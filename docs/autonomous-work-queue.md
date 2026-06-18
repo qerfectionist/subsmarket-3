@@ -498,3 +498,15 @@ Last checkpoint:
 - Verification passed:
   - local PostgreSQL upgraded to `20260619_0011`;
   - `npm run check` passed with 60 backend tests and 3 Playwright tests.
+
+2026-06-19 Vercel frontend bootstrap:
+
+- Created Vercel project `subsmarket-3` under
+  `qerfectionist-gmailcoms-projects`.
+- Deployed the Mini App frontend to production:
+  `https://subsmarket-3.vercel.app`.
+- The first frontend deployment intentionally uses a temporary backend URL.
+  After Render backend is deployed, update `VITE_API_BASE_URL` in Vercel and
+  redeploy.
+- Added `.vercel/` to the root `.gitignore` so local Vercel project metadata
+  stays out of Git.
