@@ -470,3 +470,31 @@ Last checkpoint:
   - production config validation and local production smoke passed;
   - the refreshed `390x844` Mini App had no browser console errors;
   - local backend and frontend are ready on ports `8000` and `5173`.
+
+2026-06-19 Supabase production database setup:
+
+- Connected the Supabase plugin after user confirmation.
+- Created Supabase project `subsmarket-3` in `qerfectionist's Org`.
+  - project ref: `oulwqlysozrdhlhheflk`;
+  - region: `eu-central-1`;
+  - creation cost reported by Supabase: `0` monthly.
+- Applied the Family Engine schema to Supabase and stamped Alembic at
+  `20260619_0011`.
+- Imported the production catalog:
+  - 26 active subscription services;
+  - 5 active tariff services.
+- Hardened the Supabase public schema:
+  - RLS enabled on all public application tables;
+  - explicit deny policies for `anon` and `authenticated`;
+  - additional audit-log FK indexes added.
+- Supabase security advisors returned no lints. Performance advisors only
+  reported unused indexes, which is expected on an empty newly-created database.
+- Updated production hosting plan:
+  - Render hosts only the FastAPI web service;
+  - Supabase provides PostgreSQL through `DATABASE_URL`;
+  - GitHub Actions calls protected job endpoints every 5 minutes.
+- Generated ignored local production values file:
+  `.tmp/production-env-values.md`.
+- Verification passed:
+  - local PostgreSQL upgraded to `20260619_0011`;
+  - `npm run check` passed with 60 backend tests and 3 Playwright tests.

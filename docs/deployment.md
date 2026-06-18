@@ -11,9 +11,8 @@ Telegram Mini App
   -> Managed PostgreSQL
 ```
 
-Render is the default production backend target. Supabase, Neon, Railway, or
-Render Postgres may be used as the PostgreSQL provider, but only through
-`DATABASE_URL`.
+Render is the default production backend target. Supabase is the production
+PostgreSQL provider for the current setup, but only through `DATABASE_URL`.
 
 ## What Vercel is used for
 
@@ -35,14 +34,12 @@ Render hosts the long-running backend:
 - Telegram webhook/bot endpoints;
 - migrations through Alembic;
 - catalog seed on deploy;
-- production env validation before deploy;
-- cron jobs for request/payment deadlines;
-- cron jobs for Telegram notification delivery.
+- production env validation before deploy.
 
 This is intentionally different from SubsMarket 2.0, where a Vercel serverless
 entrypoint existed while backend code also needed long-running background work.
-For SubsMarket 3.0, deadline checks, notifications, and payment reminders must
-run in a backend service, cron job, or worker.
+For SubsMarket 3.0, deadline checks, notifications, and payment reminders run
+through protected backend endpoints triggered by GitHub Actions.
 
 ## Telegram bot webhook
 
@@ -137,8 +134,7 @@ POST /api/internal/jobs/run-due
 X-Internal-Job-Token: <INTERNAL_JOB_TOKEN>
 ```
 
-The endpoint is for external schedulers. The CLI command is preferred on Render
-Cron because it does not need an HTTP round trip.
+The endpoint is called by GitHub Actions every 5 minutes.
 
 `notification_jobs` is an outbox. A second production cron sends pending
 Telegram messages:
@@ -169,6 +165,19 @@ POST /api/internal/jobs/dispatch-notifications
 X-Internal-Job-Token: <INTERNAL_JOB_TOKEN>
 ```
 
+GitHub Actions workflow:
+
+```text
+.github/workflows/subsmarket-jobs.yml
+```
+
+Required GitHub repository secrets:
+
+```text
+SUBSMARKET_API_BASE_URL=https://<backend-domain>
+INTERNAL_JOB_TOKEN=<same value as Render INTERNAL_JOB_TOKEN>
+```
+
 Local smoke commands:
 
 ```powershell
@@ -191,6 +200,16 @@ Supabase is allowed only as infrastructure:
 - SQL dashboard;
 - future storage for receipts if needed.
 
+Current production project:
+
+```text
+Project name: subsmarket-3
+Project ref: oulwqlysozrdhlhheflk
+Region: eu-central-1
+Alembic version: 20260619_0011
+Catalog: 26 subscription services, 5 tariff services
+```
+
 Supabase is not the application backend for MVP:
 
 - no direct `supabase-js` access from Mini App;
@@ -200,6 +219,11 @@ Supabase is not the application backend for MVP:
 - no Edge Functions replacing the FastAPI domain layer.
 
 The application logic stays in FastAPI.
+
+Use Supabase's **Session pooler** connection string for Render. Render is an
+IPv4 environment, and Supabase direct database endpoints are IPv6 unless the
+paid IPv4 add-on is enabled. The expected value is the SQLAlchemy/Postgres URL
+from Supabase Dashboard -> Connect -> Session pooler.
 
 ## Why this fits future accounts and GB sales
 
@@ -241,6 +265,9 @@ NOTIFICATION_RETRY_MAX_SECONDS=3600
 ACCESS_REMINDER_COOLDOWN_SECONDS=600
 DEMO_ACTIVATE_CATALOG=false
 ```
+
+Do not use Supabase anon or service-role keys in the Mini App. They are not
+needed for this architecture.
 
 After deployment, run the credential-free production smoke check:
 

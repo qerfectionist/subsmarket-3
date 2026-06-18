@@ -113,6 +113,22 @@ cd backend
 .\.venv\Scripts\python -m subsmarket.ops.production_smoke
 ```
 
+## Production infrastructure
+
+- Frontend: Vercel.
+- Backend API: Render web service.
+- Database: Supabase PostgreSQL project `subsmarket-3`
+  (`oulwqlysozrdhlhheflk`, `eu-central-1`).
+- Background jobs: GitHub Actions workflow
+  `.github/workflows/subsmarket-jobs.yml`.
+
+Production database state:
+
+- Alembic version: `20260619_0011`.
+- Catalog: 26 subscription services and 5 tariff services.
+- Supabase public tables have RLS enabled with explicit deny policies for
+  `anon` and `authenticated`; the Mini App never connects to Supabase directly.
+
 По умолчанию dev-режим использует демо Telegram-пользователя из `.env.example`.
 Исходный каталог остается `pending_verification`, но seed в dev-режиме может
 активировать записи для локальной проверки через `DEMO_ACTIVATE_CATALOG=true`.

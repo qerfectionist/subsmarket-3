@@ -1,0 +1,25 @@
+name: SubsMarket jobs
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-due-and-dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run due jobs
+        run: |
+          curl --fail --show-error --silent \
+            --request POST \
+            --header "X-Internal-Job-Token: ${{ secrets.INTERNAL_JOB_TOKEN }}" \
+            "${{ secrets.SUBSMARKET_API_BASE_URL }}/api/internal/jobs/run-due"
+
+      - name: Dispatch Telegram notifications
+        run: |
+          curl --fail --show-error --silent \
+            --request POST \
+            --header "X-Internal-Job-Token: ${{ secrets.INTERNAL_JOB_TOKEN }}" \
+            "${{ secrets.SUBSMARKET_API_BASE_URL }}/api/internal/jobs/dispatch-notifications"
