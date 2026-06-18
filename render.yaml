@@ -1,0 +1,89 @@
+databases:
+  - name: subsmarket-postgres
+    databaseName: subsmarket
+    user: subsmarket
+
+services:
+  - type: web
+    name: subsmarket-api
+    runtime: python
+    rootDir: backend
+    buildCommand: python -m pip install --upgrade pip && python -m pip install -e .
+    preDeployCommand: python -m subsmarket.ops.check_deploy_config && alembic upgrade head && python -m subsmarket.catalog.seed
+    startCommand: uvicorn subsmarket.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /ready
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: subsmarket-postgres
+          property: connectionString
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_MINI_APP_URL
+        sync: false
+      - key: TELEGRAM_WEBHOOK_URL
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: TELEGRAM_WEBHOOK_DROP_PENDING_UPDATES
+        value: false
+      - key: PAYMENT_REQUISITE_SECRET
+        sync: false
+      - key: INTERNAL_JOB_TOKEN
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: NOTIFICATION_MAX_ATTEMPTS
+        value: 5
+      - key: NOTIFICATION_RETRY_BASE_SECONDS
+        value: 60
+      - key: NOTIFICATION_RETRY_MAX_SECONDS
+        value: 3600
+      - key: ACCESS_REMINDER_COOLDOWN_SECONDS
+        value: 600
+      - key: DEMO_ACTIVATE_CATALOG
+        value: false
+
+  - type: cron
+    name: subsmarket-due-jobs
+    runtime: python
+    rootDir: backend
+    schedule: "*/5 * * * *"
+    buildCommand: python -m pip install --upgrade pip && python -m pip install -e .
+    startCommand: python -m subsmarket.jobs.run_due
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: subsmarket-postgres
+          property: connectionString
+      - key: PAYMENT_REQUISITE_SECRET
+        sync: false
+
+  - type: cron
+    name: subsmarket-notification-dispatch
+    runtime: python
+    rootDir: backend
+    schedule: "*/1 * * * *"
+    buildCommand: python -m pip install --upgrade pip && python -m pip install -e .
+    startCommand: python -m subsmarket.jobs.dispatch_notifications
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: subsmarket-postgres
+          property: connectionString
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_MINI_APP_URL
+        sync: false
+      - key: NOTIFICATION_MAX_ATTEMPTS
+        value: 5
+      - key: NOTIFICATION_RETRY_BASE_SECONDS
+        value: 60
+      - key: NOTIFICATION_RETRY_MAX_SECONDS
+        value: 3600

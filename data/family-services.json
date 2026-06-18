@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-15",
+  "currency": "KZT",
+  "engine": "family",
+  "source": "user_market_research",
+  "services": [
+    {
+      "id": "netflix-premium",
+      "name": "Netflix",
+      "variant": "Premium",
+      "category": "video_streaming",
+      "subcategory": "international",
+      "status": "pending_verification"
+    },
+    {
+      "id": "youtube-premium",
+      "name": "YouTube Premium",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "international",
+      "status": "pending_verification",
+      "included_services": [
+        "YouTube Music"
+      ]
+    },
+    {
+      "id": "hbo-max",
+      "name": "HBO Max",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "international",
+      "status": "pending_verification"
+    },
+    {
+      "id": "yandex-plus",
+      "name": "Яндекс Плюс",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "cis",
+      "status": "pending_verification",
+      "included_services": [
+        "Кинопоиск",
+        "Яндекс Музыка",
+        "Яндекс Книги"
+      ]
+    },
+    {
+      "id": "ivi",
+      "name": "Иви",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "cis",
+      "status": "pending_verification",
+      "aliases": [
+        "Ivi"
+      ]
+    },
+    {
+      "id": "megogo",
+      "name": "Megogo",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "cis",
+      "status": "pending_verification"
+    },
+    {
+      "id": "qino",
+      "name": "Qino",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "cis",
+      "status": "pending_verification"
+    },
+    {
+      "id": "okko",
+      "name": "Okko",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "cis",
+      "status": "pending_verification"
+    },
+    {
+      "id": "amediateka",
+      "name": "Амедиатека",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "cis",
+      "status": "pending_verification",
+      "aliases": [
+        "Amediateka"
+      ]
+    },
+    {
+      "id": "prime-video",
+      "name": "Prime Video",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "international",
+      "status": "pending_verification"
+    },
+    {
+      "id": "disney-plus",
+      "name": "Disney+",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "international",
+      "status": "pending_verification",
+      "aliases": [
+        "Disney"
+      ]
+    },
+    {
+      "id": "crunchyroll",
+      "name": "Crunchyroll",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "anime",
+      "status": "pending_verification"
+    },
+    {
+      "id": "ilook-tv",
+      "name": "iLookTV",
+      "variant": null,
+      "category": "video_streaming",
+      "subcategory": "iptv",
+      "status": "pending_verification"
+    },
+    {
+      "id": "spotify-family",
+      "name": "Spotify",
+      "variant": "Family",
+      "category": "music_audio",
+      "subcategory": "music",
+      "status": "pending_verification",
+      "aliases": [
+        "Spotify Premium"
+      ]
+    },
+    {
+      "id": "apple-music",
+      "name": "Apple Music",
+      "variant": null,
+      "category": "music_audio",
+      "subcategory": "music",
+      "status": "pending_verification"
+    },
+    {
+      "id": "duolingo-super",
+      "name": "Duolingo",
+      "variant": "Super",
+      "category": "education_books",
+      "subcategory": "education",
+      "status": "pending_verification"
+    },
+    {
+      "id": "duolingo-max",
+      "name": "Duolingo",
+      "variant": "Max",
+      "category": "education_books",
+      "subcategory": "education",
+      "status": "pending_verification"
+    },
+    {
+      "id": "mybook-premium",
+      "name": "MyBook",
+      "variant": "Премиум",
+      "category": "education_books",
+      "subcategory": "books",
+      "status": "pending_verification"
+    },
+    {
+      "id": "microsoft-365-family",
+      "name": "Microsoft 365",
+      "variant": "Family",
+      "category": "cloud_productivity",
+      "subcategory": "productivity",
+      "status": "pending_verification",
+      "included_services": [
+        "Word",
+        "Excel",
+        "PowerPoint",
+        "OneDrive"
+      ]
+    },
+    {
+      "id": "apple-one",
+      "name": "Apple One",
+      "variant": null,
+      "category": "cloud_productivity",
+      "subcategory": "bundle",
+      "status": "pending_verification"
+    },
+    {
+      "id": "icloud-plus-2tb",
+      "name": "iCloud+",
+      "variant": "2 ТБ",
+      "category": "cloud_productivity",
+      "subcategory": "cloud_storage",
+      "status": "pending_verification"
+    },
+    {
+      "id": "google-one",
+      "name": "Google One",
+      "variant": null,
+      "category": "cloud_productivity",
+      "subcategory": "cloud_storage",
+      "status": "pending_verification"
+    },
+    {
+      "id": "kaspersky-standard",
+      "name": "Kaspersky",
+      "variant": "Standard",
+      "category": "security_utilities",
+      "subcategory": "antivirus",
+      "status": "pending_verification"
+    },
+    {
+      "id": "kaspersky-vpn",
+      "name": "Kaspersky VPN",
+      "variant": null,
+      "category": "security_utilities",
+      "subcategory": "vpn",
+      "status": "pending_verification"
+    },
+    {
+      "id": "adguard-vpn",
+      "name": "AdGuard VPN",
+      "variant": null,
+      "category": "security_utilities",
+      "subcategory": "vpn",
+      "status": "pending_verification"
+    },
+    {
+      "id": "awax",
+      "name": "Awax",
+      "variant": null,
+      "category": "security_utilities",
+      "subcategory": "vpn",
+      "status": "pending_verification"
+    },
+    {
+      "id": "beeline-family-tariff",
+      "name": "Beeline",
+      "variant": "Семейный тариф",
+      "family_type": "tariff",
+      "category": "mobile_tariffs",
+      "subcategory": "mobile_operator",
+      "status": "pending_verification",
+      "max_members": 6,
+      "supported_periods": [
+        "monthly"
+      ]
+    },
+    {
+      "id": "tele2-family-tariff",
+      "name": "Tele2",
+      "variant": "Семейный тариф",
+      "family_type": "tariff",
+      "category": "mobile_tariffs",
+      "subcategory": "mobile_operator",
+      "status": "pending_verification",
+      "max_members": 6,
+      "supported_periods": [
+        "monthly"
+      ]
+    },
+    {
+      "id": "altel-family-tariff",
+      "name": "Altel",
+      "variant": "Семейный тариф",
+      "family_type": "tariff",
+      "category": "mobile_tariffs",
+      "subcategory": "mobile_operator",
+      "status": "pending_verification",
+      "max_members": 6,
+      "supported_periods": [
+        "monthly"
+      ]
+    },
+    {
+      "id": "kcell-family-tariff",
+      "name": "Kcell",
+      "variant": "Семейный тариф",
+      "family_type": "tariff",
+      "category": "mobile_tariffs",
+      "subcategory": "mobile_operator",
+      "status": "pending_verification",
+      "max_members": 6,
+      "supported_periods": [
+        "monthly"
+      ]
+    },
+    {
+      "id": "activ-family-tariff",
+      "name": "activ",
+      "variant": "Семейный тариф",
+      "family_type": "tariff",
+      "category": "mobile_tariffs",
+      "subcategory": "mobile_operator",
+      "status": "pending_verification",
+      "max_members": 6,
+      "supported_periods": [
+        "monthly"
+      ]
+    }
+  ]
+}

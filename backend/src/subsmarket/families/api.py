@@ -1,0 +1,449 @@
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+
+from subsmarket.core.database import get_db
+from subsmarket.families.schemas import (
+    AccessConfirmationResult,
+    FamilyAuditLogOut,
+    FamilyCreate,
+    FamilyCreateResult,
+    FamilyDescriptionUpdate,
+    FamilyMemberOut,
+    FamilyOut,
+    FamilyPaymentDayUpdate,
+    FamilyPaymentOut,
+    FamilyPriceUpdate,
+    FamilyRequestOut,
+    FamilyViewOut,
+    MyFamilyOut,
+    OwnerFamilyRequestOut,
+    PaymentConfirmationResult,
+    PaymentRequisiteOut,
+    PrepaymentPeriodsCreate,
+)
+from subsmarket.families.service import (
+    acknowledge_family_closing,
+    acknowledge_member_removal,
+    approve_join_request,
+    cancel_join_request,
+    cancel_member_before_access,
+    cancel_payment_report,
+    close_family,
+    confirm_access_received,
+    confirm_payment_received,
+    create_family,
+    create_join_request,
+    create_member_prepayment,
+    get_family_by_id,
+    get_family_view,
+    get_open_payment_requisite,
+    leave_family,
+    list_family_audit_logs,
+    list_family_members,
+    list_member_payments,
+    list_my_families,
+    list_my_join_requests,
+    list_my_payments,
+    list_owner_family_requests,
+    list_searchable_families,
+    mark_access_provided,
+    mark_payment_not_received,
+    record_owner_prepaid_periods,
+    reject_join_request,
+    remind_access_confirmation,
+    report_payment_paid,
+    revoke_member_removal,
+    schedule_member_removal,
+    to_audit_log_out,
+    to_family_out,
+    to_family_request_out,
+    to_member_out,
+    to_owner_family_request_out,
+    to_payment_out,
+    update_family_description,
+    update_family_payment_day,
+    update_family_price,
+)
+from subsmarket.identity.service import upsert_user
+from subsmarket.identity.telegram import parse_telegram_user
+
+router = APIRouter(prefix="/api/families", tags=["families"])
+
+
+def get_current_user(
+    db: Session = Depends(get_db),
+    telegram_user=Depends(parse_telegram_user),
+):
+    if not telegram_user.username:
+        raise HTTPException(status_code=403, detail="USERNAME_REQUIRED")
+    return upsert_user(db, telegram_user)
+
+
+@router.post("", response_model=FamilyCreateResult, status_code=201)
+def post_family(
+    payload: FamilyCreate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyCreateResult:
+    family = create_family(db, user, payload)
+    return FamilyCreateResult(family=to_family_out(family))
+
+
+@router.get("", response_model=list[FamilyOut])
+def get_families(
+    family_type: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyOut]:
+    return [
+        to_family_out(family)
+        for family in list_searchable_families(db, user, family_type=family_type)
+    ]
+
+
+@router.get("/me", response_model=list[MyFamilyOut])
+def get_my_families(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[MyFamilyOut]:
+    return list_my_families(db, user)
+
+
+@router.get("/payments/me", response_model=list[FamilyPaymentOut])
+def get_my_payments(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyPaymentOut]:
+    return [to_payment_out(item) for item in list_my_payments(db, user)]
+
+
+@router.post("/{family_id}/requests", response_model=FamilyRequestOut, status_code=201)
+def post_family_request(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyRequestOut:
+    request = create_join_request(db, user, family_id)
+    return to_family_request_out(request)
+
+
+@router.get("/requests/me", response_model=list[FamilyRequestOut])
+def get_my_family_requests(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyRequestOut]:
+    return [to_family_request_out(item) for item in list_my_join_requests(db, user)]
+
+
+@router.post("/requests/{request_id}/cancel", response_model=FamilyRequestOut)
+def cancel_my_family_request(
+    request_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyRequestOut:
+    request = cancel_join_request(db, user, request_id)
+    return to_family_request_out(request)
+
+
+@router.get("/{family_id}/requests", response_model=list[OwnerFamilyRequestOut])
+def get_owner_family_requests(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[OwnerFamilyRequestOut]:
+    return [
+        to_owner_family_request_out(item)
+        for item in list_owner_family_requests(db, user, family_id)
+    ]
+
+
+@router.post("/requests/{request_id}/approve", response_model=FamilyRequestOut)
+def approve_family_request(
+    request_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyRequestOut:
+    request = approve_join_request(db, user, request_id)
+    return to_family_request_out(request)
+
+
+@router.post("/requests/{request_id}/reject", response_model=FamilyRequestOut)
+def reject_family_request(
+    request_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyRequestOut:
+    request = reject_join_request(db, user, request_id)
+    return to_family_request_out(request)
+
+
+@router.patch("/{family_id}/description", response_model=FamilyOut)
+def patch_family_description(
+    family_id: UUID,
+    payload: FamilyDescriptionUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyOut:
+    return to_family_out(update_family_description(db, user, family_id, payload))
+
+
+@router.patch("/{family_id}/price", response_model=FamilyOut)
+def patch_family_price(
+    family_id: UUID,
+    payload: FamilyPriceUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyOut:
+    return to_family_out(update_family_price(db, user, family_id, payload))
+
+
+@router.patch("/{family_id}/payment-day", response_model=FamilyOut)
+def patch_family_payment_day(
+    family_id: UUID,
+    payload: FamilyPaymentDayUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyOut:
+    return to_family_out(update_family_payment_day(db, user, family_id, payload))
+
+
+@router.post("/{family_id}/close", response_model=FamilyOut)
+def post_family_close(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyOut:
+    return to_family_out(close_family(db, user, family_id))
+
+
+@router.post("/{family_id}/acknowledge-closing", response_model=FamilyMemberOut)
+def post_family_closing_acknowledged(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = acknowledge_family_closing(db, user, family_id)
+    return to_member_out(member)
+
+
+@router.get("/{family_id}/members", response_model=list[FamilyMemberOut])
+def get_family_members(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyMemberOut]:
+    return [to_member_out(item) for item in list_family_members(db, user, family_id)]
+
+
+@router.post("/members/{member_id}/access-provided", response_model=FamilyMemberOut)
+def post_member_access_provided(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = mark_access_provided(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post(
+    "/members/{member_id}/remind-access-confirmation",
+    response_model=FamilyMemberOut,
+)
+def post_member_access_confirmation_reminder(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = remind_access_confirmation(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post(
+    "/members/{member_id}/cancel-before-access",
+    response_model=FamilyMemberOut,
+)
+def post_member_cancel_before_access(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = cancel_member_before_access(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post("/members/{member_id}/leave", response_model=FamilyMemberOut)
+def post_member_leave(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = leave_family(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post("/members/{member_id}/remove", response_model=FamilyMemberOut)
+def post_member_remove(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = schedule_member_removal(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post("/members/{member_id}/acknowledge-removal", response_model=FamilyMemberOut)
+def post_member_acknowledge_removal(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = acknowledge_member_removal(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post("/members/{member_id}/revoke-removal", response_model=FamilyMemberOut)
+def post_member_revoke_removal(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = revoke_member_removal(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post(
+    "/members/{member_id}/access-confirmed",
+    response_model=AccessConfirmationResult,
+)
+def post_member_access_confirmed(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> AccessConfirmationResult:
+    return confirm_access_received(db, user, member_id)
+
+
+@router.get(
+    "/members/{member_id}/payment-requisite",
+    response_model=PaymentRequisiteOut,
+)
+def get_member_payment_requisite(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> PaymentRequisiteOut:
+    return get_open_payment_requisite(db, user, member_id)
+
+
+@router.get("/members/{member_id}/payments", response_model=list[FamilyPaymentOut])
+def get_member_payments(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyPaymentOut]:
+    return [to_payment_out(item) for item in list_member_payments(db, user, member_id)]
+
+
+@router.post(
+    "/members/{member_id}/prepayments",
+    response_model=FamilyPaymentOut,
+    status_code=201,
+)
+def post_member_prepayment(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyPaymentOut:
+    return to_payment_out(create_member_prepayment(db, user, member_id))
+
+
+@router.post(
+    "/members/{member_id}/prepayments/record-paid",
+    response_model=list[FamilyPaymentOut],
+    status_code=201,
+)
+def post_owner_prepaid_periods(
+    member_id: UUID,
+    payload: PrepaymentPeriodsCreate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyPaymentOut]:
+    return [
+        to_payment_out(payment)
+        for payment in record_owner_prepaid_periods(db, user, member_id, payload)
+    ]
+
+
+@router.post("/payments/{payment_id}/report-paid", response_model=FamilyPaymentOut)
+def post_payment_report_paid(
+    payment_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyPaymentOut:
+    payment = report_payment_paid(db, user, payment_id)
+    return to_payment_out(payment)
+
+
+@router.post("/payments/{payment_id}/cancel-report", response_model=FamilyPaymentOut)
+def post_payment_cancel_report(
+    payment_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyPaymentOut:
+    payment = cancel_payment_report(db, user, payment_id)
+    return to_payment_out(payment)
+
+
+@router.post(
+    "/payments/{payment_id}/confirm",
+    response_model=PaymentConfirmationResult,
+)
+def post_payment_confirm(
+    payment_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> PaymentConfirmationResult:
+    return confirm_payment_received(db, user, payment_id)
+
+
+@router.post("/payments/{payment_id}/not-received", response_model=FamilyPaymentOut)
+def post_payment_not_received(
+    payment_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyPaymentOut:
+    payment = mark_payment_not_received(db, user, payment_id)
+    return to_payment_out(payment)
+
+
+@router.get("/{family_id}/view", response_model=FamilyViewOut)
+def get_family_detail_view(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyViewOut:
+    return get_family_view(db, user, family_id)
+
+
+@router.get("/{family_id}/audit-log", response_model=list[FamilyAuditLogOut])
+def get_family_audit_log(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyAuditLogOut]:
+    return [
+        to_audit_log_out(item)
+        for item in list_family_audit_logs(db, user, family_id)
+    ]
+
+
+@router.get("/{family_id}", response_model=FamilyOut)
+def get_family(family_id: UUID, db: Session = Depends(get_db)) -> FamilyOut:
+    family = get_family_by_id(db, family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    return to_family_out(family)

@@ -1,0 +1,15 @@
+{
+  "name": "subsmarket-3",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "test:ui": "npm --prefix frontend run test:ui",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "backend:compile": "backend\\.venv\\Scripts\\python.exe -m compileall -q backend\\src backend\\tests",
+    "backend:test": "backend\\.venv\\Scripts\\python.exe -m pytest backend\\tests",
+    "backend:lint": "backend\\.venv\\Scripts\\python.exe -m ruff check backend\\src backend\\alembic backend\\tests",
+    "check:diff": "git diff --check",
+    "check": "npm run backend:lint && npm run backend:compile && npm run backend:test && npm run build && npm run test:ui && npm run check:diff"
+  }
+}
