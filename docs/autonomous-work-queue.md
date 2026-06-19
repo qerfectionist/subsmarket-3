@@ -578,3 +578,17 @@ Last checkpoint:
   trimmed messages, and the real Telegram sender payload with the Mini App
   button.
 - Updated deployment documentation with the outbox message contract.
+
+2026-06-19 backend security and load hardening:
+
+- Closed unauthenticated production access to `GET /api/families/{family_id}`;
+  family cards now require verified Telegram auth like the rest of Family
+  Engine.
+- Protected `POST /api/catalog/import-family-services` in production with
+  `X-Internal-Job-Token`; deploy-time seed remains the normal production path.
+- Added partial PostgreSQL indexes for deadline jobs:
+  pending request expiry, access-confirmation reminders, first-payment overdue
+  checks, member-removal execution, and due family closure.
+- Added `FOR UPDATE SKIP LOCKED` to state-changing scheduled-job selections so
+  overlapping cron runs do not process the same rows.
+- Verified backend tests and PostgreSQL-only concurrency test.

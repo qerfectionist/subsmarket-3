@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from subsmarket.catalog.models import FamilyService
+from subsmarket.core.config import settings
 from subsmarket.core.database import Base, get_db
 from subsmarket.main import app
 from subsmarket.models import import_models
@@ -221,3 +222,36 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
     assert owner_prepayments.status_code == 201
     assert len(owner_prepayments.json()) == 2
     assert all(item["status"] == "paid" for item in owner_prepayments.json())
+
+
+def test_family_by_id_requires_telegram_auth_in_production(
+    client: TestClient,
+    service: FamilyService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    owner_headers = auth_headers(610101, "api_owner_secure", "API Owner")
+    create_response = client.post(
+        "/api/families",
+        headers=owner_headers,
+        json={
+            "service_id": str(service.id),
+            "period": "monthly",
+            "max_members": 4,
+            "total_price_kzt": 3990,
+            "payment_day": 15,
+            "next_payment_date": (date.today() + timedelta(days=30)).isoformat(),
+            "description": "Private by id",
+            "owner_rules": "Access first.",
+            "payment_bank": "kaspi",
+            "payment_phone": "+77001234567",
+        },
+    )
+    assert create_response.status_code == 201
+    family_id = create_response.json()["family"]["id"]
+
+    monkeypatch.setattr(settings, "app_env", "production")
+
+    response = client.get(f"/api/families/{family_id}")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "TELEGRAM_INIT_DATA_REQUIRED"

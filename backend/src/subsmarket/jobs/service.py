@@ -88,6 +88,7 @@ def expire_family_requests(db: Session) -> tuple[int, int]:
             .options(joinedload(FamilyRequest.family))
             .where(FamilyRequest.status == "pending")
             .where(FamilyRequest.expires_at <= now)
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -141,6 +142,7 @@ def send_access_confirmation_reminders(db: Session) -> int:
             .options(joinedload(FamilyMember.family))
             .where(FamilyMember.status == "awaiting_confirmation")
             .where(FamilyMember.access_provided_at <= now - timedelta(hours=24))
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -199,6 +201,7 @@ def mark_overdue_first_payments(db: Session) -> tuple[int, int]:
             .where(FamilyPayment.kind == "first")
             .where(FamilyPayment.status == "due")
             .where(FamilyPayment.due_at <= now)
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -259,6 +262,7 @@ def create_regular_payments(db: Session) -> int:
             .where(Family.status.in_({"active", "full"}))
             .where(Family.next_payment_date <= today + timedelta(days=30))
             .order_by(Family.next_payment_date.asc())
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -342,6 +346,7 @@ def activate_regular_payments(db: Session) -> tuple[int, int]:
             .where(FamilyPayment.status == "scheduled")
             .where(FamilyPayment.due_at <= now)
             .where(FamilyPayment.due_at > now - timedelta(hours=24))
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -400,6 +405,7 @@ def mark_overdue_regular_payments(db: Session) -> tuple[int, int]:
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status.in_({"scheduled", "due"}))
             .where(FamilyPayment.due_at <= now - timedelta(hours=24))
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -472,6 +478,7 @@ def send_regular_payment_reminders(db: Session) -> int:
             .where(FamilyPayment.status == "scheduled")
             .where(Family.status.in_({"active", "full"}))
             .where(FamilyMember.status.in_(REGULAR_PAYMENT_MEMBER_STATUSES))
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -518,6 +525,7 @@ def send_regular_payment_reminders(db: Session) -> int:
                     {"payment_due", "active", "removal_pending"}
                 )
             )
+            .with_for_update(skip_locked=True)
         ).all()
     )
     for payment in open_payments:
@@ -544,6 +552,7 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
             .options(joinedload(FamilyPayment.family))
             .where(FamilyPayment.status == "payment_reported")
             .where(FamilyPayment.reported_paid_at.is_not(None))
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -603,6 +612,7 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
             .where(FamilyMember.role == "member")
             .where(FamilyMember.status.in_(CLOSING_ACK_MEMBER_STATUSES))
             .where(FamilyMember.closing_acknowledged_at.is_(None))
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -769,6 +779,7 @@ def execute_member_removals(db: Session) -> tuple[int, int]:
             .options(joinedload(FamilyMember.family), joinedload(FamilyMember.user))
             .where(FamilyMember.status == "removal_pending")
             .where(FamilyMember.removal_scheduled_at <= now)
+            .with_for_update(skip_locked=True)
         ).all()
     )
 
@@ -821,6 +832,7 @@ def close_due_families(db: Session) -> tuple[int, int]:
             select(Family)
             .where(Family.status == "closing")
             .where(Family.closes_at <= now)
+            .with_for_update(skip_locked=True)
         ).all()
     )
 

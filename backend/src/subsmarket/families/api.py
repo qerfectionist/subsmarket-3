@@ -456,7 +456,11 @@ def get_family_audit_log(
 
 
 @router.get("/{family_id}", response_model=FamilyOut)
-def get_family(family_id: UUID, db: Session = Depends(get_db)) -> FamilyOut:
+def get_family(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyOut:
     family = get_family_by_id(db, family_id)
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")

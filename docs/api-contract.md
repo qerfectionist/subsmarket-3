@@ -80,6 +80,8 @@ Headers:
 
 ### GET /api/catalog/family-services
 
+Public read-only catalog endpoint.
+
 Query:
 
 - `category`;
@@ -140,6 +142,9 @@ Backend:
 - шифрует платежный номер.
 
 ### GET /api/families/{family_id}
+
+Requires verified Telegram user auth. This endpoint is not public in
+production; unauthenticated requests must fail before returning a family card.
 
 Возвращает карточку семьи.
 
