@@ -907,13 +907,14 @@ def reject_join_request(db: Session, user: User, request_id: UUID) -> FamilyRequ
 
 
 def approve_join_request(db: Session, user: User, request_id: UUID) -> FamilyRequest:
-    request_reference = db.get(FamilyRequest, request_id)
-    if request_reference is None:
+    family_id = db.scalar(
+        select(FamilyRequest.family_id).where(FamilyRequest.id == request_id)
+    )
+    if family_id is None:
         raise HTTPException(status_code=404, detail="FAMILY_REQUEST_NOT_FOUND")
-
     family = db.scalar(
         select(Family)
-        .where(Family.id == request_reference.family_id)
+        .where(Family.id == family_id)
         .with_for_update()
     )
     if family is None:
