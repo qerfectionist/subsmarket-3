@@ -7,7 +7,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 DEFAULT_PATHS = (
     "/health",
@@ -41,10 +41,26 @@ class LoadSummary:
 
 
 def run_request(base_url: str, path: str, timeout_seconds: float) -> RequestResult:
+    return run_request_with_headers(
+        base_url,
+        path,
+        timeout_seconds,
+        headers={},
+    )
+
+
+def run_request_with_headers(
+    base_url: str,
+    path: str,
+    timeout_seconds: float,
+    *,
+    headers: dict[str, str],
+) -> RequestResult:
     started = time.perf_counter()
     try:
+        request = Request(f"{base_url.rstrip('/')}{path}", headers=headers)
         with urlopen(
-            f"{base_url.rstrip('/')}{path}",
+            request,
             timeout=timeout_seconds,
         ) as response:
             response.read()
@@ -110,6 +126,25 @@ def validate_summary(
     return problems
 
 
+def summarize_results_by_path(
+    results: list[RequestResult],
+    *,
+    concurrency: int,
+    duration_seconds: float,
+) -> dict[str, LoadSummary]:
+    grouped: dict[str, list[RequestResult]] = {}
+    for result in results:
+        grouped.setdefault(result.path, []).append(result)
+    return {
+        path: summarize_results(
+            path_results,
+            concurrency=min(concurrency, len(path_results)),
+            duration_seconds=duration_seconds,
+        )
+        for path, path_results in sorted(grouped.items())
+    }
+
+
 def _percentile(sorted_values: list[float], percentile: float) -> float:
     index = max(0, math.ceil(len(sorted_values) * percentile) - 1)
     return sorted_values[index]
@@ -133,6 +168,7 @@ def main() -> None:
     base_url = os.getenv("LOAD_SMOKE_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
     requests = _positive_int("LOAD_SMOKE_REQUESTS", 100)
     concurrency = _positive_int("LOAD_SMOKE_CONCURRENCY", 10)
+    warmup_requests = int(os.getenv("LOAD_SMOKE_WARMUP_REQUESTS", "0"))
     timeout_seconds = _positive_float("LOAD_SMOKE_TIMEOUT_SECONDS", 15)
     max_error_rate = float(os.getenv("LOAD_SMOKE_MAX_ERROR_RATE", "0"))
     max_p95_ms = _positive_float("LOAD_SMOKE_MAX_P95_MS", 2000)
@@ -145,15 +181,31 @@ def main() -> None:
         raise SystemExit("LOAD_SMOKE_PATHS must contain at least one path")
     if not 0 <= max_error_rate <= 1:
         raise SystemExit("LOAD_SMOKE_MAX_ERROR_RATE must be between 0 and 1")
+    if warmup_requests < 0:
+        raise SystemExit("LOAD_SMOKE_WARMUP_REQUESTS must be non-negative")
+
+    headers: dict[str, str] = {}
+    init_data = os.getenv("LOAD_SMOKE_TELEGRAM_INIT_DATA", "").strip()
+    if init_data:
+        headers["X-Telegram-Init-Data"] = init_data
+
+    for index in range(warmup_requests):
+        run_request_with_headers(
+            base_url,
+            paths[index % len(paths)],
+            timeout_seconds,
+            headers=headers,
+        )
 
     started = time.perf_counter()
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
         futures = [
             executor.submit(
-                run_request,
+                run_request_with_headers,
                 base_url,
                 paths[index % len(paths)],
                 timeout_seconds,
+                headers=headers,
             )
             for index in range(requests)
         ]
@@ -171,15 +223,29 @@ def main() -> None:
         max_p95_ms=max_p95_ms,
     )
     errors_by_type: dict[str, int] = {}
+    status_counts: dict[str, int] = {}
     for result in results:
+        status_counts[str(result.status or "network_error")] = (
+            status_counts.get(str(result.status or "network_error"), 0) + 1
+        )
         if result.error:
             errors_by_type[result.error] = errors_by_type.get(result.error, 0) + 1
+    summaries_by_path = summarize_results_by_path(
+        results,
+        concurrency=concurrency,
+        duration_seconds=duration_seconds,
+    )
 
     payload = {
         "ok": not problems,
         "base_url": base_url,
         "paths": list(paths),
         "summary": asdict(summary),
+        "summaries_by_path": {
+            path: asdict(path_summary)
+            for path, path_summary in summaries_by_path.items()
+        },
+        "status_counts": status_counts,
         "errors_by_type": errors_by_type,
         "problems": problems,
     }
@@ -190,4 +256,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

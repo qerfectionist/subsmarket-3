@@ -636,7 +636,12 @@ def get_family_by_id(db: Session, family_id: UUID) -> Family | None:
 
 
 def list_searchable_families(
-    db: Session, user: User, *, family_type: str | None = None, limit: int = 50
+    db: Session,
+    user: User,
+    *,
+    family_type: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[Family]:
     stmt = (
         select(Family)
@@ -666,6 +671,7 @@ def list_searchable_families(
             .exists()
         )
         .order_by(Family.created_at.desc())
+        .offset(offset)
         .limit(limit)
     )
     if family_type:
@@ -675,7 +681,14 @@ def list_searchable_families(
     )
 
 
-def list_my_families(db: Session, user: User, *, limit: int = 50) -> list[MyFamilyOut]:
+def list_my_families(
+    db: Session,
+    user: User,
+    *,
+    limit: int = 50,
+    offset: int = 0,
+    payment_limit_per_family: int = 20,
+) -> list[MyFamilyOut]:
     memberships = list(
         db.scalars(
             select(FamilyMember)
@@ -687,6 +700,7 @@ def list_my_families(db: Session, user: User, *, limit: int = 50) -> list[MyFami
             .where(FamilyMember.user_id == user.id)
             .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
             .order_by(FamilyMember.joined_at.desc())
+            .offset(offset)
             .limit(limit)
         ).all()
     )
@@ -696,11 +710,32 @@ def list_my_families(db: Session, user: User, *, limit: int = 50) -> list[MyFami
         membership_id: [] for membership_id in membership_ids
     }
     if membership_ids:
+        row_number = (
+            func.row_number()
+            .over(
+                partition_by=FamilyPayment.member_id,
+                order_by=(
+                    FamilyPayment.due_at.desc(),
+                    FamilyPayment.created_at.desc(),
+                ),
+            )
+            .label("row_number")
+        )
+        ranked_payments = (
+            select(FamilyPayment.id.label("payment_id"), row_number)
+            .where(FamilyPayment.member_id.in_(membership_ids))
+            .subquery()
+        )
         payments = list(
             db.scalars(
                 select(FamilyPayment)
-                .where(FamilyPayment.member_id.in_(membership_ids))
-                .order_by(FamilyPayment.due_at.desc(), FamilyPayment.created_at.desc())
+                .join(ranked_payments, FamilyPayment.id == ranked_payments.c.payment_id)
+                .where(ranked_payments.c.row_number <= payment_limit_per_family)
+                .order_by(
+                    FamilyPayment.member_id.asc(),
+                    FamilyPayment.due_at.desc(),
+                    FamilyPayment.created_at.desc(),
+                )
             ).all()
         )
         for payment in payments:
@@ -739,7 +774,7 @@ def list_my_families(db: Session, user: User, *, limit: int = 50) -> list[MyFami
 
 
 def list_my_payments(
-    db: Session, user: User, *, limit: int = 50
+    db: Session, user: User, *, limit: int = 50, offset: int = 0
 ) -> list[FamilyPayment]:
     return list(
         db.scalars(
@@ -747,6 +782,7 @@ def list_my_payments(
             .join(FamilyMember, FamilyMember.id == FamilyPayment.member_id)
             .where(FamilyMember.user_id == user.id)
             .order_by(FamilyPayment.due_at.desc(), FamilyPayment.created_at.desc())
+            .offset(offset)
             .limit(limit)
         ).all()
     )
@@ -806,7 +842,12 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
 
 
 def list_family_audit_logs(
-    db: Session, user: User, family_id: UUID, *, limit: int = 50
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[FamilyAuditLog]:
     family = db.get(Family, family_id)
     if family is None:
@@ -826,6 +867,7 @@ def list_family_audit_logs(
             select(FamilyAuditLog)
             .where(FamilyAuditLog.family_id == family_id)
             .order_by(FamilyAuditLog.created_at.desc())
+            .offset(offset)
             .limit(limit)
         ).all()
     )
@@ -1067,7 +1109,7 @@ def cancel_join_request(
 
 
 def list_my_join_requests(
-    db: Session, user: User, *, limit: int = 50
+    db: Session, user: User, *, limit: int = 50, offset: int = 0
 ) -> list[FamilyRequest]:
     return list(
         db.scalars(
@@ -1078,13 +1120,19 @@ def list_my_join_requests(
             )
             .where(FamilyRequest.user_id == user.id)
             .order_by(FamilyRequest.created_at.desc())
+            .offset(offset)
             .limit(limit)
         ).all()
     )
 
 
 def list_owner_family_requests(
-    db: Session, user: User, family_id: UUID, *, limit: int = 50
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[FamilyRequest]:
     family = db.get(Family, family_id)
     if family is None:
@@ -1102,6 +1150,7 @@ def list_owner_family_requests(
             .where(FamilyRequest.family_id == family_id)
             .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
             .order_by(FamilyRequest.created_at.asc())
+            .offset(offset)
             .limit(limit)
         ).all()
     )
@@ -1289,7 +1338,12 @@ def _cancel_pending_requests_for_full_family(
 
 
 def list_family_members(
-    db: Session, user: User, family_id: UUID, *, limit: int = 50
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[FamilyMember]:
     family = db.get(Family, family_id)
     if family is None:
@@ -1303,6 +1357,7 @@ def list_family_members(
             .options(joinedload(FamilyMember.user))
             .where(FamilyMember.family_id == family_id)
             .order_by(FamilyMember.joined_at.asc())
+            .offset(offset)
             .limit(limit)
         ).all()
     )
@@ -1941,7 +1996,12 @@ def get_open_payment_requisite(
 
 
 def list_member_payments(
-    db: Session, user: User, member_id: UUID, *, limit: int = 50
+    db: Session,
+    user: User,
+    member_id: UUID,
+    *,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[FamilyPayment]:
     member = db.get(FamilyMember, member_id)
     if member is None:
@@ -1957,6 +2017,7 @@ def list_member_payments(
             select(FamilyPayment)
             .where(FamilyPayment.member_id == member_id)
             .order_by(FamilyPayment.created_at.desc())
+            .offset(offset)
             .limit(limit)
         ).all()
     )
@@ -1968,6 +2029,8 @@ def list_family_member_payments(
     family_id: UUID,
     *,
     limit_per_member: int = 20,
+    member_limit: int = 50,
+    member_offset: int = 0,
 ) -> list[tuple[UUID, list[FamilyPayment]]]:
     family = db.get(Family, family_id)
     if family is None:
@@ -1980,6 +2043,8 @@ def list_family_member_payments(
             select(FamilyMember.id)
             .where(FamilyMember.family_id == family_id)
             .order_by(FamilyMember.joined_at.asc())
+            .offset(member_offset)
+            .limit(member_limit)
         ).all()
     )
     if not member_ids:

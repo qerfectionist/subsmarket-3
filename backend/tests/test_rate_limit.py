@@ -64,3 +64,36 @@ def test_rate_limit_middleware_keys_by_forwarded_client() -> None:
     assert first_client_response.status_code == 200
     assert first_client_blocked.status_code == 429
     assert second_client_response.status_code == 200
+
+
+def test_invite_lookup_rate_limit_covers_invalid_code_shapes() -> None:
+    now = [1000.0]
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(clock=lambda: now[0])
+    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+
+    @app.get("/api/families/invites/{code}")
+    def invite_lookup(code: str) -> dict[str, str]:
+        return {"code": code}
+
+    client = TestClient(app)
+
+    for index in range(10):
+        response = client.get(
+            f"/api/families/invites/not-a-code-{index}",
+            headers={"x-forwarded-for": "7.7.7.7"},
+        )
+        assert response.status_code == 200
+
+    blocked = client.get(
+        "/api/families/invites/12345678",
+        headers={"x-forwarded-for": "7.7.7.7"},
+    )
+    other_client = client.get(
+        "/api/families/invites/12345678",
+        headers={"x-forwarded-for": "8.8.8.8"},
+    )
+
+    assert blocked.status_code == 429
+    assert blocked.json() == {"detail": "RATE_LIMIT_EXCEEDED"}
+    assert other_client.status_code == 200

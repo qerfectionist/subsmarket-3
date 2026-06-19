@@ -375,16 +375,25 @@ For a read-only parallel load smoke:
 $env:LOAD_SMOKE_BASE_URL='https://subsmarket-api.onrender.com'
 $env:LOAD_SMOKE_REQUESTS='100'
 $env:LOAD_SMOKE_CONCURRENCY='10'
+$env:LOAD_SMOKE_WARMUP_REQUESTS='5'
 cd backend
 .\.venv\Scripts\python -m subsmarket.ops.load_smoke
 ```
 
 It calls only `/health`, `/ready`, and the public catalog, then reports error
-rate, requests per second, and p50/p95/p99 latency. It fails if any request
-fails or p95 exceeds 2000ms. On Render Free, call `/health` once before the run
-to wake the service; otherwise the cold start dominates the result. Increase
-load gradually and do not run aggressive tests against the shared Free
-environment.
+rate, requests per second, status counts, per-path summaries, and p50/p95/p99
+latency. It fails if any request fails or p95 exceeds 2000ms. On Render Free,
+use warmup requests before the measured run; otherwise the cold start dominates
+the result. Increase load gradually and do not run aggressive tests against the
+shared Free environment.
+
+To test authenticated read-only endpoints, pass a real Telegram WebApp initData
+header from a test user:
+
+```powershell
+$env:LOAD_SMOKE_TELEGRAM_INIT_DATA='<telegram-init-data>'
+$env:LOAD_SMOKE_PATHS='/api/families?limit=20,/api/families/me?limit=20'
+```
 
 After setting the Telegram webhook and Main Mini App URL, run the read-only
 Telegram production smoke check:

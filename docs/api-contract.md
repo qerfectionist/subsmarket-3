@@ -100,6 +100,10 @@ Query:
 
 - `family_type=subscription|tariff`.
 - `limit=1..100`, default `50`.
+- `offset=0..100000`, default `0`.
+
+Pagination rule: list endpoints use `limit + offset` and keep server-side
+caps. Clients should request the next page only after receiving a full page.
 
 Backend исключает:
 
@@ -194,12 +198,14 @@ Errors:
 - `409 FAMILY_INVITE_NOT_ACCEPTING` when the family is full;
 - `410 FAMILY_INVITE_INACTIVE` after rotation, disabling, or family closing.
 
-Lookup attempts are rate limited.
+Lookup attempts are rate limited. The limiter covers valid and invalid code
+shapes so invalid-code enumeration cannot bypass the counter.
 
 ### GET /api/families/{family_id}/audit-log
 
 Returns family action history for the family owner or a family member.
 Accepts optional `limit` query parameter, default `50`, minimum `1`, maximum `100`.
+Accepts optional `offset` query parameter, default `0`, minimum `0`, maximum `100000`.
 
 Each event contains:
 
@@ -304,6 +310,7 @@ Backend проверяет:
 Query:
 
 - `limit=1..100`, default `50`.
+- `offset=0..100000`, default `0`.
 
 Список заявок пользователя.
 
@@ -327,6 +334,7 @@ Query:
 Query:
 
 - `limit=1..100`, default `50`.
+- `offset=0..100000`, default `0`.
 
 Список заявок владельца.
 
@@ -373,6 +381,7 @@ Backend:
 Query:
 
 - `limit=1..100`, default `50`.
+- `offset=0..100000`, default `0`.
 
 Семьи пользователя как владельца и участника.
 
@@ -383,6 +392,7 @@ Owner-only member list.
 Query:
 
 - `limit=1..100`, default `50`.
+- `offset=0..100000`, default `0`.
 
 ### GET /api/families/{family_id}/payments
 
@@ -392,6 +402,8 @@ owner screens instead of one request per member.
 Query:
 
 - `limit_per_member=1..50`, default `20`.
+- `member_limit=1..100`, default `50`.
+- `member_offset=0..100000`, default `0`.
 
 Each item contains:
 
@@ -502,6 +514,7 @@ Backend:
 Query:
 
 - `limit=1..100`, default `50`.
+- `offset=0..100000`, default `0`.
 
 Платежи пользователя.
 
@@ -518,6 +531,7 @@ Member payment history. Available to the member and to the family owner.
 Query:
 
 - `limit=1..100`, default `50`.
+- `offset=0..100000`, default `0`.
 
 ### POST /api/families/members/{member_id}/prepayments
 

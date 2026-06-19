@@ -11,11 +11,12 @@ from sqlalchemy import create_engine, delete, select
 from sqlalchemy.orm import sessionmaker
 
 from subsmarket.catalog.models import FamilyService
-from subsmarket.families.models import Family, FamilyRequest
+from subsmarket.families.models import Family, FamilyInvite, FamilyRequest
 from subsmarket.families.schemas import FamilyCreate
 from subsmarket.families.service import (
     approve_join_request,
     create_family,
+    create_family_invite,
     create_join_request,
 )
 from subsmarket.identity.models import User
@@ -290,6 +291,77 @@ def test_parallel_idempotent_family_creation_returns_one_family() -> None:
                 ).all()
             )
             assert len(family_ids) == 1
+    finally:
+        _cleanup_owner_case(session_factory, owner_id, service_id)
+        engine.dispose()
+
+
+def test_parallel_family_invite_creation_returns_one_active_code() -> None:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=4, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+
+    with session_factory() as db:
+        service = FamilyService(
+            slug=f"invite-{suffix}",
+            name="Invite Service",
+            variant=None,
+            family_type="subscription",
+            category="tests",
+            subcategory=None,
+            max_members=4,
+            supported_periods=["monthly"],
+            status="active",
+            service_metadata={},
+        )
+        owner = User(
+            telegram_user_id=770000000 + int(suffix[:6], 16),
+            username=f"invite_owner_{suffix}",
+            first_name="Owner",
+        )
+        db.add_all([service, owner])
+        db.commit()
+        family = create_family(
+            db,
+            owner,
+            _family_create_payload(service.id, total_price_kzt=4000),
+        )
+        owner_id = owner.id
+        family_id = family.id
+        service_id = service.id
+
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def create_invite() -> None:
+        with session_factory() as db:
+            owner = db.get(User, owner_id)
+            assert owner is not None
+            barrier.wait(timeout=10)
+            invite = create_family_invite(db, owner, family_id)
+            results.append(invite.code)
+
+    threads = [threading.Thread(target=create_invite, daemon=True) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert len(results) == 2
+        assert len(set(results)) == 1
+        with session_factory() as db:
+            active_invites = list(
+                db.scalars(
+                    select(FamilyInvite)
+                    .where(FamilyInvite.family_id == family_id)
+                    .where(FamilyInvite.status == "active")
+                ).all()
+            )
+            assert len(active_invites) == 1
+            assert active_invites[0].code == results[0]
     finally:
         _cleanup_owner_case(session_factory, owner_id, service_id)
         engine.dispose()

@@ -5,6 +5,7 @@ import pytest
 from subsmarket.ops.load_smoke import (
     RequestResult,
     summarize_results,
+    summarize_results_by_path,
     validate_summary,
 )
 
@@ -57,7 +58,25 @@ def test_load_summary_reports_errors_and_threshold_failures() -> None:
     ]
 
 
+def test_load_summary_groups_metrics_by_path() -> None:
+    results = [
+        RequestResult(path="/health", status=200, elapsed_ms=10),
+        RequestResult(path="/health", status=200, elapsed_ms=20),
+        RequestResult(path="/ready", status=200, elapsed_ms=100),
+    ]
+
+    summaries = summarize_results_by_path(
+        results,
+        concurrency=10,
+        duration_seconds=1,
+    )
+
+    assert summaries["/health"].requests == 2
+    assert summaries["/health"].concurrency == 2
+    assert summaries["/health"].latency_ms_p95 == 20
+    assert summaries["/ready"].requests == 1
+
+
 def test_load_summary_requires_results() -> None:
     with pytest.raises(ValueError, match="At least one"):
         summarize_results([], concurrency=1, duration_seconds=1)
-

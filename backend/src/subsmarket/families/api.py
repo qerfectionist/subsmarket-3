@@ -84,6 +84,8 @@ from subsmarket.identity.telegram import parse_telegram_user
 
 router = APIRouter(prefix="/api/families", tags=["families"])
 
+MAX_PAGE_OFFSET = 100_000
+
 
 def get_current_user(
     db: Session = Depends(get_db),
@@ -114,13 +116,14 @@ def post_family(
 def get_families(
     family_type: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyOut]:
     return [
         to_family_out(family)
         for family in list_searchable_families(
-            db, user, family_type=family_type, limit=limit
+            db, user, family_type=family_type, limit=limit, offset=offset
         )
     ]
 
@@ -128,19 +131,24 @@ def get_families(
 @router.get("/me", response_model=list[MyFamilyOut])
 def get_my_families(
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[MyFamilyOut]:
-    return list_my_families(db, user, limit=limit)
+    return list_my_families(db, user, limit=limit, offset=offset)
 
 
 @router.get("/payments/me", response_model=list[FamilyPaymentOut])
 def get_my_payments(
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyPaymentOut]:
-    return [to_payment_out(item) for item in list_my_payments(db, user, limit=limit)]
+    return [
+        to_payment_out(item)
+        for item in list_my_payments(db, user, limit=limit, offset=offset)
+    ]
 
 
 @router.get("/invites/{code}", response_model=FamilyViewOut)
@@ -171,12 +179,13 @@ def post_family_request(
 @router.get("/requests/me", response_model=list[FamilyRequestOut])
 def get_my_family_requests(
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyRequestOut]:
     return [
         to_family_request_out(item)
-        for item in list_my_join_requests(db, user, limit=limit)
+        for item in list_my_join_requests(db, user, limit=limit, offset=offset)
     ]
 
 
@@ -194,12 +203,15 @@ def cancel_my_family_request(
 def get_owner_family_requests(
     family_id: UUID,
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[OwnerFamilyRequestOut]:
     return [
         to_owner_family_request_out(item)
-        for item in list_owner_family_requests(db, user, family_id, limit=limit)
+        for item in list_owner_family_requests(
+            db, user, family_id, limit=limit, offset=offset
+        )
     ]
 
 
@@ -328,12 +340,13 @@ def post_family_closing_acknowledged(
 def get_family_members(
     family_id: UUID,
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyMemberOut]:
     return [
         to_member_out(item)
-        for item in list_family_members(db, user, family_id, limit=limit)
+        for item in list_family_members(db, user, family_id, limit=limit, offset=offset)
     ]
 
 
@@ -454,12 +467,15 @@ def get_member_payment_requisite(
 def get_member_payments(
     member_id: UUID,
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyPaymentOut]:
     return [
         to_payment_out(item)
-        for item in list_member_payments(db, user, member_id, limit=limit)
+        for item in list_member_payments(
+            db, user, member_id, limit=limit, offset=offset
+        )
     ]
 
 
@@ -470,6 +486,8 @@ def get_member_payments(
 def get_family_member_payments(
     family_id: UUID,
     limit_per_member: int = Query(default=20, ge=1, le=50),
+    member_limit: int = Query(default=50, ge=1, le=100),
+    member_offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyMemberPaymentsOut]:
@@ -479,7 +497,12 @@ def get_family_member_payments(
             payments=[to_payment_out(payment) for payment in payments],
         )
         for member_id, payments in list_family_member_payments(
-            db, user, family_id, limit_per_member=limit_per_member
+            db,
+            user,
+            family_id,
+            limit_per_member=limit_per_member,
+            member_limit=member_limit,
+            member_offset=member_offset,
         )
     ]
 
@@ -569,12 +592,15 @@ def get_family_detail_view(
 def get_family_audit_log(
     family_id: UUID,
     limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0, le=MAX_PAGE_OFFSET),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyAuditLogOut]:
     return [
         to_audit_log_out(item)
-        for item in list_family_audit_logs(db, user, family_id, limit=limit)
+        for item in list_family_audit_logs(
+            db, user, family_id, limit=limit, offset=offset
+        )
     ]
 
 

@@ -46,7 +46,7 @@ DEFAULT_RATE_LIMIT_RULES = (
     RateLimitRule(
         "family_invite_lookup",
         "GET",
-        re.compile(r"/api/families/invites/[0-9-]{8,9}"),
+        re.compile(r"/api/families/invites/[^/]{1,64}"),
         10,
         600,
     ),
