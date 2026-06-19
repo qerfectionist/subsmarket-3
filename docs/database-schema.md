@@ -403,6 +403,26 @@ create index family_audit_action_created_idx
 - не удалять события при закрытии семьи;
 - не хранить в payload незашифрованные платежные телефоны.
 
+## idempotency_records
+
+```sql
+idempotency_records (
+  id uuid primary key,
+  user_id uuid not null references users(id) on delete cascade,
+  operation text not null,
+  idempotency_key text not null,
+  request_hash text not null,
+  resource_type text,
+  resource_id uuid,
+  created_at timestamptz not null,
+  unique (user_id, operation, idempotency_key)
+)
+```
+
+The backend writes the idempotency record and domain resource in the same
+transaction. The table is denied to Supabase client roles and can later be
+reused by Marketplace operations.
+
 ## Транзакционные сценарии
 
 ### Одобрение заявки

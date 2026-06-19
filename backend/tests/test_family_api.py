@@ -70,6 +70,40 @@ def auth_headers(user_id: int, username: str, first_name: str) -> dict[str, str]
     }
 
 
+def test_family_creation_is_idempotent(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    headers = {
+        **auth_headers(610000, "idempotent_owner", "Idempotent Owner"),
+        "Idempotency-Key": "family-create-test-key",
+    }
+    payload = {
+        "service_id": str(service.id),
+        "period": "monthly",
+        "max_members": 4,
+        "total_price_kzt": 4000,
+        "payment_day": 15,
+        "next_payment_date": (date.today() + timedelta(days=30)).isoformat(),
+        "payment_bank": "kaspi",
+        "payment_phone": "+77001234567",
+    }
+
+    first = client.post("/api/families", headers=headers, json=payload)
+    repeated = client.post("/api/families", headers=headers, json=payload)
+    changed = client.post(
+        "/api/families",
+        headers=headers,
+        json={**payload, "total_price_kzt": 4500},
+    )
+
+    assert first.status_code == 201
+    assert repeated.status_code == 201
+    assert repeated.json()["family"]["id"] == first.json()["family"]["id"]
+    assert changed.status_code == 409
+    assert changed.json()["detail"] == "IDEMPOTENCY_KEY_REUSED"
+
+
 def test_family_api_happy_path_keeps_requisites_private_until_access(
     client: TestClient,
     service: FamilyService,
@@ -108,13 +142,23 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
     assert before_request.status_code == 200
     assert before_request.json()["owner_username"] is None
 
+    request_headers = {
+        **member_headers,
+        "Idempotency-Key": "family-request-test-key",
+    }
     request_response = client.post(
         f"/api/families/{family_id}/requests",
-        headers=member_headers,
+        headers=request_headers,
     )
     assert request_response.status_code == 201
     request_id = request_response.json()["id"]
     assert request_response.json()["owner_username"] == "api_owner"
+    repeated_request = client.post(
+        f"/api/families/{family_id}/requests",
+        headers=request_headers,
+    )
+    assert repeated_request.status_code == 201
+    assert repeated_request.json()["id"] == request_id
 
     pending_search = client.get("/api/families", headers=member_headers)
     assert pending_search.json() == []

@@ -114,6 +114,10 @@ Backend исключает:
 
 ### POST /api/families
 
+Header `Idempotency-Key` is supported and used by the Mini App. Repeating the
+same key with the same body returns the originally created family. Reusing the
+key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`.
+
 Создать семью подписки или семью тарифа.
 
 Body:
@@ -241,6 +245,9 @@ Backend:
 ## Family requests
 
 ### POST /api/families/{family_id}/requests
+
+Header `Idempotency-Key` is supported and used by the Mini App. A network retry
+with the same key returns the original request instead of creating a duplicate.
 
 Отправить заявку.
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from subsmarket.identity.models import User
@@ -28,6 +29,23 @@ def upsert_user(db: Session, telegram_user: TelegramUserData) -> User:
         photo_url=telegram_user.photo_url,
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = db.scalar(
+            select(User).where(
+                User.telegram_user_id == telegram_user.telegram_user_id
+            )
+        )
+        if existing is None:
+            raise
+        existing.username = telegram_user.username or existing.username
+        existing.first_name = telegram_user.first_name
+        existing.last_name = telegram_user.last_name
+        existing.photo_url = telegram_user.photo_url
+        db.commit()
+        db.refresh(existing)
+        return existing
     db.refresh(user)
     return user

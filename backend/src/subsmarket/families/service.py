@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 from subsmarket.catalog.models import FamilyService
 from subsmarket.core.config import settings
 from subsmarket.core.database import utcnow
+from subsmarket.core.idempotency import claim_idempotency, complete_idempotency
 from subsmarket.families.audit import record_family_audit_event
 from subsmarket.families.calendar import add_payment_period, payment_due_at
 from subsmarket.families.crypto import (
@@ -211,7 +212,28 @@ def to_audit_log_out(log: FamilyAuditLog) -> FamilyAuditLogOut:
     )
 
 
-def create_family(db: Session, user: User, data: FamilyCreate) -> Family:
+def create_family(
+    db: Session,
+    user: User,
+    data: FamilyCreate,
+    *,
+    idempotency_key: str | None = None,
+) -> Family:
+    user_id = user.id
+    claim = claim_idempotency(
+        db,
+        user_id=user_id,
+        operation="family.create",
+        idempotency_key=idempotency_key,
+        payload=data.model_dump(mode="json"),
+        resource_type="family",
+    )
+    if claim.is_replay:
+        family = get_family_by_id(db, claim.resource_id)
+        if family is None:
+            raise RuntimeError("Idempotent family was not found")
+        return family
+
     service = db.get(FamilyService, data.service_id)
     if service is None or service.status != "active":
         raise HTTPException(status_code=404, detail="FAMILY_SERVICE_NOT_FOUND")
@@ -223,22 +245,28 @@ def create_family(db: Session, user: User, data: FamilyCreate) -> Family:
     if data.max_members > service.max_members:
         raise HTTPException(status_code=400, detail="MAX_MEMBERS_EXCEEDS_SERVICE_LIMIT")
 
-    active_owned_count = db.scalar(
-        select(func.count(Family.id))
-        .where(Family.owner_user_id == user.id)
-        .where(Family.status.in_(ACTIVE_OWNER_FAMILY_STATUSES))
-    )
-    if active_owned_count and active_owned_count >= 2:
-        raise HTTPException(status_code=409, detail="OWNER_ACTIVE_FAMILY_LIMIT_REACHED")
-
     payment_phone = normalize_payment_phone(data.payment_phone)
     member_share, rounding_delta = calculate_member_share(
         data.total_price_kzt, data.max_members
     )
 
+    locked_user = db.scalar(
+        select(User).where(User.id == user_id).with_for_update()
+    )
+    if locked_user is None:
+        raise RuntimeError("Family owner disappeared during creation")
+
+    active_owned_count = db.scalar(
+        select(func.count(Family.id))
+        .where(Family.owner_user_id == user_id)
+        .where(Family.status.in_(ACTIVE_OWNER_FAMILY_STATUSES))
+    )
+    if active_owned_count and active_owned_count >= 2:
+        raise HTTPException(status_code=409, detail="OWNER_ACTIVE_FAMILY_LIMIT_REACHED")
+
     family = Family(
         service_id=service.id,
-        owner_user_id=user.id,
+        owner_user_id=user_id,
         family_type=service.family_type,
         status="active",
         period=data.period,
@@ -264,7 +292,7 @@ def create_family(db: Session, user: User, data: FamilyCreate) -> Family:
     )
     owner_member = FamilyMember(
         family_id=family.id,
-        user_id=user.id,
+        user_id=user_id,
         role="owner",
         status="active",
     )
@@ -274,8 +302,8 @@ def create_family(db: Session, user: User, data: FamilyCreate) -> Family:
         db,
         family_id=family.id,
         action="family_created",
-        actor_user_id=user.id,
-        target_user_id=user.id,
+        actor_user_id=user_id,
+        target_user_id=user_id,
         target_member_id=owner_member.id,
         new_status=family.status,
         details={
@@ -288,6 +316,11 @@ def create_family(db: Session, user: User, data: FamilyCreate) -> Family:
             "payment_day": family.payment_day,
             "next_payment_date": family.next_payment_date.isoformat(),
         },
+    )
+    complete_idempotency(
+        claim,
+        resource_type="family",
+        resource_id=family.id,
     )
     db.commit()
 
@@ -677,15 +710,42 @@ def _active_request_count_for_service(
     )
 
 
-def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyRequest:
+def create_join_request(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    idempotency_key: str | None = None,
+) -> FamilyRequest:
+    user_id = user.id
+    claim = claim_idempotency(
+        db,
+        user_id=user_id,
+        operation="family_request.create",
+        idempotency_key=idempotency_key,
+        payload={"family_id": str(family_id)},
+        resource_type="family_request",
+    )
+    if claim.is_replay:
+        request = db.get(FamilyRequest, claim.resource_id)
+        if request is None:
+            raise RuntimeError("Idempotent family request was not found")
+        return request
+
+    locked_user = db.scalar(
+        select(User).where(User.id == user_id).with_for_update()
+    )
+    if locked_user is None:
+        raise RuntimeError("Family candidate disappeared during request creation")
+
     family = _get_joinable_family(db, family_id)
-    if family.owner_user_id == user.id:
+    if family.owner_user_id == user_id:
         raise HTTPException(status_code=400, detail="OWNER_CANNOT_REQUEST_OWN_FAMILY")
 
     existing_member = db.scalar(
         select(FamilyMember)
         .where(FamilyMember.family_id == family.id)
-        .where(FamilyMember.user_id == user.id)
+        .where(FamilyMember.user_id == user_id)
         .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
     )
     if existing_member:
@@ -693,7 +753,7 @@ def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyReque
 
     restriction = db.get(
         FamilyRequestRestriction,
-        {"family_id": family.id, "user_id": user.id},
+        {"family_id": family.id, "user_id": user_id},
     )
     if restriction:
         raise HTTPException(status_code=409, detail="FAMILY_REQUEST_FORBIDDEN")
@@ -701,7 +761,7 @@ def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyReque
     pending_for_family = db.scalar(
         select(FamilyRequest)
         .where(FamilyRequest.family_id == family.id)
-        .where(FamilyRequest.user_id == user.id)
+        .where(FamilyRequest.user_id == user_id)
         .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
     )
     if pending_for_family:
@@ -711,7 +771,7 @@ def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyReque
         db.scalar(
             select(func.count(FamilyRequest.id))
             .where(FamilyRequest.family_id == family.id)
-            .where(FamilyRequest.user_id == user.id)
+            .where(FamilyRequest.user_id == user_id)
             .where(FamilyRequest.status == "cancelled")
             .where(FamilyRequest.cancel_reason == "user_cancelled")
         )
@@ -721,7 +781,7 @@ def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyReque
         raise HTTPException(status_code=409, detail="SELF_CANCEL_LIMIT_REACHED")
 
     active_for_service = _active_request_count_for_service(
-        db, user_id=user.id, service_id=family.service_id
+        db, user_id=user_id, service_id=family.service_id
     )
     if active_for_service >= 3:
         raise HTTPException(
@@ -733,7 +793,7 @@ def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyReque
     now = utcnow()
     request = FamilyRequest(
         family_id=family.id,
-        user_id=user.id,
+        user_id=user_id,
         status=ACTIVE_REQUEST_STATUS,
         expires_at=now + timedelta(hours=24),
     )
@@ -743,8 +803,8 @@ def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyReque
         db,
         family_id=family.id,
         action="family_request_created",
-        actor_user_id=user.id,
-        target_user_id=user.id,
+        actor_user_id=user_id,
+        target_user_id=user_id,
         target_request_id=request.id,
         new_status=request.status,
     )
@@ -760,6 +820,11 @@ def create_join_request(db: Session, user: User, family_id: UUID) -> FamilyReque
                 f"Кандидат: @{user.username}."
             ),
         },
+    )
+    complete_idempotency(
+        claim,
+        resource_type="family_request",
+        resource_id=request.id,
     )
     db.commit()
     db.refresh(request)

@@ -22,6 +22,7 @@ export { initTelegramShell };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 const DEV_TELEGRAM_USER_KEY = "subsmarket.devTelegramUser";
+const pendingIdempotency = new Map<string, { fingerprint: string; key: string }>();
 
 export type DevTelegramUser = {
   id: number;
@@ -106,11 +107,37 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function post<T>(path: string, body?: unknown): Promise<T> {
+function post<T>(path: string, body?: unknown, headers?: HeadersInit): Promise<T> {
   return request<T>(path, {
     method: "POST",
-    body: body === undefined ? undefined : JSON.stringify(body)
+    body: body === undefined ? undefined : JSON.stringify(body),
+    headers
   });
+}
+
+async function postIdempotent<T>(
+  scope: string,
+  path: string,
+  body?: unknown
+): Promise<T> {
+  const fingerprint = JSON.stringify(body ?? null);
+  const pending = pendingIdempotency.get(scope);
+  const key =
+    pending?.fingerprint === fingerprint ? pending.key : createIdempotencyKey();
+  pendingIdempotency.set(scope, { fingerprint, key });
+  const result = await post<T>(path, body, { "Idempotency-Key": key });
+  if (pendingIdempotency.get(scope)?.key === key) {
+    pendingIdempotency.delete(scope);
+  }
+  return result;
+}
+
+function createIdempotencyKey(): string {
+  if (typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
 }
 
 function patch<T>(path: string, body?: unknown): Promise<T> {
@@ -151,7 +178,11 @@ export function getFamilyAuditLog(familyId: string): Promise<FamilyAuditLog[]> {
 }
 
 export function createFamily(payload: FamilyCreate): Promise<FamilyCreateResult> {
-  return post<FamilyCreateResult>("/api/families", payload);
+  return postIdempotent<FamilyCreateResult>(
+    "family.create",
+    "/api/families",
+    payload
+  );
 }
 
 export function updateFamilyDescription(
@@ -190,7 +221,10 @@ export function acknowledgeFamilyClosing(familyId: string): Promise<FamilyMember
 }
 
 export function createFamilyRequest(familyId: string): Promise<FamilyRequest> {
-  return post<FamilyRequest>(`/api/families/${familyId}/requests`);
+  return postIdempotent<FamilyRequest>(
+    `family_request.create:${familyId}`,
+    `/api/families/${familyId}/requests`
+  );
 }
 
 export function getMyFamilyRequests(): Promise<FamilyRequest[]> {

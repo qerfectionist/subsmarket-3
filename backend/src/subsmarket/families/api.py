@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import get_db
@@ -89,10 +89,16 @@ def get_current_user(
 @router.post("", response_model=FamilyCreateResult, status_code=201)
 def post_family(
     payload: FamilyCreate,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyCreateResult:
-    family = create_family(db, user, payload)
+    family = create_family(
+        db,
+        user,
+        payload,
+        idempotency_key=idempotency_key,
+    )
     return FamilyCreateResult(family=to_family_out(family))
 
 
@@ -132,10 +138,16 @@ def get_my_payments(
 @router.post("/{family_id}/requests", response_model=FamilyRequestOut, status_code=201)
 def post_family_request(
     family_id: UUID,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyRequestOut:
-    request = create_join_request(db, user, family_id)
+    request = create_join_request(
+        db,
+        user,
+        family_id,
+        idempotency_key=idempotency_key,
+    )
     return to_family_request_out(request)
 
 
