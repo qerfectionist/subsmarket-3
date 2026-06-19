@@ -539,3 +539,19 @@ Last checkpoint:
 - Added a read-only Telegram production smoke command that verifies bot
   identity, webhook state, menu button URL, and Mini App availability without
   printing the bot token.
+
+2026-06-19 signed production Family Engine QA:
+
+- Ran the production API with two isolated, correctly signed Telegram WebApp
+  `initData` identities; requests without `initData` were rejected.
+- Completed the full owner/member lifecycle for both engines:
+  - subscription family;
+  - tariff family;
+  - join request and approval;
+  - access provided and confirmed;
+  - payment reported and owner-confirmed;
+  - full-family counters and audit timeline.
+- The runner removed both QA families, all 12 generated notification jobs, and
+  both QA users in a guaranteed cleanup block.
+- An independent Supabase query confirmed zero remaining QA users and zero QA
+  families after cleanup.
