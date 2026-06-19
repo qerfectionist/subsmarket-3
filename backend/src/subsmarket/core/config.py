@@ -76,6 +76,7 @@ class Settings(BaseSettings):
         default=600,
         alias="ACCESS_REMINDER_COOLDOWN_SECONDS",
     )
+    job_batch_size: int = Field(default=200, ge=1, le=1000, alias="JOB_BATCH_SIZE")
 
     demo_telegram_user_id: int = Field(default=100001, alias="DEMO_TELEGRAM_USER_ID")
     demo_telegram_username: str = Field(

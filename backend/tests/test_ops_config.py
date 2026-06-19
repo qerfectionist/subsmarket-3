@@ -39,6 +39,7 @@ def test_production_config_checker_accepts_required_env(
     monkeypatch.setattr(settings, "notification_retry_base_seconds", 60)
     monkeypatch.setattr(settings, "notification_retry_max_seconds", 3600)
     monkeypatch.setattr(settings, "access_reminder_cooldown_seconds", 600)
+    monkeypatch.setattr(settings, "job_batch_size", 200)
 
     checks = check_production_config()
 
@@ -107,6 +108,7 @@ def test_production_config_checker_rejects_excessive_db_connection_budget(
     monkeypatch.setattr(settings, "notification_retry_base_seconds", 60)
     monkeypatch.setattr(settings, "notification_retry_max_seconds", 3600)
     monkeypatch.setattr(settings, "access_reminder_cooldown_seconds", 600)
+    monkeypatch.setattr(settings, "job_batch_size", 200)
 
     checks = check_production_config()
     failed = {check.key: check.problem for check in checks if not check.ok}

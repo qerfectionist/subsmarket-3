@@ -179,6 +179,11 @@ inside `job_errors`.
 Due-job logs include step names, aggregate counts, and error metadata. They do
 not include payment requisites or Telegram message text.
 
+Each due-job query processes at most `JOB_BATCH_SIZE` rows, oldest first. The
+default is 200. This keeps locks and transactions bounded when many requests or
+payments become due together. The next scheduled run continues the backlog;
+`skip_locked` also allows multiple workers to avoid selecting the same rows.
+
 `notification_jobs` is an outbox. A second production cron sends pending
 Telegram messages:
 
@@ -346,6 +351,7 @@ NOTIFICATION_MAX_ATTEMPTS=5
 NOTIFICATION_RETRY_BASE_SECONDS=60
 NOTIFICATION_RETRY_MAX_SECONDS=3600
 ACCESS_REMINDER_COOLDOWN_SECONDS=600
+JOB_BATCH_SIZE=200
 DEMO_ACTIVATE_CATALOG=true
 ```
 

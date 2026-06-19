@@ -46,5 +46,7 @@ services:
         value: 3600
       - key: ACCESS_REMINDER_COOLDOWN_SECONDS
         value: 600
+      - key: JOB_BATCH_SIZE
+        value: 200
       - key: DEMO_ACTIVATE_CATALOG
         value: true

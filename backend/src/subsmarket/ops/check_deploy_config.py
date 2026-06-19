@@ -63,6 +63,12 @@ def check_production_config() -> list[ConfigCheck]:
             "ACCESS_REMINDER_COOLDOWN_SECONDS",
             settings.access_reminder_cooldown_seconds,
         ),
+        _bounded_int(
+            "JOB_BATCH_SIZE",
+            settings.job_batch_size,
+            minimum=1,
+            maximum=1000,
+        ),
     ]
     if (
         settings.telegram_webhook_url
@@ -105,6 +111,22 @@ def _positive_int(key: str, value: int) -> ConfigCheck:
 def _non_negative_int(key: str, value: int) -> ConfigCheck:
     if value < 0:
         return ConfigCheck(key=key, ok=False, problem="must be zero or positive")
+    return ConfigCheck(key=key, ok=True)
+
+
+def _bounded_int(
+    key: str,
+    value: int,
+    *,
+    minimum: int,
+    maximum: int,
+) -> ConfigCheck:
+    if not minimum <= value <= maximum:
+        return ConfigCheck(
+            key=key,
+            ok=False,
+            problem=f"must be between {minimum} and {maximum}",
+        )
     return ConfigCheck(key=key, ok=True)
 
 

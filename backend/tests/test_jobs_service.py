@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from subsmarket.catalog.models import FamilyService
+from subsmarket.core.config import settings
 from subsmarket.core.database import Base, utcnow
 from subsmarket.families.calendar import add_months
 from subsmarket.families.models import (
@@ -159,6 +160,41 @@ def test_expired_request_notifies_both_sides_and_can_be_retried(db: Session) -> 
 
     retried_request = create_join_request(db, candidate, family.id)
     assert retried_request.status == "pending"
+
+
+def test_expired_requests_are_processed_oldest_first_in_bounded_batches(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 31)
+    family = make_family(db, owner, service)
+    requests = [
+        create_join_request(db, make_user(db, index), family.id)
+        for index in (32, 33, 34)
+    ]
+    now = utcnow()
+    for position, request in enumerate(requests):
+        request.expires_at = now - timedelta(minutes=3 - position)
+    db.commit()
+    monkeypatch.setattr(settings, "job_batch_size", 2)
+
+    first_count, first_notifications = expire_family_requests(db)
+    db.flush()
+
+    assert first_count == 2
+    assert first_notifications == 4
+    assert [request.status for request in requests] == [
+        "expired",
+        "expired",
+        "pending",
+    ]
+
+    second_count, second_notifications = expire_family_requests(db)
+
+    assert second_count == 1
+    assert second_notifications == 2
+    assert requests[2].status == "expired"
 
 
 def test_run_due_jobs_commits_successful_steps_when_later_step_fails(
