@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import get_db
@@ -12,6 +12,7 @@ from subsmarket.families.schemas import (
     FamilyCreate,
     FamilyCreateResult,
     FamilyDescriptionUpdate,
+    FamilyInviteOut,
     FamilyMemberOut,
     FamilyMemberPaymentsOut,
     FamilyOut,
@@ -20,6 +21,7 @@ from subsmarket.families.schemas import (
     FamilyPriceUpdate,
     FamilyRequestOut,
     FamilyViewOut,
+    FamilyVisibilityUpdate,
     MyFamilyOut,
     OwnerFamilyRequestOut,
     PaymentConfirmationResult,
@@ -37,9 +39,12 @@ from subsmarket.families.service import (
     confirm_access_received,
     confirm_payment_received,
     create_family,
+    create_family_invite,
     create_join_request,
     create_member_prepayment,
+    disable_family_invite,
     get_family_by_id,
+    get_family_invite,
     get_family_view,
     get_open_payment_requisite,
     leave_family,
@@ -59,7 +64,9 @@ from subsmarket.families.service import (
     remind_access_confirmation,
     report_payment_paid,
     request_member_removal_cancellation,
+    resolve_family_invite,
     revoke_member_removal,
+    rotate_family_invite,
     schedule_member_removal,
     to_audit_log_out,
     to_family_out,
@@ -70,6 +77,7 @@ from subsmarket.families.service import (
     update_family_description,
     update_family_payment_day,
     update_family_price,
+    update_family_visibility,
 )
 from subsmarket.identity.service import upsert_user
 from subsmarket.identity.telegram import parse_telegram_user
@@ -133,6 +141,15 @@ def get_my_payments(
     user=Depends(get_current_user),
 ) -> list[FamilyPaymentOut]:
     return [to_payment_out(item) for item in list_my_payments(db, user, limit=limit)]
+
+
+@router.get("/invites/{code}", response_model=FamilyViewOut)
+def get_family_by_invite_code(
+    code: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyViewOut:
+    return resolve_family_invite(db, user, code)
 
 
 @router.post("/{family_id}/requests", response_model=FamilyRequestOut, status_code=201)
@@ -234,6 +251,58 @@ def patch_family_payment_day(
     user=Depends(get_current_user),
 ) -> FamilyOut:
     return to_family_out(update_family_payment_day(db, user, family_id, payload))
+
+
+@router.patch("/{family_id}/visibility", response_model=FamilyOut)
+def patch_family_visibility(
+    family_id: UUID,
+    payload: FamilyVisibilityUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyOut:
+    return to_family_out(update_family_visibility(db, user, family_id, payload))
+
+
+@router.get("/{family_id}/invite", response_model=FamilyInviteOut | None)
+def get_owner_family_invite(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyInviteOut | None:
+    invite = get_family_invite(db, user, family_id)
+    return FamilyInviteOut.model_validate(invite) if invite else None
+
+
+@router.post(
+    "/{family_id}/invite",
+    response_model=FamilyInviteOut,
+    status_code=201,
+)
+def post_owner_family_invite(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyInviteOut:
+    return FamilyInviteOut.model_validate(create_family_invite(db, user, family_id))
+
+
+@router.post("/{family_id}/invite/rotate", response_model=FamilyInviteOut)
+def post_owner_family_invite_rotation(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyInviteOut:
+    return FamilyInviteOut.model_validate(rotate_family_invite(db, user, family_id))
+
+
+@router.post("/{family_id}/invite/disable", status_code=204)
+def post_owner_family_invite_disabled(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> Response:
+    disable_family_invite(db, user, family_id)
+    return Response(status_code=204)
 
 
 @router.post("/{family_id}/close", response_model=FamilyOut)

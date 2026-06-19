@@ -722,6 +722,36 @@ textarea {
   padding: 14px;
 }
 
+.invite-code-card,
+.invite-owner-card {
+  background: var(--app-secondary-bg);
+  border: 1px solid var(--app-border);
+  border-radius: 18px;
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.invite-code-card p,
+.invite-owner-card p {
+  margin: 0;
+}
+
+.invite-owner-card strong {
+  display: block;
+  font-size: 24px;
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+}
+
+.invite-code-card input {
+  flex: 1 1 150px;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  min-width: 0;
+}
+
 .owner-settings-card label {
   color: var(--app-muted);
   display: grid;

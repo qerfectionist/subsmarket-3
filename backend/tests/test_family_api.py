@@ -104,6 +104,100 @@ def test_family_creation_is_idempotent(
     assert changed.json()["detail"] == "IDEMPOTENCY_KEY_REUSED"
 
 
+def test_family_invite_lifecycle_and_hidden_discovery(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    owner_headers = auth_headers(610010, "invite_owner", "Invite Owner")
+    candidate_headers = auth_headers(610011, "invite_candidate", "Candidate")
+    create_response = client.post(
+        "/api/families",
+        headers=owner_headers,
+        json={
+            "service_id": str(service.id),
+            "period": "monthly",
+            "max_members": 4,
+            "total_price_kzt": 4000,
+            "payment_day": 15,
+            "next_payment_date": (date.today() + timedelta(days=30)).isoformat(),
+            "payment_bank": "kaspi",
+            "payment_phone": "+77001234567",
+        },
+    )
+    family_id = create_response.json()["family"]["id"]
+
+    invite_response = client.post(
+        f"/api/families/{family_id}/invite",
+        headers=owner_headers,
+    )
+    assert invite_response.status_code == 201
+    first_code = invite_response.json()["code"]
+    assert len(first_code) == 8
+    assert first_code.isdigit()
+
+    hidden = client.patch(
+        f"/api/families/{family_id}/visibility",
+        headers=owner_headers,
+        json={"is_search_visible": False},
+    )
+    assert hidden.status_code == 200
+    assert hidden.json()["is_search_visible"] is False
+    assert client.get("/api/families", headers=candidate_headers).json() == []
+
+    resolved = client.get(
+        f"/api/families/invites/{first_code}",
+        headers=candidate_headers,
+    )
+    assert resolved.status_code == 200
+    assert resolved.json()["family"]["id"] == family_id
+    assert resolved.json()["can_request"] is True
+
+    rotated = client.post(
+        f"/api/families/{family_id}/invite/rotate",
+        headers=owner_headers,
+    )
+    assert rotated.status_code == 200
+    second_code = rotated.json()["code"]
+    assert second_code != first_code
+    assert (
+        client.get(
+            f"/api/families/invites/{first_code}",
+            headers=candidate_headers,
+        ).status_code
+        == 410
+    )
+
+    disabled = client.post(
+        f"/api/families/{family_id}/invite/disable",
+        headers=owner_headers,
+    )
+    assert disabled.status_code == 204
+    assert (
+        client.get(
+            f"/api/families/invites/{second_code}",
+            headers=candidate_headers,
+        ).status_code
+        == 410
+    )
+
+    active_again = client.post(
+        f"/api/families/{family_id}/invite",
+        headers=owner_headers,
+    ).json()["code"]
+    close_response = client.post(
+        f"/api/families/{family_id}/close",
+        headers=owner_headers,
+    )
+    assert close_response.status_code == 200
+    assert close_response.json()["is_search_visible"] is False
+    closed_invite = client.get(
+        f"/api/families/invites/{active_again}",
+        headers=candidate_headers,
+    )
+    assert closed_invite.status_code == 410
+    assert closed_invite.json()["detail"] == "FAMILY_INVITE_INACTIVE"
+
+
 def test_family_api_happy_path_keeps_requisites_private_until_access(
     client: TestClient,
     service: FamilyService,

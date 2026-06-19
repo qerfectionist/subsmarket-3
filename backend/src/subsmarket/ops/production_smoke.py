@@ -11,6 +11,7 @@ REQUIRED_PATHS = {
     "/api/me",
     "/api/families",
     "/api/families/{family_id}/view",
+    "/api/families/invites/{code}",
     "/api/telegram/webhook",
 }
 FORBIDDEN_PATHS = {"/api/dev/reset-demo-data"}

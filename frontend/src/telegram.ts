@@ -37,6 +37,9 @@ type TelegramHapticFeedback = {
 
 type TelegramWebApp = {
   initData?: string;
+  initDataUnsafe?: {
+    start_param?: string;
+  };
   version?: string;
   colorScheme?: "light" | "dark";
   themeParams?: TelegramThemeParams;
@@ -145,6 +148,14 @@ function applyTelegramViewport() {
 
 export function getTelegramInitData() {
   return webApp()?.initData ?? "";
+}
+
+export function getTelegramStartParam() {
+  return (
+    webApp()?.initDataUnsafe?.start_param ??
+    new URLSearchParams(window.location.search).get("tgWebAppStartParam") ??
+    ""
+  );
 }
 
 export function isTelegramMiniApp() {

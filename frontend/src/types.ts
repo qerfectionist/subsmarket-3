@@ -63,6 +63,7 @@ export type Family = {
   next_payment_date: string;
   description: string | null;
   owner_rules: string | null;
+  is_search_visible: boolean;
   closing_started_at: string | null;
   closes_at: string | null;
   created_at: string;
@@ -83,6 +84,12 @@ export type FamilyCreate = {
 
 export type FamilyCreateResult = {
   family: Family;
+};
+
+export type FamilyInvite = {
+  code: string;
+  status: "active" | "revoked";
+  created_at: string;
 };
 
 export type RequestUser = {

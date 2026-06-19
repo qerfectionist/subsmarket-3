@@ -403,6 +403,25 @@ create index family_audit_action_created_idx
 - не удалять события при закрытии семьи;
 - не хранить в payload незашифрованные платежные телефоны.
 
+## family_invites
+
+```sql
+family_invites (
+  id uuid primary key,
+  family_id uuid not null references families(id) on delete cascade,
+  code text not null unique,
+  status text not null check (status in ('active', 'revoked')),
+  revoked_reason text,
+  created_at timestamptz not null,
+  revoked_at timestamptz
+)
+```
+
+Only one active code is allowed per family through a partial unique index.
+Revoked codes remain in history and are never assigned to another family.
+`families.is_search_visible` controls only general discovery; invite resolution
+still applies family status, capacity, request restrictions, and owner approval.
+
 ## idempotency_records
 
 ```sql

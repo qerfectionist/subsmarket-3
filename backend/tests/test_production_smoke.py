@@ -10,6 +10,7 @@ def test_production_smoke_accepts_required_routes() -> None:
         "/api/me",
         "/api/families",
         "/api/families/{family_id}/view",
+        "/api/families/invites/{code}",
         "/api/telegram/webhook",
     }
 
@@ -24,6 +25,7 @@ def test_production_smoke_rejects_dev_route() -> None:
             "/api/me",
             "/api/families",
             "/api/families/{family_id}/view",
+            "/api/families/invites/{code}",
             "/api/telegram/webhook",
             "/api/dev/reset-demo-data",
         }

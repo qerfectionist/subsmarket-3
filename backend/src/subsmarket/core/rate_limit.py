@@ -44,6 +44,13 @@ DEFAULT_RATE_LIMIT_RULES = (
         60,
     ),
     RateLimitRule(
+        "family_invite_lookup",
+        "GET",
+        re.compile(r"/api/families/invites/[0-9-]{8,9}"),
+        10,
+        600,
+    ),
+    RateLimitRule(
         "telegram_webhook",
         "POST",
         re.compile(r"/api/telegram/webhook"),

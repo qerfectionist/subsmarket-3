@@ -139,5 +139,14 @@ export const errorLabels: Record<string, string> = {
   INVALID_PAYMENT_PHONE: "Укажите номер телефона для оплаты. Номера карт и IBAN запрещены.",
   PAYMENT_PHONE_ONLY_NO_CARD_OR_IBAN: "Укажите только номер телефона. Номера карт и IBAN запрещены.",
   INVALID_INTERNAL_JOB_TOKEN: "Внутренний токен задания неверный.",
+  INVALID_FAMILY_INVITE_CODE: "Введите код приглашения из 8 цифр.",
+  FAMILY_INVITE_NOT_FOUND: "Код приглашения не найден.",
+  FAMILY_INVITE_INACTIVE: "Этот код больше не действует.",
+  FAMILY_INVITE_NOT_ACCEPTING: "Семья сейчас не принимает новых участников.",
+  FAMILY_INVITE_NOT_EDITABLE: "Для закрывающейся семьи код приглашения недоступен.",
+  FAMILY_INVITE_NOT_ACTIVE: "У семьи сейчас нет активного кода приглашения.",
+  ONLY_OWNER_CAN_VIEW_INVITE: "Код приглашения доступен только владельцу семьи.",
+  FAMILY_VISIBILITY_NOT_EDITABLE: "Видимость закрывающейся семьи изменить нельзя.",
+  RATE_LIMIT_EXCEEDED: "Слишком много попыток. Повторите позже.",
   INTERNAL_JOB_TOKEN_REQUIRED: "Внутренний токен задания не настроен."
 };

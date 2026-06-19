@@ -36,6 +36,10 @@ class FamilyPaymentDayUpdate(BaseModel):
     next_payment_date: date
 
 
+class FamilyVisibilityUpdate(BaseModel):
+    is_search_visible: bool
+
+
 class PrepaymentPeriodsCreate(BaseModel):
     periods: int = Field(ge=1, le=12)
 
@@ -67,6 +71,7 @@ class FamilyOut(BaseModel):
     next_payment_date: date
     description: str | None
     owner_rules: str | None
+    is_search_visible: bool
     closing_started_at: datetime | None = None
     closes_at: datetime | None = None
     created_at: datetime
@@ -74,6 +79,14 @@ class FamilyOut(BaseModel):
 
 class FamilyCreateResult(BaseModel):
     family: FamilyOut
+
+
+class FamilyInviteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    code: str
+    status: str
+    created_at: datetime
 
 
 class RequestUserOut(BaseModel):

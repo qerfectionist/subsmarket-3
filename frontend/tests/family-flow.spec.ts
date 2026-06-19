@@ -87,10 +87,22 @@ test("owner and member complete the first payment family flow", async ({ page })
     nextPaymentDate
   );
 
+  await page.getByTestId("workspace-open-family-button").click();
+  await clickAndWait(page, "create-invite-button");
+  const inviteCode = (await page.getByTestId("owner-invite-code").innerText()).replace(
+    /\s/g,
+    ""
+  );
+  expect(inviteCode).toMatch(/^\d{8}$/);
+  await clickAndWait(page, "toggle-family-visibility-button");
+
   await switchDevUser(page, "200002");
   await openNav(page, 1);
-  await expect(page.getByTestId("send-request-button")).toHaveCount(1);
-  await page.getByTestId("send-request-button").click();
+  await expect(page.getByTestId("family-card")).toHaveCount(0);
+  await page.getByTestId("invite-code-input").fill(inviteCode);
+  await page.getByTestId("open-invite-button").click();
+  await expect(page.getByTestId("detail-send-request-button")).toBeVisible();
+  await page.getByTestId("detail-send-request-button").click();
   await expect(page.locator(".inline-success")).toBeVisible();
   await expect(page.getByTestId("owner-chat-button")).toBeVisible();
   await openNav(page, 4);

@@ -181,6 +181,21 @@ production; unauthenticated requests must fail before returning a family card.
 - при `pending`/`approved` заявке или активном членстве возвращает username;
 - после `rejected`, `cancelled` или `expired` снова скрывает username.
 
+### GET /api/families/invites/{code}
+
+Resolves an active 8-digit family invite and returns the personalized
+`FamilyViewOut`. The family may be hidden from general search. A code never
+bypasses the normal join-request and owner-approval flow.
+
+Errors:
+
+- `400 INVALID_FAMILY_INVITE_CODE`;
+- `404 FAMILY_INVITE_NOT_FOUND`;
+- `409 FAMILY_INVITE_NOT_ACCEPTING` when the family is full;
+- `410 FAMILY_INVITE_INACTIVE` after rotation, disabling, or family closing.
+
+Lookup attempts are rate limited.
+
 ### GET /api/families/{family_id}/audit-log
 
 Returns family action history for the family owner or a family member.
@@ -224,6 +239,22 @@ Each event contains:
 
 - только владелец;
 - только пока семья ни разу не была полной.
+
+### PATCH /api/families/{family_id}/visibility
+
+Owner-only. Sets `is_search_visible`. Hidden families remain available through
+an active invite code.
+
+### Family invite management
+
+- `GET /api/families/{family_id}/invite` returns the active code to the owner;
+- `POST /api/families/{family_id}/invite` creates or returns the active code;
+- `POST /api/families/{family_id}/invite/rotate` revokes the old code and
+  creates a new one;
+- `POST /api/families/{family_id}/invite/disable` revokes the active code.
+
+Codes contain exactly 8 digits. Closing a family hides it from search and
+revokes its active code in the same transaction.
 
 ### POST /api/families/{family_id}/close
 

@@ -4,6 +4,7 @@ import type {
   FamilyAuditLog,
   FamilyCreate,
   FamilyCreateResult,
+  FamilyInvite,
   FamilyMember,
   FamilyPayment,
   FamilyRequest,
@@ -104,6 +105,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(`API ${response.status}: ${detail}`);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json() as Promise<T>;
 }
 
@@ -171,6 +176,35 @@ export function getFamilies(familyType?: FamilyType): Promise<Family[]> {
 
 export function getFamilyView(familyId: string): Promise<FamilyView> {
   return request<FamilyView>(`/api/families/${familyId}/view`);
+}
+
+export function getFamilyByInviteCode(code: string): Promise<FamilyView> {
+  return request<FamilyView>(`/api/families/invites/${code}`);
+}
+
+export function getFamilyInvite(familyId: string): Promise<FamilyInvite | null> {
+  return request<FamilyInvite | null>(`/api/families/${familyId}/invite`);
+}
+
+export function createFamilyInvite(familyId: string): Promise<FamilyInvite> {
+  return post<FamilyInvite>(`/api/families/${familyId}/invite`);
+}
+
+export function rotateFamilyInvite(familyId: string): Promise<FamilyInvite> {
+  return post<FamilyInvite>(`/api/families/${familyId}/invite/rotate`);
+}
+
+export function disableFamilyInvite(familyId: string): Promise<void> {
+  return post<void>(`/api/families/${familyId}/invite/disable`);
+}
+
+export function updateFamilyVisibility(
+  familyId: string,
+  isSearchVisible: boolean
+): Promise<Family> {
+  return patch<Family>(`/api/families/${familyId}/visibility`, {
+    is_search_visible: isSearchVisible
+  });
 }
 
 export function getFamilyAuditLog(familyId: string): Promise<FamilyAuditLog[]> {

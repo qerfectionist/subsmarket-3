@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+import secrets
 from datetime import date, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from subsmarket.catalog.models import FamilyService
@@ -21,6 +23,7 @@ from subsmarket.families.crypto import (
 from subsmarket.families.models import (
     Family,
     FamilyAuditLog,
+    FamilyInvite,
     FamilyMember,
     FamilyPayment,
     FamilyPaymentRequisite,
@@ -39,6 +42,7 @@ from subsmarket.families.schemas import (
     FamilyPriceUpdate,
     FamilyRequestOut,
     FamilyViewOut,
+    FamilyVisibilityUpdate,
     MyFamilyOut,
     OwnerFamilyRequestOut,
     PaymentConfirmationResult,
@@ -108,6 +112,7 @@ def to_family_out(family: Family) -> FamilyOut:
         next_payment_date=family.next_payment_date,
         description=family.description,
         owner_rules=family.owner_rules,
+        is_search_visible=family.is_search_visible,
         closing_started_at=family.closing_started_at,
         closes_at=family.closes_at,
         created_at=family.created_at,
@@ -439,6 +444,189 @@ def update_family_payment_day(
     return loaded
 
 
+def update_family_visibility(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    data: FamilyVisibilityUpdate,
+) -> Family:
+    family = _get_owned_family_for_update(db, user, family_id)
+    if family.status not in {"active", "full"}:
+        raise HTTPException(status_code=409, detail="FAMILY_VISIBILITY_NOT_EDITABLE")
+    old_visibility = family.is_search_visible
+    family.is_search_visible = data.is_search_visible
+    record_family_audit_event(
+        db,
+        family_id=family.id,
+        action="family_search_visibility_updated",
+        actor_user_id=user.id,
+        details={
+            "old_is_search_visible": old_visibility,
+            "new_is_search_visible": family.is_search_visible,
+        },
+    )
+    db.commit()
+    loaded = get_family_by_id(db, family.id)
+    if loaded is None:
+        raise RuntimeError("Updated family was not found")
+    return loaded
+
+
+def get_family_invite(
+    db: Session,
+    user: User,
+    family_id: UUID,
+) -> FamilyInvite | None:
+    family = db.get(Family, family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if family.owner_user_id != user.id:
+        raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_VIEW_INVITE")
+    return db.scalar(
+        select(FamilyInvite)
+        .where(FamilyInvite.family_id == family_id)
+        .where(FamilyInvite.status == "active")
+    )
+
+
+def create_family_invite(
+    db: Session,
+    user: User,
+    family_id: UUID,
+) -> FamilyInvite:
+    family = _get_owned_family_for_update(db, user, family_id)
+    _ensure_family_can_manage_invite(family)
+    existing = db.scalar(
+        select(FamilyInvite)
+        .where(FamilyInvite.family_id == family.id)
+        .where(FamilyInvite.status == "active")
+        .with_for_update()
+    )
+    if existing is not None:
+        return existing
+
+    invite = _insert_family_invite(db, family.id)
+    record_family_audit_event(
+        db,
+        family_id=family.id,
+        action="family_invite_created",
+        actor_user_id=user.id,
+    )
+    db.commit()
+    db.refresh(invite)
+    return invite
+
+
+def rotate_family_invite(
+    db: Session,
+    user: User,
+    family_id: UUID,
+) -> FamilyInvite:
+    family = _get_owned_family_for_update(db, user, family_id)
+    _ensure_family_can_manage_invite(family)
+    _revoke_active_family_invite(db, family.id, reason="rotated")
+    invite = _insert_family_invite(db, family.id)
+    record_family_audit_event(
+        db,
+        family_id=family.id,
+        action="family_invite_rotated",
+        actor_user_id=user.id,
+    )
+    db.commit()
+    db.refresh(invite)
+    return invite
+
+
+def disable_family_invite(
+    db: Session,
+    user: User,
+    family_id: UUID,
+) -> None:
+    family = _get_owned_family_for_update(db, user, family_id)
+    invite = _revoke_active_family_invite(db, family.id, reason="owner_disabled")
+    if invite is None:
+        raise HTTPException(status_code=409, detail="FAMILY_INVITE_NOT_ACTIVE")
+    record_family_audit_event(
+        db,
+        family_id=family.id,
+        action="family_invite_disabled",
+        actor_user_id=user.id,
+    )
+    db.commit()
+
+
+def resolve_family_invite(
+    db: Session,
+    user: User,
+    raw_code: str,
+) -> FamilyViewOut:
+    code = normalize_family_invite_code(raw_code)
+    invite = db.scalar(
+        select(FamilyInvite)
+        .options(joinedload(FamilyInvite.family))
+        .where(FamilyInvite.code == code)
+    )
+    if invite is None:
+        raise HTTPException(status_code=404, detail="FAMILY_INVITE_NOT_FOUND")
+    family = invite.family
+    if invite.status != "active" or family.status in {"closing", "closed"}:
+        raise HTTPException(status_code=410, detail="FAMILY_INVITE_INACTIVE")
+    if family.status != "active" or family.active_members_count >= family.max_members:
+        raise HTTPException(status_code=409, detail="FAMILY_INVITE_NOT_ACCEPTING")
+    return get_family_view(db, user, family.id)
+
+
+def normalize_family_invite_code(value: str) -> str:
+    code = re.sub(r"[\s-]", "", value.strip())
+    if not re.fullmatch(r"\d{8}", code):
+        raise HTTPException(status_code=400, detail="INVALID_FAMILY_INVITE_CODE")
+    return code
+
+
+def _ensure_family_can_manage_invite(family: Family) -> None:
+    if family.status not in {"active", "full"}:
+        raise HTTPException(status_code=409, detail="FAMILY_INVITE_NOT_EDITABLE")
+
+
+def _insert_family_invite(db: Session, family_id: UUID) -> FamilyInvite:
+    for _ in range(20):
+        code = f"{secrets.randbelow(100_000_000):08d}"
+        if db.scalar(select(FamilyInvite.id).where(FamilyInvite.code == code)):
+            continue
+        invite = FamilyInvite(family_id=family_id, code=code, status="active")
+        savepoint = db.begin_nested()
+        try:
+            db.add(invite)
+            db.flush()
+        except IntegrityError:
+            savepoint.rollback()
+            continue
+        savepoint.commit()
+        return invite
+    raise RuntimeError("Could not allocate a unique family invite code")
+
+
+def _revoke_active_family_invite(
+    db: Session,
+    family_id: UUID,
+    *,
+    reason: str,
+) -> FamilyInvite | None:
+    invite = db.scalar(
+        select(FamilyInvite)
+        .where(FamilyInvite.family_id == family_id)
+        .where(FamilyInvite.status == "active")
+        .with_for_update()
+    )
+    if invite is None:
+        return None
+    invite.status = "revoked"
+    invite.revoked_reason = reason
+    invite.revoked_at = utcnow()
+    db.flush()
+    return invite
+
+
 def get_family_by_id(db: Session, family_id: UUID) -> Family | None:
     return db.scalar(
         select(Family)
@@ -454,6 +642,7 @@ def list_searchable_families(
         select(Family)
         .options(joinedload(Family.service), joinedload(Family.owner))
         .where(Family.status == "active")
+        .where(Family.is_search_visible.is_(True))
         .where(Family.active_members_count < Family.max_members)
         .where(Family.owner_user_id != user.id)
         .where(
@@ -1434,8 +1623,14 @@ def close_family(db: Session, user: User, family_id: UUID) -> Family:
         now = utcnow()
         old_status = family.status
         family.status = "closing"
+        family.is_search_visible = False
         family.closing_started_at = now
         family.closes_at = now + timedelta(days=3)
+        _revoke_active_family_invite(
+            db,
+            family.id,
+            reason="family_closing",
+        )
         cancel_scheduled_payments(
             db,
             family_id=family.id,

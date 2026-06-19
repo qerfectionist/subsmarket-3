@@ -4,6 +4,7 @@ import { formatDate, formatDateTime, statusText } from "../format";
 import { bankLabels, familyKindLabels, periodLabels } from "../labels";
 import type {
   FamilyAuditLog,
+  FamilyInvite,
   FamilyMember,
   FamilyPayment,
   FamilyRequest,
@@ -23,11 +24,17 @@ export function FamilyDetailsScreen({
   onGetRequisite,
   onReportPayment,
   onCancelPaymentReport,
-  auditLogs
+  auditLogs,
+  invite,
+  onCreateInvite,
+  onRotateInvite,
+  onDisableInvite,
+  onUpdateVisibility
 }: {
   view: FamilyView | null;
   requisite: PaymentRequisite | null;
   auditLogs: FamilyAuditLog[];
+  invite: FamilyInvite | null;
   busy: string | null;
   onBack: () => void;
   onRefresh: () => void;
@@ -36,6 +43,10 @@ export function FamilyDetailsScreen({
   onGetRequisite: (memberId: string) => void;
   onReportPayment: (payment: FamilyPayment) => Promise<unknown>;
   onCancelPaymentReport: (payment: FamilyPayment) => Promise<unknown>;
+  onCreateInvite: (familyId: string) => void;
+  onRotateInvite: (familyId: string) => void;
+  onDisableInvite: (familyId: string) => void;
+  onUpdateVisibility: (familyId: string, isSearchVisible: boolean) => void;
 }) {
   if (!view) {
     return (
@@ -74,6 +85,18 @@ export function FamilyDetailsScreen({
       }
     >
       <FamilyCard family={family} />
+
+      {membership?.role === "owner" && (
+        <OwnerInvitePanel
+          family={family}
+          invite={invite}
+          busy={busy}
+          onCreate={onCreateInvite}
+          onRotate={onRotateInvite}
+          onDisable={onDisableInvite}
+          onUpdateVisibility={onUpdateVisibility}
+        />
+      )}
 
       <section className="detail-grid">
         <DetailItem label="Общая цена" value={`${family.total_price_kzt.toLocaleString("ru-KZ")} ₸`} />
@@ -196,6 +219,107 @@ export function FamilyDetailsScreen({
       {membership && <FamilyAuditTimeline logs={auditLogs} />}
     </Panel>
   );
+}
+
+function OwnerInvitePanel({
+  family,
+  invite,
+  busy,
+  onCreate,
+  onRotate,
+  onDisable,
+  onUpdateVisibility
+}: {
+  family: FamilyView["family"];
+  invite: FamilyInvite | null;
+  busy: string | null;
+  onCreate: (familyId: string) => void;
+  onRotate: (familyId: string) => void;
+  onDisable: (familyId: string) => void;
+  onUpdateVisibility: (familyId: string, isSearchVisible: boolean) => void;
+}) {
+  const editable = ["active", "full"].includes(family.status);
+  const formattedCode = invite
+    ? `${invite.code.slice(0, 4)} ${invite.code.slice(4)}`
+    : null;
+
+  return (
+    <section className="invite-owner-card">
+      <div>
+        <span className="muted">Код приглашения</span>
+        <strong data-testid="owner-invite-code">
+          {formattedCode ?? "Код ещё не создан"}
+        </strong>
+        <p className="muted">
+          По коду человек увидит карточку и отправит обычную заявку.
+        </p>
+      </div>
+      <div className="row-actions">
+        {!invite ? (
+          <button
+            type="button"
+            data-testid="create-invite-button"
+            disabled={busy !== null || !editable}
+            onClick={() => onCreate(family.id)}
+          >
+            Создать код
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => void copyInviteCode(invite.code)}
+            >
+              Копировать
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              disabled={busy !== null || !editable}
+              onClick={() => onRotate(family.id)}
+            >
+              Заменить код
+            </button>
+            <button
+              type="button"
+              className="danger"
+              disabled={busy !== null || !editable}
+              onClick={() => onDisable(family.id)}
+            >
+              Отключить код
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          className="secondary"
+          data-testid="toggle-family-visibility-button"
+          disabled={busy !== null || !editable}
+          onClick={() =>
+            onUpdateVisibility(family.id, !family.is_search_visible)
+          }
+        >
+          {family.is_search_visible ? "Скрыть из поиска" : "Показывать в поиске"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+async function copyInviteCode(code: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(code);
+    return;
+  }
+  const input = document.createElement("textarea");
+  input.value = code;
+  input.style.position = "fixed";
+  input.style.opacity = "0";
+  document.body.appendChild(input);
+  input.select();
+  document.execCommand("copy");
+  input.remove();
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) {

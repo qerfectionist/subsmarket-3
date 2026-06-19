@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { FamilyCard } from "../components/families";
 import { EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
 import { serviceTitle } from "../format";
@@ -16,6 +18,7 @@ export function SearchScreen({
   onRefresh,
   onImportCatalog,
   onOpenFamily,
+  onOpenInvite,
   onCreateFamily,
   onCreateRequest
 }: {
@@ -30,9 +33,13 @@ export function SearchScreen({
   onRefresh: () => void;
   onImportCatalog: () => void;
   onOpenFamily: (familyId: string) => void;
+  onOpenInvite: (code: string) => void;
   onCreateFamily: (familyType: FamilyType) => void;
   onCreateRequest: (familyId: string) => void;
 }) {
+  const [inviteCode, setInviteCode] = useState("");
+  const normalizedInviteCode = inviteCode.replace(/\D/g, "").slice(0, 8);
+
   return (
     <Panel
       title={`Найти семью: ${familyTypeLabels[familyType].toLowerCase()}`}
@@ -46,6 +53,29 @@ export function SearchScreen({
       }
     >
       <FamilyTypeSwitch value={familyType} onChange={onChangeFamilyType} />
+      <div className="invite-code-card">
+        <strong>Есть код приглашения?</strong>
+        <p className="muted">Введите 8 цифр, чтобы открыть семью вне общего поиска.</p>
+        <div className="toolbar">
+          <input
+            aria-label="Код приглашения"
+            data-testid="invite-code-input"
+            inputMode="numeric"
+            maxLength={9}
+            placeholder="4827 1936"
+            value={inviteCode}
+            onChange={(event) => setInviteCode(event.target.value)}
+          />
+          <button
+            type="button"
+            data-testid="open-invite-button"
+            disabled={busy !== null || normalizedInviteCode.length !== 8}
+            onClick={() => onOpenInvite(normalizedInviteCode)}
+          >
+            Открыть
+          </button>
+        </div>
+      </div>
       <div className="toolbar">
         <select
           value={familyFilter}

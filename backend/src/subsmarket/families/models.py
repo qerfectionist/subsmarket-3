@@ -7,12 +7,15 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,6 +34,7 @@ class Family(Base):
     owner_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     family_type: Mapped[str] = mapped_column(Text, default="subscription", index=True)
     status: Mapped[str] = mapped_column(Text, default="active", index=True)
+    is_search_visible: Mapped[bool] = mapped_column(Boolean, default=True)
     period: Mapped[str] = mapped_column(Text)
     max_members: Mapped[int] = mapped_column(Integer)
     active_members_count: Mapped[int] = mapped_column(Integer, default=1)
@@ -63,6 +67,43 @@ class Family(Base):
     payment_requisite: Mapped[FamilyPaymentRequisite] = relationship(
         back_populates="family", uselist=False
     )
+
+
+class FamilyInvite(Base):
+    __tablename__ = "family_invites"
+    __table_args__ = (
+        CheckConstraint("length(code) = 8", name="family_invite_code_length_ck"),
+        CheckConstraint(
+            "status in ('active', 'revoked')",
+            name="family_invite_status_ck",
+        ),
+        Index(
+            "family_invite_one_active_idx",
+            "family_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+            sqlite_where=text("status = 'active'"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    family_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("families.id", ondelete="CASCADE"),
+        index=True,
+    )
+    code: Mapped[str] = mapped_column(Text, unique=True)
+    status: Mapped[str] = mapped_column(Text, default="active")
+    revoked_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utcnow,
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    family: Mapped[Family] = relationship()
 
 
 class FamilyPaymentRequisite(Base):

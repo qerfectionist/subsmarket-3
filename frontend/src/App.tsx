@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import {
@@ -12,12 +12,16 @@ import {
   confirmAccessReceived,
   confirmPaymentReceived,
   createFamily,
+  createFamilyInvite,
   createFamilyRequest,
   createMemberPrepayment,
   DEV_TELEGRAM_USERS,
   type DevTelegramUser,
+  disableFamilyInvite,
   getActiveDevTelegramUser,
   getFamilies,
+  getFamilyByInviteCode,
+  getFamilyInvite,
   getFamilyAuditLog,
   getFamilyView,
   getFamilyMembers,
@@ -40,12 +44,14 @@ import {
   rejectFamilyRequest,
   reportPaymentPaid,
   requestMemberRemovalCancellation,
+  rotateFamilyInvite,
   revokeMemberRemoval,
   scheduleMemberRemoval,
   setActiveDevTelegramUser,
   updateFamilyDescription,
   updateFamilyPaymentDay,
-  updateFamilyPrice
+  updateFamilyPrice,
+  updateFamilyVisibility
 } from "./api";
 import type { LoadState, Tab } from "./appTypes";
 import {
@@ -65,6 +71,7 @@ import type {
   Family,
   FamilyAuditLog,
   FamilyCreate,
+  FamilyInvite,
   FamilyRequest,
   FamilyService,
   FamilyView,
@@ -75,6 +82,7 @@ import type {
   PaymentRequisite
 } from "./types";
 import {
+  getTelegramStartParam,
   setTelegramBackButton,
   triggerTelegramNotification,
   triggerTelegramSelection
@@ -109,6 +117,8 @@ export function App() {
     null
   );
   const [selectedFamilyAudit, setSelectedFamilyAudit] = useState<FamilyAuditLog[]>([]);
+  const [selectedFamilyInvite, setSelectedFamilyInvite] =
+    useState<FamilyInvite | null>(null);
   const [familyBackTab, setFamilyBackTab] = useState<Tab>("search");
   const [devUser, setDevUser] = useState<DevTelegramUser | null>(
     getActiveDevTelegramUser()
@@ -120,6 +130,7 @@ export function App() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const startParamHandled = useRef(false);
 
   async function load() {
     try {
@@ -208,9 +219,31 @@ export function App() {
       const auditLogs = view.my_membership
         ? await getFamilyAuditLog(familyId)
         : [];
+      const invite =
+        view.my_membership?.role === "owner"
+          ? await getFamilyInvite(familyId)
+          : null;
       setSelectedFamilyView(view);
       setSelectedFamilyAudit(auditLogs);
+      setSelectedFamilyInvite(invite);
       setFamilyBackTab(backTab === "family" ? "search" : backTab);
+      setTab("family");
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function openFamilyByInviteCode(code: string) {
+    try {
+      setBusy("invite-view");
+      setError(null);
+      const view = await getFamilyByInviteCode(code);
+      setSelectedFamilyView(view);
+      setSelectedFamilyAudit([]);
+      setSelectedFamilyInvite(null);
+      setFamilyBackTab("search");
       setTab("family");
     } catch (err) {
       setError(formatError(err));
@@ -274,6 +307,17 @@ export function App() {
     void load();
     return cleanupTelegram;
   }, []);
+
+  useEffect(() => {
+    if (loadState !== "ready" || startParamHandled.current) {
+      return;
+    }
+    startParamHandled.current = true;
+    const match = getTelegramStartParam().match(/^invite_(\d{8})$/);
+    if (match) {
+      void openFamilyByInviteCode(match[1]);
+    }
+  }, [loadState]);
 
   useEffect(() => {
     return setTelegramBackButton(tab !== "home", () => {
@@ -404,6 +448,7 @@ export function App() {
             void runAction("import-catalog", importFamilyServices)
           }
           onOpenFamily={(familyId) => void openFamily(familyId, "search")}
+          onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
             changeFamilyType(nextType);
             setTab("create");
@@ -573,6 +618,7 @@ export function App() {
               : null
           }
           auditLogs={selectedFamilyAudit}
+          invite={selectedFamilyInvite}
           busy={busy}
           onBack={() => setTab(familyBackTab)}
           onRefresh={() =>
@@ -583,6 +629,27 @@ export function App() {
             void runAction("create-request", () => createFamilyRequest(familyId)).then(
               () => openFamily(familyId, familyBackTab)
             )
+          }
+          onCreateInvite={(familyId) =>
+            void runAction("create-invite", async () => {
+              setSelectedFamilyInvite(await createFamilyInvite(familyId));
+            })
+          }
+          onRotateInvite={(familyId) =>
+            void runAction("rotate-invite", async () => {
+              setSelectedFamilyInvite(await rotateFamilyInvite(familyId));
+            })
+          }
+          onDisableInvite={(familyId) =>
+            void runAction("disable-invite", async () => {
+              await disableFamilyInvite(familyId);
+              setSelectedFamilyInvite(null);
+            })
+          }
+          onUpdateVisibility={(familyId, isSearchVisible) =>
+            void runAction("update-visibility", () =>
+              updateFamilyVisibility(familyId, isSearchVisible)
+            ).then(() => openFamily(familyId, familyBackTab))
           }
           onConfirmAccess={(memberId) =>
             void runAction("confirm-access", async () => {
