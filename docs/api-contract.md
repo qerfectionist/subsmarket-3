@@ -511,3 +511,16 @@ Backend:
 - `execute_member_removals`;
 - `close_due_families`;
 - `send_closing_acknowledgement_reminders`.
+
+### POST /api/internal/jobs/run-due
+
+Requires `X-Internal-Job-Token` outside development.
+
+Each due-job step is committed separately. If one step fails, the failed step is
+rolled back, later steps continue, and the response includes:
+
+- `job_errors[].step`;
+- `job_errors[].error_type`;
+- `job_errors[].message`.
+
+When there are no failures, `job_errors` is an empty list.

@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class RunDueJobError(BaseModel):
+    step: str
+    error_type: str
+    message: str
 
 
 class RunDueJobsResult(BaseModel):
@@ -16,3 +22,4 @@ class RunDueJobsResult(BaseModel):
     executed_member_removals: int
     closed_families: int
     notification_jobs_created: int
+    job_errors: list[RunDueJobError] = Field(default_factory=list)

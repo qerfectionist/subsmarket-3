@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, date, timedelta
 from uuid import UUID
 
@@ -16,7 +19,7 @@ from subsmarket.families.models import (
     FamilyRequest,
 )
 from subsmarket.families.service import cancel_scheduled_payments
-from subsmarket.jobs.schemas import RunDueJobsResult
+from subsmarket.jobs.schemas import RunDueJobError, RunDueJobsResult
 from subsmarket.notifications.models import NotificationJob
 from subsmarket.notifications.service import enqueue_notification
 
@@ -29,55 +32,196 @@ CLOSING_ACK_MEMBER_STATUSES = {
     "active",
     "removal_pending",
 }
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class DueJobStep:
+    name: str
+    run: Callable[[Session], int | tuple[int, int]]
+    apply: Callable[[RunDueJobsResult, int | tuple[int, int]], None]
 
 
 def run_due_jobs(db: Session) -> RunDueJobsResult:
-    expired_requests, request_notifications = expire_family_requests(db)
-    access_confirmation_notifications = send_access_confirmation_reminders(db)
-    overdue_payments, payment_notifications = mark_overdue_first_payments(db)
-    created_regular_payments = create_regular_payments(db)
-    db.flush()
-    activated_regular_payments, activation_notifications = activate_regular_payments(db)
-    db.flush()
-    overdue_regular_payments, regular_overdue_notifications = (
-        mark_overdue_regular_payments(db)
+    result = RunDueJobsResult(
+        expired_family_requests=0,
+        access_confirmation_reminders_sent=0,
+        overdue_first_payments=0,
+        created_regular_payments=0,
+        activated_regular_payments=0,
+        overdue_regular_payments=0,
+        regular_payment_reminders_sent=0,
+        owner_payment_confirmation_reminders_sent=0,
+        closing_acknowledgement_reminders_sent=0,
+        executed_member_removals=0,
+        closed_families=0,
+        notification_jobs_created=0,
     )
-    db.flush()
-    regular_reminder_notifications = send_regular_payment_reminders(db)
-    owner_confirmation_notifications = send_owner_payment_confirmation_reminders(db)
-    closing_acknowledgement_notifications = (
-        send_closing_acknowledgement_reminders(db)
-    )
-    removals, removal_notifications = execute_member_removals(db)
-    closed_families, closing_notifications = close_due_families(db)
-    db.commit()
-    return RunDueJobsResult(
-        expired_family_requests=expired_requests,
-        access_confirmation_reminders_sent=access_confirmation_notifications,
-        overdue_first_payments=overdue_payments,
-        created_regular_payments=created_regular_payments,
-        activated_regular_payments=activated_regular_payments,
-        overdue_regular_payments=overdue_regular_payments,
-        regular_payment_reminders_sent=regular_reminder_notifications,
-        owner_payment_confirmation_reminders_sent=owner_confirmation_notifications,
-        closing_acknowledgement_reminders_sent=(
-            closing_acknowledgement_notifications
+    for step in _due_job_steps():
+        _run_due_job_step(db, result, step)
+    return result
+
+
+def _run_due_job_step(
+    db: Session,
+    result: RunDueJobsResult,
+    step: DueJobStep,
+) -> None:
+    try:
+        step_result = step.run(db)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Due job step failed", extra={"job_step": step.name})
+        result.job_errors.append(
+            RunDueJobError(
+                step=step.name,
+                error_type=type(exc).__name__,
+                message=str(exc),
+            )
+        )
+        return
+    step.apply(result, step_result)
+
+
+def _due_job_steps() -> tuple[DueJobStep, ...]:
+    return (
+        DueJobStep(
+            name="expire_family_requests",
+            run=expire_family_requests,
+            apply=lambda result, step_result: _apply_count_and_notifications(
+                result,
+                step_result,
+                count_field="expired_family_requests",
+            ),
         ),
-        executed_member_removals=removals,
-        closed_families=closed_families,
-        notification_jobs_created=(
-            request_notifications
-            + access_confirmation_notifications
-            + payment_notifications
-            + activation_notifications
-            + regular_overdue_notifications
-            + regular_reminder_notifications
-            + owner_confirmation_notifications
-            + closing_acknowledgement_notifications
-            + removal_notifications
-            + closing_notifications
+        DueJobStep(
+            name="send_access_confirmation_reminders",
+            run=send_access_confirmation_reminders,
+            apply=lambda result, step_result: _apply_notification_count(
+                result,
+                step_result,
+                count_field="access_confirmation_reminders_sent",
+            ),
+        ),
+        DueJobStep(
+            name="mark_overdue_first_payments",
+            run=mark_overdue_first_payments,
+            apply=lambda result, step_result: _apply_count_and_notifications(
+                result,
+                step_result,
+                count_field="overdue_first_payments",
+            ),
+        ),
+        DueJobStep(
+            name="create_regular_payments",
+            run=create_regular_payments,
+            apply=lambda result, step_result: _apply_count(
+                result,
+                step_result,
+                count_field="created_regular_payments",
+            ),
+        ),
+        DueJobStep(
+            name="activate_regular_payments",
+            run=activate_regular_payments,
+            apply=lambda result, step_result: _apply_count_and_notifications(
+                result,
+                step_result,
+                count_field="activated_regular_payments",
+            ),
+        ),
+        DueJobStep(
+            name="mark_overdue_regular_payments",
+            run=mark_overdue_regular_payments,
+            apply=lambda result, step_result: _apply_count_and_notifications(
+                result,
+                step_result,
+                count_field="overdue_regular_payments",
+            ),
+        ),
+        DueJobStep(
+            name="send_regular_payment_reminders",
+            run=send_regular_payment_reminders,
+            apply=lambda result, step_result: _apply_notification_count(
+                result,
+                step_result,
+                count_field="regular_payment_reminders_sent",
+            ),
+        ),
+        DueJobStep(
+            name="send_owner_payment_confirmation_reminders",
+            run=send_owner_payment_confirmation_reminders,
+            apply=lambda result, step_result: _apply_notification_count(
+                result,
+                step_result,
+                count_field="owner_payment_confirmation_reminders_sent",
+            ),
+        ),
+        DueJobStep(
+            name="send_closing_acknowledgement_reminders",
+            run=send_closing_acknowledgement_reminders,
+            apply=lambda result, step_result: _apply_notification_count(
+                result,
+                step_result,
+                count_field="closing_acknowledgement_reminders_sent",
+            ),
+        ),
+        DueJobStep(
+            name="execute_member_removals",
+            run=execute_member_removals,
+            apply=lambda result, step_result: _apply_count_and_notifications(
+                result,
+                step_result,
+                count_field="executed_member_removals",
+            ),
+        ),
+        DueJobStep(
+            name="close_due_families",
+            run=close_due_families,
+            apply=lambda result, step_result: _apply_count_and_notifications(
+                result,
+                step_result,
+                count_field="closed_families",
+            ),
         ),
     )
+
+
+def _apply_count(
+    result: RunDueJobsResult,
+    step_result: int | tuple[int, int],
+    *,
+    count_field: str,
+) -> None:
+    if not isinstance(step_result, int):
+        raise TypeError(f"{count_field} expected integer result")
+    setattr(result, count_field, step_result)
+
+
+def _apply_notification_count(
+    result: RunDueJobsResult,
+    step_result: int | tuple[int, int],
+    *,
+    count_field: str,
+) -> None:
+    if not isinstance(step_result, int):
+        raise TypeError(f"{count_field} expected integer result")
+    setattr(result, count_field, step_result)
+    result.notification_jobs_created += step_result
+
+
+def _apply_count_and_notifications(
+    result: RunDueJobsResult,
+    step_result: int | tuple[int, int],
+    *,
+    count_field: str,
+) -> None:
+    if not isinstance(step_result, tuple):
+        raise TypeError(f"{count_field} expected count and notifications")
+    count, notifications = step_result
+    setattr(result, count_field, count)
+    result.notification_jobs_created += notifications
 
 
 def expire_family_requests(db: Session) -> tuple[int, int]:

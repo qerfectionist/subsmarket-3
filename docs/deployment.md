@@ -171,7 +171,10 @@ POST /api/internal/jobs/run-due
 X-Internal-Job-Token: <INTERNAL_JOB_TOKEN>
 ```
 
-The endpoint is called by GitHub Actions every 5 minutes.
+The endpoint is called by GitHub Actions every 5 minutes. Each due-job step is
+committed separately. If one step fails, the backend rolls back only that step,
+continues the remaining steps, logs the exception, and returns the failed step
+inside `job_errors`.
 
 `notification_jobs` is an outbox. A second production cron sends pending
 Telegram messages:

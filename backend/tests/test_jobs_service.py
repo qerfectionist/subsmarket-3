@@ -10,7 +10,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from subsmarket.catalog.models import FamilyService
 from subsmarket.core.database import Base, utcnow
 from subsmarket.families.calendar import add_months
-from subsmarket.families.models import Family, FamilyMember, FamilyPayment
+from subsmarket.families.models import (
+    Family,
+    FamilyMember,
+    FamilyPayment,
+    FamilyRequest,
+)
 from subsmarket.families.schemas import FamilyCreate
 from subsmarket.families.service import (
     acknowledge_family_closing,
@@ -26,6 +31,7 @@ from subsmarket.jobs.service import (
     expire_family_requests,
     mark_overdue_first_payments,
     mark_overdue_regular_payments,
+    run_due_jobs,
     send_closing_acknowledgement_reminders,
     send_regular_payment_reminders,
 )
@@ -152,6 +158,38 @@ def test_expired_request_notifies_both_sides_and_can_be_retried(db: Session) -> 
 
     retried_request = create_join_request(db, candidate, family.id)
     assert retried_request.status == "pending"
+
+
+def test_run_due_jobs_commits_successful_steps_when_later_step_fails(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 21)
+    candidate = make_user(db, 22)
+    family = make_family(db, owner, service)
+    request = create_join_request(db, candidate, family.id)
+    request.expires_at = utcnow() - timedelta(minutes=1)
+    db.commit()
+
+    def fail_access_reminders(_: Session) -> int:
+        raise RuntimeError("forced failure")
+
+    monkeypatch.setattr(
+        "subsmarket.jobs.service.send_access_confirmation_reminders",
+        fail_access_reminders,
+    )
+
+    result = run_due_jobs(db)
+
+    assert result.expired_family_requests == 1
+    assert result.notification_jobs_created == 2
+    assert len(result.job_errors) == 1
+    assert result.job_errors[0].step == "send_access_confirmation_reminders"
+    assert result.job_errors[0].error_type == "RuntimeError"
+    db.expire_all()
+    persisted_request = db.get(FamilyRequest, request.id)
+    assert persisted_request is not None
+    assert persisted_request.status == "expired"
 
 
 def test_first_payment_overdue_does_not_remove_member(db: Session) -> None:
