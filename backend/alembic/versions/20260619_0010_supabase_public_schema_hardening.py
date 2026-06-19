@@ -8,6 +8,8 @@ Create Date: 2026-06-19 00:30:00.000000
 
 from __future__ import annotations
 
+import re
+
 from sqlalchemy import text
 
 from alembic import op
@@ -39,9 +41,12 @@ def upgrade() -> None:
 
     has_supabase_roles = _has_role("anon") and _has_role("authenticated")
     for table in PUBLIC_TABLES:
-        op.execute(f"ALTER TABLE public.{table} ENABLE ROW LEVEL SECURITY")
+        table_name = _public_table_name(table)
+        op.execute(text(f"ALTER TABLE {table_name} ENABLE ROW LEVEL SECURITY"))
         if has_supabase_roles:
-            op.execute(f"REVOKE ALL ON TABLE public.{table} FROM anon, authenticated")
+            op.execute(
+                text(f"REVOKE ALL ON TABLE {table_name} FROM anon, authenticated")
+            )
 
     op.create_index(
         "family_audit_target_member_idx",
@@ -70,7 +75,15 @@ def downgrade() -> None:
     op.drop_index("family_audit_target_member_idx", table_name="family_audit_logs")
 
     for table in PUBLIC_TABLES:
-        op.execute(f"ALTER TABLE public.{table} DISABLE ROW LEVEL SECURITY")
+        op.execute(
+            text(f"ALTER TABLE {_public_table_name(table)} DISABLE ROW LEVEL SECURITY")
+        )
+
+
+def _public_table_name(table: str) -> str:
+    if not re.fullmatch(r"[a-z_][a-z0-9_]*", table):
+        raise ValueError(f"Unsafe table identifier: {table}")
+    return f'public."{table}"'
 
 
 def _has_role(role: str) -> bool:
