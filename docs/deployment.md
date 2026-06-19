@@ -171,6 +171,27 @@ Payment phone requisites are encrypted before storage. New requisites use a
 versioned PBKDF2-derived Fernet key. Legacy SHA-256-derived Fernet tokens remain
 readable so existing data does not require a forced migration.
 
+## Error monitoring
+
+Sentry is optional but recommended before a public launch. The backend only
+enables it when `SENTRY_DSN` is set, so local development and test deployments
+can run without a Sentry account.
+
+Render env values:
+
+```text
+SENTRY_DSN=https://<public-key>@<org>.ingest.sentry.io/<project-id>
+SENTRY_TRACES_SAMPLE_RATE=0
+SENTRY_SEND_DEFAULT_PII=false
+SENTRY_RELEASE=<optional-release-name-or-commit>
+```
+
+With `SENTRY_DSN` configured, unhandled FastAPI and SQLAlchemy exceptions are
+reported to Sentry with the current `APP_ENV` as the environment. Keep
+`SENTRY_SEND_DEFAULT_PII=false`; SubsMarket should not send Telegram user
+personal data or payment requisites into external error logs. Increase
+`SENTRY_TRACES_SAMPLE_RATE` later only if performance tracing is needed.
+
 ## Due jobs and notifications
 
 The first production cron runs:
@@ -375,6 +396,11 @@ TELEGRAM_WEBHOOK_SECRET=...
 TELEGRAM_WEBHOOK_DROP_PENDING_UPDATES=false
 PAYMENT_REQUISITE_SECRET=...
 INTERNAL_JOB_TOKEN=...
+RATE_LIMIT_REDIS_URL=rediss://...
+SENTRY_DSN=
+SENTRY_TRACES_SAMPLE_RATE=0
+SENTRY_SEND_DEFAULT_PII=false
+SENTRY_RELEASE=
 CORS_ALLOWED_ORIGINS=https://<vercel-mini-app-domain>
 NOTIFICATION_MAX_ATTEMPTS=5
 NOTIFICATION_RETRY_BASE_SECONDS=60

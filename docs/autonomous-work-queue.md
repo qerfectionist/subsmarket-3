@@ -658,3 +658,15 @@ Last checkpoint:
   - temporary services and users after cleanup: 0.
 - Verified 122 backend tests, 3 Playwright tests, and 5 PostgreSQL concurrency
   tests.
+
+2026-06-20 optional Sentry error monitoring:
+
+- Added optional Sentry initialization for the FastAPI backend.
+- Sentry stays disabled when `SENTRY_DSN` is empty, so local/test environments
+  keep working without an external account.
+- Added production config validation for:
+  - `SENTRY_DSN`;
+  - `SENTRY_TRACES_SAMPLE_RATE`.
+- Added Render and `.env.example` entries for Sentry env values.
+- Documented that `SENTRY_SEND_DEFAULT_PII=false` should remain the default so
+  personal user data and payment requisites are not sent to external logs.

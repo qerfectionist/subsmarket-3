@@ -7,6 +7,7 @@ from subsmarket.bot.api import router as bot_router
 from subsmarket.catalog.api import router as catalog_router
 from subsmarket.core.api import router as core_router
 from subsmarket.core.config import settings
+from subsmarket.core.observability import configure_sentry
 from subsmarket.core.rate_limit import RateLimitMiddleware
 from subsmarket.dev.api import router as dev_router
 from subsmarket.families.api import router as families_router
@@ -27,6 +28,7 @@ def validate_runtime_settings() -> None:
 
 def create_app() -> FastAPI:
     validate_runtime_settings()
+    configure_sentry()
     app = FastAPI(title="SubsMarket API", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,

@@ -11,6 +11,7 @@ dependencies = [
   "pydantic-settings>=2.5.2",
   "psycopg[binary]>=3.2.3",
   "redis>=5.2.0",
+  "sentry-sdk[fastapi]>=2.17.0",
   "sqlalchemy>=2.0.35",
   "uvicorn[standard]>=0.30.6"
 ]

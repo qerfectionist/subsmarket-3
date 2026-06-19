@@ -50,6 +50,13 @@ def check_production_config() -> list[ConfigCheck]:
         ),
         _present("INTERNAL_JOB_TOKEN", settings.internal_job_token),
         _optional_redis_url(settings.rate_limit_redis_url),
+        _optional_http_url("SENTRY_DSN", settings.sentry_dsn),
+        _bounded_float(
+            "SENTRY_TRACES_SAMPLE_RATE",
+            settings.sentry_traces_sample_rate,
+            minimum=0.0,
+            maximum=1.0,
+        ),
         _production_origins(settings.cors_origins),
         _positive_int("NOTIFICATION_MAX_ATTEMPTS", settings.notification_max_attempts),
         _positive_int(
@@ -145,6 +152,34 @@ def _bounded_int(
             key=key,
             ok=False,
             problem=f"must be between {minimum} and {maximum}",
+        )
+    return ConfigCheck(key=key, ok=True)
+
+
+def _bounded_float(
+    key: str,
+    value: float,
+    *,
+    minimum: float,
+    maximum: float,
+) -> ConfigCheck:
+    if not minimum <= value <= maximum:
+        return ConfigCheck(
+            key=key,
+            ok=False,
+            problem=f"must be between {minimum:g} and {maximum:g}",
+        )
+    return ConfigCheck(key=key, ok=True)
+
+
+def _optional_http_url(key: str, value: str | None) -> ConfigCheck:
+    if not value:
+        return ConfigCheck(key=key, ok=True)
+    if not value.startswith(("http://", "https://")):
+        return ConfigCheck(
+            key=key,
+            ok=False,
+            problem="must start with http:// or https://",
         )
     return ConfigCheck(key=key, ok=True)
 

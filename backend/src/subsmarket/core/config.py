@@ -68,6 +68,18 @@ class Settings(BaseSettings):
         default=None,
         alias="RATE_LIMIT_REDIS_URL",
     )
+    sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
+    sentry_traces_sample_rate: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        alias="SENTRY_TRACES_SAMPLE_RATE",
+    )
+    sentry_send_default_pii: bool = Field(
+        default=False,
+        alias="SENTRY_SEND_DEFAULT_PII",
+    )
+    sentry_release: str | None = Field(default=None, alias="SENTRY_RELEASE")
     cors_allowed_origins: str = Field(default="*", alias="CORS_ALLOWED_ORIGINS")
     notification_max_attempts: int = Field(default=5, alias="NOTIFICATION_MAX_ATTEMPTS")
     notification_retry_base_seconds: int = Field(
