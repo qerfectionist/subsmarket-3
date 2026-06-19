@@ -51,12 +51,16 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await expect(page.locator(".home-hero")).toBeVisible();
+  await expect(page.locator(".home-hero")).toContainText("Найдите семью для подписки");
+  await expect(page.locator(".trust-strip")).toContainText("Доступ");
   await expect(page.getByTestId("dev-user-select")).toHaveValue("200001");
 
   await openNav(page, 2);
   await expect(page.getByTestId("create-family-form")).toBeVisible();
+  await expect(page.getByTestId("create-share-preview")).toContainText("650 ₸");
   await page.getByTestId("create-total-price-input").fill("3990");
   await page.getByTestId("create-max-members-input").fill("4");
+  await expect(page.getByTestId("create-share-preview")).toContainText("1 000 ₸");
   await page.getByTestId("create-payment-phone-input").fill("+77001234567");
   await page.getByTestId("create-description-input").fill("E2E subscription family");
   await page.getByTestId("create-owner-rules-input").fill("Access first, payment after check.");

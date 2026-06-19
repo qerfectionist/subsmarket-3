@@ -16,6 +16,7 @@ export function SearchScreen({
   onRefresh,
   onImportCatalog,
   onOpenFamily,
+  onCreateFamily,
   onCreateRequest
 }: {
   familyType: FamilyType;
@@ -29,6 +30,7 @@ export function SearchScreen({
   onRefresh: () => void;
   onImportCatalog: () => void;
   onOpenFamily: (familyId: string) => void;
+  onCreateFamily: (familyType: FamilyType) => void;
   onCreateRequest: (familyId: string) => void;
 }) {
   return (
@@ -62,8 +64,17 @@ export function SearchScreen({
       </div>
       {filteredFamilies.length === 0 ? (
         <EmptyState title="Пока нет доступных семей">
-          В этом разделе пока нет доступных семей. Создайте первую семью или
-          попробуйте другой сервис.
+          <span>
+            В этом разделе пока нет доступных семей. Можно создать первую семью
+            или попробовать другой сервис.
+          </span>
+          <button
+            type="button"
+            data-testid="empty-create-family-button"
+            onClick={() => onCreateFamily(familyType)}
+          >
+            Создать семью
+          </button>
         </EmptyState>
       ) : (
         <div className="card-grid">

@@ -26,12 +26,32 @@ export function CreateFamilyScreen({
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
   onSubmit: (event: FormEvent) => void;
 }) {
+  const memberShare = calculatePreviewShare(
+    createForm.total_price_kzt,
+    createForm.max_members
+  );
+  const freeMemberSlots = Math.max(0, createForm.max_members - 1);
+
   return (
     <Panel
       title={`Создать семью: ${familyTypeLabels[familyType].toLowerCase()}`}
-      description="Владелец тоже занимает одно место. Цена делится на всех участников автоматически."
+      description="Заполните только условия подписки. Доступ и оплата идут уже после заявки."
     >
       <FamilyTypeSwitch value={familyType} onChange={onChangeFamilyType} />
+      <div className="create-preview" data-testid="create-share-preview">
+        <div>
+          <span>Участник платит</span>
+          <strong>{formatKzt(memberShare)}</strong>
+        </div>
+        <div>
+          <span>Свободных мест</span>
+          <strong>{freeMemberSlots}</strong>
+        </div>
+        <p>
+          Владелец входит в лимит. Общая цена делится на всех и округляется
+          вверх до 50 ₸.
+        </p>
+      </div>
       <form className="form-grid" data-testid="create-family-form" onSubmit={onSubmit}>
         <label>
           Сервис
@@ -199,7 +219,8 @@ export function CreateFamilyScreen({
           />
         </label>
         <div className="wide summary">
-          Доля участника будет рассчитана backend-ом и округлена вверх до 50 ₸.
+          Реквизиты увидит только участник после подтверждения доступа. Номера
+          карт и IBAN запрещены.
         </div>
         <button
           type="submit"
@@ -211,4 +232,15 @@ export function CreateFamilyScreen({
       </form>
     </Panel>
   );
+}
+
+function calculatePreviewShare(totalPriceKzt: number, maxMembers: number) {
+  if (totalPriceKzt <= 0 || maxMembers <= 0) {
+    return 0;
+  }
+  return Math.ceil(Math.ceil(totalPriceKzt / maxMembers) / 50) * 50;
+}
+
+function formatKzt(value: number) {
+  return new Intl.NumberFormat("ru-KZ").format(value) + " ₸";
 }

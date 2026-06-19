@@ -21,6 +21,8 @@ test("Mini App renders home, search, and family details", async ({ page }) => {
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await expect(page.locator(".home-hero")).toBeVisible();
+  await expect(page.locator(".home-hero")).toContainText("Найдите семью для подписки");
+  await expect(page.locator(".trust-strip")).toContainText("Заявка");
   await expect(page.locator(".bottom-nav")).toBeVisible();
 
   await page.locator(".bottom-nav button").nth(1).click();
@@ -34,6 +36,7 @@ test("Mini App renders home, search, and family details", async ({ page }) => {
 
   await page.locator(".bottom-nav button").nth(2).click();
   await expect(page.locator("form.form-grid")).toBeVisible();
+  await expect(page.getByTestId("create-share-preview")).toBeVisible();
 
   await page.locator(".bottom-nav button").nth(3).click();
   await expect(page.locator(".panel")).toBeVisible();

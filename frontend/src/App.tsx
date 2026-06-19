@@ -404,6 +404,10 @@ export function App() {
             void runAction("import-catalog", importFamilyServices)
           }
           onOpenFamily={(familyId) => void openFamily(familyId, "search")}
+          onCreateFamily={(nextType) => {
+            changeFamilyType(nextType);
+            setTab("create");
+          }}
           onCreateRequest={(familyId) =>
             void runAction("create-request", () =>
               createFamilyRequest(familyId)

@@ -25,23 +25,39 @@ export function HomeScreen({
   return (
     <div className="screen-stack">
       <section className="home-hero">
+        <span className="eyebrow">Семейные подписки</span>
         <div>
-          <h2>Экономьте вместе</h2>
+          <h2>Найдите семью для подписки</h2>
           <p>
-            Семьи подписок и тарифов: заявка сначала, доступ потом, оплата
-            напрямую владельцу после проверки.
+            SubsMarket помогает незнакомым людям объединяться в семьи подписок:
+            сначала заявка и доступ, потом оплата напрямую владельцу.
           </p>
         </div>
-        <button type="button" onClick={() => onSearch("subscription")}>
-          Найти семью
-        </button>
+        <div className="hero-actions">
+          <button type="button" onClick={() => onSearch("subscription")}>
+            Найти подписку
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => onCreate("subscription")}
+          >
+            Создать семью
+          </button>
+        </div>
+      </section>
+
+      <section className="trust-strip">
+        <TrustStep title="1. Заявка" text="Владелец видит запрос и пишет вам в Telegram." />
+        <TrustStep title="2. Доступ" text="Деньги переводятся только после выдачи доступа." />
+        <TrustStep title="3. Контроль" text="Бот напоминает оплатить, владелец подтверждает." />
       </section>
 
       <section className="quick-grid">
         <HomeStat label="Семьи подписок" value={String(subscriptionFamilies.length)} />
-        <HomeStat label="Семьи тарифов" value={String(tariffFamilies.length)} />
         <HomeStat label="Мои семьи" value={String(myFamilies.length)} />
         <HomeStat label="Активные заявки" value={String(activeRequests.length)} />
+        <HomeStat label="Семьи тарифов" value={String(tariffFamilies.length)} />
       </section>
 
       <section className="action-list">
@@ -51,19 +67,9 @@ export function HomeScreen({
           onClick={() => onSearch("subscription")}
         />
         <HomeAction
-          title="Найти семью тарифа"
-          text="Мобильные операторы отдельно от цифровых подписок."
-          onClick={() => onSearch("tariff")}
-        />
-        <HomeAction
           title="Создать свою семью"
           text="Цена делится поровну, владелец тоже занимает место."
           onClick={() => onCreate("subscription")}
-        />
-        <HomeAction
-          title="Создать семью тарифа"
-          text="Один участник тарифа равен одному месту, без сложных слотов."
-          onClick={() => onCreate("tariff")}
         />
         <HomeAction
           title="Проверить мои семьи"
@@ -71,11 +77,30 @@ export function HomeScreen({
           onClick={onMine}
         />
         <HomeAction
+          title="Семейные тарифы"
+          text="Отдельный раздел для мобильных операторов, без сложных слотов."
+          onClick={() => onSearch("tariff")}
+        />
+        <HomeAction
+          title="Создать семью тарифа"
+          text="Один участник тарифа равен одному месту, без сложных слотов."
+          onClick={() => onCreate("tariff")}
+        />
+        <HomeAction
           title="Мои заявки"
           text="Ожидание, отмена, отклонение или истечение заявки."
           onClick={onRequests}
         />
       </section>
+    </div>
+  );
+}
+
+function TrustStep({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="trust-step">
+      <strong>{title}</strong>
+      <span>{text}</span>
     </div>
   );
 }
@@ -108,4 +133,3 @@ function HomeAction({
     </button>
   );
 }
-

@@ -231,6 +231,14 @@ textarea {
   padding: 24px;
 }
 
+.eyebrow {
+  color: var(--app-link);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .home-hero h2 {
   font-size: 36px;
   letter-spacing: -0.06em;
@@ -242,6 +250,36 @@ textarea {
   font-size: 15px;
   line-height: 1.55;
   margin-top: 12px;
+}
+
+.hero-actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
+.trust-strip {
+  display: grid;
+  gap: 10px;
+}
+
+.trust-step {
+  background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.trust-step strong {
+  font-size: 14px;
+}
+
+.trust-step span {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .quick-grid {
@@ -509,12 +547,21 @@ textarea {
 .empty-state {
   border: 1px dashed #b8c2d6;
   border-radius: 20px;
+  display: grid;
+  gap: 12px;
   padding: 18px;
 }
 
-.empty-state p {
+.empty-state p,
+.empty-state span {
+  color: var(--app-muted);
+  display: block;
   line-height: 1.5;
   margin-top: 8px;
+}
+
+.empty-state button {
+  width: 100%;
 }
 
 .form-grid {
@@ -537,7 +584,44 @@ textarea {
   background: var(--app-secondary-bg);
   border-radius: 16px;
   color: #344054;
+  line-height: 1.45;
   padding: 14px;
+}
+
+.create-preview {
+  background: #eef4ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 22px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.create-preview div {
+  background: var(--app-surface);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.create-preview span {
+  color: var(--app-muted);
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.create-preview strong {
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.create-preview p {
+  color: #24406f;
+  grid-column: 1 / -1;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .family-workspace {
