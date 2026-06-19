@@ -510,3 +510,23 @@ Last checkpoint:
   redeploy.
 - Added `.vercel/` to the root `.gitignore` so local Vercel project metadata
   stays out of Git.
+
+2026-06-19 production deployment completion:
+
+- Deployed the FastAPI backend to Render Free:
+  `https://subsmarket-api.onrender.com`.
+- Connected Render to Supabase through the IPv4 Session pooler.
+- Production health, readiness, database connectivity, OpenAPI routes, and
+  absence of development endpoints passed the production smoke check.
+- Activated the production catalog and verified 31 visible services:
+  26 subscriptions and 5 family tariffs.
+- Set Vercel `VITE_API_BASE_URL` to the Render backend and redeployed
+  `https://subsmarket-3.vercel.app`.
+- Set the Telegram webhook to the Render endpoint with zero pending updates
+  and no delivery error.
+- Added `SUBSMARKET_API_BASE_URL` to GitHub Actions and verified the protected
+  scheduled-jobs workflow completes successfully.
+- Pinned Render to Python 3.12 through `backend/.python-version`.
+- Remaining external check: update the bot Main Mini App URL in BotFather from
+  the old development domain to `https://subsmarket-3.vercel.app`, then test on
+  real Telegram iOS, Android, or Desktop.

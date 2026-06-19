@@ -14,6 +14,19 @@ Telegram Mini App
 Render is the default production backend target. Supabase is the production
 PostgreSQL provider for the current setup, but only through `DATABASE_URL`.
 
+Current production endpoints:
+
+```text
+Mini App: https://subsmarket-3.vercel.app
+Backend: https://subsmarket-api.onrender.com
+Health: https://subsmarket-api.onrender.com/health
+Readiness: https://subsmarket-api.onrender.com/ready
+```
+
+The current Render instance uses the Free plan. It can sleep after inactivity,
+so the first request may be delayed. Upgrade to an always-on plan before a
+traffic-sensitive public launch.
+
 ## What Vercel is used for
 
 Vercel hosts only the Mini App frontend:
@@ -71,6 +84,16 @@ cd backend
 python -m subsmarket.bot.set_webhook
 ```
 
+The production webhook currently points to:
+
+```text
+https://subsmarket-api.onrender.com/api/telegram/webhook
+```
+
+The bot's Main Mini App URL in BotFather must also point to
+`https://subsmarket-3.vercel.app`. This setting is separate from the webhook
+and may override the default chat menu button configured through Bot API.
+
 Current bot behavior is intentionally thin:
 
 - `/start` in a private chat sends a short SubsMarket intro;
@@ -101,9 +124,11 @@ cd backend
 python -m subsmarket.ops.check_deploy_config
 ```
 
-The Render web service runs this in `preDeployCommand` before migrations and
-catalog seed. It fails fast when critical production values are missing, still
-using development defaults, or using non-HTTPS Telegram URLs.
+The Render blueprint uses `preDeployCommand` on plans that support it. The
+current Free service runs the config check, Alembic migrations, and catalog
+seed at the end of its build command because Pre-Deploy Command is unavailable
+on Free. It fails fast when critical production values are missing, still using
+development defaults, or using non-HTTPS Telegram URLs.
 
 ## Due jobs and notifications
 
@@ -263,7 +288,7 @@ NOTIFICATION_MAX_ATTEMPTS=5
 NOTIFICATION_RETRY_BASE_SECONDS=60
 NOTIFICATION_RETRY_MAX_SECONDS=3600
 ACCESS_REMINDER_COOLDOWN_SECONDS=600
-DEMO_ACTIVATE_CATALOG=false
+DEMO_ACTIVATE_CATALOG=true
 ```
 
 Do not use Supabase anon or service-role keys in the Mini App. They are not
@@ -285,7 +310,7 @@ The backend accepts both `postgresql://...` and `postgresql+psycopg://...`.
 Frontend:
 
 ```text
-VITE_API_BASE_URL=https://<backend-domain>
+VITE_API_BASE_URL=https://subsmarket-api.onrender.com
 ```
 
 ## Scaling path
