@@ -37,6 +37,13 @@ DEFAULT_RATE_LIMIT_RULES = (
         60,
     ),
     RateLimitRule(
+        "family_create",
+        "POST",
+        re.compile(r"/api/families"),
+        10,
+        600,
+    ),
+    RateLimitRule(
         "join_request",
         "POST",
         re.compile(r"/api/families/[0-9a-fA-F-]{36}/requests"),

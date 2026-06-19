@@ -97,3 +97,37 @@ def test_invite_lookup_rate_limit_covers_invalid_code_shapes() -> None:
     assert blocked.status_code == 429
     assert blocked.json() == {"detail": "RATE_LIMIT_EXCEEDED"}
     assert other_client.status_code == 200
+
+
+def test_family_create_rate_limit_blocks_burst_by_client() -> None:
+    now = [1000.0]
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(clock=lambda: now[0])
+    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+
+    @app.post("/api/families")
+    def create_family() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    for _ in range(10):
+        response = client.post(
+            "/api/families",
+            headers={"x-forwarded-for": "9.9.9.9"},
+        )
+        assert response.status_code == 200
+
+    blocked = client.post(
+        "/api/families",
+        headers={"x-forwarded-for": "9.9.9.9"},
+    )
+    other_client = client.post(
+        "/api/families",
+        headers={"x-forwarded-for": "9.9.9.10"},
+    )
+
+    assert blocked.status_code == 429
+    assert blocked.json() == {"detail": "RATE_LIMIT_EXCEEDED"}
+    assert blocked.headers["Retry-After"] == "600"
+    assert other_client.status_code == 200

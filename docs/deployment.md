@@ -68,9 +68,9 @@ SubsMarket rejects webhook requests with a missing or wrong secret in
 production.
 
 The backend also applies an in-process rate limit to the Telegram webhook,
-identity refresh, join request, and internal job endpoints. This is a baseline
-abuse guard for the MVP deployment. For higher traffic, keep it and add an edge
-layer such as Cloudflare/WAF in front of Render.
+identity refresh, family creation, join request, invite lookup, and internal job
+endpoints. This is a baseline abuse guard for the MVP deployment. For higher
+traffic, keep it and add an edge layer such as Cloudflare/WAF in front of Render.
 
 Configure webhook env values on the backend service:
 
