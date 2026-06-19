@@ -175,11 +175,11 @@ It reads pending `notification_jobs`, calls Telegram Bot API through
 If `TELEGRAM_MINI_APP_URL` is configured, outgoing Telegram notifications include
 an inline button that opens the Mini App.
 
-Every dispatchable notification must contain a non-empty human-facing
-`payload.message`. The dispatcher does not fall back to raw event names because
-those names are internal implementation details. If a row is missing a message,
-the dispatcher marks it as a permanent failure with
-`NOTIFICATION_MESSAGE_MISSING`.
+Every notification job must contain a non-empty human-facing `payload.message`.
+The application normalizes that text when a job is created. The dispatcher does
+not fall back to raw event names because those names are internal implementation
+details. If an old or manually inserted row is missing a message, the dispatcher
+marks it as a permanent failure with `NOTIFICATION_MESSAGE_MISSING`.
 
 Notification retry rules:
 

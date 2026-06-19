@@ -11,6 +11,7 @@ from subsmarket.core.config import settings
 from subsmarket.core.database import utcnow
 from subsmarket.notifications.models import NotificationJob
 from subsmarket.notifications.schemas import DispatchNotificationsResult
+from subsmarket.notifications.service import notification_payload_message
 
 
 class NotificationSender(Protocol):
@@ -71,13 +72,13 @@ class TelegramBotSender:
 
 
 def notification_message(job: NotificationJob) -> str:
-    message = job.payload.get("message")
-    if not isinstance(message, str) or not message.strip():
+    try:
+        return notification_payload_message(job.payload)
+    except ValueError as exc:
         raise NotificationSendError(
-            "NOTIFICATION_MESSAGE_MISSING",
+            str(exc),
             permanent=True,
-        )
-    return message.strip()
+        ) from exc
 
 
 def build_send_message_payload(

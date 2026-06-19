@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from subsmarket.core.config import settings
-from subsmarket.core.database import Base
+from subsmarket.core.database import Base, utcnow
 from subsmarket.identity.models import User
 from subsmarket.models import import_models
 from subsmarket.notifications.dispatcher import (
@@ -103,12 +103,36 @@ def test_dispatch_trims_notification_message(db: Session) -> None:
     db.refresh(job)
     assert result.sent == 1
     assert job.status == "sent"
+    assert job.payload["message"] == "New request"
     assert sender.messages == [(user.telegram_user_id, "New request")]
 
 
-def test_dispatch_fails_notification_without_user_message(db: Session) -> None:
+def test_enqueue_notification_rejects_missing_user_message(db: Session) -> None:
     user = make_user(db)
-    job = make_notification(db, user, payload={"message": "   "})
+
+    with pytest.raises(ValueError, match="NOTIFICATION_MESSAGE_MISSING"):
+        enqueue_notification(
+            db,
+            recipient_user_id=user.id,
+            event_type="family_request_created_owner",
+            payload={"message": "   "},
+        )
+
+
+def test_dispatch_fails_existing_notification_without_user_message(
+    db: Session,
+) -> None:
+    user = make_user(db)
+    job = NotificationJob(
+        recipient_user_id=user.id,
+        event_type="family_request_created_owner",
+        payload={"message": "   "},
+        available_at=utcnow(),
+        status="pending",
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
     sender = FakeSender()
 
     result = dispatch_pending_notifications(db, sender=sender)
