@@ -609,3 +609,19 @@ Last checkpoint:
   - PostgreSQL concurrency tests;
   - production backend smoke;
   - Vercel production deployment for the frontend change.
+
+2026-06-20 distributed rate-limit readiness:
+
+- Added optional Redis-backed atomic rate limiting for multi-instance Render
+  deployments through `RATE_LIMIT_REDIS_URL`.
+- Kept an automatic process-local fallback so a Redis outage does not take the
+  API offline.
+- Hashed client identities before using them in Redis keys.
+- Verified two independent limiter instances against a real temporary Redis 7
+  container: the shared sequence was `(allowed, allowed, blocked)`.
+- Ran a non-mutating production load smoke on the current test deployment:
+  - 120 requests at concurrency 12;
+  - 0 errors;
+  - about 16.9 requests/second;
+  - overall p95 about 1.45 seconds.
+- Treat this as a Free-plan baseline, not a Pro launch-capacity guarantee.
