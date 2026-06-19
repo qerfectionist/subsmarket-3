@@ -64,6 +64,10 @@ class Settings(BaseSettings):
         alias="PAYMENT_REQUISITE_SECRET",
     )
     internal_job_token: str | None = Field(default=None, alias="INTERNAL_JOB_TOKEN")
+    rate_limit_redis_url: str | None = Field(
+        default=None,
+        alias="RATE_LIMIT_REDIS_URL",
+    )
     cors_allowed_origins: str = Field(default="*", alias="CORS_ALLOWED_ORIGINS")
     notification_max_attempts: int = Field(default=5, alias="NOTIFICATION_MAX_ATTEMPTS")
     notification_retry_base_seconds: int = Field(

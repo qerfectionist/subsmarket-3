@@ -75,6 +75,18 @@ Authenticated identity, family creation, and join-request limits use the
 Telegram user ID from `initData` so unrelated users behind one mobile carrier IP
 do not consume the same bucket. Public endpoints fall back to the client IP.
 
+For one backend instance, the limiter works in process memory. Before scaling
+Render to two or more instances, provision a Redis-compatible service and set:
+
+```text
+RATE_LIMIT_REDIS_URL=rediss://<user>:<password>@<host>:<port>
+```
+
+With this variable set, all backend instances use one atomic Redis counter.
+Redis keys contain a SHA-256 digest instead of a raw Telegram user ID or IP. If
+Redis is temporarily unavailable, the backend stays online and falls back to a
+per-process limiter until Redis recovers.
+
 Configure webhook env values on the backend service:
 
 ```text

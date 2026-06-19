@@ -49,6 +49,7 @@ def check_production_config() -> list[ConfigCheck]:
             DEFAULT_PAYMENT_SECRET,
         ),
         _present("INTERNAL_JOB_TOKEN", settings.internal_job_token),
+        _optional_redis_url(settings.rate_limit_redis_url),
         _production_origins(settings.cors_origins),
         _positive_int("NOTIFICATION_MAX_ATTEMPTS", settings.notification_max_attempts),
         _positive_int(
@@ -147,6 +148,18 @@ def _https_url(key: str, value: str | None) -> ConfigCheck:
     if not value.startswith("https://"):
         return ConfigCheck(key=key, ok=False, problem="must start with https://")
     return ConfigCheck(key=key, ok=True)
+
+
+def _optional_redis_url(value: str | None) -> ConfigCheck:
+    if not value:
+        return ConfigCheck(key="RATE_LIMIT_REDIS_URL", ok=True)
+    if not value.startswith(("redis://", "rediss://")):
+        return ConfigCheck(
+            key="RATE_LIMIT_REDIS_URL",
+            ok=False,
+            problem="must start with redis:// or rediss://",
+        )
+    return ConfigCheck(key="RATE_LIMIT_REDIS_URL", ok=True)
 
 
 def _production_origins(origins: list[str]) -> ConfigCheck:

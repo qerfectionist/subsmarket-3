@@ -1,15 +1,43 @@
 from __future__ import annotations
 
+import asyncio
 import re
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from redis.exceptions import RedisError
 
 from subsmarket.core.rate_limit import (
     InMemoryRateLimiter,
     RateLimitMiddleware,
     RateLimitRule,
+    RedisRateLimiter,
 )
+
+
+class FakeRedis:
+    def __init__(self) -> None:
+        self.counts: dict[str, int] = {}
+        self.keys: list[str] = []
+
+    async def eval(
+        self,
+        script: str,
+        number_of_keys: int,
+        key: str,
+        window_seconds: int,
+    ) -> int:
+        assert script
+        assert number_of_keys == 1
+        assert window_seconds > 0
+        self.keys.append(key)
+        self.counts[key] = self.counts.get(key, 0) + 1
+        return self.counts[key]
+
+
+class FailingRedis:
+    async def eval(self, *args: object) -> int:
+        raise RedisError("redis unavailable")
 
 
 def test_rate_limit_middleware_blocks_after_rule_limit() -> None:
@@ -230,3 +258,38 @@ def test_telegram_scoped_limit_reads_user_id_from_init_data() -> None:
 
     assert client.post("/limited", headers=headers).status_code == 200
     assert client.post("/limited", headers=headers).status_code == 429
+
+
+def test_redis_rate_limiter_shares_counts_between_instances() -> None:
+    rule = RateLimitRule("test", "POST", re.compile(r"/limited"), 2, 60)
+    redis = FakeRedis()
+    first = RedisRateLimiter("redis://unused", [rule], client=redis)
+    second = RedisRateLimiter("redis://unused", [rule], client=redis)
+
+    async def run() -> tuple[bool, bool, bool]:
+        return (
+            await first.allow(rule=rule, client_key="telegram:1001"),
+            await second.allow(rule=rule, client_key="telegram:1001"),
+            await first.allow(rule=rule, client_key="telegram:1001"),
+        )
+
+    assert asyncio.run(run()) == (True, True, False)
+    assert redis.keys
+    assert all("telegram:1001" not in key for key in redis.keys)
+
+
+def test_redis_rate_limiter_uses_local_fallback_on_connection_error() -> None:
+    rule = RateLimitRule("test", "POST", re.compile(r"/limited"), 1, 60)
+    limiter = RedisRateLimiter(
+        "redis://unused",
+        [rule],
+        client=FailingRedis(),
+    )
+
+    async def run() -> tuple[bool, bool]:
+        return (
+            await limiter.allow(rule=rule, client_key="telegram:1001"),
+            await limiter.allow(rule=rule, client_key="telegram:1001"),
+        )
+
+    assert asyncio.run(run()) == (True, False)

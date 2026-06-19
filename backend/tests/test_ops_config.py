@@ -142,3 +142,16 @@ def test_runtime_settings_reject_missing_webhook_secret_in_production(
 
     with pytest.raises(RuntimeError, match="TELEGRAM_WEBHOOK_SECRET"):
         create_app()
+
+
+def test_production_config_checker_rejects_invalid_optional_redis_url(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "rate_limit_redis_url", "https://not-redis")
+
+    checks = check_production_config()
+    failed = {check.key: check.problem for check in checks if not check.ok}
+
+    assert failed["RATE_LIMIT_REDIS_URL"] == (
+        "must start with redis:// or rediss://"
+    )

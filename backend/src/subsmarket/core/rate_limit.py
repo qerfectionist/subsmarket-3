@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import inspect
 import json
+import logging
 import re
 import time
 from collections import defaultdict, deque
@@ -9,10 +12,24 @@ from dataclasses import dataclass
 from re import Pattern
 from urllib.parse import parse_qs
 
+from redis.asyncio import Redis
+from redis.exceptions import RedisError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp
+
+from subsmarket.core.config import settings
+
+logger = logging.getLogger(__name__)
+
+REDIS_RATE_LIMIT_SCRIPT = """
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return count
+"""
 
 
 @dataclass(frozen=True)
@@ -135,15 +152,59 @@ class InMemoryRateLimiter:
         self._last_prune = now
 
 
+class RedisRateLimiter:
+    def __init__(
+        self,
+        redis_url: str,
+        rules: Iterable[RateLimitRule] = DEFAULT_RATE_LIMIT_RULES,
+        *,
+        client: Redis | None = None,
+        fallback: InMemoryRateLimiter | None = None,
+    ) -> None:
+        self.rules = tuple(rules)
+        self.client = client or Redis.from_url(redis_url, decode_responses=True)
+        self.fallback = fallback or InMemoryRateLimiter(self.rules)
+
+    def matching_rule(self, request: Request) -> RateLimitRule | None:
+        for rule in self.rules:
+            if rule.matches(request):
+                return rule
+        return None
+
+    async def allow(self, *, rule: RateLimitRule, client_key: str) -> bool:
+        digest = hashlib.sha256(client_key.encode("utf-8")).hexdigest()
+        redis_key = f"subsmarket:rate-limit:{rule.name}:{digest}"
+        try:
+            count = await self.client.eval(
+                REDIS_RATE_LIMIT_SCRIPT,
+                1,
+                redis_key,
+                rule.window_seconds,
+            )
+        except RedisError:
+            logger.warning(
+                "Redis rate limiter unavailable; using process-local fallback",
+                exc_info=True,
+            )
+            return self.fallback.allow(rule=rule, client_key=client_key)
+        return int(count) <= rule.max_requests
+
+
+def build_rate_limiter() -> InMemoryRateLimiter | RedisRateLimiter:
+    if settings.rate_limit_redis_url:
+        return RedisRateLimiter(settings.rate_limit_redis_url)
+    return InMemoryRateLimiter()
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
         *,
-        limiter: InMemoryRateLimiter | None = None,
+        limiter: InMemoryRateLimiter | RedisRateLimiter | None = None,
     ) -> None:
         super().__init__(app)
-        self.limiter = limiter or InMemoryRateLimiter()
+        self.limiter = limiter or build_rate_limiter()
 
     async def dispatch(
         self,
@@ -155,7 +216,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         client_key = _request_key(request, rule)
-        if not self.limiter.allow(rule=rule, client_key=client_key):
+        allow_result = self.limiter.allow(rule=rule, client_key=client_key)
+        allowed = (
+            await allow_result
+            if inspect.isawaitable(allow_result)
+            else allow_result
+        )
+        if not allowed:
             return JSONResponse(
                 {"detail": "RATE_LIMIT_EXCEEDED"},
                 status_code=429,
