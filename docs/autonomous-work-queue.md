@@ -592,3 +592,20 @@ Last checkpoint:
 - Added `FOR UPDATE SKIP LOCKED` to state-changing scheduled-job selections so
   overlapping cron runs do not process the same rows.
 - Verified backend tests and PostgreSQL-only concurrency test.
+
+2026-06-20 backend list and abuse hardening:
+
+- Added cursor-based `/page` endpoints for high-volume Family Engine lists:
+  family search, my families, requests, members, payments, and audit log.
+- Kept legacy offset endpoints for compatibility while moving the Mini App to
+  the new first-page API shape.
+- Replaced owner workspace per-member payment requests with one batched family
+  payments request.
+- Added a family creation rate limit to slow down burst spam from one client.
+- Added automatic pruning of expired in-memory rate-limit buckets so old client
+  keys do not grow unbounded.
+- Verified:
+  - `npm run check`;
+  - PostgreSQL concurrency tests;
+  - production backend smoke;
+  - Vercel production deployment for the frontend change.
