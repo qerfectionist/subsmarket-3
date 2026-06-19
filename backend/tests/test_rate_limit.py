@@ -7,11 +7,13 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from redis.exceptions import RedisError
 
+from subsmarket.core.config import settings
 from subsmarket.core.rate_limit import (
     InMemoryRateLimiter,
     RateLimitMiddleware,
     RateLimitRule,
     RedisRateLimiter,
+    rate_limit_backend_status,
 )
 
 
@@ -38,6 +40,20 @@ class FakeRedis:
 class FailingRedis:
     async def eval(self, *args: object) -> int:
         raise RedisError("redis unavailable")
+
+
+class ReadyPingRedis:
+    def __init__(self, *, fail: bool = False) -> None:
+        self.fail = fail
+        self.closed = False
+
+    async def ping(self) -> bool:
+        if self.fail:
+            raise RedisError("redis unavailable")
+        return True
+
+    async def aclose(self) -> None:
+        self.closed = True
 
 
 def test_rate_limit_middleware_blocks_after_rule_limit() -> None:
@@ -293,3 +309,26 @@ def test_redis_rate_limiter_uses_local_fallback_on_connection_error() -> None:
         )
 
     assert asyncio.run(run()) == (True, False)
+
+
+def test_rate_limit_backend_status_reports_redis_and_fallback(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "rate_limit_redis_url", "redis://example")
+    ready_client = ReadyPingRedis()
+    monkeypatch.setattr(
+        "subsmarket.core.rate_limit.Redis.from_url",
+        lambda *args, **kwargs: ready_client,
+    )
+
+    assert asyncio.run(rate_limit_backend_status()) == "redis"
+    assert ready_client.closed is True
+
+    failing_client = ReadyPingRedis(fail=True)
+    monkeypatch.setattr(
+        "subsmarket.core.rate_limit.Redis.from_url",
+        lambda *args, **kwargs: failing_client,
+    )
+
+    assert asyncio.run(rate_limit_backend_status()) == "fallback"
+    assert failing_client.closed is True

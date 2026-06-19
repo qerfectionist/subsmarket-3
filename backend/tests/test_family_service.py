@@ -48,6 +48,7 @@ from subsmarket.families.service import (
     list_owner_family_requests,
     list_searchable_families,
     mark_access_provided,
+    mark_payment_not_received,
     normalize_payment_phone,
     record_owner_prepaid_periods,
     reject_join_request,
@@ -624,6 +625,73 @@ def test_payment_requisite_is_hidden_before_access_confirmation(
     assert result.payment_requisite.phone == "+77001234567"
 
 
+def test_closing_family_blocks_new_access_and_first_payment(
+    db: Session,
+    subscription_service: FamilyService,
+) -> None:
+    owner = make_user(db, 170)
+    first_candidate = make_user(db, 171)
+    second_candidate = make_user(db, 172)
+    family = make_family(db, owner, subscription_service)
+    first_request = create_join_request(db, first_candidate, family.id)
+    second_request = create_join_request(db, second_candidate, family.id)
+    approve_join_request(db, owner, first_request.id)
+    approve_join_request(db, owner, second_request.id)
+    members = list(
+        db.scalars(
+            select(FamilyMember).where(
+                FamilyMember.family_id == family.id,
+                FamilyMember.role == "member",
+            )
+        ).all()
+    )
+    first_member = next(
+        member for member in members if member.user_id == first_candidate.id
+    )
+    second_member = next(
+        member for member in members if member.user_id == second_candidate.id
+    )
+    mark_access_provided(db, owner, first_member.id)
+    close_family(db, owner, family.id)
+
+    with pytest.raises(HTTPException) as provide_exc:
+        mark_access_provided(db, owner, second_member.id)
+    with pytest.raises(HTTPException) as confirm_exc:
+        confirm_access_received(db, first_candidate, first_member.id)
+    with pytest.raises(HTTPException) as remind_exc:
+        remind_access_confirmation(db, owner, first_member.id)
+
+    assert provide_exc.value.detail == "FAMILY_NOT_MUTABLE"
+    assert confirm_exc.value.detail == "FAMILY_NOT_MUTABLE"
+    assert remind_exc.value.detail == "FAMILY_NOT_MUTABLE"
+    assert (
+        db.scalar(
+            select(FamilyPayment).where(FamilyPayment.member_id == first_member.id)
+        )
+        is None
+    )
+
+
+def test_payment_not_received_preserves_overdue_status(
+    db: Session,
+    subscription_service: FamilyService,
+) -> None:
+    owner = make_user(db, 173)
+    candidate = make_user(db, 174)
+    family = make_family(db, owner, subscription_service)
+    member, payment = make_active_member(db, owner, candidate, family)
+    payment.status = "overdue"
+    payment.overdue_at = utcnow()
+    member.status = "payment_due"
+    db.commit()
+    report_payment_paid(db, candidate, payment.id)
+
+    updated = mark_payment_not_received(db, owner, payment.id)
+
+    assert updated.status == "overdue"
+    assert updated.reported_paid_at is None
+
+
 def test_owner_can_remind_member_to_confirm_access(
     db: Session, subscription_service: FamilyService
 ) -> None:
@@ -1008,6 +1076,51 @@ def test_family_closing_cancels_future_payments(
     db.refresh(scheduled_payment)
     assert scheduled_payment.status == "cancelled"
     assert scheduled_payment.cancel_reason == "family_closing"
+
+
+def test_family_closing_cancels_pending_requests_without_restriction(
+    db: Session,
+    subscription_service: FamilyService,
+) -> None:
+    owner = make_user(db, 192)
+    candidate = make_user(db, 193)
+    family = make_family(db, owner, subscription_service)
+    request = create_join_request(db, candidate, family.id)
+
+    close_family(db, owner, family.id)
+
+    db.refresh(request)
+    restriction = db.get(
+        FamilyRequestRestriction,
+        {"family_id": family.id, "user_id": candidate.id},
+    )
+    notification = db.scalar(
+        select(NotificationJob).where(
+            NotificationJob.recipient_user_id == candidate.id,
+            NotificationJob.event_type
+            == "family_request_cancelled_family_closing",
+        )
+    )
+    assert request.status == "cancelled"
+    assert request.cancel_reason == "family_closing"
+    assert restriction is None
+    assert notification is not None
+
+
+def test_family_closing_blocks_new_member_removal(
+    db: Session,
+    subscription_service: FamilyService,
+) -> None:
+    owner = make_user(db, 194)
+    candidate = make_user(db, 195)
+    family = make_family(db, owner, subscription_service)
+    member, _ = make_active_member(db, owner, candidate, family)
+    close_family(db, owner, family.id)
+
+    with pytest.raises(HTTPException) as exc:
+        schedule_member_removal(db, owner, member.id)
+
+    assert exc.value.detail == "FAMILY_NOT_MUTABLE"
 
 
 def test_member_removal_warning_lasts_twelve_hours(

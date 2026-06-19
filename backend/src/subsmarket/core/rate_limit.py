@@ -196,6 +196,24 @@ def build_rate_limiter() -> InMemoryRateLimiter | RedisRateLimiter:
     return InMemoryRateLimiter()
 
 
+async def rate_limit_backend_status() -> str:
+    if not settings.rate_limit_redis_url:
+        return "local"
+    client = Redis.from_url(
+        settings.rate_limit_redis_url,
+        decode_responses=True,
+        socket_connect_timeout=1,
+        socket_timeout=1,
+    )
+    try:
+        await client.ping()
+    except (RedisError, TimeoutError):
+        return "fallback"
+    finally:
+        await client.aclose()
+    return "redis"
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,

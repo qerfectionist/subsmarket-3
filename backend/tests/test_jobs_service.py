@@ -34,6 +34,7 @@ from subsmarket.jobs.service import (
     mark_overdue_first_payments,
     mark_overdue_regular_payments,
     run_due_jobs,
+    send_access_confirmation_reminders,
     send_closing_acknowledgement_reminders,
     send_regular_payment_reminders,
 )
@@ -197,6 +198,32 @@ def test_expired_requests_are_processed_oldest_first_in_bounded_batches(
     assert requests[2].status == "expired"
 
 
+def test_access_reminder_scan_covers_multiple_batches_without_duplicates(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 40)
+    family = make_family(db, owner, service)
+    for index in (41, 42, 43):
+        member = add_member(
+            db,
+            family,
+            make_user(db, index),
+            status="awaiting_confirmation",
+        )
+        member.access_provided_at = utcnow() - timedelta(hours=25)
+    db.commit()
+    monkeypatch.setattr(settings, "job_batch_size", 2)
+    monkeypatch.setattr(settings, "job_max_batches_per_step", 2)
+
+    first_count = send_access_confirmation_reminders(db)
+    second_count = send_access_confirmation_reminders(db)
+
+    assert first_count == 6
+    assert second_count == 0
+
+
 def test_run_due_jobs_commits_successful_steps_when_later_step_fails(
     db: Session, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
@@ -232,6 +259,37 @@ def test_run_due_jobs_commits_successful_steps_when_later_step_fails(
     assert "Due job run completed" in caplog.text
 
 
+def test_run_due_jobs_drains_state_changes_across_bounded_batches(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 210)
+    family = make_family(db, owner, service)
+    requests = [
+        create_join_request(db, make_user(db, user_id), family.id)
+        for user_id in range(211, 216)
+    ]
+    now = utcnow()
+    for request in requests:
+        request.expires_at = now - timedelta(minutes=1)
+    db.commit()
+    monkeypatch.setattr(settings, "job_batch_size", 2)
+    monkeypatch.setattr(settings, "job_max_batches_per_step", 2)
+
+    first = run_due_jobs(db)
+
+    assert first.expired_family_requests == 4
+    assert first.notification_jobs_created == 8
+    assert sum(request.status == "pending" for request in requests) == 1
+
+    second = run_due_jobs(db)
+
+    assert second.expired_family_requests == 1
+    assert second.notification_jobs_created == 2
+    assert all(request.status == "expired" for request in requests)
+
+
 def test_first_payment_overdue_does_not_remove_member(db: Session) -> None:
     service = make_service(db)
     owner = make_user(db, 3)
@@ -263,6 +321,65 @@ def test_first_payment_overdue_does_not_remove_member(db: Session) -> None:
     assert family.active_members_count == 2
 
 
+def test_regular_payment_batch_selects_only_actionable_family_periods(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = make_service(db)
+    monthly_owner = make_user(db, 50)
+    monthly_member_user = make_user(db, 51)
+    yearly_owner = make_user(db, 52)
+    yearly_member_user = make_user(db, 53)
+    monthly_family = make_family(
+        db,
+        monthly_owner,
+        service,
+        period="monthly",
+        next_payment_date=date.today() + timedelta(days=20),
+    )
+    yearly_family = make_family(
+        db,
+        yearly_owner,
+        service,
+        period="yearly",
+        next_payment_date=date.today() + timedelta(days=25),
+    )
+    monthly_member = add_member(
+        db,
+        monthly_family,
+        monthly_member_user,
+        status="active",
+    )
+    yearly_member = add_member(
+        db,
+        yearly_family,
+        yearly_member_user,
+        status="active",
+    )
+    monkeypatch.setattr(settings, "job_batch_size", 1)
+
+    created = create_regular_payments(db)
+    db.flush()
+
+    assert created == 1
+    assert (
+        db.scalar(
+            select(FamilyPayment).where(
+                FamilyPayment.member_id == monthly_member.id,
+                FamilyPayment.kind == "regular",
+            )
+        )
+        is None
+    )
+    assert (
+        db.scalar(
+            select(FamilyPayment).where(
+                FamilyPayment.member_id == yearly_member.id,
+                FamilyPayment.kind == "regular",
+            )
+        )
+        is not None
+    )
 def test_regular_payment_moves_through_schedule_due_and_overdue(db: Session) -> None:
     service = make_service(db)
     owner = make_user(db, 5)

@@ -46,9 +46,15 @@ services:
         value: 60
       - key: NOTIFICATION_RETRY_MAX_SECONDS
         value: 3600
+      - key: NOTIFICATION_DISPATCH_BATCH_SIZE
+        value: 100
+      - key: NOTIFICATION_DISPATCH_MAX_BATCHES
+        value: 5
       - key: ACCESS_REMINDER_COOLDOWN_SECONDS
         value: 600
       - key: JOB_BATCH_SIZE
         value: 200
+      - key: JOB_MAX_BATCHES_PER_STEP
+        value: 5
       - key: DEMO_ACTIVATE_CATALOG
         value: true

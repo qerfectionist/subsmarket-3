@@ -60,6 +60,18 @@ def check_production_config() -> list[ConfigCheck]:
             "NOTIFICATION_RETRY_MAX_SECONDS",
             settings.notification_retry_max_seconds,
         ),
+        _bounded_int(
+            "NOTIFICATION_DISPATCH_BATCH_SIZE",
+            settings.notification_dispatch_batch_size,
+            minimum=1,
+            maximum=500,
+        ),
+        _bounded_int(
+            "NOTIFICATION_DISPATCH_MAX_BATCHES",
+            settings.notification_dispatch_max_batches,
+            minimum=1,
+            maximum=20,
+        ),
         _positive_int(
             "ACCESS_REMINDER_COOLDOWN_SECONDS",
             settings.access_reminder_cooldown_seconds,
@@ -69,6 +81,12 @@ def check_production_config() -> list[ConfigCheck]:
             settings.job_batch_size,
             minimum=1,
             maximum=1000,
+        ),
+        _bounded_int(
+            "JOB_MAX_BATCHES_PER_STEP",
+            settings.job_max_batches_per_step,
+            minimum=1,
+            maximum=20,
         ),
     ]
     if (

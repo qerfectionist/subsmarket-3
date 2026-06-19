@@ -1639,6 +1639,47 @@ def _cancel_pending_requests_for_full_family(
         )
 
 
+def _cancel_pending_requests_for_closing_family(
+    db: Session,
+    family_id: UUID,
+) -> None:
+    pending_requests = db.scalars(
+        select(FamilyRequest)
+        .where(FamilyRequest.family_id == family_id)
+        .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
+        .with_for_update()
+    ).all()
+    now = utcnow()
+    for request in pending_requests:
+        old_status = request.status
+        request.status = "cancelled"
+        request.cancel_reason = "family_closing"
+        request.cancelled_at = now
+        record_family_audit_event(
+            db,
+            family_id=family_id,
+            action="family_request_cancelled_family_closing",
+            target_user_id=request.user_id,
+            target_request_id=request.id,
+            old_status=old_status,
+            new_status=request.status,
+            details={"reason": "family_closing"},
+        )
+        enqueue_notification(
+            db,
+            recipient_user_id=request.user_id,
+            event_type="family_request_cancelled_family_closing",
+            payload={
+                "family_id": str(family_id),
+                "request_id": str(request.id),
+                "message": (
+                    "Семья закрывается, поэтому заявка отменена. "
+                    "Вы можете выбрать другую семью."
+                ),
+            },
+        )
+
+
 def list_family_members(
     db: Session,
     user: User,
@@ -1828,6 +1869,8 @@ def schedule_member_removal(db: Session, user: User, member_id: UUID) -> FamilyM
         raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_REMOVE_MEMBER")
     if member.role == "owner":
         raise HTTPException(status_code=400, detail="OWNER_CANNOT_REMOVE_SELF")
+    if family.status not in {"active", "full"}:
+        raise HTTPException(status_code=409, detail="FAMILY_NOT_MUTABLE")
     if member.status not in {"payment_due", "active", "awaiting_confirmation"}:
         raise HTTPException(status_code=409, detail="MEMBER_NOT_REMOVABLE")
 
@@ -2033,6 +2076,7 @@ def close_family(db: Session, user: User, family_id: UUID) -> Family:
             reason="family_closing",
             actor_user_id=user.id,
         )
+        _cancel_pending_requests_for_closing_family(db, family.id)
         record_family_audit_event(
             db,
             family_id=family.id,
@@ -2100,13 +2144,17 @@ def mark_access_provided(db: Session, user: User, member_id: UUID) -> FamilyMemb
     )
     if member is None:
         raise HTTPException(status_code=404, detail="FAMILY_MEMBER_NOT_FOUND")
-    family = db.get(Family, member.family_id)
+    family = db.scalar(
+        select(Family).where(Family.id == member.family_id).with_for_update()
+    )
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     if family.owner_user_id != user.id:
         raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_PROVIDE_ACCESS")
     if member.role == "owner":
         raise HTTPException(status_code=400, detail="OWNER_ACCESS_ALREADY_ACTIVE")
+    if family.status not in {"active", "full"}:
+        raise HTTPException(status_code=409, detail="FAMILY_NOT_MUTABLE")
     if member.status != "awaiting_access":
         raise HTTPException(status_code=409, detail="MEMBER_NOT_AWAITING_ACCESS")
 
@@ -2151,7 +2199,9 @@ def remind_access_confirmation(
     )
     if member is None:
         raise HTTPException(status_code=404, detail="FAMILY_MEMBER_NOT_FOUND")
-    family = db.get(Family, member.family_id)
+    family = db.scalar(
+        select(Family).where(Family.id == member.family_id).with_for_update()
+    )
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     if family.owner_user_id != user.id:
@@ -2159,6 +2209,8 @@ def remind_access_confirmation(
             status_code=403,
             detail="ONLY_OWNER_CAN_REMIND_ACCESS_CONFIRMATION",
         )
+    if family.status not in {"active", "full"}:
+        raise HTTPException(status_code=409, detail="FAMILY_NOT_MUTABLE")
     if member.role == "owner" or member.status != "awaiting_confirmation":
         raise HTTPException(
             status_code=409,
@@ -2228,6 +2280,8 @@ def confirm_access_received(
     )
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if family.status not in {"active", "full"}:
+        raise HTTPException(status_code=409, detail="FAMILY_NOT_MUTABLE")
     requisite = db.scalar(
         select(FamilyPaymentRequisite).where(
             FamilyPaymentRequisite.family_id == family.id
@@ -2786,7 +2840,7 @@ def mark_payment_not_received(
 
     old_status = payment.status
     cancel_pending_payment_notifications(db, payment)
-    payment.status = "due"
+    payment.status = "overdue" if payment.overdue_at is not None else "due"
     payment.reported_paid_at = None
     record_family_audit_event(
         db,

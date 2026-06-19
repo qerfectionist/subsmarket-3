@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, timedelta
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from subsmarket.core.config import settings
@@ -41,6 +41,7 @@ class DueJobStep:
     name: str
     run: Callable[[Session], int | tuple[int, int]]
     apply: Callable[[RunDueJobsResult, int | tuple[int, int]], None]
+    drain_batches: bool = False
 
 
 def run_due_jobs(db: Session) -> RunDueJobsResult:
@@ -79,25 +80,45 @@ def _run_due_job_step(
     result: RunDueJobsResult,
     step: DueJobStep,
 ) -> None:
-    try:
-        step_result = step.run(db)
-        db.commit()
-    except Exception as exc:
-        db.rollback()
-        logger.exception("Due job step failed", extra={"job_step": step.name})
-        result.job_errors.append(
-            RunDueJobError(
-                step=step.name,
-                error_type=type(exc).__name__,
-                message=str(exc),
+    max_batches = settings.job_max_batches_per_step if step.drain_batches else 1
+    for batch_number in range(1, max_batches + 1):
+        try:
+            step_result = step.run(db)
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            logger.exception(
+                "Due job step failed",
+                extra={"job_step": step.name, "job_batch": batch_number},
             )
+            result.job_errors.append(
+                RunDueJobError(
+                    step=step.name,
+                    error_type=type(exc).__name__,
+                    message=str(exc),
+                )
+            )
+            return
+        step.apply(result, step_result)
+        processed_count = _step_processed_count(step_result)
+        logger.info(
+            "Due job step batch completed",
+            extra={
+                "job_step": step.name,
+                "job_batch": batch_number,
+                "job_step_result": str(step_result),
+            },
         )
-        return
-    step.apply(result, step_result)
-    logger.info(
-        "Due job step completed",
-        extra={"job_step": step.name, "job_step_result": str(step_result)},
-    )
+        if not step.drain_batches or processed_count < settings.job_batch_size:
+            break
+
+
+def _step_processed_count(step_result: int | tuple[int, int]) -> int:
+    return step_result if isinstance(step_result, int) else step_result[0]
+
+
+def _job_scan_limit() -> int:
+    return settings.job_batch_size * settings.job_max_batches_per_step
 
 
 def _due_job_steps() -> tuple[DueJobStep, ...]:
@@ -110,6 +131,7 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 step_result,
                 count_field="expired_family_requests",
             ),
+            drain_batches=True,
         ),
         DueJobStep(
             name="send_access_confirmation_reminders",
@@ -128,6 +150,7 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 step_result,
                 count_field="overdue_first_payments",
             ),
+            drain_batches=True,
         ),
         DueJobStep(
             name="create_regular_payments",
@@ -146,6 +169,7 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 step_result,
                 count_field="activated_regular_payments",
             ),
+            drain_batches=True,
         ),
         DueJobStep(
             name="mark_overdue_regular_payments",
@@ -155,6 +179,7 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 step_result,
                 count_field="overdue_regular_payments",
             ),
+            drain_batches=True,
         ),
         DueJobStep(
             name="send_regular_payment_reminders",
@@ -191,6 +216,7 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 step_result,
                 count_field="executed_member_removals",
             ),
+            drain_batches=True,
         ),
         DueJobStep(
             name="close_due_families",
@@ -200,6 +226,7 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 step_result,
                 count_field="closed_families",
             ),
+            drain_batches=True,
         ),
     )
 
@@ -212,7 +239,7 @@ def _apply_count(
 ) -> None:
     if not isinstance(step_result, int):
         raise TypeError(f"{count_field} expected integer result")
-    setattr(result, count_field, step_result)
+    setattr(result, count_field, getattr(result, count_field) + step_result)
 
 
 def _apply_notification_count(
@@ -223,7 +250,7 @@ def _apply_notification_count(
 ) -> None:
     if not isinstance(step_result, int):
         raise TypeError(f"{count_field} expected integer result")
-    setattr(result, count_field, step_result)
+    setattr(result, count_field, getattr(result, count_field) + step_result)
     result.notification_jobs_created += step_result
 
 
@@ -236,7 +263,7 @@ def _apply_count_and_notifications(
     if not isinstance(step_result, tuple):
         raise TypeError(f"{count_field} expected count and notifications")
     count, notifications = step_result
-    setattr(result, count_field, count)
+    setattr(result, count_field, getattr(result, count_field) + count)
     result.notification_jobs_created += notifications
 
 
@@ -305,7 +332,7 @@ def send_access_confirmation_reminders(db: Session) -> int:
             .where(FamilyMember.status == "awaiting_confirmation")
             .where(FamilyMember.access_provided_at <= now - timedelta(hours=24))
             .order_by(FamilyMember.access_provided_at.asc())
-            .limit(settings.job_batch_size)
+            .limit(_job_scan_limit())
             .with_for_update(skip_locked=True)
         ).all()
     )
@@ -426,7 +453,18 @@ def create_regular_payments(db: Session) -> int:
         db.scalars(
             select(Family)
             .where(Family.status.in_({"active", "full"}))
-            .where(Family.next_payment_date <= today + timedelta(days=30))
+            .where(
+                or_(
+                    and_(
+                        Family.period == "monthly",
+                        Family.next_payment_date <= today + timedelta(days=3),
+                    ),
+                    and_(
+                        Family.period == "yearly",
+                        Family.next_payment_date <= today + timedelta(days=30),
+                    ),
+                )
+            )
             .order_by(Family.next_payment_date.asc())
             .limit(settings.job_batch_size)
             .with_for_update(skip_locked=True)
@@ -435,10 +473,6 @@ def create_regular_payments(db: Session) -> int:
 
     created_count = 0
     for family in families:
-        lead_days = _regular_payment_lead_days(family.period)
-        if family.next_payment_date > today + timedelta(days=lead_days):
-            continue
-
         period_start = family.next_payment_date
         period_end = add_payment_period(period_start, family.period)
 
@@ -652,7 +686,7 @@ def send_regular_payment_reminders(db: Session) -> int:
             .where(Family.status.in_({"active", "full"}))
             .where(FamilyMember.status.in_(REGULAR_PAYMENT_MEMBER_STATUSES))
             .order_by(FamilyPayment.due_at.asc())
-            .limit(settings.job_batch_size)
+            .limit(_job_scan_limit())
             .with_for_update(skip_locked=True)
         ).all()
     )
@@ -701,7 +735,7 @@ def send_regular_payment_reminders(db: Session) -> int:
                 )
             )
             .order_by(FamilyPayment.due_at.asc())
-            .limit(settings.job_batch_size)
+            .limit(_job_scan_limit())
             .with_for_update(skip_locked=True)
         ).all()
     )
@@ -730,7 +764,7 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
             .where(FamilyPayment.status == "payment_reported")
             .where(FamilyPayment.reported_paid_at.is_not(None))
             .order_by(FamilyPayment.reported_paid_at.asc())
-            .limit(settings.job_batch_size)
+            .limit(_job_scan_limit())
             .with_for_update(skip_locked=True)
         ).all()
     )
@@ -794,7 +828,7 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
             .where(FamilyMember.status.in_(CLOSING_ACK_MEMBER_STATUSES))
             .where(FamilyMember.closing_acknowledged_at.is_(None))
             .order_by(Family.closes_at.asc(), FamilyMember.created_at.asc())
-            .limit(settings.job_batch_size)
+            .limit(_job_scan_limit())
             .with_for_update(skip_locked=True)
         ).all()
     )
@@ -836,12 +870,6 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
     if notification_count:
         db.flush()
     return notification_count
-
-
-def _regular_payment_lead_days(period: str) -> int:
-    if period == "yearly":
-        return 30
-    return 3
 
 
 def _regular_payment_exists(

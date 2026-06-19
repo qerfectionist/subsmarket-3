@@ -132,7 +132,21 @@ GET /ready
 ```
 
 `/health` is a lightweight process check. `/ready` also verifies database
-connectivity with a simple query and is used as the Render health check.
+connectivity and reports the active rate-limit backend without exposing its
+URL: `local`, `redis`, or `fallback`. Render uses `/ready` as its health check;
+Redis fallback does not restart an otherwise working API, but production smoke
+reports it as a deployment problem.
+
+Due jobs process state-changing records in bounded batches. The defaults allow
+up to five batches of 200 records per step. Notification dispatch sends up to
+five batches of 100 jobs per cron call. These values can be tuned with:
+
+```text
+JOB_BATCH_SIZE=200
+JOB_MAX_BATCHES_PER_STEP=5
+NOTIFICATION_DISPATCH_BATCH_SIZE=100
+NOTIFICATION_DISPATCH_MAX_BATCHES=5
+```
 
 ## Production config check
 

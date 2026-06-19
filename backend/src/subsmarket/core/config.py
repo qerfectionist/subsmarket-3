@@ -76,11 +76,29 @@ class Settings(BaseSettings):
     notification_retry_max_seconds: int = Field(
         default=3600, alias="NOTIFICATION_RETRY_MAX_SECONDS"
     )
+    notification_dispatch_batch_size: int = Field(
+        default=100,
+        ge=1,
+        le=500,
+        alias="NOTIFICATION_DISPATCH_BATCH_SIZE",
+    )
+    notification_dispatch_max_batches: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        alias="NOTIFICATION_DISPATCH_MAX_BATCHES",
+    )
     access_reminder_cooldown_seconds: int = Field(
         default=600,
         alias="ACCESS_REMINDER_COOLDOWN_SECONDS",
     )
     job_batch_size: int = Field(default=200, ge=1, le=1000, alias="JOB_BATCH_SIZE")
+    job_max_batches_per_step: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        alias="JOB_MAX_BATCHES_PER_STEP",
+    )
 
     demo_telegram_user_id: int = Field(default=100001, alias="DEMO_TELEGRAM_USER_ID")
     demo_telegram_username: str = Field(

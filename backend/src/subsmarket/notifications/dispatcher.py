@@ -139,20 +139,28 @@ def _telegram_error(
 def dispatch_pending_notifications(
     db: Session,
     *,
-    limit: int = 50,
-    max_batches: int = 5,
+    limit: int | None = None,
+    max_batches: int | None = None,
     sender: NotificationSender | None = None,
 ) -> DispatchNotificationsResult:
+    active_limit = (
+        settings.notification_dispatch_batch_size if limit is None else limit
+    )
+    active_max_batches = (
+        settings.notification_dispatch_max_batches
+        if max_batches is None
+        else max_batches
+    )
     active_sender = sender or TelegramBotSender()
     total_selected = 0
     total_sent = 0
     total_retried = 0
     total_failed = 0
 
-    for batch_number in range(1, max_batches + 1):
+    for batch_number in range(1, active_max_batches + 1):
         result = _dispatch_notification_batch(
             db,
-            limit=limit,
+            limit=active_limit,
             batch_number=batch_number,
             sender=active_sender,
         )
@@ -160,7 +168,7 @@ def dispatch_pending_notifications(
         total_sent += result.sent
         total_retried += result.retried
         total_failed += result.failed
-        if result.selected < limit:
+        if result.selected < active_limit:
             break
 
     return DispatchNotificationsResult(

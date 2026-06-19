@@ -36,6 +36,20 @@ def validate_openapi_paths(paths: set[str]) -> list[str]:
     return problems
 
 
+def validate_readiness(
+    health: dict[str, Any],
+    ready: dict[str, Any],
+) -> list[str]:
+    problems: list[str] = []
+    if health.get("status") != "ok":
+        problems.append("health status is not ok")
+    if ready.get("database") != "ok":
+        problems.append("database readiness is not ok")
+    if ready.get("rate_limit") == "fallback":
+        problems.append("Redis rate limiter is using local fallback")
+    return problems
+
+
 def main() -> None:
     base_url = os.getenv("PRODUCTION_API_URL", "").rstrip("/")
     allow_http = os.getenv("PRODUCTION_SMOKE_ALLOW_HTTP") == "true"
@@ -48,10 +62,7 @@ def main() -> None:
     ready = fetch_json(base_url, "/ready")
     openapi = fetch_json(base_url, "/openapi.json")
     problems = validate_openapi_paths(set(openapi.get("paths", {})))
-    if health.get("status") != "ok":
-        problems.append("health status is not ok")
-    if ready.get("database") != "ok":
-        problems.append("database readiness is not ok")
+    problems.extend(validate_readiness(health, ready))
 
     payload = {
         "ok": not problems,

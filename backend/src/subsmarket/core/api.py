@@ -6,6 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import get_db
+from subsmarket.core.rate_limit import rate_limit_backend_status
 
 router = APIRouter(tags=["system"])
 
@@ -16,9 +17,13 @@ def health() -> dict[str, str]:
 
 
 @router.get("/ready")
-def ready(db: Session = Depends(get_db)) -> dict[str, str]:
+async def ready(db: Session = Depends(get_db)) -> dict[str, str]:
     try:
         db.execute(text("select 1"))
     except SQLAlchemyError as exc:
         raise HTTPException(status_code=503, detail="DATABASE_NOT_READY") from exc
-    return {"status": "ok", "database": "ok"}
+    return {
+        "status": "ok",
+        "database": "ok",
+        "rate_limit": await rate_limit_backend_status(),
+    }

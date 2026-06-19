@@ -138,6 +138,25 @@ def test_dispatch_processes_multiple_batches(db: Session) -> None:
     assert len(sender.messages) == 3
 
 
+def test_dispatch_uses_configured_batch_capacity(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = make_user(db)
+    jobs = [make_notification(db, user) for _ in range(3)]
+    sender = FakeSender()
+    monkeypatch.setattr(settings, "notification_dispatch_batch_size", 1)
+    monkeypatch.setattr(settings, "notification_dispatch_max_batches", 2)
+
+    result = dispatch_pending_notifications(db, sender=sender)
+
+    for job in jobs:
+        db.refresh(job)
+    assert result.selected == 2
+    assert result.sent == 2
+    assert [job.status for job in jobs].count("pending") == 1
+
+
 def test_enqueue_notification_rejects_missing_user_message(db: Session) -> None:
     user = make_user(db)
 

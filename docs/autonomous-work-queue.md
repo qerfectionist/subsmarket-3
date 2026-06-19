@@ -625,3 +625,21 @@ Last checkpoint:
   - about 16.9 requests/second;
   - overall p95 about 1.45 seconds.
 - Treat this as a Free-plan baseline, not a Pro launch-capacity guarantee.
+
+2026-06-20 due jobs, readiness, and Family Engine audit:
+
+- Due state transitions now drain up to five committed batches per step instead
+  of processing only the first 200 records.
+- Reminder scans cover the same bounded multi-batch window, and notification
+  dispatch capacity is configurable with a 500-job default per cron call.
+- Regular-payment creation filters monthly and yearly lead windows directly in
+  SQL so non-actionable monthly families cannot occupy the batch.
+- `/ready` now reports `rate_limit` as `local`, `redis`, or `fallback` without
+  exposing connection details; production smoke flags Redis fallback.
+- Family Engine audit fixes:
+  - closing families cannot issue, remind, or confirm new access;
+  - closing immediately cancels pending join requests without restrictions;
+  - closing families cannot start a separate member-removal flow;
+  - `payment not received` preserves an existing overdue status.
+- Verified 118 backend tests, 3 Playwright tests, and 5 PostgreSQL concurrency
+  tests.
