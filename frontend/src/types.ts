@@ -162,6 +162,11 @@ export type FamilyPayment = {
   cancel_reason: string | null;
 };
 
+export type FamilyMemberPayments = {
+  member_id: string;
+  payments: FamilyPayment[];
+};
+
 export type PaymentRequisite = {
   bank: "kaspi" | "halyk" | "freedom" | "jusan";
   phone: string;

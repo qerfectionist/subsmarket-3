@@ -7,6 +7,7 @@ import type {
   FamilyCreateResult,
   FamilyInvite,
   FamilyMember,
+  FamilyMemberPayments,
   FamilyPayment,
   FamilyRequest,
   FamilyService,
@@ -302,6 +303,12 @@ export function getFamilyMembers(familyId: string): Promise<FamilyMember[]> {
   return request<CursorPage<FamilyMember>>(
     `/api/families/${familyId}/members/page`
   ).then((page) => page.items);
+}
+
+export function getFamilyMemberPayments(
+  familyId: string
+): Promise<FamilyMemberPayments[]> {
+  return request<FamilyMemberPayments[]>(`/api/families/${familyId}/payments`);
 }
 
 export function markAccessProvided(memberId: string): Promise<FamilyMember> {

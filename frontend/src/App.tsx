@@ -23,11 +23,11 @@ import {
   getFamilyByInviteCode,
   getFamilyInvite,
   getFamilyAuditLog,
+  getFamilyMemberPayments,
   getFamilyView,
   getFamilyMembers,
   getFamilyServices,
   getMe,
-  getMemberPayments,
   getMyFamilies,
   getMyFamilyRequests,
   getOwnerFamilyRequests,
@@ -193,19 +193,19 @@ export function App() {
 
   async function loadOwnerDetails(familyId: string) {
     await runAction("owner-details", async () => {
-      const [requests, members] = await Promise.all([
+      const [requests, members, memberPayments] = await Promise.all([
         getOwnerFamilyRequests(familyId),
-        getFamilyMembers(familyId)
+        getFamilyMembers(familyId),
+        getFamilyMemberPayments(familyId)
       ]);
-      const paymentPairs = await Promise.all(
-        members.map(async (member) => [member.id, await getMemberPayments(member.id)])
-      );
       setOwnerDetails((current) => ({
         ...current,
         [familyId]: {
           requests,
           members,
-          paymentsByMemberId: Object.fromEntries(paymentPairs)
+          paymentsByMemberId: Object.fromEntries(
+            memberPayments.map((item) => [item.member_id, item.payments])
+          )
         }
       }));
     });
