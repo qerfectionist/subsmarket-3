@@ -67,6 +67,11 @@ Telegram adds this header when `secret_token` is passed to `setWebhook`.
 SubsMarket rejects webhook requests with a missing or wrong secret in
 production.
 
+The backend also applies an in-process rate limit to the Telegram webhook,
+identity refresh, join request, and internal job endpoints. This is a baseline
+abuse guard for the MVP deployment. For higher traffic, keep it and add an edge
+layer such as Cloudflare/WAF in front of Render.
+
 Configure webhook env values on the backend service:
 
 ```text
@@ -129,6 +134,13 @@ current Free service runs the config check, Alembic migrations, and catalog
 seed at the end of its build command because Pre-Deploy Command is unavailable
 on Free. It fails fast when critical production values are missing, still using
 development defaults, or using non-HTTPS Telegram URLs.
+
+Runtime startup also fails outside development when `CORS_ALLOWED_ORIGINS`
+contains `*` or `TELEGRAM_WEBHOOK_SECRET` is missing.
+
+Payment phone requisites are encrypted before storage. New requisites use a
+versioned PBKDF2-derived Fernet key. Legacy SHA-256-derived Fernet tokens remain
+readable so existing data does not require a forced migration.
 
 ## Due jobs and notifications
 
