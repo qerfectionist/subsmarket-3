@@ -12,6 +12,16 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
+      - key: DB_POOL_SIZE
+        value: 5
+      - key: DB_MAX_OVERFLOW
+        value: 5
+      - key: DB_POOL_TIMEOUT_SECONDS
+        value: 30
+      - key: DB_POOL_RECYCLE_SECONDS
+        value: 1800
+      - key: DB_CONNECT_TIMEOUT_SECONDS
+        value: 10
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_MINI_APP_URL

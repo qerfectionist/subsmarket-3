@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,6 +28,23 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="postgresql+psycopg://subsmarket:subsmarket@localhost:5432/subsmarket",
         alias="DATABASE_URL",
+    )
+    db_pool_size: int = Field(default=5, ge=1, alias="DB_POOL_SIZE")
+    db_max_overflow: int = Field(default=5, ge=0, alias="DB_MAX_OVERFLOW")
+    db_pool_timeout_seconds: int = Field(
+        default=30,
+        ge=1,
+        alias="DB_POOL_TIMEOUT_SECONDS",
+    )
+    db_pool_recycle_seconds: int = Field(
+        default=1800,
+        ge=1,
+        alias="DB_POOL_RECYCLE_SECONDS",
+    )
+    db_connect_timeout_seconds: int = Field(
+        default=10,
+        ge=1,
+        alias="DB_CONNECT_TIMEOUT_SECONDS",
     )
     telegram_bot_token: str | None = Field(default=None, alias="TELEGRAM_BOT_TOKEN")
     telegram_mini_app_url: str | None = Field(
@@ -75,6 +93,27 @@ class Settings(BaseSettings):
     @property
     def sqlalchemy_database_url(self) -> str:
         return normalize_sqlalchemy_database_url(self.database_url)
+
+    @property
+    def sqlalchemy_engine_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {"pool_pre_ping": True}
+        if self.sqlalchemy_database_url.startswith("sqlite"):
+            return kwargs
+
+        kwargs.update(
+            {
+                "pool_size": self.db_pool_size,
+                "max_overflow": self.db_max_overflow,
+                "pool_timeout": self.db_pool_timeout_seconds,
+                "pool_recycle": self.db_pool_recycle_seconds,
+            }
+        )
+        if self.sqlalchemy_database_url.startswith("postgresql+psycopg://"):
+            kwargs["connect_args"] = {
+                "connect_timeout": self.db_connect_timeout_seconds,
+                "application_name": "subsmarket-api",
+            }
+        return kwargs
 
     @property
     def catalog_file(self) -> Path:

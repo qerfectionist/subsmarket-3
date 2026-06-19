@@ -281,6 +281,28 @@ IPv4 environment, and Supabase direct database endpoints are IPv6 unless the
 paid IPv4 add-on is enabled. The expected value is the SQLAlchemy/Postgres URL
 from Supabase Dashboard -> Connect -> Session pooler.
 
+The backend keeps its own SQLAlchemy pool small because every Render process can
+hold database connections. Default production values are:
+
+```text
+DB_POOL_SIZE=5
+DB_MAX_OVERFLOW=5
+DB_POOL_TIMEOUT_SECONDS=30
+DB_POOL_RECYCLE_SECONDS=1800
+DB_CONNECT_TIMEOUT_SECONDS=10
+```
+
+That means one backend process can use at most 10 database connections. Keep the
+per-process total low and scale it only after checking Supabase connection
+charts or `pg_stat_activity`. The production config check rejects
+`DB_POOL_SIZE + DB_MAX_OVERFLOW > 20` to prevent accidental connection
+exhaustion while the project is small.
+
+Supabase's 2026 default-privileges change for new `public` tables does not
+change the MVP app path because the Mini App never talks to Supabase Data API
+directly. Keep it that way unless a future feature explicitly needs public Data
+API access, and then add grants and RLS together.
+
 ## Why this fits future accounts and GB sales
 
 Future account and mobile-data sales use a separate `Marketplace Engine` in the
@@ -307,6 +329,11 @@ Backend:
 ```text
 APP_ENV=production
 DATABASE_URL=postgresql://...
+DB_POOL_SIZE=5
+DB_MAX_OVERFLOW=5
+DB_POOL_TIMEOUT_SECONDS=30
+DB_POOL_RECYCLE_SECONDS=1800
+DB_CONNECT_TIMEOUT_SECONDS=10
 TELEGRAM_BOT_TOKEN=...
 TELEGRAM_MINI_APP_URL=https://<vercel-mini-app-domain>
 TELEGRAM_WEBHOOK_URL=https://<backend-domain>/api/telegram/webhook
