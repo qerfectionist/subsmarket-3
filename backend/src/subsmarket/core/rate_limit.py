@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 import re
 import time
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from re import Pattern
+from urllib.parse import parse_qs
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -20,6 +22,7 @@ class RateLimitRule:
     path_pattern: Pattern[str]
     max_requests: int
     window_seconds: int
+    key_by_telegram_user: bool = False
 
     def matches(self, request: Request) -> bool:
         return request.method == self.method and bool(
@@ -28,13 +31,21 @@ class RateLimitRule:
 
 
 DEFAULT_RATE_LIMIT_RULES = (
-    RateLimitRule("me_get", "GET", re.compile(r"/api/me"), 120, 60),
+    RateLimitRule(
+        "me_get",
+        "GET",
+        re.compile(r"/api/me"),
+        120,
+        60,
+        key_by_telegram_user=True,
+    ),
     RateLimitRule(
         "me_refresh",
         "PATCH",
         re.compile(r"/api/me/refresh-telegram-profile"),
         30,
         60,
+        key_by_telegram_user=True,
     ),
     RateLimitRule(
         "family_create",
@@ -42,6 +53,7 @@ DEFAULT_RATE_LIMIT_RULES = (
         re.compile(r"/api/families"),
         10,
         600,
+        key_by_telegram_user=True,
     ),
     RateLimitRule(
         "join_request",
@@ -49,6 +61,7 @@ DEFAULT_RATE_LIMIT_RULES = (
         re.compile(r"/api/families/[0-9a-fA-F-]{36}/requests"),
         20,
         60,
+        key_by_telegram_user=True,
     ),
     RateLimitRule(
         "family_invite_lookup",
@@ -141,7 +154,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if rule is None:
             return await call_next(request)
 
-        client_key = _client_key(request)
+        client_key = _request_key(request, rule)
         if not self.limiter.allow(rule=rule, client_key=client_key):
             return JSONResponse(
                 {"detail": "RATE_LIMIT_EXCEEDED"},
@@ -158,3 +171,25 @@ def _client_key(request: Request) -> str:
     if request.client is not None:
         return request.client.host
     return "unknown"
+
+
+def _request_key(request: Request, rule: RateLimitRule) -> str:
+    if rule.key_by_telegram_user:
+        telegram_user_id = _telegram_user_id(request)
+        if telegram_user_id is not None:
+            return f"telegram:{telegram_user_id}"
+    return f"client:{_client_key(request)}"
+
+
+def _telegram_user_id(request: Request) -> str | None:
+    init_data = request.headers.get("x-telegram-init-data")
+    if not init_data:
+        return None
+    try:
+        user_json = parse_qs(init_data, keep_blank_values=True).get("user", [""])[0]
+        telegram_user_id = json.loads(user_json).get("id")
+    except (AttributeError, json.JSONDecodeError, TypeError, ValueError):
+        return None
+    if not isinstance(telegram_user_id, int) or telegram_user_id <= 0:
+        return None
+    return str(telegram_user_id)

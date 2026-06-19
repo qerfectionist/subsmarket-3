@@ -71,6 +71,9 @@ The backend also applies an in-process rate limit to the Telegram webhook,
 identity refresh, family creation, join request, invite lookup, and internal job
 endpoints. This is a baseline abuse guard for the MVP deployment. For higher
 traffic, keep it and add an edge layer such as Cloudflare/WAF in front of Render.
+Authenticated identity, family creation, and join-request limits use the
+Telegram user ID from `initData` so unrelated users behind one mobile carrier IP
+do not consume the same bucket. Public endpoints fall back to the client IP.
 
 Configure webhook env values on the backend service:
 
