@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from subsmarket.core.config import settings
 from subsmarket.core.database import get_db
-from subsmarket.jobs.schemas import RunDueJobsResult
+from subsmarket.jobs.monitoring import get_jobs_status
+from subsmarket.jobs.schemas import JobsStatusResult, RunDueJobsResult
 from subsmarket.jobs.service import run_due_jobs
 from subsmarket.notifications.dispatcher import dispatch_pending_notifications
 from subsmarket.notifications.schemas import DispatchNotificationsResult
@@ -39,3 +40,11 @@ def post_dispatch_notifications(
     db: Session = Depends(get_db),
 ) -> DispatchNotificationsResult:
     return dispatch_pending_notifications(db)
+
+
+@router.get("/status", response_model=JobsStatusResult)
+def get_internal_jobs_status(
+    _: None = Depends(require_internal_job_token),
+    db: Session = Depends(get_db),
+) -> JobsStatusResult:
+    return get_jobs_status(db)

@@ -26,6 +26,7 @@ from subsmarket.families.service import (
     create_join_request,
 )
 from subsmarket.identity.models import User
+from subsmarket.jobs.monitoring import get_jobs_status
 from subsmarket.jobs.service import (
     activate_regular_payments,
     close_due_families,
@@ -288,6 +289,76 @@ def test_run_due_jobs_drains_state_changes_across_bounded_batches(
     assert second.expired_family_requests == 1
     assert second.notification_jobs_created == 2
     assert all(request.status == "expired" for request in requests)
+
+
+def test_jobs_status_reports_notification_and_due_backlogs(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 230)
+    candidate = make_user(db, 231)
+    family = make_family(
+        db,
+        owner,
+        service,
+        next_payment_date=date.today() + timedelta(days=2),
+    )
+    request = create_join_request(db, candidate, family.id)
+    request.expires_at = utcnow() - timedelta(minutes=1)
+    member = add_member(db, family, candidate, status="awaiting_confirmation")
+    member.access_provided_at = utcnow() - timedelta(hours=25)
+    first_payment = FamilyPayment(
+        family_id=family.id,
+        member_id=member.id,
+        kind="first",
+        status="due",
+        amount_kzt=family.member_share_kzt,
+        period=family.period,
+        period_start=date.today(),
+        period_end=family.next_payment_date,
+        due_at=utcnow() - timedelta(minutes=1),
+    )
+    db.add(first_payment)
+    db.add(
+        NotificationJob(
+            recipient_user_id=candidate.id,
+            event_type="stale_pending_test",
+            status="pending",
+            available_at=utcnow() - timedelta(minutes=20),
+        )
+    )
+    db.add(
+        NotificationJob(
+            recipient_user_id=candidate.id,
+            event_type="failed_test",
+            status="failed",
+            attempts=5,
+            failed_at=utcnow() - timedelta(minutes=5),
+            error="telegram blocked",
+        )
+    )
+    db.commit()
+    monkeypatch.setattr(settings, "job_batch_size", 1)
+    monkeypatch.setattr(settings, "job_max_batches_per_step", 1)
+    monkeypatch.setattr(settings, "notification_dispatch_batch_size", 1)
+    monkeypatch.setattr(settings, "notification_dispatch_max_batches", 1)
+
+    status = get_jobs_status(db)
+
+    assert status.status == "attention"
+    assert "stale_due_notifications" in status.warnings
+    assert "notification_failures_last_24h" in status.warnings
+    assert status.notification_queue.pending_total == 2
+    assert status.notification_queue.pending_due == 2
+    assert status.notification_queue.stale_due == 1
+    assert status.notification_queue.failed_total == 1
+    assert status.notification_queue.failed_last_24h == 1
+    assert status.due_backlog.expired_family_requests == 1
+    assert status.due_backlog.access_confirmations_overdue == 1
+    assert status.due_backlog.first_payments_overdue == 1
+    assert status.due_backlog.regular_payment_creation_due == 1
+    assert status.recent_notification_failures[0].event_type == "failed_test"
 
 
 def test_first_payment_overdue_does_not_remove_member(db: Session) -> None:

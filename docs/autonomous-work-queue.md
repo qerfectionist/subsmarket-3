@@ -670,3 +670,15 @@ Last checkpoint:
 - Added Render and `.env.example` entries for Sentry env values.
 - Documented that `SENTRY_SEND_DEFAULT_PII=false` should remain the default so
   personal user data and payment requisites are not sent to external logs.
+
+2026-06-20 jobs and notification status monitoring:
+
+- Added protected `GET /api/internal/jobs/status`.
+- The endpoint reports:
+  - notification queue counts;
+  - stale due notifications;
+  - failed notifications from the last 24 hours;
+  - due Family Engine backlog counts;
+  - recent notification failure samples without private user data.
+- GitHub Actions now prints this status after due jobs and notification
+  dispatch complete.

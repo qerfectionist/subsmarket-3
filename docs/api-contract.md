@@ -651,3 +651,20 @@ rolled back, later steps continue, and the response includes:
 - `job_errors[].message`.
 
 When there are no failures, `job_errors` is an empty list.
+
+### GET /api/internal/jobs/status
+
+Protected by `X-Internal-Job-Token`.
+
+Returns background health counters:
+
+- notification queue counts by status;
+- stale due notifications;
+- notification failures from the last 24 hours;
+- due Family Engine backlog counts;
+- recent notification failure samples without user profiles, message text, or
+  payment requisites.
+
+`status` is `ok` when there are no warnings and `attention` when the backend
+sees stale notifications, recent notification failures, or backlog that exceeds
+one configured processing capacity.

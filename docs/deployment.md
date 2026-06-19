@@ -276,6 +276,19 @@ POST /api/internal/jobs/dispatch-notifications
 X-Internal-Job-Token: <INTERNAL_JOB_TOKEN>
 ```
 
+After the due-job and notification-dispatch calls, the protected status endpoint
+can be used to inspect background health without exposing personal data:
+
+```text
+GET /api/internal/jobs/status
+X-Internal-Job-Token: <INTERNAL_JOB_TOKEN>
+```
+
+It reports notification queue counts, stale due notifications, failed
+notifications from the last 24 hours, due Family Engine backlog counts, and up
+to 10 recent notification failure samples. It does not include payment
+requisites, Telegram message text, or user profiles.
+
 GitHub Actions workflow:
 
 ```text
