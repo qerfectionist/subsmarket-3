@@ -118,6 +118,18 @@ create index families_owner_idx
 create index families_discovery_idx
   on families(family_type, created_at desc)
   where status = 'active';
+
+create index families_discovery_visible_created_idx
+  on families(created_at desc)
+  where status = 'active'
+    and is_search_visible = true
+    and active_members_count < max_members;
+
+create index families_discovery_visible_type_created_idx
+  on families(family_type, created_at desc)
+  where status = 'active'
+    and is_search_visible = true
+    and active_members_count < max_members;
 ```
 
 Правила:
@@ -236,6 +248,9 @@ create index family_requests_owner_queue_idx
 
 create index family_requests_user_idx
   on family_requests(user_id, status, created_at);
+
+create index family_requests_family_user_created_desc_idx
+  on family_requests(family_id, user_id, created_at desc);
 ```
 
 Финальный запрет после отказа:
@@ -303,6 +318,14 @@ create index family_payments_member_idx
 
 create index family_payments_family_status_due_idx
   on family_payments(family_id, status, due_at);
+
+create index family_payments_member_due_created_desc_idx
+  on family_payments(member_id, due_at desc, created_at desc);
+
+create index family_payments_reported_paid_reminder_idx
+  on family_payments(reported_paid_at asc)
+  where status = 'payment_reported'
+    and reported_paid_at is not null;
 ```
 
 Правила:
@@ -355,8 +378,8 @@ notification_jobs (
 Индексы:
 
 ```sql
-create index notification_jobs_dispatch_idx
-  on notification_jobs(status, available_at);
+create index notification_jobs_dispatch_status_available_created_idx
+  on notification_jobs(status, available_at asc, created_at asc);
 
 create index notification_jobs_recipient_event_status_idx
   on notification_jobs(recipient_user_id, event_type, status);
