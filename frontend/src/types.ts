@@ -123,6 +123,8 @@ export type FamilyMember = {
   access_provided_at: string | null;
   access_confirmed_at: string | null;
   removal_scheduled_at: string | null;
+  removal_acknowledged_at: string | null;
+  removal_cancel_requested_at: string | null;
   left_at: string | null;
   removed_at: string | null;
   cancelled_at: string | null;

@@ -172,6 +172,10 @@ export function OwnerDetails({
                 </div>
               )}
             </div>
+            {member.status === "removal_pending" &&
+              member.removal_cancel_requested_at && (
+                <p className="muted">Участник просит отменить удаление.</p>
+              )}
             {member.role !== "owner" && member.status === "active" && (
               <OwnerPrepaymentControl
                 family={family}
@@ -315,7 +319,8 @@ function ownerMemberHint(status: string) {
     payment_due: "Участник получил доступ. Теперь он должен оплатить.",
     payment_reported: "Проверьте перевод и подтвердите оплату.",
     active: "Участник активен, первый платеж подтвержден.",
-    removal_pending: "Удаление запланировано, можно отменить до истечения срока."
+    removal_pending:
+      "Удаление запланировано. Участник может попросить об отмене, решение остается за вами."
   };
   return hints[status] ?? "Проверьте статус участника.";
 }

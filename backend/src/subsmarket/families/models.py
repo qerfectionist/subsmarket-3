@@ -104,6 +104,12 @@ class FamilyMember(Base):
     removal_scheduled_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    removal_acknowledged_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    removal_cancel_requested_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     left_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

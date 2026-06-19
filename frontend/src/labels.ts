@@ -132,6 +132,8 @@ export const errorLabels: Record<string, string> = {
   MEMBER_NOT_REMOVABLE: "Этого участника сейчас нельзя поставить на удаление.",
   MEMBER_REMOVAL_NOT_PENDING: "Удаление участника сейчас не запланировано.",
   ONLY_MEMBER_CAN_ACK_REMOVAL: "Подтвердить предупреждение об удалении может только сам участник.",
+  ONLY_MEMBER_CAN_REQUEST_REMOVAL_CANCELLATION:
+    "Попросить отменить удаление может только сам участник.",
   FAMILY_ALREADY_CLOSED: "Семья уже закрыта.",
   FAMILY_NOT_CLOSING: "Семья сейчас не находится в процессе закрытия.",
   INVALID_PAYMENT_PHONE: "Укажите номер телефона для оплаты. Номера карт и IBAN запрещены.",

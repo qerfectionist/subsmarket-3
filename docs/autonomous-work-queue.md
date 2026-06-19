@@ -555,3 +555,14 @@ Last checkpoint:
   both QA users in a guaranteed cleanup block.
 - An independent Supabase query confirmed zero remaining QA users and zero QA
   families after cleanup.
+
+2026-06-19 member removal lifecycle correction:
+
+- Aligned participant removal with the approved 12-hour warning:
+  - `Понятно` records acknowledgement without removing the participant;
+  - `Попросить отменить` notifies the owner without stopping the timer;
+  - only the owner can revoke removal;
+  - the slot and scheduled payments remain active until revocation or timeout.
+- Added backend service tests and a full owner/member Playwright flow.
+- Verified Alembic `20260619_0012` both as an incremental upgrade and from the
+  first migration on a clean PostgreSQL database.

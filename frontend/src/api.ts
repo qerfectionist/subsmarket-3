@@ -261,6 +261,14 @@ export function acknowledgeMemberRemoval(memberId: string): Promise<FamilyMember
   );
 }
 
+export function requestMemberRemovalCancellation(
+  memberId: string
+): Promise<FamilyMember> {
+  return post<FamilyMember>(
+    `/api/families/members/${memberId}/request-removal-cancellation`
+  );
+}
+
 export function revokeMemberRemoval(memberId: string): Promise<FamilyMember> {
   return post<FamilyMember>(`/api/families/members/${memberId}/revoke-removal`);
 }

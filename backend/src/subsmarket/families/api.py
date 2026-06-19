@@ -56,6 +56,7 @@ from subsmarket.families.service import (
     reject_join_request,
     remind_access_confirmation,
     report_payment_paid,
+    request_member_removal_cancellation,
     revoke_member_removal,
     schedule_member_removal,
     to_audit_log_out,
@@ -302,6 +303,19 @@ def post_member_acknowledge_removal(
     user=Depends(get_current_user),
 ) -> FamilyMemberOut:
     member = acknowledge_member_removal(db, user, member_id)
+    return to_member_out(member)
+
+
+@router.post(
+    "/members/{member_id}/request-removal-cancellation",
+    response_model=FamilyMemberOut,
+)
+def post_member_request_removal_cancellation(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = request_member_removal_cancellation(db, user, member_id)
     return to_member_out(member)
 
 

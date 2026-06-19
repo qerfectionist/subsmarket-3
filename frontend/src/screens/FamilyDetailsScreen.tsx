@@ -442,7 +442,10 @@ function auditActionText(action: string) {
     regular_payment_overdue: "Регулярный платеж просрочен",
     family_member_removal_scheduled: "Удаление участника запланировано",
     family_member_removal_revoked: "Удаление участника отменено",
-    family_member_removal_acknowledged: "Участник подтвердил удаление",
+    family_member_removal_acknowledged:
+      "Участник увидел предупреждение об удалении",
+    family_member_removal_cancellation_requested:
+      "Участник попросил отменить удаление",
     family_member_removed_by_timeout: "Участник удален после предупреждения",
     family_member_cancelled_before_access: "Вступление отменено до доступа",
     family_member_left: "Участник вышел из семьи",

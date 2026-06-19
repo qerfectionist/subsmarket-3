@@ -32,6 +32,7 @@ export function MyFamiliesScreen({
   onGetRequisite,
   onAcknowledgeClosing,
   onAcknowledgeRemoval,
+  onRequestRemovalCancellation,
   onLeaveFamily,
   onCreatePrepayment,
   onReportPayment,
@@ -67,6 +68,7 @@ export function MyFamiliesScreen({
   onGetRequisite: (memberId: string) => void;
   onAcknowledgeClosing: (familyId: string) => void;
   onAcknowledgeRemoval: (memberId: string) => void;
+  onRequestRemovalCancellation: (memberId: string) => void;
   onLeaveFamily: (memberId: string) => void;
   onCreatePrepayment: (memberId: string) => void;
   onReportPayment: (payment: FamilyPayment) => Promise<unknown>;
@@ -150,6 +152,7 @@ export function MyFamiliesScreen({
                       onGetRequisite={onGetRequisite}
                       onAcknowledgeClosing={onAcknowledgeClosing}
                       onAcknowledgeRemoval={onAcknowledgeRemoval}
+                      onRequestRemovalCancellation={onRequestRemovalCancellation}
                       onLeaveFamily={onLeaveFamily}
                       onCreatePrepayment={onCreatePrepayment}
                     />
@@ -242,6 +245,15 @@ function getMemberStep(member: FamilyMember, payment?: FamilyPayment) {
       text: "Если подписка работает, нажмите «Доступ получен». После этого откроются реквизиты."
     };
   }
+  if (member.status === "removal_pending") {
+    return {
+      tone: "danger",
+      title: "Вас планируют удалить",
+      text: member.removal_cancel_requested_at
+        ? "Вы попросили отменить удаление. Решение остается за владельцем, а 12-часовой срок продолжает идти."
+        : "Подтвердите, что увидели предупреждение, или попросите владельца отменить удаление."
+    };
+  }
   if (payment?.status === "due" || payment?.status === "overdue") {
     return {
       tone: payment.status === "overdue" ? "danger" : "warning",
@@ -254,13 +266,6 @@ function getMemberStep(member: FamilyMember, payment?: FamilyPayment) {
       tone: "info",
       title: "Ждите подтверждение владельца",
       text: "Вы отметили оплату. Владелец должен вручную подтвердить получение."
-    };
-  }
-  if (member.status === "removal_pending") {
-    return {
-      tone: "danger",
-      title: "Вас планируют удалить",
-      text: "Подтвердите, что увидели предупреждение, или решите вопрос в личном чате."
     };
   }
   return {
@@ -469,6 +474,7 @@ function MemberActions({
   onGetRequisite,
   onAcknowledgeClosing,
   onAcknowledgeRemoval,
+  onRequestRemovalCancellation,
   onLeaveFamily,
   onCreatePrepayment
 }: {
@@ -480,6 +486,7 @@ function MemberActions({
   onGetRequisite: (memberId: string) => void;
   onAcknowledgeClosing: (familyId: string) => void;
   onAcknowledgeRemoval: (memberId: string) => void;
+  onRequestRemovalCancellation: (memberId: string) => void;
   onLeaveFamily: (memberId: string) => void;
   onCreatePrepayment: (memberId: string) => void;
 }) {
@@ -527,7 +534,7 @@ function MemberActions({
           Понятно, семья закрывается
         </button>
       )}
-      {member.status === "removal_pending" && (
+      {member.status === "removal_pending" && !member.removal_acknowledged_at && (
         <button
           type="button"
           data-testid="acknowledge-removal-button"
@@ -537,6 +544,22 @@ function MemberActions({
           Понятно, меня удаляют
         </button>
       )}
+      {member.status === "removal_pending" &&
+        !member.removal_cancel_requested_at && (
+          <button
+            type="button"
+            className="secondary"
+            data-testid="request-removal-cancellation-button"
+            disabled={busy !== null}
+            onClick={() => onRequestRemovalCancellation(member.id)}
+          >
+            Попросить отменить
+          </button>
+        )}
+      {member.status === "removal_pending" &&
+        member.removal_cancel_requested_at && (
+          <p className="muted">Владелец получил просьбу отменить удаление.</p>
+        )}
       <button
         type="button"
         className="danger"

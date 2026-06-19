@@ -39,6 +39,7 @@ import {
   remindAccessConfirmation,
   rejectFamilyRequest,
   reportPaymentPaid,
+  requestMemberRemovalCancellation,
   revokeMemberRemoval,
   scheduleMemberRemoval,
   setActiveDevTelegramUser,
@@ -476,6 +477,11 @@ export function App() {
           }
           onAcknowledgeRemoval={(memberId) =>
             void runAction("ack-removal", () => acknowledgeMemberRemoval(memberId))
+          }
+          onRequestRemovalCancellation={(memberId) =>
+            void runAction("request-removal-cancellation", () =>
+              requestMemberRemovalCancellation(memberId)
+            )
           }
           onLeaveFamily={(memberId) =>
             void runAction("leave-family", () => leaveFamily(memberId))

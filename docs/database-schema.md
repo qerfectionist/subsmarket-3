@@ -166,6 +166,8 @@ family_members (
   access_provided_at timestamptz,
   access_confirmed_at timestamptz,
   removal_scheduled_at timestamptz,
+  removal_acknowledged_at timestamptz,
+  removal_cancel_requested_at timestamptz,
   left_at timestamptz,
   removed_at timestamptz,
   cancelled_at timestamptz,
@@ -321,7 +323,10 @@ create index family_payments_family_status_due_idx
 
 - удаление хранится в `family_members.removal_scheduled_at` и выполняется через
   12 часов, если владелец не отозвал решение;
-- кнопка `Понятно` выполняет удаление сразу;
+- подтверждение предупреждения хранится в `removal_acknowledged_at` и не
+  останавливает удаление;
+- просьба участника об отмене хранится в `removal_cancel_requested_at`, но
+  отменить удаление может только владелец;
 - подтверждение предупреждения о закрытии хранится в
   `family_members.closing_acknowledged_at`;
 - закрытие семьи длится 3 календарных дня;

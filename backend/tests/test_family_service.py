@@ -25,6 +25,7 @@ from subsmarket.families.schemas import (
     PrepaymentPeriodsCreate,
 )
 from subsmarket.families.service import (
+    acknowledge_member_removal,
     approve_join_request,
     calculate_member_share,
     cancel_join_request,
@@ -44,6 +45,8 @@ from subsmarket.families.service import (
     reject_join_request,
     remind_access_confirmation,
     report_payment_paid,
+    request_member_removal_cancellation,
+    revoke_member_removal,
     schedule_member_removal,
     to_family_out,
     to_family_request_out,
@@ -848,6 +851,7 @@ def test_member_removal_timeout_cancels_future_payments(
     member, _ = make_active_member(db, owner, candidate, family)
     scheduled_payment = make_scheduled_payment(db, family, member)
     schedule_member_removal(db, owner, member.id)
+    request_member_removal_cancellation(db, candidate, member.id)
     member.removal_scheduled_at = utcnow() - timedelta(minutes=1)
     db.commit()
 
@@ -859,3 +863,71 @@ def test_member_removal_timeout_cancels_future_payments(
     assert member.status == "removed"
     assert scheduled_payment.status == "cancelled"
     assert scheduled_payment.cancel_reason == "member_removed"
+
+
+def test_member_acknowledgement_keeps_slot_and_payments_active(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 114)
+    candidate = make_user(db, 115)
+    family = make_family(db, owner, subscription_service)
+    member, _ = make_active_member(db, owner, candidate, family)
+    scheduled_payment = make_scheduled_payment(db, family, member)
+    scheduled_member = schedule_member_removal(db, owner, member.id)
+    removal_deadline = scheduled_member.removal_scheduled_at
+    occupied_slots = family.active_members_count
+
+    acknowledged_member = acknowledge_member_removal(db, candidate, member.id)
+
+    db.refresh(family)
+    db.refresh(scheduled_payment)
+    assert acknowledged_member.status == "removal_pending"
+    assert acknowledged_member.removal_acknowledged_at is not None
+    assert acknowledged_member.removal_scheduled_at == removal_deadline
+    assert acknowledged_member.removed_at is None
+    assert family.active_members_count == occupied_slots
+    assert scheduled_payment.status == "scheduled"
+
+
+def test_member_can_request_cancellation_without_stopping_removal_timer(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 116)
+    candidate = make_user(db, 117)
+    family = make_family(db, owner, subscription_service)
+    member, _ = make_active_member(db, owner, candidate, family)
+    scheduled_member = schedule_member_removal(db, owner, member.id)
+    removal_deadline = scheduled_member.removal_scheduled_at
+
+    requested_member = request_member_removal_cancellation(db, candidate, member.id)
+
+    assert requested_member.status == "removal_pending"
+    assert requested_member.removal_cancel_requested_at is not None
+    assert requested_member.removal_scheduled_at == removal_deadline
+    owner_notification = db.scalar(
+        select(NotificationJob).where(
+            NotificationJob.recipient_user_id == owner.id,
+            NotificationJob.event_type
+            == "family_member_removal_cancellation_requested",
+        )
+    )
+    assert owner_notification is not None
+
+
+def test_owner_revoke_clears_member_removal_responses(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 118)
+    candidate = make_user(db, 119)
+    family = make_family(db, owner, subscription_service)
+    member, _ = make_active_member(db, owner, candidate, family)
+    schedule_member_removal(db, owner, member.id)
+    acknowledge_member_removal(db, candidate, member.id)
+    request_member_removal_cancellation(db, candidate, member.id)
+
+    restored_member = revoke_member_removal(db, owner, member.id)
+
+    assert restored_member.status == "active"
+    assert restored_member.removal_scheduled_at is None
+    assert restored_member.removal_acknowledged_at is None
+    assert restored_member.removal_cancel_requested_at is None

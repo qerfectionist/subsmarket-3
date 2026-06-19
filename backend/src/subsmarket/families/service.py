@@ -164,6 +164,8 @@ def to_member_out(member: FamilyMember) -> FamilyMemberOut:
         access_provided_at=member.access_provided_at,
         access_confirmed_at=member.access_confirmed_at,
         removal_scheduled_at=member.removal_scheduled_at,
+        removal_acknowledged_at=member.removal_acknowledged_at,
+        removal_cancel_requested_at=member.removal_cancel_requested_at,
         left_at=member.left_at,
         removed_at=member.removed_at,
         cancelled_at=member.cancelled_at,
@@ -1137,6 +1139,8 @@ def schedule_member_removal(db: Session, user: User, member_id: UUID) -> FamilyM
     old_status = member.status
     member.status = "removal_pending"
     member.removal_scheduled_at = utcnow() + timedelta(hours=12)
+    member.removal_acknowledged_at = None
+    member.removal_cancel_requested_at = None
     record_family_audit_event(
         db,
         family_id=family.id,
@@ -1179,6 +1183,8 @@ def revoke_member_removal(db: Session, user: User, member_id: UUID) -> FamilyMem
     old_status = member.status
     member.status = _restored_member_status(db, member)
     member.removal_scheduled_at = None
+    member.removal_acknowledged_at = None
+    member.removal_cancel_requested_at = None
     record_family_audit_event(
         db,
         family_id=family.id,
@@ -1217,17 +1223,11 @@ def acknowledge_member_removal(
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
 
-    old_status = member.status
-    member.status = "removed"
-    member.removed_at = utcnow()
-    _release_family_slot(family)
-    cancel_scheduled_payments(
-        db,
-        family_id=family.id,
-        member_id=member.id,
-        reason="member_removed",
-        actor_user_id=user.id,
-    )
+    if member.removal_acknowledged_at is not None:
+        member.user = db.get(User, member.user_id)
+        return member
+
+    member.removal_acknowledged_at = utcnow()
     record_family_audit_event(
         db,
         family_id=family.id,
@@ -1235,8 +1235,14 @@ def acknowledge_member_removal(
         actor_user_id=user.id,
         target_user_id=member.user_id,
         target_member_id=member.id,
-        old_status=old_status,
+        old_status=member.status,
         new_status=member.status,
+        details={
+            "removal_acknowledged_at": member.removal_acknowledged_at.isoformat(),
+            "removal_scheduled_at": member.removal_scheduled_at.isoformat()
+            if member.removal_scheduled_at
+            else None,
+        },
     )
     enqueue_notification(
         db,
@@ -1246,6 +1252,62 @@ def acknowledge_member_removal(
             "family_id": str(family.id),
             "member_id": str(member.id),
             "message": f"{user.first_name} подтвердил уведомление об удалении.",
+        },
+    )
+    db.commit()
+    db.refresh(member)
+    member.user = db.get(User, member.user_id)
+    return member
+
+
+def request_member_removal_cancellation(
+    db: Session, user: User, member_id: UUID
+) -> FamilyMember:
+    member = _get_member_for_update(db, member_id)
+    if member.user_id != user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="ONLY_MEMBER_CAN_REQUEST_REMOVAL_CANCELLATION",
+        )
+    if member.status != "removal_pending":
+        raise HTTPException(status_code=409, detail="MEMBER_REMOVAL_NOT_PENDING")
+    family = db.get(Family, member.family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if member.removal_cancel_requested_at is not None:
+        member.user = db.get(User, member.user_id)
+        return member
+
+    member.removal_cancel_requested_at = utcnow()
+    record_family_audit_event(
+        db,
+        family_id=family.id,
+        action="family_member_removal_cancellation_requested",
+        actor_user_id=user.id,
+        target_user_id=member.user_id,
+        target_member_id=member.id,
+        old_status=member.status,
+        new_status=member.status,
+        details={
+            "removal_cancel_requested_at": (
+                member.removal_cancel_requested_at.isoformat()
+            ),
+            "removal_scheduled_at": member.removal_scheduled_at.isoformat()
+            if member.removal_scheduled_at
+            else None,
+        },
+    )
+    enqueue_notification(
+        db,
+        recipient_user_id=family.owner_user_id,
+        event_type="family_member_removal_cancellation_requested",
+        payload={
+            "family_id": str(family.id),
+            "member_id": str(member.id),
+            "message": (
+                f"{user.first_name} просит отменить удаление из семьи. "
+                "Решение остаётся за владельцем."
+            ),
         },
     )
     db.commit()
