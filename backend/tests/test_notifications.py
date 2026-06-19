@@ -3,15 +3,18 @@ from __future__ import annotations
 from collections.abc import Iterator
 from datetime import timedelta
 
+import httpx
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from subsmarket.core.config import settings
 from subsmarket.core.database import Base
 from subsmarket.identity.models import User
 from subsmarket.models import import_models
 from subsmarket.notifications.dispatcher import (
     NotificationSendError,
+    TelegramBotSender,
     build_send_message_payload,
     dispatch_pending_notifications,
 )
@@ -54,12 +57,18 @@ def make_user(db: Session) -> User:
     return user
 
 
-def make_notification(db: Session, user: User, *, attempts: int = 0) -> NotificationJob:
+def make_notification(
+    db: Session,
+    user: User,
+    *,
+    attempts: int = 0,
+    payload: dict[str, str] | None = None,
+) -> NotificationJob:
     job = enqueue_notification(
         db,
         recipient_user_id=user.id,
         event_type="family_request_created_owner",
-        payload={"message": "New request"},
+        payload=payload or {"message": "New request"},
     )
     job.attempts = attempts
     db.commit()
@@ -82,6 +91,37 @@ def test_dispatch_marks_notification_sent(db: Session) -> None:
     assert job.status == "sent"
     assert job.attempts == 1
     assert sender.messages == [(user.telegram_user_id, "New request")]
+
+
+def test_dispatch_trims_notification_message(db: Session) -> None:
+    user = make_user(db)
+    job = make_notification(db, user, payload={"message": "  New request  "})
+    sender = FakeSender()
+
+    result = dispatch_pending_notifications(db, sender=sender)
+
+    db.refresh(job)
+    assert result.sent == 1
+    assert job.status == "sent"
+    assert sender.messages == [(user.telegram_user_id, "New request")]
+
+
+def test_dispatch_fails_notification_without_user_message(db: Session) -> None:
+    user = make_user(db)
+    job = make_notification(db, user, payload={"message": "   "})
+    sender = FakeSender()
+
+    result = dispatch_pending_notifications(db, sender=sender)
+
+    db.refresh(job)
+    assert result.selected == 1
+    assert result.sent == 0
+    assert result.retried == 0
+    assert result.failed == 1
+    assert job.status == "failed"
+    assert job.attempts == 1
+    assert "NOTIFICATION_MESSAGE_MISSING" in (job.error or "")
+    assert sender.messages == []
 
 
 def test_dispatch_retries_transient_notification_error(db: Session) -> None:
@@ -154,4 +194,47 @@ def test_send_message_payload_can_include_mini_app_button() -> None:
                 }
             ]
         ]
+    }
+
+
+def test_telegram_sender_includes_mini_app_button(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_post(
+        url: str,
+        *,
+        json: dict[str, object],
+        timeout: float,
+    ) -> httpx.Response:
+        captured["url"] = url
+        captured["json"] = json
+        captured["timeout"] = timeout
+        return httpx.Response(200, json={"ok": True})
+
+    monkeypatch.setattr(
+        "subsmarket.notifications.dispatcher.httpx.post",
+        fake_post,
+    )
+    monkeypatch.setattr(settings, "telegram_mini_app_url", "https://mini.example.com")
+
+    TelegramBotSender(bot_token="123456:test").send_message(700001, "Open app")
+
+    assert captured["url"] == "https://api.telegram.org/bot123456:test/sendMessage"
+    assert captured["timeout"] == 10.0
+    assert captured["json"] == {
+        "chat_id": 700001,
+        "text": "Open app",
+        "disable_web_page_preview": True,
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Открыть SubsMarket",
+                        "web_app": {"url": "https://mini.example.com"},
+                    }
+                ]
+            ]
+        },
     }

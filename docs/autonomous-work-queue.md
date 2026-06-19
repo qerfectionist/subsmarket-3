@@ -566,3 +566,14 @@ Last checkpoint:
 - Added backend service tests and a full owner/member Playwright flow.
 - Verified Alembic `20260619_0012` both as an incremental upgrade and from the
   first migration on a clean PostgreSQL database.
+
+2026-06-19 notification dispatch hardening:
+
+- Blocked delivery of internal event names to Telegram users. Pending
+  `notification_jobs` now require a non-empty human-facing `payload.message`;
+  invalid rows fail permanently with `NOTIFICATION_MESSAGE_MISSING`.
+- Trimmed notification text before sending so accidental whitespace does not
+  leak into Telegram.
+- Added tests for missing-message failures, trimmed messages, and the real
+  Telegram sender payload with the Mini App button.
+- Updated deployment documentation with the outbox message contract.

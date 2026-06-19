@@ -70,6 +70,16 @@ class TelegramBotSender:
             )
 
 
+def notification_message(job: NotificationJob) -> str:
+    message = job.payload.get("message")
+    if not isinstance(message, str) or not message.strip():
+        raise NotificationSendError(
+            "NOTIFICATION_MESSAGE_MISSING",
+            permanent=True,
+        )
+    return message.strip()
+
+
 def build_send_message_payload(
     telegram_user_id: int,
     text: str,
@@ -150,9 +160,9 @@ def dispatch_pending_notifications(
     failed = 0
 
     for job in jobs:
-        message = str(job.payload.get("message") or job.event_type)
         job.attempts += 1
         try:
+            message = notification_message(job)
             active_sender.send_message(job.recipient.telegram_user_id, message)
         except NotificationSendError as exc:
             job.failed_at = utcnow()
