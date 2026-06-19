@@ -140,7 +140,43 @@ def dispatch_pending_notifications(
     db: Session,
     *,
     limit: int = 50,
+    max_batches: int = 5,
     sender: NotificationSender | None = None,
+) -> DispatchNotificationsResult:
+    active_sender = sender or TelegramBotSender()
+    total_selected = 0
+    total_sent = 0
+    total_retried = 0
+    total_failed = 0
+
+    for batch_number in range(1, max_batches + 1):
+        result = _dispatch_notification_batch(
+            db,
+            limit=limit,
+            batch_number=batch_number,
+            sender=active_sender,
+        )
+        total_selected += result.selected
+        total_sent += result.sent
+        total_retried += result.retried
+        total_failed += result.failed
+        if result.selected < limit:
+            break
+
+    return DispatchNotificationsResult(
+        selected=total_selected,
+        sent=total_sent,
+        retried=total_retried,
+        failed=total_failed,
+    )
+
+
+def _dispatch_notification_batch(
+    db: Session,
+    *,
+    limit: int,
+    batch_number: int,
+    sender: NotificationSender,
 ) -> DispatchNotificationsResult:
     now = utcnow()
     jobs = list(
@@ -160,9 +196,12 @@ def dispatch_pending_notifications(
     )
     logger.info(
         "Notification dispatch started",
-        extra={"notification_limit": limit, "notifications_selected": len(jobs)},
+        extra={
+            "notification_batch": batch_number,
+            "notification_limit": limit,
+            "notifications_selected": len(jobs),
+        },
     )
-    active_sender = sender or TelegramBotSender()
     sent = 0
     retried = 0
     failed = 0
@@ -171,7 +210,7 @@ def dispatch_pending_notifications(
         job.attempts += 1
         try:
             message = notification_message(job)
-            active_sender.send_message(job.recipient.telegram_user_id, message)
+            sender.send_message(job.recipient.telegram_user_id, message)
         except NotificationSendError as exc:
             job.failed_at = utcnow()
             job.error = str(exc)[:1000]
@@ -241,6 +280,7 @@ def dispatch_pending_notifications(
     logger.info(
         "Notification dispatch completed",
         extra={
+            "notification_batch": batch_number,
             "notifications_selected": len(jobs),
             "notifications_sent": sent,
             "notifications_retried": retried,

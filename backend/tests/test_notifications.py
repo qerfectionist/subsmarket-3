@@ -113,6 +113,31 @@ def test_dispatch_trims_notification_message(db: Session) -> None:
     assert sender.messages == [(user.telegram_user_id, "New request")]
 
 
+def test_dispatch_processes_multiple_batches(db: Session) -> None:
+    user = make_user(db)
+    jobs = [
+        make_notification(db, user, payload={"message": f"Message {index}"})
+        for index in range(3)
+    ]
+    sender = FakeSender()
+
+    result = dispatch_pending_notifications(
+        db,
+        limit=1,
+        max_batches=3,
+        sender=sender,
+    )
+
+    for job in jobs:
+        db.refresh(job)
+    assert result.selected == 3
+    assert result.sent == 3
+    assert result.retried == 0
+    assert result.failed == 0
+    assert [job.status for job in jobs] == ["sent", "sent", "sent"]
+    assert len(sender.messages) == 3
+
+
 def test_enqueue_notification_rejects_missing_user_message(db: Session) -> None:
     user = make_user(db)
 

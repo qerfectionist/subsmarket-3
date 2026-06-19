@@ -189,6 +189,9 @@ python -m subsmarket.jobs.dispatch_notifications
 It reads pending `notification_jobs`, calls Telegram Bot API through
 `TELEGRAM_BOT_TOKEN`, and marks each row as `sent`, `pending` for retry, or
 `failed`.
+One dispatcher run can process multiple batches of due notifications and commits
+after each batch, so a backlog can drain faster without keeping one very large
+transaction open.
 
 If `TELEGRAM_MINI_APP_URL` is configured, outgoing Telegram notifications include
 an inline button that opens the Mini App.
