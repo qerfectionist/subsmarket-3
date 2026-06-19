@@ -530,3 +530,12 @@ Last checkpoint:
 - Remaining external check: update the bot Main Mini App URL in BotFather from
   the old development domain to `https://subsmarket-3.vercel.app`, then test on
   real Telegram iOS, Android, or Desktop.
+
+2026-06-19 Telegram production smoke hardening:
+
+- Confirmed the bot menu button now opens `https://subsmarket-3.vercel.app`.
+- Confirmed the webhook points to the Render backend with zero pending updates
+  and no delivery error.
+- Added a read-only Telegram production smoke command that verifies bot
+  identity, webhook state, menu button URL, and Mini App availability without
+  printing the bot token.

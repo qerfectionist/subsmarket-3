@@ -305,6 +305,20 @@ cd backend
 It verifies health, database readiness, required OpenAPI routes, and that the
 development reset endpoint is not exposed.
 
+After setting the Telegram webhook and Main Mini App URL, run the read-only
+Telegram production smoke check:
+
+```powershell
+$env:TELEGRAM_WEBHOOK_URL='https://subsmarket-api.onrender.com/api/telegram/webhook'
+$env:TELEGRAM_MINI_APP_URL='https://subsmarket-3.vercel.app'
+cd backend
+.\.venv\Scripts\python -m subsmarket.ops.telegram_production_smoke
+```
+
+It verifies bot identity, webhook URL and delivery state, accepted update
+types, the default menu button URL, and Mini App availability. It never prints
+the bot token.
+
 The backend accepts both `postgresql://...` and `postgresql+psycopg://...`.
 
 Frontend:
