@@ -88,7 +88,7 @@ export function EmptyState({ title, children }: { title: string; children: React
   return (
     <div className="empty-state">
       <strong>{title}</strong>
-      <p>{children}</p>
+      <div className="empty-state-body">{children}</div>
     </div>
   );
 }

@@ -31,11 +31,12 @@ export function CreateFamilyScreen({
     createForm.max_members
   );
   const freeMemberSlots = Math.max(0, createForm.max_members - 1);
+  const familySubject = familyType === "tariff" ? "тарифа" : "подписки";
 
   return (
     <Panel
       title={`Создать семью: ${familyTypeLabels[familyType].toLowerCase()}`}
-      description="Заполните только условия подписки. Доступ и оплата идут уже после заявки."
+      description={`Заполните только условия ${familySubject}. Доступ и оплата идут уже после заявки.`}
     >
       <FamilyTypeSwitch value={familyType} onChange={onChangeFamilyType} />
       <div className="create-preview" data-testid="create-share-preview">
@@ -77,7 +78,7 @@ export function CreateFamilyScreen({
             ))}
           </select>
         </label>
-        <label>
+        <label className="half">
           Период
           <select
             data-testid="create-period-select"
@@ -96,12 +97,13 @@ export function CreateFamilyScreen({
             ))}
           </select>
         </label>
-        <label>
+        <label className="half">
           Всего мест
           <input
             min={2}
             max={service?.max_members ?? 8}
             data-testid="create-max-members-input"
+            inputMode="numeric"
             type="number"
             value={createForm.max_members}
             onChange={(event) =>
@@ -112,11 +114,12 @@ export function CreateFamilyScreen({
             }
           />
         </label>
-        <label>
+        <label className="half">
           Общая цена, ₸
           <input
             min={1}
             data-testid="create-total-price-input"
+            inputMode="numeric"
             type="number"
             value={createForm.total_price_kzt}
             onChange={(event) =>
@@ -127,12 +130,13 @@ export function CreateFamilyScreen({
             }
           />
         </label>
-        <label>
+        <label className="half">
           День оплаты
           <input
             min={1}
             max={31}
             data-testid="create-payment-day-input"
+            inputMode="numeric"
             type="number"
             value={createForm.payment_day}
             onChange={(event) =>
@@ -143,7 +147,7 @@ export function CreateFamilyScreen({
             }
           />
         </label>
-        <label>
+        <label className="half">
           Следующая дата оплаты
           <input
             data-testid="create-next-payment-date-input"
@@ -157,7 +161,7 @@ export function CreateFamilyScreen({
             }
           />
         </label>
-        <label>
+        <label className="half">
           Банк
           <select
             data-testid="create-bank-select"
@@ -180,6 +184,7 @@ export function CreateFamilyScreen({
           Номер телефона для оплаты
           <input
             data-testid="create-payment-phone-input"
+            inputMode="tel"
             placeholder="+77001234567"
             value={createForm.payment_phone}
             onChange={(event) =>
@@ -189,6 +194,10 @@ export function CreateFamilyScreen({
               }))
             }
           />
+          <small className="field-helper">
+            Только номер телефона для Kaspi, Halyk, Freedom или Jusan. Номер карты
+            и IBAN нельзя указывать.
+          </small>
         </label>
         <label className="wide">
           Описание

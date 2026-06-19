@@ -46,6 +46,7 @@ html,
 body,
 #root {
   min-height: 100%;
+  scroll-padding-bottom: calc(150px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom));
 }
 
 button,
@@ -90,6 +91,7 @@ textarea {
   color: var(--app-text);
   outline: none;
   padding: 13px;
+  scroll-margin-bottom: calc(132px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom));
 }
 
 textarea {
@@ -103,7 +105,7 @@ textarea {
   padding:
     calc(16px + var(--app-content-safe-area-top) + env(safe-area-inset-top))
     calc(14px + var(--app-content-safe-area-right) + env(safe-area-inset-right))
-    calc(132px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom))
+    calc(168px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom))
     calc(14px + var(--app-content-safe-area-left) + env(safe-area-inset-left));
 }
 
@@ -545,6 +547,9 @@ textarea {
 }
 
 .empty-state {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--app-link) 8%, transparent), transparent 58%),
+    var(--app-surface);
   border: 1px dashed #b8c2d6;
   border-radius: 20px;
   display: grid;
@@ -552,7 +557,12 @@ textarea {
   padding: 18px;
 }
 
+.empty-state strong {
+  font-size: 17px;
+}
+
 .empty-state p,
+.empty-state-body,
 .empty-state span {
   color: var(--app-muted);
   display: block;
@@ -564,9 +574,38 @@ textarea {
   width: 100%;
 }
 
+.empty-state-points {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 4px;
+}
+
+.empty-state-points span {
+  align-items: center;
+  background: var(--app-secondary-bg);
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+  display: flex;
+  font-size: 12px;
+  gap: 8px;
+  line-height: 1.35;
+  margin: 0;
+  padding: 9px 10px;
+}
+
+.empty-state-points b {
+  background: #ecfdf3;
+  border-radius: 999px;
+  color: #027a48;
+  flex: 0 0 auto;
+  font-size: 11px;
+  padding: 3px 7px;
+}
+
 .form-grid {
   display: grid;
   gap: 13px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .form-grid label {
@@ -574,6 +613,19 @@ textarea {
   display: grid;
   font-weight: 800;
   gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.form-grid label.half {
+  grid-column: span 1;
+}
+
+.field-helper {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  margin-top: -2px;
 }
 
 .wide {
@@ -1037,5 +1089,11 @@ textarea {
 @media (min-width: 720px) {
   .app-shell {
     max-width: 520px;
+  }
+}
+
+@media (max-width: 380px) {
+  .form-grid label.half {
+    grid-column: 1 / -1;
   }
 }
