@@ -812,7 +812,9 @@ def cancel_join_request(
     return request
 
 
-def list_my_join_requests(db: Session, user: User) -> list[FamilyRequest]:
+def list_my_join_requests(
+    db: Session, user: User, *, limit: int = 50
+) -> list[FamilyRequest]:
     return list(
         db.scalars(
             select(FamilyRequest)
@@ -822,12 +824,13 @@ def list_my_join_requests(db: Session, user: User) -> list[FamilyRequest]:
             )
             .where(FamilyRequest.user_id == user.id)
             .order_by(FamilyRequest.created_at.desc())
+            .limit(limit)
         ).all()
     )
 
 
 def list_owner_family_requests(
-    db: Session, user: User, family_id: UUID
+    db: Session, user: User, family_id: UUID, *, limit: int = 50
 ) -> list[FamilyRequest]:
     family = db.get(Family, family_id)
     if family is None:
@@ -845,6 +848,7 @@ def list_owner_family_requests(
             .where(FamilyRequest.family_id == family_id)
             .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
             .order_by(FamilyRequest.created_at.asc())
+            .limit(limit)
         ).all()
     )
 
@@ -1029,7 +1033,9 @@ def _cancel_pending_requests_for_full_family(
         )
 
 
-def list_family_members(db: Session, user: User, family_id: UUID) -> list[FamilyMember]:
+def list_family_members(
+    db: Session, user: User, family_id: UUID, *, limit: int = 50
+) -> list[FamilyMember]:
     family = db.get(Family, family_id)
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
@@ -1042,6 +1048,7 @@ def list_family_members(db: Session, user: User, family_id: UUID) -> list[Family
             .options(joinedload(FamilyMember.user))
             .where(FamilyMember.family_id == family_id)
             .order_by(FamilyMember.joined_at.asc())
+            .limit(limit)
         ).all()
     )
 
@@ -1673,7 +1680,7 @@ def get_open_payment_requisite(
 
 
 def list_member_payments(
-    db: Session, user: User, member_id: UUID
+    db: Session, user: User, member_id: UUID, *, limit: int = 50
 ) -> list[FamilyPayment]:
     member = db.get(FamilyMember, member_id)
     if member is None:
@@ -1689,8 +1696,64 @@ def list_member_payments(
             select(FamilyPayment)
             .where(FamilyPayment.member_id == member_id)
             .order_by(FamilyPayment.created_at.desc())
+            .limit(limit)
         ).all()
     )
+
+
+def list_family_member_payments(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    limit_per_member: int = 20,
+) -> list[tuple[UUID, list[FamilyPayment]]]:
+    family = db.get(Family, family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if family.owner_user_id != user.id:
+        raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_VIEW_PAYMENTS")
+
+    member_ids = list(
+        db.scalars(
+            select(FamilyMember.id)
+            .where(FamilyMember.family_id == family_id)
+            .order_by(FamilyMember.joined_at.asc())
+        ).all()
+    )
+    if not member_ids:
+        return []
+
+    row_number = (
+        func.row_number()
+        .over(
+            partition_by=FamilyPayment.member_id,
+            order_by=FamilyPayment.created_at.desc(),
+        )
+        .label("row_number")
+    )
+    ranked_payments = (
+        select(FamilyPayment.id.label("payment_id"), row_number)
+        .where(FamilyPayment.member_id.in_(member_ids))
+        .subquery()
+    )
+    payments = list(
+        db.scalars(
+            select(FamilyPayment)
+            .join(ranked_payments, FamilyPayment.id == ranked_payments.c.payment_id)
+            .where(ranked_payments.c.row_number <= limit_per_member)
+            .order_by(FamilyPayment.member_id.asc(), FamilyPayment.created_at.desc())
+        ).all()
+    )
+    payments_by_member_id: dict[UUID, list[FamilyPayment]] = {
+        member_id: [] for member_id in member_ids
+    }
+    for payment in payments:
+        payments_by_member_id[payment.member_id].append(payment)
+    return [
+        (member_id, payments_by_member_id.get(member_id, []))
+        for member_id in member_ids
+    ]
 
 
 def create_member_prepayment(

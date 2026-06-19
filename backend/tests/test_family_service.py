@@ -39,6 +39,11 @@ from subsmarket.families.service import (
     get_family_view,
     get_open_payment_requisite,
     leave_family,
+    list_family_member_payments,
+    list_family_members,
+    list_member_payments,
+    list_my_join_requests,
+    list_owner_family_requests,
     list_searchable_families,
     mark_access_provided,
     normalize_payment_phone,
@@ -241,6 +246,58 @@ def test_rejected_request_blocks_same_family(
 
     assert exc.value.status_code == 409
     assert exc.value.detail == "FAMILY_REQUEST_FORBIDDEN"
+
+
+def test_family_list_helpers_apply_server_side_limits(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 220)
+    first_candidate = make_user(db, 221)
+    second_candidate = make_user(db, 222)
+    family = make_family(db, owner, subscription_service)
+    first_request = create_join_request(db, first_candidate, family.id)
+    second_request = create_join_request(db, second_candidate, family.id)
+
+    assert list_my_join_requests(db, first_candidate, limit=1) == [first_request]
+    assert list_owner_family_requests(db, owner, family.id, limit=1) == [
+        first_request
+    ]
+
+    approve_join_request(db, owner, first_request.id)
+    approve_join_request(db, owner, second_request.id)
+
+    assert len(list_family_members(db, owner, family.id, limit=2)) == 2
+
+
+def test_member_and_family_payment_lists_apply_limits(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 223)
+    first_candidate = make_user(db, 224)
+    second_candidate = make_user(db, 225)
+    family = make_family(db, owner, subscription_service)
+    first_member, _ = make_active_member(db, owner, first_candidate, family)
+    second_member, _ = make_active_member(db, owner, second_candidate, family)
+    for index in range(3):
+        family.next_payment_date = date.today() + timedelta(days=30 + index * 30)
+        db.flush()
+        make_scheduled_payment(db, family, first_member)
+        make_scheduled_payment(db, family, second_member)
+
+    assert len(list_member_payments(db, owner, first_member.id, limit=2)) == 2
+
+    family_payments = list_family_member_payments(
+        db,
+        owner,
+        family.id,
+        limit_per_member=2,
+    )
+    payments_by_member_id = {
+        member_id: payments for member_id, payments in family_payments
+    }
+
+    assert len(payments_by_member_id[first_member.id]) == 2
+    assert len(payments_by_member_id[second_member.id]) == 2
 
 
 def test_search_hides_own_pending_member_and_restricted_families(

@@ -148,6 +148,11 @@ class FamilyPaymentOut(BaseModel):
     cancel_reason: str | None
 
 
+class FamilyMemberPaymentsOut(BaseModel):
+    member_id: uuid.UUID
+    payments: list[FamilyPaymentOut]
+
+
 class AccessConfirmationResult(BaseModel):
     member: FamilyMemberOut
     payment: FamilyPaymentOut

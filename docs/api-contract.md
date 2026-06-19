@@ -263,6 +263,10 @@ Backend проверяет:
 
 ### GET /api/families/requests/me
 
+Query:
+
+- `limit=1..100`, default `50`.
+
 Список заявок пользователя.
 
 Каждая заявка содержит краткие данные семьи для карточки UI:
@@ -281,6 +285,10 @@ Backend проверяет:
 - `expired` -> `Истекла`.
 
 ### GET /api/families/{family_id}/requests
+
+Query:
+
+- `limit=1..100`, default `50`.
 
 Список заявок владельца.
 
@@ -329,6 +337,28 @@ Query:
 - `limit=1..100`, default `50`.
 
 Семьи пользователя как владельца и участника.
+
+### GET /api/families/{family_id}/members
+
+Owner-only member list.
+
+Query:
+
+- `limit=1..100`, default `50`.
+
+### GET /api/families/{family_id}/payments
+
+Owner-only batch payment list grouped by family member. Use this endpoint for
+owner screens instead of one request per member.
+
+Query:
+
+- `limit_per_member=1..50`, default `20`.
+
+Each item contains:
+
+- `member_id`;
+- `payments[]`.
 
 ### POST /api/families/members/{member_id}/cancel-before-access
 
@@ -442,6 +472,14 @@ Query:
 - `status = cancelled`;
 - `cancelled_at`;
 - `cancel_reason = member_left|member_removed|family_closing|family_closed`.
+
+### GET /api/families/members/{member_id}/payments
+
+Member payment history. Available to the member and to the family owner.
+
+Query:
+
+- `limit=1..100`, default `50`.
 
 ### POST /api/families/members/{member_id}/prepayments
 

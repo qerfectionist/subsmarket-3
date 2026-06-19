@@ -13,6 +13,7 @@ from subsmarket.families.schemas import (
     FamilyCreateResult,
     FamilyDescriptionUpdate,
     FamilyMemberOut,
+    FamilyMemberPaymentsOut,
     FamilyOut,
     FamilyPaymentDayUpdate,
     FamilyPaymentOut,
@@ -43,6 +44,7 @@ from subsmarket.families.service import (
     get_open_payment_requisite,
     leave_family,
     list_family_audit_logs,
+    list_family_member_payments,
     list_family_members,
     list_member_payments,
     list_my_families,
@@ -139,10 +141,14 @@ def post_family_request(
 
 @router.get("/requests/me", response_model=list[FamilyRequestOut])
 def get_my_family_requests(
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyRequestOut]:
-    return [to_family_request_out(item) for item in list_my_join_requests(db, user)]
+    return [
+        to_family_request_out(item)
+        for item in list_my_join_requests(db, user, limit=limit)
+    ]
 
 
 @router.post("/requests/{request_id}/cancel", response_model=FamilyRequestOut)
@@ -158,12 +164,13 @@ def cancel_my_family_request(
 @router.get("/{family_id}/requests", response_model=list[OwnerFamilyRequestOut])
 def get_owner_family_requests(
     family_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[OwnerFamilyRequestOut]:
     return [
         to_owner_family_request_out(item)
-        for item in list_owner_family_requests(db, user, family_id)
+        for item in list_owner_family_requests(db, user, family_id, limit=limit)
     ]
 
 
@@ -239,10 +246,14 @@ def post_family_closing_acknowledged(
 @router.get("/{family_id}/members", response_model=list[FamilyMemberOut])
 def get_family_members(
     family_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyMemberOut]:
-    return [to_member_out(item) for item in list_family_members(db, user, family_id)]
+    return [
+        to_member_out(item)
+        for item in list_family_members(db, user, family_id, limit=limit)
+    ]
 
 
 @router.post("/members/{member_id}/access-provided", response_model=FamilyMemberOut)
@@ -361,10 +372,35 @@ def get_member_payment_requisite(
 @router.get("/members/{member_id}/payments", response_model=list[FamilyPaymentOut])
 def get_member_payments(
     member_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyPaymentOut]:
-    return [to_payment_out(item) for item in list_member_payments(db, user, member_id)]
+    return [
+        to_payment_out(item)
+        for item in list_member_payments(db, user, member_id, limit=limit)
+    ]
+
+
+@router.get(
+    "/{family_id}/payments",
+    response_model=list[FamilyMemberPaymentsOut],
+)
+def get_family_member_payments(
+    family_id: UUID,
+    limit_per_member: int = Query(default=20, ge=1, le=50),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> list[FamilyMemberPaymentsOut]:
+    return [
+        FamilyMemberPaymentsOut(
+            member_id=member_id,
+            payments=[to_payment_out(payment) for payment in payments],
+        )
+        for member_id, payments in list_family_member_payments(
+            db, user, family_id, limit_per_member=limit_per_member
+        )
+    ]
 
 
 @router.post(

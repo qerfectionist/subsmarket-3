@@ -223,6 +223,16 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
     assert len(owner_prepayments.json()) == 2
     assert all(item["status"] == "paid" for item in owner_prepayments.json())
 
+    family_payments = client.get(
+        f"/api/families/{family_id}/payments?limit_per_member=2",
+        headers=owner_headers,
+    )
+    assert family_payments.status_code == 200
+    member_payments = next(
+        item for item in family_payments.json() if item["member_id"] == member_id
+    )
+    assert len(member_payments["payments"]) == 2
+
 
 def test_family_by_id_requires_telegram_auth_in_production(
     client: TestClient,
