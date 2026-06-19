@@ -29,6 +29,7 @@ from subsmarket.families.service import (
     approve_join_request,
     calculate_member_share,
     cancel_join_request,
+    cancel_member_before_access,
     close_family,
     confirm_access_received,
     confirm_payment_received,
@@ -208,6 +209,14 @@ def test_payment_phone_rejects_card_like_values() -> None:
 
     assert exc.value.status_code == 400
     assert exc.value.detail == "PAYMENT_PHONE_ONLY_NO_CARD_OR_IBAN"
+
+
+def test_payment_phone_rejects_plus_eight_number() -> None:
+    with pytest.raises(HTTPException) as exc:
+        normalize_payment_phone("+87001234567")
+
+    assert exc.value.status_code == 400
+    assert exc.value.detail == "INVALID_PAYMENT_PHONE"
 
 
 def test_rejected_request_blocks_same_family(
@@ -660,6 +669,38 @@ def test_owner_payment_confirmation_reminders_follow_schedule_and_stop(
     assert send_owner_payment_confirmation_reminders(db) == 0
 
 
+def test_owner_payment_confirmation_reminders_catch_up_in_order(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 176)
+    candidate = make_user(db, 177)
+    family = make_family(db, owner, subscription_service)
+    member, first_payment = make_active_member(db, owner, candidate, family)
+    first_payment.status = "payment_reported"
+    first_payment.reported_paid_at = utcnow() - timedelta(minutes=45)
+    member.status = "payment_due"
+    db.commit()
+
+    expected_events = [
+        "payment_confirmation_reminder_10m_owner",
+        "payment_confirmation_reminder_20m_owner",
+        "payment_confirmation_reminder_40m_owner",
+    ]
+    for event_type in expected_events:
+        assert send_owner_payment_confirmation_reminders(db) == 1
+        assert (
+            db.scalar(
+                select(NotificationJob).where(
+                    NotificationJob.recipient_user_id == owner.id,
+                    NotificationJob.event_type == event_type,
+                )
+            )
+            is not None
+        )
+
+    assert send_owner_payment_confirmation_reminders(db) == 0
+
+
 def test_member_can_prepay_only_the_next_single_period(
     db: Session, subscription_service: FamilyService
 ) -> None:
@@ -713,6 +754,26 @@ def test_owner_can_record_multiple_prepaid_periods_and_calendar_advances(
     assert family.next_payment_date == prepayments[0].period_end
 
 
+def test_regular_payment_job_advances_owner_only_family_calendar(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 178)
+    family = make_family(db, owner, subscription_service)
+    family.next_payment_date = date.today() + timedelta(days=3)
+    db.commit()
+    period_start = family.next_payment_date
+
+    assert create_regular_payments(db) == 0
+
+    db.flush()
+    db.refresh(family)
+    assert family.next_payment_date > period_start
+    assert (
+        db.scalar(select(FamilyPayment).where(FamilyPayment.family_id == family.id))
+        is None
+    )
+
+
 def test_owner_cannot_leave_family_like_member(
     db: Session, subscription_service: FamilyService
 ) -> None:
@@ -757,6 +818,33 @@ def test_member_leave_frees_family_slot(
     db.refresh(family)
     assert family.status == "active"
     assert family.active_members_count == 1
+
+
+def test_cancel_member_before_access_is_blocked_for_closing_family(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 190)
+    candidate = make_user(db, 191)
+    family = make_family(db, owner, subscription_service)
+    request = create_join_request(db, candidate, family.id)
+    approve_join_request(db, owner, request.id)
+    member = db.scalar(
+        select(FamilyMember).where(
+            FamilyMember.family_id == family.id,
+            FamilyMember.user_id == candidate.id,
+        )
+    )
+    assert member is not None
+    assert member.status == "awaiting_access"
+    close_family(db, owner, family.id)
+
+    with pytest.raises(HTTPException) as exc:
+        cancel_member_before_access(db, candidate, member.id)
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "FAMILY_NOT_MUTABLE"
+    db.refresh(member)
+    assert member.status == "awaiting_access"
 
 
 def test_member_leave_cancels_future_payment_and_pending_reminder(

@@ -99,6 +99,7 @@ Query:
 Query:
 
 - `family_type=subscription|tariff`.
+- `limit=1..100`, default `50`.
 
 Backend исключает:
 
@@ -179,6 +180,7 @@ production; unauthenticated requests must fail before returning a family card.
 ### GET /api/families/{family_id}/audit-log
 
 Returns family action history for the family owner or a family member.
+Accepts optional `limit` query parameter, default `50`, minimum `1`, maximum `100`.
 
 Each event contains:
 
@@ -322,6 +324,10 @@ Backend:
 
 ### GET /api/families/me
 
+Query:
+
+- `limit=1..100`, default `50`.
+
 Семьи пользователя как владельца и участника.
 
 ### POST /api/families/members/{member_id}/cancel-before-access
@@ -424,6 +430,10 @@ Backend:
 ## Payments
 
 ### GET /api/families/payments/me
+
+Query:
+
+- `limit=1..100`, default `50`.
 
 Платежи пользователя.
 

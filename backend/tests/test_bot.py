@@ -68,6 +68,17 @@ def test_webhook_secret_is_required_in_production(
     assert exc.value.detail == "TELEGRAM_WEBHOOK_SECRET_REQUIRED"
 
 
+def test_webhook_secret_dev_bypass_logs_warning(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "development")
+    monkeypatch.setattr(settings, "telegram_webhook_secret", None)
+
+    verify_webhook_secret(None)
+
+    assert "accepting unsigned development webhook request" in caplog.text
+
+
 def test_webhook_secret_must_match(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "app_env", "production")
     monkeypatch.setattr(settings, "telegram_webhook_secret", "secret")

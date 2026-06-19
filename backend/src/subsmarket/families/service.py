@@ -60,7 +60,7 @@ ACTIVE_MEMBER_STATUSES = {
     "active",
     "removal_pending",
 }
-PHONE_RE = re.compile(r"^\+?[78]\d{10}$")
+PHONE_RE = re.compile(r"^\+?7\d{10}$")
 
 
 def calculate_member_share(total_price_kzt: int, max_members: int) -> tuple[int, int]:
@@ -415,7 +415,7 @@ def get_family_by_id(db: Session, family_id: UUID) -> Family | None:
 
 
 def list_searchable_families(
-    db: Session, user: User, *, family_type: str | None = None
+    db: Session, user: User, *, family_type: str | None = None, limit: int = 50
 ) -> list[Family]:
     stmt = (
         select(Family)
@@ -444,6 +444,7 @@ def list_searchable_families(
             .exists()
         )
         .order_by(Family.created_at.desc())
+        .limit(limit)
     )
     if family_type:
         stmt = stmt.where(Family.family_type == family_type)
@@ -452,7 +453,7 @@ def list_searchable_families(
     )
 
 
-def list_my_families(db: Session, user: User) -> list[MyFamilyOut]:
+def list_my_families(db: Session, user: User, *, limit: int = 50) -> list[MyFamilyOut]:
     memberships = list(
         db.scalars(
             select(FamilyMember)
@@ -464,22 +465,46 @@ def list_my_families(db: Session, user: User) -> list[MyFamilyOut]:
             .where(FamilyMember.user_id == user.id)
             .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
             .order_by(FamilyMember.joined_at.desc())
+            .limit(limit)
         ).all()
     )
 
+    membership_ids = [membership.id for membership in memberships]
+    payments_by_member_id: dict[UUID, list[FamilyPayment]] = {
+        membership_id: [] for membership_id in membership_ids
+    }
+    if membership_ids:
+        payments = list(
+            db.scalars(
+                select(FamilyPayment)
+                .where(FamilyPayment.member_id.in_(membership_ids))
+                .order_by(FamilyPayment.due_at.desc(), FamilyPayment.created_at.desc())
+            ).all()
+        )
+        for payment in payments:
+            payments_by_member_id[payment.member_id].append(payment)
+
+    owner_family_ids = [
+        membership.family_id for membership in memberships if membership.role == "owner"
+    ]
+    pending_requests_by_family_id: dict[UUID, int] = {}
+    if owner_family_ids:
+        rows = db.execute(
+            select(FamilyRequest.family_id, func.count(FamilyRequest.id))
+            .where(FamilyRequest.family_id.in_(owner_family_ids))
+            .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
+            .group_by(FamilyRequest.family_id)
+        ).all()
+        pending_requests_by_family_id = {
+            family_id: int(count) for family_id, count in rows
+        }
+
     result: list[MyFamilyOut] = []
     for membership in memberships:
-        payments = list_member_payments(db, user, membership.id)
-        pending_requests_count = 0
-        if membership.role == "owner":
-            pending_requests_count = (
-                db.scalar(
-                    select(func.count(FamilyRequest.id))
-                    .where(FamilyRequest.family_id == membership.family_id)
-                    .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
-                )
-                or 0
-            )
+        payments = payments_by_member_id.get(membership.id, [])
+        pending_requests_count = pending_requests_by_family_id.get(
+            membership.family_id, 0
+        )
         result.append(
             MyFamilyOut(
                 family=to_family_out(membership.family),
@@ -491,13 +516,16 @@ def list_my_families(db: Session, user: User) -> list[MyFamilyOut]:
     return result
 
 
-def list_my_payments(db: Session, user: User) -> list[FamilyPayment]:
+def list_my_payments(
+    db: Session, user: User, *, limit: int = 50
+) -> list[FamilyPayment]:
     return list(
         db.scalars(
             select(FamilyPayment)
             .join(FamilyMember, FamilyMember.id == FamilyPayment.member_id)
             .where(FamilyMember.user_id == user.id)
             .order_by(FamilyPayment.due_at.desc(), FamilyPayment.created_at.desc())
+            .limit(limit)
         ).all()
     )
 
@@ -556,7 +584,7 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
 
 
 def list_family_audit_logs(
-    db: Session, user: User, family_id: UUID
+    db: Session, user: User, family_id: UUID, *, limit: int = 50
 ) -> list[FamilyAuditLog]:
     family = db.get(Family, family_id)
     if family is None:
@@ -576,6 +604,7 @@ def list_family_audit_logs(
             select(FamilyAuditLog)
             .where(FamilyAuditLog.family_id == family_id)
             .order_by(FamilyAuditLog.created_at.desc())
+            .limit(limit)
         ).all()
     )
 
@@ -1021,9 +1050,13 @@ def cancel_member_before_access(
     db: Session, user: User, member_id: UUID
 ) -> FamilyMember:
     member = _get_member_for_update(db, member_id)
-    family = db.get(Family, member.family_id)
+    family = db.scalar(
+        select(Family).where(Family.id == member.family_id).with_for_update()
+    )
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if family.status in {"closing", "closed"}:
+        raise HTTPException(status_code=409, detail="FAMILY_NOT_MUTABLE")
     if user.id not in {member.user_id, family.owner_user_id}:
         raise HTTPException(status_code=403, detail="MEMBER_CANCEL_FORBIDDEN")
     if member.role == "owner":
@@ -1084,7 +1117,9 @@ def leave_family(db: Session, user: User, member_id: UUID) -> FamilyMember:
     if member.status not in ACTIVE_MEMBER_STATUSES:
         raise HTTPException(status_code=409, detail="MEMBER_NOT_ACTIVE")
 
-    family = db.get(Family, member.family_id)
+    family = db.scalar(
+        select(Family).where(Family.id == member.family_id).with_for_update()
+    )
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     old_status = member.status
@@ -1126,7 +1161,9 @@ def leave_family(db: Session, user: User, member_id: UUID) -> FamilyMember:
 
 def schedule_member_removal(db: Session, user: User, member_id: UUID) -> FamilyMember:
     member = _get_member_for_update(db, member_id)
-    family = db.get(Family, member.family_id)
+    family = db.scalar(
+        select(Family).where(Family.id == member.family_id).with_for_update()
+    )
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     if family.owner_user_id != user.id:
@@ -1522,7 +1559,9 @@ def confirm_access_received(
     if member.status != "awaiting_confirmation":
         raise HTTPException(status_code=409, detail="MEMBER_NOT_AWAITING_CONFIRMATION")
 
-    family = db.get(Family, member.family_id)
+    family = db.scalar(
+        select(Family).where(Family.id == member.family_id).with_for_update()
+    )
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     requisite = db.scalar(

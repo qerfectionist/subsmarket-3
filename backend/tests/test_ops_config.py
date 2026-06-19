@@ -67,3 +67,29 @@ def test_production_config_checker_rejects_dev_defaults(
     assert "PAYMENT_REQUISITE_SECRET" in failed
     assert "INTERNAL_JOB_TOKEN" in failed
     assert "CORS_ALLOWED_ORIGINS" in failed
+
+
+def test_runtime_settings_reject_wildcard_cors_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from subsmarket.main import create_app
+
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "cors_allowed_origins", "*")
+    monkeypatch.setattr(settings, "telegram_webhook_secret", "secret")
+
+    with pytest.raises(RuntimeError, match="CORS_ALLOWED_ORIGINS"):
+        create_app()
+
+
+def test_runtime_settings_reject_missing_webhook_secret_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from subsmarket.main import create_app
+
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "cors_allowed_origins", "https://mini.example.com")
+    monkeypatch.setattr(settings, "telegram_webhook_secret", None)
+
+    with pytest.raises(RuntimeError, match="TELEGRAM_WEBHOOK_SECRET"):
+        create_app()

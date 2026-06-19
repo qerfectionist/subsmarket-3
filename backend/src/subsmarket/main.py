@@ -13,7 +13,19 @@ from subsmarket.identity.api import router as identity_router
 from subsmarket.jobs.api import router as jobs_router
 
 
+def validate_runtime_settings() -> None:
+    if settings.is_development:
+        return
+    if "*" in settings.cors_origins:
+        raise RuntimeError(
+            "CORS_ALLOWED_ORIGINS must not include '*' outside development"
+        )
+    if not settings.telegram_webhook_secret:
+        raise RuntimeError("TELEGRAM_WEBHOOK_SECRET is required outside development")
+
+
 def create_app() -> FastAPI:
+    validate_runtime_settings()
     app = FastAPI(title="SubsMarket API", version="0.1.0")
     app.add_middleware(
         CORSMiddleware,

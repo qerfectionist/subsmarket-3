@@ -272,6 +272,9 @@ def create_regular_payments(db: Session) -> int:
         if family.next_payment_date > today + timedelta(days=lead_days):
             continue
 
+        period_start = family.next_payment_date
+        period_end = add_payment_period(period_start, family.period)
+
         members = list(
             db.scalars(
                 select(FamilyMember)
@@ -281,10 +284,9 @@ def create_regular_payments(db: Session) -> int:
             ).all()
         )
         if not members:
+            family.next_payment_date = period_end
             continue
 
-        period_start = family.next_payment_date
-        period_end = add_payment_period(period_start, family.period)
         due_at = payment_due_at(period_start)
         family_created_count = 0
         covered_member_count = 0
@@ -578,10 +580,10 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
             )
             continue
 
-        for minutes in (40, 20, 10):
+        for minutes in (10, 20, 40):
             if elapsed < timedelta(minutes=minutes):
                 continue
-            notification_count += _enqueue_payment_notification_once(
+            created = _enqueue_payment_notification_once(
                 db,
                 payment=payment,
                 recipient_user_id=payment.family.owner_user_id,
@@ -591,7 +593,9 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
                     "получение в SubsMarket."
                 ),
             )
-            break
+            notification_count += created
+            if created:
+                break
 
     if notification_count:
         db.flush()
@@ -776,7 +780,7 @@ def execute_member_removals(db: Session) -> tuple[int, int]:
     members = list(
         db.scalars(
             select(FamilyMember)
-            .options(joinedload(FamilyMember.family), joinedload(FamilyMember.user))
+            .options(joinedload(FamilyMember.user))
             .where(FamilyMember.status == "removal_pending")
             .where(FamilyMember.removal_scheduled_at <= now)
             .with_for_update(skip_locked=True)
@@ -788,7 +792,11 @@ def execute_member_removals(db: Session) -> tuple[int, int]:
         old_member_status = member.status
         member.status = "removed"
         member.removed_at = now
-        family = member.family
+        family = db.scalar(
+            select(Family).where(Family.id == member.family_id).with_for_update()
+        )
+        if family is None:
+            raise RuntimeError(f"Family {member.family_id} disappeared during removal")
         cancel_scheduled_payments(
             db,
             family_id=family.id,

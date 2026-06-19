@@ -97,29 +97,34 @@ def post_family(
 @router.get("", response_model=list[FamilyOut])
 def get_families(
     family_type: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyOut]:
     return [
         to_family_out(family)
-        for family in list_searchable_families(db, user, family_type=family_type)
+        for family in list_searchable_families(
+            db, user, family_type=family_type, limit=limit
+        )
     ]
 
 
 @router.get("/me", response_model=list[MyFamilyOut])
 def get_my_families(
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[MyFamilyOut]:
-    return list_my_families(db, user)
+    return list_my_families(db, user, limit=limit)
 
 
 @router.get("/payments/me", response_model=list[FamilyPaymentOut])
 def get_my_payments(
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyPaymentOut]:
-    return [to_payment_out(item) for item in list_my_payments(db, user)]
+    return [to_payment_out(item) for item in list_my_payments(db, user, limit=limit)]
 
 
 @router.post("/{family_id}/requests", response_model=FamilyRequestOut, status_code=201)
@@ -446,12 +451,13 @@ def get_family_detail_view(
 @router.get("/{family_id}/audit-log", response_model=list[FamilyAuditLogOut])
 def get_family_audit_log(
     family_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> list[FamilyAuditLogOut]:
     return [
         to_audit_log_out(item)
-        for item in list_family_audit_logs(db, user, family_id)
+        for item in list_family_audit_logs(db, user, family_id, limit=limit)
     ]
 
 
