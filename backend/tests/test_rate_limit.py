@@ -131,3 +131,22 @@ def test_family_create_rate_limit_blocks_burst_by_client() -> None:
     assert blocked.json() == {"detail": "RATE_LIMIT_EXCEEDED"}
     assert blocked.headers["Retry-After"] == "600"
     assert other_client.status_code == 200
+
+
+def test_rate_limiter_prunes_expired_client_buckets() -> None:
+    now = [1000.0]
+    limiter = InMemoryRateLimiter(
+        [RateLimitRule("test", "GET", re.compile(r"/limited"), 2, 60)],
+        clock=lambda: now[0],
+        prune_interval_seconds=1,
+    )
+    rule = limiter.rules[0]
+
+    assert limiter.allow(rule=rule, client_key="old-client") is True
+    assert ("test", "old-client") in limiter._hits
+
+    now[0] += 61
+    assert limiter.allow(rule=rule, client_key="new-client") is True
+
+    assert ("test", "old-client") not in limiter._hits
+    assert ("test", "new-client") in limiter._hits

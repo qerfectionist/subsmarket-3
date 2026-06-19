@@ -80,9 +80,12 @@ class InMemoryRateLimiter:
         rules: Iterable[RateLimitRule] = DEFAULT_RATE_LIMIT_RULES,
         *,
         clock: Callable[[], float] = time.monotonic,
+        prune_interval_seconds: int = 60,
     ) -> None:
         self.rules = tuple(rules)
         self.clock = clock
+        self.prune_interval_seconds = prune_interval_seconds
+        self._last_prune = self.clock()
         self._hits: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
     def matching_rule(self, request: Request) -> RateLimitRule | None:
@@ -93,6 +96,7 @@ class InMemoryRateLimiter:
 
     def allow(self, *, rule: RateLimitRule, client_key: str) -> bool:
         now = self.clock()
+        self._prune_if_due(now)
         bucket = self._hits[(rule.name, client_key)]
         window_start = now - rule.window_seconds
         while bucket and bucket[0] <= window_start:
@@ -101,6 +105,21 @@ class InMemoryRateLimiter:
             return False
         bucket.append(now)
         return True
+
+    def _prune_if_due(self, now: float) -> None:
+        if now - self._last_prune < self.prune_interval_seconds:
+            return
+        max_window_seconds = max(
+            (rule.window_seconds for rule in self.rules),
+            default=0,
+        )
+        cutoff = now - max_window_seconds
+        for key, bucket in list(self._hits.items()):
+            while bucket and bucket[0] <= cutoff:
+                bucket.popleft()
+            if not bucket:
+                del self._hits[key]
+        self._last_prune = now
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
