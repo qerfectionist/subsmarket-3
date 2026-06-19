@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
 from typing import Any, Protocol
 
@@ -12,6 +13,8 @@ from subsmarket.core.database import utcnow
 from subsmarket.notifications.models import NotificationJob
 from subsmarket.notifications.schemas import DispatchNotificationsResult
 from subsmarket.notifications.service import notification_payload_message
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationSender(Protocol):
@@ -155,6 +158,10 @@ def dispatch_pending_notifications(
             .with_for_update(skip_locked=True)
         ).all()
     )
+    logger.info(
+        "Notification dispatch started",
+        extra={"notification_limit": limit, "notifications_selected": len(jobs)},
+    )
     active_sender = sender or TelegramBotSender()
     sent = 0
     retried = 0
@@ -171,24 +178,58 @@ def dispatch_pending_notifications(
             if exc.permanent or job.attempts >= settings.notification_max_attempts:
                 job.status = "failed"
                 failed += 1
+                logger.warning(
+                    "Notification job failed permanently",
+                    extra={
+                        "notification_job_id": str(job.id),
+                        "notification_event_type": job.event_type,
+                        "notification_attempts": job.attempts,
+                        "notification_error_type": type(exc).__name__,
+                    },
+                )
             else:
                 job.status = "pending"
                 job.available_at = utcnow() + timedelta(
                     seconds=_retry_delay_seconds(job.attempts, exc)
                 )
                 retried += 1
+                logger.warning(
+                    "Notification job scheduled for retry",
+                    extra={
+                        "notification_job_id": str(job.id),
+                        "notification_event_type": job.event_type,
+                        "notification_attempts": job.attempts,
+                        "notification_error_type": type(exc).__name__,
+                    },
+                )
         except Exception as exc:
             job.failed_at = utcnow()
             job.error = str(exc)[:1000]
             if job.attempts >= settings.notification_max_attempts:
                 job.status = "failed"
                 failed += 1
+                logger.exception(
+                    "Notification job failed permanently with unexpected error",
+                    extra={
+                        "notification_job_id": str(job.id),
+                        "notification_event_type": job.event_type,
+                        "notification_attempts": job.attempts,
+                    },
+                )
             else:
                 job.status = "pending"
                 job.available_at = utcnow() + timedelta(
                     seconds=_retry_delay_seconds(job.attempts)
                 )
                 retried += 1
+                logger.exception(
+                    "Notification job scheduled for retry after unexpected error",
+                    extra={
+                        "notification_job_id": str(job.id),
+                        "notification_event_type": job.event_type,
+                        "notification_attempts": job.attempts,
+                    },
+                )
         else:
             job.status = "sent"
             job.sent_at = utcnow()
@@ -197,6 +238,15 @@ def dispatch_pending_notifications(
             sent += 1
 
     db.commit()
+    logger.info(
+        "Notification dispatch completed",
+        extra={
+            "notifications_selected": len(jobs),
+            "notifications_sent": sent,
+            "notifications_retried": retried,
+            "notifications_failed": failed,
+        },
+    )
     return DispatchNotificationsResult(
         selected=len(jobs), sent=sent, retried=retried, failed=failed
     )

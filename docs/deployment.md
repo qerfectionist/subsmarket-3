@@ -176,6 +176,9 @@ committed separately. If one step fails, the backend rolls back only that step,
 continues the remaining steps, logs the exception, and returns the failed step
 inside `job_errors`.
 
+Due-job logs include step names, aggregate counts, and error metadata. They do
+not include payment requisites or Telegram message text.
+
 `notification_jobs` is an outbox. A second production cron sends pending
 Telegram messages:
 
@@ -203,6 +206,10 @@ Notification retry rules:
 - `available_at` moves forward using exponential backoff;
 - Telegram `400` and `403` errors are treated as permanent delivery failures;
 - after `NOTIFICATION_MAX_ATTEMPTS`, the job becomes `failed`.
+
+Notification dispatcher logs include selected/sent/retried/failed counts,
+notification job ids, event types, attempts, and error classes. They do not log
+Telegram bot tokens or outgoing message text.
 
 The same notification dispatcher is available as an internal API endpoint:
 

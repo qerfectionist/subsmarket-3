@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from datetime import timedelta
 
@@ -76,10 +77,13 @@ def make_notification(
     return job
 
 
-def test_dispatch_marks_notification_sent(db: Session) -> None:
+def test_dispatch_marks_notification_sent(
+    db: Session, caplog: pytest.LogCaptureFixture
+) -> None:
     user = make_user(db)
     job = make_notification(db, user)
     sender = FakeSender()
+    caplog.set_level(logging.INFO, logger="subsmarket.notifications.dispatcher")
 
     result = dispatch_pending_notifications(db, sender=sender)
 
@@ -91,6 +95,8 @@ def test_dispatch_marks_notification_sent(db: Session) -> None:
     assert job.status == "sent"
     assert job.attempts == 1
     assert sender.messages == [(user.telegram_user_id, "New request")]
+    assert "Notification dispatch completed" in caplog.text
+    assert "New request" not in caplog.text
 
 
 def test_dispatch_trims_notification_message(db: Session) -> None:
@@ -148,10 +154,13 @@ def test_dispatch_fails_existing_notification_without_user_message(
     assert sender.messages == []
 
 
-def test_dispatch_retries_transient_notification_error(db: Session) -> None:
+def test_dispatch_retries_transient_notification_error(
+    db: Session, caplog: pytest.LogCaptureFixture
+) -> None:
     user = make_user(db)
     job = make_notification(db, user)
     error = NotificationSendError("rate limited", retry_after_seconds=120)
+    caplog.set_level(logging.WARNING, logger="subsmarket.notifications.dispatcher")
 
     result = dispatch_pending_notifications(db, sender=FakeSender(error))
 
@@ -165,6 +174,8 @@ def test_dispatch_retries_transient_notification_error(db: Session) -> None:
     assert job.failed_at is not None
     assert job.available_at - job.failed_at >= timedelta(seconds=100)
     assert "rate limited" in (job.error or "")
+    assert "Notification job scheduled for retry" in caplog.text
+    assert "New request" not in caplog.text
 
 
 def test_dispatch_fails_permanent_notification_error(db: Session) -> None:

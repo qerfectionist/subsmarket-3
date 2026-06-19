@@ -43,6 +43,7 @@ class DueJobStep:
 
 
 def run_due_jobs(db: Session) -> RunDueJobsResult:
+    logger.info("Due job run started")
     result = RunDueJobsResult(
         expired_family_requests=0,
         access_confirmation_reminders_sent=0,
@@ -59,6 +60,16 @@ def run_due_jobs(db: Session) -> RunDueJobsResult:
     )
     for step in _due_job_steps():
         _run_due_job_step(db, result, step)
+    logger.info(
+        "Due job run completed",
+        extra={
+            "expired_family_requests": result.expired_family_requests,
+            "overdue_first_payments": result.overdue_first_payments,
+            "created_regular_payments": result.created_regular_payments,
+            "notification_jobs_created": result.notification_jobs_created,
+            "job_errors": len(result.job_errors),
+        },
+    )
     return result
 
 
@@ -82,6 +93,10 @@ def _run_due_job_step(
         )
         return
     step.apply(result, step_result)
+    logger.info(
+        "Due job step completed",
+        extra={"job_step": step.name, "job_step_result": str(step_result)},
+    )
 
 
 def _due_job_steps() -> tuple[DueJobStep, ...]:

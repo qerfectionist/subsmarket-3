@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator
 from datetime import date, timedelta
 
@@ -161,7 +162,7 @@ def test_expired_request_notifies_both_sides_and_can_be_retried(db: Session) -> 
 
 
 def test_run_due_jobs_commits_successful_steps_when_later_step_fails(
-    db: Session, monkeypatch: pytest.MonkeyPatch
+    db: Session, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     service = make_service(db)
     owner = make_user(db, 21)
@@ -178,6 +179,7 @@ def test_run_due_jobs_commits_successful_steps_when_later_step_fails(
         "subsmarket.jobs.service.send_access_confirmation_reminders",
         fail_access_reminders,
     )
+    caplog.set_level(logging.INFO, logger="subsmarket.jobs.service")
 
     result = run_due_jobs(db)
 
@@ -190,6 +192,8 @@ def test_run_due_jobs_commits_successful_steps_when_later_step_fails(
     persisted_request = db.get(FamilyRequest, request.id)
     assert persisted_request is not None
     assert persisted_request.status == "expired"
+    assert "Due job step failed" in caplog.text
+    assert "Due job run completed" in caplog.text
 
 
 def test_first_payment_overdue_does_not_remove_member(db: Session) -> None:
