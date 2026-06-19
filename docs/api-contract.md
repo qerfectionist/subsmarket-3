@@ -105,6 +105,30 @@ Query:
 Pagination rule: list endpoints use `limit + offset` and keep server-side
 caps. Clients should request the next page only after receiving a full page.
 
+Cursor pages are available for high-volume screens and should be preferred by
+new clients. They return:
+
+```json
+{
+  "items": [],
+  "next_cursor": "opaque-token-or-null"
+}
+```
+
+The cursor is an opaque bookmark. Clients must send it back unchanged as
+`cursor=<value>` to fetch the next page.
+
+Cursor endpoints:
+
+- `GET /api/families/page`;
+- `GET /api/families/me/page`;
+- `GET /api/families/payments/me/page`;
+- `GET /api/families/requests/me/page`;
+- `GET /api/families/{family_id}/requests/page`;
+- `GET /api/families/{family_id}/members/page`;
+- `GET /api/families/members/{member_id}/payments/page`;
+- `GET /api/families/{family_id}/audit-log/page`.
+
 Backend исключает:
 
 - закрытые семьи;

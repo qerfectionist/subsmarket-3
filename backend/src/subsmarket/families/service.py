@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -29,6 +29,12 @@ from subsmarket.families.models import (
     FamilyPaymentRequisite,
     FamilyRequest,
     FamilyRequestRestriction,
+)
+from subsmarket.families.pagination import (
+    cursor_datetime,
+    cursor_uuid,
+    decode_cursor,
+    encode_cursor,
 )
 from subsmarket.families.schemas import (
     AccessConfirmationResult,
@@ -66,6 +72,33 @@ ACTIVE_MEMBER_STATUSES = {
     "removal_pending",
 }
 PHONE_RE = re.compile(r"^\+?7\d{10}$")
+
+
+def _trim_page(items: list, limit: int, cursor_factory) -> tuple[list, str | None]:
+    page_items = items[:limit]
+    next_cursor = cursor_factory(page_items[-1]) if len(items) > limit else None
+    return page_items, next_cursor
+
+
+def _desc_datetime_uuid_condition(model, cursor: str):
+    payload = decode_cursor(cursor)
+    created_at = cursor_datetime(payload, "created_at")
+    item_id = cursor_uuid(payload, "id")
+    return or_(
+        model.created_at < created_at,
+        and_(model.created_at == created_at, model.id < item_id),
+    )
+
+
+def _asc_datetime_uuid_condition(model, cursor: str, datetime_field: str):
+    payload = decode_cursor(cursor)
+    value = cursor_datetime(payload, datetime_field)
+    item_id = cursor_uuid(payload, "id")
+    column = getattr(model, datetime_field)
+    return or_(
+        column > value,
+        and_(column == value, model.id > item_id),
+    )
 
 
 def calculate_member_share(total_price_kzt: int, max_members: int) -> tuple[int, int]:
@@ -681,6 +714,58 @@ def list_searchable_families(
     )
 
 
+def list_searchable_families_page(
+    db: Session,
+    user: User,
+    *,
+    family_type: str | None = None,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> tuple[list[Family], str | None]:
+    stmt = (
+        select(Family)
+        .options(joinedload(Family.service), joinedload(Family.owner))
+        .where(Family.status == "active")
+        .where(Family.is_search_visible.is_(True))
+        .where(Family.active_members_count < Family.max_members)
+        .where(Family.owner_user_id != user.id)
+        .where(
+            ~select(FamilyRequestRestriction.family_id)
+            .where(FamilyRequestRestriction.family_id == Family.id)
+            .where(FamilyRequestRestriction.user_id == user.id)
+            .exists()
+        )
+        .where(
+            ~select(FamilyRequest.id)
+            .where(FamilyRequest.family_id == Family.id)
+            .where(FamilyRequest.user_id == user.id)
+            .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
+            .exists()
+        )
+        .where(
+            ~select(FamilyMember.id)
+            .where(FamilyMember.family_id == Family.id)
+            .where(FamilyMember.user_id == user.id)
+            .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
+            .exists()
+        )
+        .order_by(Family.created_at.desc(), Family.id.desc())
+        .limit(limit + 1)
+    )
+    if family_type:
+        stmt = stmt.where(Family.family_type == family_type)
+    if cursor:
+        stmt = stmt.where(_desc_datetime_uuid_condition(Family, cursor))
+    items = list(db.scalars(stmt).all())
+    return _trim_page(
+        items,
+        limit,
+        lambda family: encode_cursor(
+            {"created_at": family.created_at, "id": family.id}
+        ),
+    )
+
+
 def list_my_families(
     db: Session,
     user: User,
@@ -705,6 +790,19 @@ def list_my_families(
         ).all()
     )
 
+    return _my_family_out_from_memberships(
+        db,
+        memberships,
+        payment_limit_per_family=payment_limit_per_family,
+    )
+
+
+def _my_family_out_from_memberships(
+    db: Session,
+    memberships: list[FamilyMember],
+    *,
+    payment_limit_per_family: int,
+) -> list[MyFamilyOut]:
     membership_ids = [membership.id for membership in memberships]
     payments_by_member_id: dict[UUID, list[FamilyPayment]] = {
         membership_id: [] for membership_id in membership_ids
@@ -773,6 +871,54 @@ def list_my_families(
     return result
 
 
+def list_my_families_page(
+    db: Session,
+    user: User,
+    *,
+    limit: int = 50,
+    cursor: str | None = None,
+    payment_limit_per_family: int = 20,
+) -> tuple[list[MyFamilyOut], str | None]:
+    stmt = (
+        select(FamilyMember)
+        .options(
+            joinedload(FamilyMember.user),
+            joinedload(FamilyMember.family).joinedload(Family.service),
+            joinedload(FamilyMember.family).joinedload(Family.owner),
+        )
+        .where(FamilyMember.user_id == user.id)
+        .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
+        .order_by(FamilyMember.joined_at.desc(), FamilyMember.id.desc())
+        .limit(limit + 1)
+    )
+    if cursor:
+        payload = decode_cursor(cursor)
+        joined_at = cursor_datetime(payload, "joined_at")
+        member_id = cursor_uuid(payload, "id")
+        stmt = stmt.where(
+            or_(
+                FamilyMember.joined_at < joined_at,
+                and_(FamilyMember.joined_at == joined_at, FamilyMember.id < member_id),
+            )
+        )
+    memberships = list(db.scalars(stmt).all())
+    page_memberships, next_cursor = _trim_page(
+        memberships,
+        limit,
+        lambda membership: encode_cursor(
+            {"joined_at": membership.joined_at, "id": membership.id}
+        ),
+    )
+    return (
+        _my_family_out_from_memberships(
+            db,
+            page_memberships,
+            payment_limit_per_family=payment_limit_per_family,
+        ),
+        next_cursor,
+    )
+
+
 def list_my_payments(
     db: Session, user: User, *, limit: int = 50, offset: int = 0
 ) -> list[FamilyPayment]:
@@ -785,6 +931,57 @@ def list_my_payments(
             .offset(offset)
             .limit(limit)
         ).all()
+    )
+
+
+def list_my_payments_page(
+    db: Session,
+    user: User,
+    *,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> tuple[list[FamilyPayment], str | None]:
+    stmt = (
+        select(FamilyPayment)
+        .join(FamilyMember, FamilyMember.id == FamilyPayment.member_id)
+        .where(FamilyMember.user_id == user.id)
+        .order_by(
+            FamilyPayment.due_at.desc(),
+            FamilyPayment.created_at.desc(),
+            FamilyPayment.id.desc(),
+        )
+        .limit(limit + 1)
+    )
+    if cursor:
+        payload = decode_cursor(cursor)
+        due_at = cursor_datetime(payload, "due_at")
+        created_at = cursor_datetime(payload, "created_at")
+        payment_id = cursor_uuid(payload, "id")
+        stmt = stmt.where(
+            or_(
+                FamilyPayment.due_at < due_at,
+                and_(
+                    FamilyPayment.due_at == due_at,
+                    FamilyPayment.created_at < created_at,
+                ),
+                and_(
+                    FamilyPayment.due_at == due_at,
+                    FamilyPayment.created_at == created_at,
+                    FamilyPayment.id < payment_id,
+                ),
+            )
+        )
+    items = list(db.scalars(stmt).all())
+    return _trim_page(
+        items,
+        limit,
+        lambda payment: encode_cursor(
+            {
+                "due_at": payment.due_at,
+                "created_at": payment.created_at,
+                "id": payment.id,
+            }
+        ),
     )
 
 
@@ -870,6 +1067,43 @@ def list_family_audit_logs(
             .offset(offset)
             .limit(limit)
         ).all()
+    )
+
+
+def list_family_audit_logs_page(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> tuple[list[FamilyAuditLog], str | None]:
+    family = db.get(Family, family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+
+    is_owner = family.owner_user_id == user.id
+    membership = db.scalar(
+        select(FamilyMember)
+        .where(FamilyMember.family_id == family_id)
+        .where(FamilyMember.user_id == user.id)
+    )
+    if not is_owner and membership is None:
+        raise HTTPException(status_code=403, detail="FAMILY_AUDIT_FORBIDDEN")
+
+    stmt = (
+        select(FamilyAuditLog)
+        .where(FamilyAuditLog.family_id == family_id)
+        .order_by(FamilyAuditLog.created_at.desc(), FamilyAuditLog.id.desc())
+        .limit(limit + 1)
+    )
+    if cursor:
+        stmt = stmt.where(_desc_datetime_uuid_condition(FamilyAuditLog, cursor))
+    items = list(db.scalars(stmt).all())
+    return _trim_page(
+        items,
+        limit,
+        lambda log: encode_cursor({"created_at": log.created_at, "id": log.id}),
     )
 
 
@@ -1126,6 +1360,35 @@ def list_my_join_requests(
     )
 
 
+def list_my_join_requests_page(
+    db: Session,
+    user: User,
+    *,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> tuple[list[FamilyRequest], str | None]:
+    stmt = (
+        select(FamilyRequest)
+        .options(
+            joinedload(FamilyRequest.family).joinedload(Family.service),
+            joinedload(FamilyRequest.family).joinedload(Family.owner),
+        )
+        .where(FamilyRequest.user_id == user.id)
+        .order_by(FamilyRequest.created_at.desc(), FamilyRequest.id.desc())
+        .limit(limit + 1)
+    )
+    if cursor:
+        stmt = stmt.where(_desc_datetime_uuid_condition(FamilyRequest, cursor))
+    items = list(db.scalars(stmt).all())
+    return _trim_page(
+        items,
+        limit,
+        lambda request: encode_cursor(
+            {"created_at": request.created_at, "id": request.id}
+        ),
+    )
+
+
 def list_owner_family_requests(
     db: Session,
     user: User,
@@ -1153,6 +1416,45 @@ def list_owner_family_requests(
             .offset(offset)
             .limit(limit)
         ).all()
+    )
+
+
+def list_owner_family_requests_page(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> tuple[list[FamilyRequest], str | None]:
+    family = db.get(Family, family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if family.owner_user_id != user.id:
+        raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_VIEW_REQUESTS")
+
+    stmt = (
+        select(FamilyRequest)
+        .options(
+            joinedload(FamilyRequest.user),
+            joinedload(FamilyRequest.family).joinedload(Family.service),
+        )
+        .where(FamilyRequest.family_id == family_id)
+        .where(FamilyRequest.status == ACTIVE_REQUEST_STATUS)
+        .order_by(FamilyRequest.created_at.asc(), FamilyRequest.id.asc())
+        .limit(limit + 1)
+    )
+    if cursor:
+        stmt = stmt.where(
+            _asc_datetime_uuid_condition(FamilyRequest, cursor, "created_at")
+        )
+    items = list(db.scalars(stmt).all())
+    return _trim_page(
+        items,
+        limit,
+        lambda request: encode_cursor(
+            {"created_at": request.created_at, "id": request.id}
+        ),
     )
 
 
@@ -1360,6 +1662,45 @@ def list_family_members(
             .offset(offset)
             .limit(limit)
         ).all()
+    )
+
+
+def list_family_members_page(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> tuple[list[FamilyMember], str | None]:
+    family = db.get(Family, family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if family.owner_user_id != user.id:
+        raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_VIEW_MEMBERS")
+
+    stmt = (
+        select(FamilyMember)
+        .options(joinedload(FamilyMember.user))
+        .where(FamilyMember.family_id == family_id)
+        .order_by(FamilyMember.joined_at.asc(), FamilyMember.id.asc())
+        .limit(limit + 1)
+    )
+    if cursor:
+        payload = decode_cursor(cursor)
+        joined_at = cursor_datetime(payload, "joined_at")
+        member_id = cursor_uuid(payload, "id")
+        stmt = stmt.where(
+            or_(
+                FamilyMember.joined_at > joined_at,
+                and_(FamilyMember.joined_at == joined_at, FamilyMember.id > member_id),
+            )
+        )
+    items = list(db.scalars(stmt).all())
+    return _trim_page(
+        items,
+        limit,
+        lambda member: encode_cursor({"joined_at": member.joined_at, "id": member.id}),
     )
 
 
@@ -2020,6 +2361,41 @@ def list_member_payments(
             .offset(offset)
             .limit(limit)
         ).all()
+    )
+
+
+def list_member_payments_page(
+    db: Session,
+    user: User,
+    member_id: UUID,
+    *,
+    limit: int = 50,
+    cursor: str | None = None,
+) -> tuple[list[FamilyPayment], str | None]:
+    member = db.get(FamilyMember, member_id)
+    if member is None:
+        raise HTTPException(status_code=404, detail="FAMILY_MEMBER_NOT_FOUND")
+    family = db.get(Family, member.family_id)
+    if family is None:
+        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    if user.id not in {member.user_id, family.owner_user_id}:
+        raise HTTPException(status_code=403, detail="FAMILY_PAYMENTS_FORBIDDEN")
+
+    stmt = (
+        select(FamilyPayment)
+        .where(FamilyPayment.member_id == member_id)
+        .order_by(FamilyPayment.created_at.desc(), FamilyPayment.id.desc())
+        .limit(limit + 1)
+    )
+    if cursor:
+        stmt = stmt.where(_desc_datetime_uuid_condition(FamilyPayment, cursor))
+    items = list(db.scalars(stmt).all())
+    return _trim_page(
+        items,
+        limit,
+        lambda payment: encode_cursor(
+            {"created_at": payment.created_at, "id": payment.id}
+        ),
     )
 
 

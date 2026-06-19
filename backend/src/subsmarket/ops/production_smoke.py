@@ -10,6 +10,7 @@ REQUIRED_PATHS = {
     "/ready",
     "/api/me",
     "/api/families",
+    "/api/families/page",
     "/api/families/{family_id}/view",
     "/api/families/invites/{code}",
     "/api/telegram/webhook",

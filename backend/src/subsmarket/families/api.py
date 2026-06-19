@@ -9,21 +9,28 @@ from subsmarket.core.database import get_db
 from subsmarket.families.schemas import (
     AccessConfirmationResult,
     FamilyAuditLogOut,
+    FamilyAuditLogPageOut,
     FamilyCreate,
     FamilyCreateResult,
     FamilyDescriptionUpdate,
     FamilyInviteOut,
     FamilyMemberOut,
+    FamilyMemberPageOut,
     FamilyMemberPaymentsOut,
     FamilyOut,
+    FamilyPageOut,
     FamilyPaymentDayUpdate,
     FamilyPaymentOut,
+    FamilyPaymentPageOut,
     FamilyPriceUpdate,
     FamilyRequestOut,
+    FamilyRequestPageOut,
     FamilyViewOut,
     FamilyVisibilityUpdate,
     MyFamilyOut,
+    MyFamilyPageOut,
     OwnerFamilyRequestOut,
+    OwnerFamilyRequestPageOut,
     PaymentConfirmationResult,
     PaymentRequisiteOut,
     PrepaymentPeriodsCreate,
@@ -49,14 +56,22 @@ from subsmarket.families.service import (
     get_open_payment_requisite,
     leave_family,
     list_family_audit_logs,
+    list_family_audit_logs_page,
     list_family_member_payments,
     list_family_members,
+    list_family_members_page,
     list_member_payments,
+    list_member_payments_page,
     list_my_families,
+    list_my_families_page,
     list_my_join_requests,
+    list_my_join_requests_page,
     list_my_payments,
+    list_my_payments_page,
     list_owner_family_requests,
+    list_owner_family_requests_page,
     list_searchable_families,
+    list_searchable_families_page,
     mark_access_provided,
     mark_payment_not_received,
     record_owner_prepaid_periods,
@@ -85,6 +100,7 @@ from subsmarket.identity.telegram import parse_telegram_user
 router = APIRouter(prefix="/api/families", tags=["families"])
 
 MAX_PAGE_OFFSET = 100_000
+MAX_CURSOR_LENGTH = 512
 
 
 def get_current_user(
@@ -128,6 +144,31 @@ def get_families(
     ]
 
 
+@router.get("/page", response_model=FamilyPageOut)
+def get_families_page(
+    family_type: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyPageOut:
+    items, next_cursor = list_searchable_families_page(
+        db,
+        user,
+        family_type=family_type,
+        limit=limit,
+        cursor=cursor,
+    )
+    return FamilyPageOut(
+        items=[to_family_out(family) for family in items],
+        next_cursor=next_cursor,
+    )
+
+
 @router.get("/me", response_model=list[MyFamilyOut])
 def get_my_families(
     limit: int = Query(default=50, ge=1, le=100),
@@ -136,6 +177,26 @@ def get_my_families(
     user=Depends(get_current_user),
 ) -> list[MyFamilyOut]:
     return list_my_families(db, user, limit=limit, offset=offset)
+
+
+@router.get("/me/page", response_model=MyFamilyPageOut)
+def get_my_families_page(
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> MyFamilyPageOut:
+    items, next_cursor = list_my_families_page(
+        db,
+        user,
+        limit=limit,
+        cursor=cursor,
+    )
+    return MyFamilyPageOut(items=items, next_cursor=next_cursor)
 
 
 @router.get("/payments/me", response_model=list[FamilyPaymentOut])
@@ -149,6 +210,29 @@ def get_my_payments(
         to_payment_out(item)
         for item in list_my_payments(db, user, limit=limit, offset=offset)
     ]
+
+
+@router.get("/payments/me/page", response_model=FamilyPaymentPageOut)
+def get_my_payments_page(
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyPaymentPageOut:
+    items, next_cursor = list_my_payments_page(
+        db,
+        user,
+        limit=limit,
+        cursor=cursor,
+    )
+    return FamilyPaymentPageOut(
+        items=[to_payment_out(item) for item in items],
+        next_cursor=next_cursor,
+    )
 
 
 @router.get("/invites/{code}", response_model=FamilyViewOut)
@@ -189,6 +273,29 @@ def get_my_family_requests(
     ]
 
 
+@router.get("/requests/me/page", response_model=FamilyRequestPageOut)
+def get_my_family_requests_page(
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyRequestPageOut:
+    items, next_cursor = list_my_join_requests_page(
+        db,
+        user,
+        limit=limit,
+        cursor=cursor,
+    )
+    return FamilyRequestPageOut(
+        items=[to_family_request_out(item) for item in items],
+        next_cursor=next_cursor,
+    )
+
+
 @router.post("/requests/{request_id}/cancel", response_model=FamilyRequestOut)
 def cancel_my_family_request(
     request_id: UUID,
@@ -213,6 +320,31 @@ def get_owner_family_requests(
             db, user, family_id, limit=limit, offset=offset
         )
     ]
+
+
+@router.get("/{family_id}/requests/page", response_model=OwnerFamilyRequestPageOut)
+def get_owner_family_requests_page(
+    family_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> OwnerFamilyRequestPageOut:
+    items, next_cursor = list_owner_family_requests_page(
+        db,
+        user,
+        family_id,
+        limit=limit,
+        cursor=cursor,
+    )
+    return OwnerFamilyRequestPageOut(
+        items=[to_owner_family_request_out(item) for item in items],
+        next_cursor=next_cursor,
+    )
 
 
 @router.post("/requests/{request_id}/approve", response_model=FamilyRequestOut)
@@ -350,6 +482,31 @@ def get_family_members(
     ]
 
 
+@router.get("/{family_id}/members/page", response_model=FamilyMemberPageOut)
+def get_family_members_page(
+    family_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberPageOut:
+    items, next_cursor = list_family_members_page(
+        db,
+        user,
+        family_id,
+        limit=limit,
+        cursor=cursor,
+    )
+    return FamilyMemberPageOut(
+        items=[to_member_out(item) for item in items],
+        next_cursor=next_cursor,
+    )
+
+
 @router.post("/members/{member_id}/access-provided", response_model=FamilyMemberOut)
 def post_member_access_provided(
     member_id: UUID,
@@ -479,6 +636,31 @@ def get_member_payments(
     ]
 
 
+@router.get("/members/{member_id}/payments/page", response_model=FamilyPaymentPageOut)
+def get_member_payments_page(
+    member_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyPaymentPageOut:
+    items, next_cursor = list_member_payments_page(
+        db,
+        user,
+        member_id,
+        limit=limit,
+        cursor=cursor,
+    )
+    return FamilyPaymentPageOut(
+        items=[to_payment_out(item) for item in items],
+        next_cursor=next_cursor,
+    )
+
+
 @router.get(
     "/{family_id}/payments",
     response_model=list[FamilyMemberPaymentsOut],
@@ -602,6 +784,31 @@ def get_family_audit_log(
             db, user, family_id, limit=limit, offset=offset
         )
     ]
+
+
+@router.get("/{family_id}/audit-log/page", response_model=FamilyAuditLogPageOut)
+def get_family_audit_log_page(
+    family_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    cursor: str | None = Query(
+        default=None,
+        min_length=1,
+        max_length=MAX_CURSOR_LENGTH,
+    ),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyAuditLogPageOut:
+    items, next_cursor = list_family_audit_logs_page(
+        db,
+        user,
+        family_id,
+        limit=limit,
+        cursor=cursor,
+    )
+    return FamilyAuditLogPageOut(
+        items=[to_audit_log_out(item) for item in items],
+        next_cursor=next_cursor,
+    )
 
 
 @router.get("/{family_id}", response_model=FamilyOut)

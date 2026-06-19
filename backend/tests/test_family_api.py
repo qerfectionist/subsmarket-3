@@ -104,6 +104,62 @@ def test_family_creation_is_idempotent(
     assert changed.json()["detail"] == "IDEMPOTENCY_KEY_REUSED"
 
 
+def test_family_search_page_uses_cursor_without_duplicates(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    candidate_headers = auth_headers(610006, "cursor_candidate", "Candidate")
+    payload = {
+        "service_id": str(service.id),
+        "period": "monthly",
+        "max_members": 4,
+        "total_price_kzt": 4000,
+        "payment_day": 15,
+        "next_payment_date": (date.today() + timedelta(days=30)).isoformat(),
+        "payment_bank": "kaspi",
+        "payment_phone": "+77001234567",
+    }
+    for index in range(3):
+        response = client.post(
+            "/api/families",
+            headers=auth_headers(
+                610020 + index,
+                f"cursor_owner_{index}",
+                f"Owner {index}",
+            ),
+            json=payload,
+        )
+        assert response.status_code == 201
+
+    first_page = client.get(
+        "/api/families/page?limit=2",
+        headers=candidate_headers,
+    )
+    assert first_page.status_code == 200
+    first_body = first_page.json()
+    first_ids = {item["id"] for item in first_body["items"]}
+    assert len(first_ids) == 2
+    assert first_body["next_cursor"]
+
+    second_page = client.get(
+        f"/api/families/page?limit=2&cursor={first_body['next_cursor']}",
+        headers=candidate_headers,
+    )
+    assert second_page.status_code == 200
+    second_body = second_page.json()
+    second_ids = {item["id"] for item in second_body["items"]}
+    assert len(second_ids) == 1
+    assert first_ids.isdisjoint(second_ids)
+    assert second_body["next_cursor"] is None
+
+    invalid_cursor = client.get(
+        "/api/families/page?cursor=bad-cursor",
+        headers=candidate_headers,
+    )
+    assert invalid_cursor.status_code == 400
+    assert invalid_cursor.json()["detail"] == "INVALID_PAGE_CURSOR"
+
+
 def test_family_invite_lifecycle_and_hidden_discovery(
     client: TestClient,
     service: FamilyService,

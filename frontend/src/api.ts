@@ -1,5 +1,6 @@
 import type {
   AccessConfirmationResult,
+  CursorPage,
   Family,
   FamilyAuditLog,
   FamilyCreate,
@@ -171,7 +172,9 @@ export async function importFamilyServices(): Promise<void> {
 
 export function getFamilies(familyType?: FamilyType): Promise<Family[]> {
   const query = familyType ? `?family_type=${familyType}` : "";
-  return request<Family[]>(`/api/families${query}`);
+  return request<CursorPage<Family>>(`/api/families/page${query}`).then(
+    (page) => page.items
+  );
 }
 
 export function getFamilyView(familyId: string): Promise<FamilyView> {
@@ -208,7 +211,9 @@ export function updateFamilyVisibility(
 }
 
 export function getFamilyAuditLog(familyId: string): Promise<FamilyAuditLog[]> {
-  return request<FamilyAuditLog[]>(`/api/families/${familyId}/audit-log`);
+  return request<CursorPage<FamilyAuditLog>>(
+    `/api/families/${familyId}/audit-log/page`
+  ).then((page) => page.items);
 }
 
 export function createFamily(payload: FamilyCreate): Promise<FamilyCreateResult> {
@@ -262,7 +267,9 @@ export function createFamilyRequest(familyId: string): Promise<FamilyRequest> {
 }
 
 export function getMyFamilyRequests(): Promise<FamilyRequest[]> {
-  return request<FamilyRequest[]>("/api/families/requests/me");
+  return request<CursorPage<FamilyRequest>>("/api/families/requests/me/page").then(
+    (page) => page.items
+  );
 }
 
 export function cancelFamilyRequest(requestId: string): Promise<FamilyRequest> {
@@ -272,7 +279,9 @@ export function cancelFamilyRequest(requestId: string): Promise<FamilyRequest> {
 export function getOwnerFamilyRequests(
   familyId: string
 ): Promise<OwnerFamilyRequest[]> {
-  return request<OwnerFamilyRequest[]>(`/api/families/${familyId}/requests`);
+  return request<CursorPage<OwnerFamilyRequest>>(
+    `/api/families/${familyId}/requests/page`
+  ).then((page) => page.items);
 }
 
 export function approveFamilyRequest(requestId: string): Promise<FamilyRequest> {
@@ -284,11 +293,15 @@ export function rejectFamilyRequest(requestId: string): Promise<FamilyRequest> {
 }
 
 export function getMyFamilies() {
-  return request<MyFamily[]>("/api/families/me");
+  return request<CursorPage<MyFamily>>("/api/families/me/page").then(
+    (page) => page.items
+  );
 }
 
 export function getFamilyMembers(familyId: string): Promise<FamilyMember[]> {
-  return request<FamilyMember[]>(`/api/families/${familyId}/members`);
+  return request<CursorPage<FamilyMember>>(
+    `/api/families/${familyId}/members/page`
+  ).then((page) => page.items);
 }
 
 export function markAccessProvided(memberId: string): Promise<FamilyMember> {
@@ -348,7 +361,9 @@ export function getPaymentRequisite(memberId: string): Promise<PaymentRequisite>
 }
 
 export function getMemberPayments(memberId: string): Promise<FamilyPayment[]> {
-  return request<FamilyPayment[]>(`/api/families/members/${memberId}/payments`);
+  return request<CursorPage<FamilyPayment>>(
+    `/api/families/members/${memberId}/payments/page`
+  ).then((page) => page.items);
 }
 
 export function createMemberPrepayment(memberId: string): Promise<FamilyPayment> {

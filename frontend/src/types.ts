@@ -38,6 +38,11 @@ export type FamilyService = {
 
 export type FamilyType = "subscription" | "tariff";
 
+export type CursorPage<T> = {
+  items: T[];
+  next_cursor: string | null;
+};
+
 export type PublicOwner = {
   first_name: string;
   photo_url: string | null;

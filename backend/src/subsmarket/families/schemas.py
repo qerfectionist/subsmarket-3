@@ -81,6 +81,11 @@ class FamilyCreateResult(BaseModel):
     family: FamilyOut
 
 
+class FamilyPageOut(BaseModel):
+    items: list[FamilyOut]
+    next_cursor: str | None = None
+
+
 class FamilyInviteOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -117,6 +122,16 @@ class FamilyRequestOut(BaseModel):
 
 class OwnerFamilyRequestOut(FamilyRequestOut):
     candidate: RequestUserOut
+
+
+class FamilyRequestPageOut(BaseModel):
+    items: list[FamilyRequestOut]
+    next_cursor: str | None = None
+
+
+class OwnerFamilyRequestPageOut(BaseModel):
+    items: list[OwnerFamilyRequestOut]
+    next_cursor: str | None = None
 
 
 class FamilyMemberOut(BaseModel):
@@ -166,6 +181,16 @@ class FamilyMemberPaymentsOut(BaseModel):
     payments: list[FamilyPaymentOut]
 
 
+class FamilyMemberPageOut(BaseModel):
+    items: list[FamilyMemberOut]
+    next_cursor: str | None = None
+
+
+class FamilyPaymentPageOut(BaseModel):
+    items: list[FamilyPaymentOut]
+    next_cursor: str | None = None
+
+
 class AccessConfirmationResult(BaseModel):
     member: FamilyMemberOut
     payment: FamilyPaymentOut
@@ -182,6 +207,11 @@ class MyFamilyOut(BaseModel):
     membership: FamilyMemberOut
     payments: list[FamilyPaymentOut]
     pending_requests_count: int = 0
+
+
+class MyFamilyPageOut(BaseModel):
+    items: list[MyFamilyOut]
+    next_cursor: str | None = None
 
 
 class FamilyViewOut(BaseModel):
@@ -206,3 +236,8 @@ class FamilyAuditLogOut(BaseModel):
     new_status: str | None
     details: dict[str, Any]
     created_at: datetime
+
+
+class FamilyAuditLogPageOut(BaseModel):
+    items: list[FamilyAuditLogOut]
+    next_cursor: str | None = None
