@@ -253,7 +253,10 @@ export function updateFamilyPaymentDay(
 }
 
 export function closeFamily(familyId: string): Promise<Family> {
-  return post<Family>(`/api/families/${familyId}/close`);
+  return postIdempotent<Family>(
+    `family.close:${familyId}`,
+    `/api/families/${familyId}/close`
+  );
 }
 
 export function acknowledgeFamilyClosing(familyId: string): Promise<FamilyMember> {
@@ -312,7 +315,10 @@ export function getFamilyMemberPayments(
 }
 
 export function markAccessProvided(memberId: string): Promise<FamilyMember> {
-  return post<FamilyMember>(`/api/families/members/${memberId}/access-provided`);
+  return postIdempotent<FamilyMember>(
+    `family_member.provide_access:${memberId}`,
+    `/api/families/members/${memberId}/access-provided`
+  );
 }
 
 export function remindAccessConfirmation(memberId: string): Promise<FamilyMember> {
@@ -330,7 +336,8 @@ export function cancelMemberBeforeAccess(memberId: string): Promise<FamilyMember
 export function confirmAccessReceived(
   memberId: string
 ): Promise<AccessConfirmationResult> {
-  return post<AccessConfirmationResult>(
+  return postIdempotent<AccessConfirmationResult>(
+    `family_member.confirm_access:${memberId}`,
     `/api/families/members/${memberId}/access-confirmed`
   );
 }
@@ -340,7 +347,10 @@ export function leaveFamily(memberId: string): Promise<FamilyMember> {
 }
 
 export function scheduleMemberRemoval(memberId: string): Promise<FamilyMember> {
-  return post<FamilyMember>(`/api/families/members/${memberId}/remove`);
+  return postIdempotent<FamilyMember>(
+    `family_member.schedule_removal:${memberId}`,
+    `/api/families/members/${memberId}/remove`
+  );
 }
 
 export function acknowledgeMemberRemoval(memberId: string): Promise<FamilyMember> {
@@ -388,7 +398,10 @@ export function recordOwnerPrepaidPeriods(
 }
 
 export function reportPaymentPaid(paymentId: string): Promise<FamilyPayment> {
-  return post<FamilyPayment>(`/api/families/payments/${paymentId}/report-paid`);
+  return postIdempotent<FamilyPayment>(
+    `family_payment.report_paid:${paymentId}`,
+    `/api/families/payments/${paymentId}/report-paid`
+  );
 }
 
 export function cancelPaymentReport(paymentId: string): Promise<FamilyPayment> {
@@ -398,7 +411,8 @@ export function cancelPaymentReport(paymentId: string): Promise<FamilyPayment> {
 export function confirmPaymentReceived(
   paymentId: string
 ): Promise<PaymentConfirmationResult> {
-  return post<PaymentConfirmationResult>(
+  return postIdempotent<PaymentConfirmationResult>(
+    `family_payment.confirm_received:${paymentId}`,
     `/api/families/payments/${paymentId}/confirm`
   );
 }

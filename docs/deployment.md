@@ -416,6 +416,22 @@ use warmup requests before the measured run; otherwise the cold start dominates
 the result. Increase load gradually and do not run aggressive tests against the
 shared Free environment.
 
+For a write-heavy lifecycle smoke, use only a local disposable PostgreSQL
+database. The command creates temporary owners, candidates, families, requests,
+and memberships; validates the final counts; and deletes all generated data in
+a `finally` cleanup block:
+
+```powershell
+$env:WRITE_LOAD_DATABASE_URL='postgresql+psycopg://subsmarket:subsmarket@localhost:5432/subsmarket'
+$env:WRITE_LOAD_FAMILIES='250'
+$env:WRITE_LOAD_CONCURRENCY='25'
+cd backend
+.\.venv\Scripts\python -m subsmarket.ops.write_load_smoke
+```
+
+Remote databases are rejected by default. Do not set
+`WRITE_LOAD_ALLOW_REMOTE=true` for production or shared staging databases.
+
 To test authenticated read-only endpoints, pass a real Telegram WebApp initData
 header from a test user:
 

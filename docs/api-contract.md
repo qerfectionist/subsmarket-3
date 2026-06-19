@@ -146,6 +146,19 @@ Header `Idempotency-Key` is supported and used by the Mini App. Repeating the
 same key with the same body returns the originally created family. Reusing the
 key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`.
 
+The Mini App also sends `Idempotency-Key` for critical state transitions:
+
+- `POST /api/families/{family_id}/close`;
+- `POST /api/families/members/{member_id}/access-provided`;
+- `POST /api/families/members/{member_id}/access-confirmed`;
+- `POST /api/families/members/{member_id}/remove`;
+- `POST /api/families/payments/{payment_id}/report-paid`;
+- `POST /api/families/payments/{payment_id}/confirm`.
+
+A network retry with the same user, operation, target, and key returns the
+original resource. The backend does not create duplicate payments,
+notifications, removal timers, or family-closing windows.
+
 Создать семью подписки или семью тарифа.
 
 Body:

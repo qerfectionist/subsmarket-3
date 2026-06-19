@@ -1858,7 +1858,27 @@ def leave_family(db: Session, user: User, member_id: UUID) -> FamilyMember:
     return member
 
 
-def schedule_member_removal(db: Session, user: User, member_id: UUID) -> FamilyMember:
+def schedule_member_removal(
+    db: Session,
+    user: User,
+    member_id: UUID,
+    *,
+    idempotency_key: str | None = None,
+) -> FamilyMember:
+    claim = claim_idempotency(
+        db,
+        user_id=user.id,
+        operation="family_member.schedule_removal",
+        idempotency_key=idempotency_key,
+        payload={"member_id": str(member_id)},
+        resource_type="family_member",
+    )
+    if claim.is_replay:
+        replayed_member = db.get(FamilyMember, claim.resource_id)
+        if replayed_member is None:
+            raise RuntimeError("Idempotent family member was not found")
+        return replayed_member
+
     member = _get_member_for_update(db, member_id)
     family = db.scalar(
         select(Family).where(Family.id == member.family_id).with_for_update()
@@ -1901,6 +1921,11 @@ def schedule_member_removal(db: Session, user: User, member_id: UUID) -> FamilyM
             "member_id": str(member.id),
             "message": "Владелец запустил удаление из семьи. У вас есть 12 часов.",
         },
+    )
+    complete_idempotency(
+        claim,
+        resource_type="family_member",
+        resource_id=member.id,
     )
     db.commit()
     db.refresh(member)
@@ -2054,7 +2079,27 @@ def request_member_removal_cancellation(
     return member
 
 
-def close_family(db: Session, user: User, family_id: UUID) -> Family:
+def close_family(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    idempotency_key: str | None = None,
+) -> Family:
+    claim = claim_idempotency(
+        db,
+        user_id=user.id,
+        operation="family.close",
+        idempotency_key=idempotency_key,
+        payload={"family_id": str(family_id)},
+        resource_type="family",
+    )
+    if claim.is_replay:
+        replayed_family = get_family_by_id(db, claim.resource_id)
+        if replayed_family is None:
+            raise RuntimeError("Idempotent family was not found")
+        return replayed_family
+
     family = _get_owned_family_for_update(db, user, family_id)
     if family.status == "closed":
         raise HTTPException(status_code=409, detail="FAMILY_ALREADY_CLOSED")
@@ -2095,6 +2140,11 @@ def close_family(db: Session, user: User, family_id: UUID) -> Family:
                 "Подтвердите, что увидели уведомление."
             ),
         )
+    complete_idempotency(
+        claim,
+        resource_type="family",
+        resource_id=family.id,
+    )
     db.commit()
     loaded = get_family_by_id(db, family.id)
     if loaded is None:
@@ -2138,7 +2188,27 @@ def acknowledge_family_closing(
     return member
 
 
-def mark_access_provided(db: Session, user: User, member_id: UUID) -> FamilyMember:
+def mark_access_provided(
+    db: Session,
+    user: User,
+    member_id: UUID,
+    *,
+    idempotency_key: str | None = None,
+) -> FamilyMember:
+    claim = claim_idempotency(
+        db,
+        user_id=user.id,
+        operation="family_member.provide_access",
+        idempotency_key=idempotency_key,
+        payload={"member_id": str(member_id)},
+        resource_type="family_member",
+    )
+    if claim.is_replay:
+        replayed_member = db.get(FamilyMember, claim.resource_id)
+        if replayed_member is None:
+            raise RuntimeError("Idempotent family member was not found")
+        return replayed_member
+
     member = db.scalar(
         select(FamilyMember).where(FamilyMember.id == member_id).with_for_update()
     )
@@ -2185,6 +2255,11 @@ def mark_access_provided(db: Session, user: User, member_id: UUID) -> FamilyMemb
                 "Проверьте доступ и подтвердите получение."
             ),
         },
+    )
+    complete_idempotency(
+        claim,
+        resource_type="family_member",
+        resource_id=member.id,
     )
     db.commit()
     db.refresh(member)
@@ -2263,8 +2338,26 @@ def remind_access_confirmation(
 
 
 def confirm_access_received(
-    db: Session, user: User, member_id: UUID
+    db: Session,
+    user: User,
+    member_id: UUID,
+    *,
+    idempotency_key: str | None = None,
 ) -> AccessConfirmationResult:
+    claim = claim_idempotency(
+        db,
+        user_id=user.id,
+        operation="family_member.confirm_access",
+        idempotency_key=idempotency_key,
+        payload={"member_id": str(member_id)},
+        resource_type="family_payment",
+    )
+    if claim.is_replay:
+        replayed_payment = db.get(FamilyPayment, claim.resource_id)
+        if replayed_payment is None:
+            raise RuntimeError("Idempotent family payment was not found")
+        return _access_confirmation_result(db, replayed_payment)
+
     member = db.scalar(
         select(FamilyMember).where(FamilyMember.id == member_id).with_for_update()
     )
@@ -2346,10 +2439,32 @@ def confirm_access_received(
             ),
         },
     )
+    complete_idempotency(
+        claim,
+        resource_type="family_payment",
+        resource_id=payment.id,
+    )
     db.commit()
     db.refresh(member)
     db.refresh(payment)
 
+    return _access_confirmation_result(db, payment)
+
+
+def _access_confirmation_result(
+    db: Session,
+    payment: FamilyPayment,
+) -> AccessConfirmationResult:
+    member = db.get(FamilyMember, payment.member_id)
+    if member is None:
+        raise RuntimeError("Family member for access confirmation was not found")
+    requisite = db.scalar(
+        select(FamilyPaymentRequisite).where(
+            FamilyPaymentRequisite.family_id == payment.family_id
+        )
+    )
+    if requisite is None:
+        raise RuntimeError("Payment requisite for access confirmation was not found")
     member.user = db.get(User, member.user_id)
     return AccessConfirmationResult(
         member=to_member_out(member),
@@ -2658,7 +2773,27 @@ def record_owner_prepaid_periods(
     return created
 
 
-def report_payment_paid(db: Session, user: User, payment_id: UUID) -> FamilyPayment:
+def report_payment_paid(
+    db: Session,
+    user: User,
+    payment_id: UUID,
+    *,
+    idempotency_key: str | None = None,
+) -> FamilyPayment:
+    claim = claim_idempotency(
+        db,
+        user_id=user.id,
+        operation="family_payment.report_paid",
+        idempotency_key=idempotency_key,
+        payload={"payment_id": str(payment_id)},
+        resource_type="family_payment",
+    )
+    if claim.is_replay:
+        replayed_payment = db.get(FamilyPayment, claim.resource_id)
+        if replayed_payment is None:
+            raise RuntimeError("Idempotent family payment was not found")
+        return replayed_payment
+
     payment = _get_payment_for_update(db, payment_id)
     member = db.get(FamilyMember, payment.member_id)
     if member is None:
@@ -2705,6 +2840,11 @@ def report_payment_paid(db: Session, user: User, payment_id: UUID) -> FamilyPaym
                 "Проверьте перевод и подтвердите."
             ),
         },
+    )
+    complete_idempotency(
+        claim,
+        resource_type="family_payment",
+        resource_id=payment.id,
     )
     db.commit()
     db.refresh(payment)
@@ -2758,8 +2898,26 @@ def cancel_payment_report(db: Session, user: User, payment_id: UUID) -> FamilyPa
 
 
 def confirm_payment_received(
-    db: Session, user: User, payment_id: UUID
+    db: Session,
+    user: User,
+    payment_id: UUID,
+    *,
+    idempotency_key: str | None = None,
 ) -> PaymentConfirmationResult:
+    claim = claim_idempotency(
+        db,
+        user_id=user.id,
+        operation="family_payment.confirm_received",
+        idempotency_key=idempotency_key,
+        payload={"payment_id": str(payment_id)},
+        resource_type="family_payment",
+    )
+    if claim.is_replay:
+        replayed_payment = db.get(FamilyPayment, claim.resource_id)
+        if replayed_payment is None:
+            raise RuntimeError("Idempotent family payment was not found")
+        return _payment_confirmation_result(db, replayed_payment)
+
     payment = _get_payment_for_update(db, payment_id)
     member = db.scalar(
         select(FamilyMember)
@@ -2814,9 +2972,24 @@ def confirm_payment_received(
             "message": "Владелец подтвердил оплату.",
         },
     )
+    complete_idempotency(
+        claim,
+        resource_type="family_payment",
+        resource_id=payment.id,
+    )
     db.commit()
     db.refresh(payment)
     db.refresh(member)
+    return _payment_confirmation_result(db, payment)
+
+
+def _payment_confirmation_result(
+    db: Session,
+    payment: FamilyPayment,
+) -> PaymentConfirmationResult:
+    member = db.get(FamilyMember, payment.member_id)
+    if member is None:
+        raise RuntimeError("Family member for payment confirmation was not found")
     member.user = db.get(User, member.user_id)
     return PaymentConfirmationResult(
         member=to_member_out(member), payment=to_payment_out(payment)

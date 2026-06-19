@@ -643,3 +643,18 @@ Last checkpoint:
   - `payment not received` preserves an existing overdue status.
 - Verified 118 backend tests, 3 Playwright tests, and 5 PostgreSQL concurrency
   tests.
+
+2026-06-20 critical-command idempotency and local write load:
+
+- Added `Idempotency-Key` support to access provided, access confirmed, payment
+  reported, payment confirmed, member removal scheduling, and family closing.
+- Updated the Mini App to reuse one key across concurrent/network retries for
+  those commands.
+- Added a local-PostgreSQL-only write-load tool with guaranteed cleanup.
+- Completed a 250-family run at concurrency 25:
+  - 250 family creations, 250 requests, and 250 approvals;
+  - 0 errors;
+  - all 250 families validated as full;
+  - temporary services and users after cleanup: 0.
+- Verified 122 backend tests, 3 Playwright tests, and 5 PostgreSQL concurrency
+  tests.

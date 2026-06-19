@@ -346,36 +346,76 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
     assert hidden_requisite.status_code == 409
     assert hidden_requisite.json()["detail"] == "ACCESS_NOT_CONFIRMED"
 
+    access_headers = {
+        **owner_headers,
+        "Idempotency-Key": "access-provided-test-key",
+    }
     access_response = client.post(
         f"/api/families/members/{member_id}/access-provided",
-        headers=owner_headers,
+        headers=access_headers,
+    )
+    repeated_access = client.post(
+        f"/api/families/members/{member_id}/access-provided",
+        headers=access_headers,
     )
     assert access_response.status_code == 200
+    assert repeated_access.status_code == 200
+    assert repeated_access.json()["id"] == access_response.json()["id"]
+    confirm_access_headers = {
+        **member_headers,
+        "Idempotency-Key": "access-confirmed-test-key",
+    }
     confirmation_response = client.post(
         f"/api/families/members/{member_id}/access-confirmed",
-        headers=member_headers,
+        headers=confirm_access_headers,
+    )
+    repeated_confirmation = client.post(
+        f"/api/families/members/{member_id}/access-confirmed",
+        headers=confirm_access_headers,
     )
     assert confirmation_response.status_code == 200
+    assert repeated_confirmation.status_code == 200
     confirmation = confirmation_response.json()
     assert confirmation["payment_requisite"] == {
         "bank": "kaspi",
         "phone": "+77001234567",
     }
     payment_id = confirmation["payment"]["id"]
+    assert repeated_confirmation.json()["payment"]["id"] == payment_id
 
+    report_headers = {
+        **member_headers,
+        "Idempotency-Key": "payment-reported-test-key",
+    }
     report_response = client.post(
         f"/api/families/payments/{payment_id}/report-paid",
-        headers=member_headers,
+        headers=report_headers,
+    )
+    repeated_report = client.post(
+        f"/api/families/payments/{payment_id}/report-paid",
+        headers=report_headers,
     )
     assert report_response.status_code == 200
     assert report_response.json()["status"] == "payment_reported"
+    assert repeated_report.status_code == 200
+    assert repeated_report.json()["id"] == payment_id
+    payment_confirm_headers = {
+        **owner_headers,
+        "Idempotency-Key": "payment-confirmed-test-key",
+    }
     confirm_response = client.post(
         f"/api/families/payments/{payment_id}/confirm",
-        headers=owner_headers,
+        headers=payment_confirm_headers,
+    )
+    repeated_payment_confirmation = client.post(
+        f"/api/families/payments/{payment_id}/confirm",
+        headers=payment_confirm_headers,
     )
     assert confirm_response.status_code == 200
+    assert repeated_payment_confirmation.status_code == 200
     assert confirm_response.json()["payment"]["status"] == "paid"
     assert confirm_response.json()["member"]["status"] == "active"
+    assert repeated_payment_confirmation.json()["payment"]["id"] == payment_id
 
     member_families = client.get("/api/families/me", headers=member_headers)
     assert member_families.status_code == 200

@@ -1052,9 +1052,22 @@ def test_family_close_starts_three_day_warning(
     owner = make_user(db, 100)
     family = make_family(db, owner, subscription_service)
 
-    closing_family = close_family(db, owner, family.id)
+    closing_family = close_family(
+        db,
+        owner,
+        family.id,
+        idempotency_key="family-close-test-key",
+    )
+    repeated_closing = close_family(
+        db,
+        owner,
+        family.id,
+        idempotency_key="family-close-test-key",
+    )
 
     assert closing_family.status == "closing"
+    assert repeated_closing.id == closing_family.id
+    assert repeated_closing.closes_at == closing_family.closes_at
     assert closing_family.closing_started_at is not None
     assert closing_family.closes_at is not None
     assert closing_family.closes_at - closing_family.closing_started_at == timedelta(
@@ -1140,9 +1153,24 @@ def test_member_removal_warning_lasts_twelve_hours(
     assert member is not None
     mark_access_provided(db, owner, member.id)
 
-    scheduled_member = schedule_member_removal(db, owner, member.id)
+    scheduled_member = schedule_member_removal(
+        db,
+        owner,
+        member.id,
+        idempotency_key="member-removal-test-key",
+    )
+    repeated_schedule = schedule_member_removal(
+        db,
+        owner,
+        member.id,
+        idempotency_key="member-removal-test-key",
+    )
 
     assert scheduled_member.status == "removal_pending"
+    assert repeated_schedule.id == scheduled_member.id
+    assert repeated_schedule.removal_scheduled_at == (
+        scheduled_member.removal_scheduled_at
+    )
     assert scheduled_member.updated_at is not None
     assert scheduled_member.removal_scheduled_at is not None
     delay = scheduled_member.removal_scheduled_at - scheduled_member.updated_at

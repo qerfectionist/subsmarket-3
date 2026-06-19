@@ -452,10 +452,18 @@ def post_owner_family_invite_disabled(
 @router.post("/{family_id}/close", response_model=FamilyOut)
 def post_family_close(
     family_id: UUID,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyOut:
-    return to_family_out(close_family(db, user, family_id))
+    return to_family_out(
+        close_family(
+            db,
+            user,
+            family_id,
+            idempotency_key=idempotency_key,
+        )
+    )
 
 
 @router.post("/{family_id}/acknowledge-closing", response_model=FamilyMemberOut)
@@ -510,10 +518,16 @@ def get_family_members_page(
 @router.post("/members/{member_id}/access-provided", response_model=FamilyMemberOut)
 def post_member_access_provided(
     member_id: UUID,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyMemberOut:
-    member = mark_access_provided(db, user, member_id)
+    member = mark_access_provided(
+        db,
+        user,
+        member_id,
+        idempotency_key=idempotency_key,
+    )
     return to_member_out(member)
 
 
@@ -556,10 +570,16 @@ def post_member_leave(
 @router.post("/members/{member_id}/remove", response_model=FamilyMemberOut)
 def post_member_remove(
     member_id: UUID,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyMemberOut:
-    member = schedule_member_removal(db, user, member_id)
+    member = schedule_member_removal(
+        db,
+        user,
+        member_id,
+        idempotency_key=idempotency_key,
+    )
     return to_member_out(member)
 
 
@@ -602,10 +622,16 @@ def post_member_revoke_removal(
 )
 def post_member_access_confirmed(
     member_id: UUID,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> AccessConfirmationResult:
-    return confirm_access_received(db, user, member_id)
+    return confirm_access_received(
+        db,
+        user,
+        member_id,
+        idempotency_key=idempotency_key,
+    )
 
 
 @router.get(
@@ -722,10 +748,16 @@ def post_owner_prepaid_periods(
 @router.post("/payments/{payment_id}/report-paid", response_model=FamilyPaymentOut)
 def post_payment_report_paid(
     payment_id: UUID,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyPaymentOut:
-    payment = report_payment_paid(db, user, payment_id)
+    payment = report_payment_paid(
+        db,
+        user,
+        payment_id,
+        idempotency_key=idempotency_key,
+    )
     return to_payment_out(payment)
 
 
@@ -745,10 +777,16 @@ def post_payment_cancel_report(
 )
 def post_payment_confirm(
     payment_id: UUID,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> PaymentConfirmationResult:
-    return confirm_payment_received(db, user, payment_id)
+    return confirm_payment_received(
+        db,
+        user,
+        payment_id,
+        idempotency_key=idempotency_key,
+    )
 
 
 @router.post("/payments/{payment_id}/not-received", response_model=FamilyPaymentOut)
