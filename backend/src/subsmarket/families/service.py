@@ -1237,6 +1237,7 @@ def list_family_audit_logs(
         select(FamilyMember)
         .where(FamilyMember.family_id == family_id)
         .where(FamilyMember.user_id == user.id)
+        .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
     )
     if not is_owner and membership is None:
         raise HTTPException(status_code=403, detail="FAMILY_AUDIT_FORBIDDEN")
@@ -1269,6 +1270,7 @@ def list_family_audit_logs_page(
         select(FamilyMember)
         .where(FamilyMember.family_id == family_id)
         .where(FamilyMember.user_id == user.id)
+        .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
     )
     if not is_owner and membership is None:
         raise HTTPException(status_code=403, detail="FAMILY_AUDIT_FORBIDDEN")
@@ -2718,7 +2720,11 @@ def get_open_payment_requisite(
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
 
-    can_view = user.id in {member.user_id, family.owner_user_id}
+    can_view = family.owner_user_id == user.id or (
+        member.user_id == user.id
+        and member.status in ACTIVE_MEMBER_STATUSES
+        and family.status != "closed"
+    )
     if not can_view:
         raise HTTPException(status_code=403, detail="PAYMENT_REQUISITE_FORBIDDEN")
     if member.access_confirmed_at is None:

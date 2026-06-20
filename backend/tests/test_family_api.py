@@ -531,6 +531,210 @@ def test_non_owner_cannot_manage_family_or_requests(
     assert checks[6].json()["detail"] == "ONLY_OWNER_CAN_CHANGE_FAMILY"
 
 
+def test_wrong_roles_cannot_mutate_family_request_access_or_prepayments(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    owner_headers = auth_headers(610043, "role_owner", "Role Owner")
+    member_headers = auth_headers(610044, "role_member", "Role Member")
+    outsider_headers = auth_headers(610045, "role_outsider", "Role Outsider")
+    family_id = create_family_via_api(client, service, owner_headers)
+    request_response = client.post(
+        f"/api/families/{family_id}/requests",
+        headers=member_headers,
+    )
+    request_id = request_response.json()["id"]
+
+    non_owner_mutations = [
+        client.patch(
+            f"/api/families/{family_id}/description",
+            headers=outsider_headers,
+            json={"description": "bad edit"},
+        ),
+        client.patch(
+            f"/api/families/{family_id}/price",
+            headers=outsider_headers,
+            json={"total_price_kzt": 4500},
+        ),
+        client.patch(
+            f"/api/families/{family_id}/payment-day",
+            headers=outsider_headers,
+            json={
+                "payment_day": 20,
+                "next_payment_date": (
+                    date.today() + timedelta(days=40)
+                ).isoformat(),
+            },
+        ),
+        client.patch(
+            f"/api/families/{family_id}/visibility",
+            headers=outsider_headers,
+            json={"is_search_visible": False},
+        ),
+        client.post(
+            f"/api/families/{family_id}/confirm-availability",
+            headers=outsider_headers,
+        ),
+        client.post(
+            f"/api/families/{family_id}/invite/rotate",
+            headers=outsider_headers,
+        ),
+        client.post(
+            f"/api/families/{family_id}/invite/disable",
+            headers=outsider_headers,
+        ),
+    ]
+    outsider_cancel_request = client.post(
+        f"/api/families/requests/{request_id}/cancel",
+        headers=outsider_headers,
+    )
+    approval_response = client.post(
+        f"/api/families/requests/{request_id}/approve",
+        headers=owner_headers,
+    )
+    members_response = client.get(
+        f"/api/families/{family_id}/members",
+        headers=owner_headers,
+    )
+    member_id = next(
+        item for item in members_response.json() if item["role"] == "member"
+    )["id"]
+
+    outsider_access = client.post(
+        f"/api/families/members/{member_id}/access-provided",
+        headers=outsider_headers,
+    )
+    member_access = client.post(
+        f"/api/families/members/{member_id}/access-provided",
+        headers=member_headers,
+    )
+    owner_access = client.post(
+        f"/api/families/members/{member_id}/access-provided",
+        headers=owner_headers,
+    )
+    access_confirmation = client.post(
+        f"/api/families/members/{member_id}/access-confirmed",
+        headers=member_headers,
+    )
+    payment_id = access_confirmation.json()["payment"]["id"]
+    client.post(
+        f"/api/families/payments/{payment_id}/report-paid",
+        headers=member_headers,
+    )
+    client.post(
+        f"/api/families/payments/{payment_id}/confirm",
+        headers=owner_headers,
+    )
+
+    outsider_prepayment = client.post(
+        f"/api/families/members/{member_id}/prepayments",
+        headers=outsider_headers,
+    )
+    owner_member_prepayment = client.post(
+        f"/api/families/members/{member_id}/prepayments",
+        headers=owner_headers,
+    )
+    outsider_record_paid = client.post(
+        f"/api/families/members/{member_id}/prepayments/record-paid",
+        headers=outsider_headers,
+        json={"periods": 1},
+    )
+
+    assert request_response.status_code == 201
+    assert [response.status_code for response in non_owner_mutations] == [403] * len(
+        non_owner_mutations
+    )
+    assert outsider_cancel_request.status_code == 404
+    assert outsider_cancel_request.json()["detail"] == "FAMILY_REQUEST_NOT_FOUND"
+    assert approval_response.status_code == 200
+    assert outsider_access.status_code == 403
+    assert outsider_access.json()["detail"] == "ONLY_OWNER_CAN_PROVIDE_ACCESS"
+    assert member_access.status_code == 403
+    assert member_access.json()["detail"] == "ONLY_OWNER_CAN_PROVIDE_ACCESS"
+    assert owner_access.status_code == 200
+    assert access_confirmation.status_code == 200
+    assert outsider_prepayment.status_code == 403
+    assert outsider_prepayment.json()["detail"] == "ONLY_MEMBER_CAN_PREPAY"
+    assert owner_member_prepayment.status_code == 403
+    assert owner_member_prepayment.json()["detail"] == "ONLY_MEMBER_CAN_PREPAY"
+    assert outsider_record_paid.status_code == 403
+    assert outsider_record_paid.json()["detail"] == "ONLY_OWNER_CAN_RECORD_PREPAYMENT"
+
+
+def test_both_sides_can_cancel_membership_before_access(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    owner_headers = auth_headers(610046, "cancel_owner", "Cancel Owner")
+    first_member_headers = auth_headers(610047, "cancel_member_one", "Member One")
+    second_member_headers = auth_headers(610048, "cancel_member_two", "Member Two")
+    outsider_headers = auth_headers(610049, "cancel_outsider", "Outsider")
+    family_id = create_family_via_api(
+        client,
+        service,
+        owner_headers,
+        max_members=3,
+    )
+    for member_headers in (first_member_headers, second_member_headers):
+        request_response = client.post(
+            f"/api/families/{family_id}/requests",
+            headers=member_headers,
+        )
+        assert request_response.status_code == 201
+        approval_response = client.post(
+            f"/api/families/requests/{request_response.json()['id']}/approve",
+            headers=owner_headers,
+        )
+        assert approval_response.status_code == 200
+    members = client.get(
+        f"/api/families/{family_id}/members",
+        headers=owner_headers,
+    ).json()
+    first_member_id = next(
+        item["id"]
+        for item in members
+        if item["user"]["username"] == "cancel_member_one"
+    )
+    second_member_id = next(
+        item["id"]
+        for item in members
+        if item["user"]["username"] == "cancel_member_two"
+    )
+
+    outsider_cancel = client.post(
+        f"/api/families/members/{first_member_id}/cancel-before-access",
+        headers=outsider_headers,
+    )
+    candidate_cancel = client.post(
+        f"/api/families/members/{first_member_id}/cancel-before-access",
+        headers=first_member_headers,
+    )
+    owner_cancel = client.post(
+        f"/api/families/members/{second_member_id}/cancel-before-access",
+        headers=owner_headers,
+    )
+    family_after_cancels = client.get(
+        f"/api/families/{family_id}",
+        headers=owner_headers,
+    )
+    repeat_request = client.post(
+        f"/api/families/{family_id}/requests",
+        headers=first_member_headers,
+    )
+
+    assert outsider_cancel.status_code == 403
+    assert outsider_cancel.json()["detail"] == "MEMBER_CANCEL_FORBIDDEN"
+    assert candidate_cancel.status_code == 200
+    assert candidate_cancel.json()["status"] == "cancelled_before_access"
+    assert owner_cancel.status_code == 200
+    assert owner_cancel.json()["status"] == "cancelled_before_access"
+    assert family_after_cancels.status_code == 200
+    assert family_after_cancels.json()["status"] == "active"
+    assert family_after_cancels.json()["active_members_count"] == 1
+    assert repeat_request.status_code == 201
+    assert repeat_request.json()["status"] == "pending"
+
+
 def test_family_api_happy_path_keeps_requisites_private_until_access(
     client: TestClient,
     service: FamilyService,
@@ -1033,6 +1237,18 @@ def test_member_leave_and_removal_flow_permissions(
         f"/api/families/members/{member_id}/leave",
         headers=member_headers,
     )
+    removed_member_requisite = client.get(
+        f"/api/families/members/{member_id}/payment-requisite",
+        headers=member_headers,
+    )
+    removed_member_audit = client.get(
+        f"/api/families/{family_id}/audit-log",
+        headers=member_headers,
+    )
+    owner_audit = client.get(
+        f"/api/families/{family_id}/audit-log",
+        headers=owner_headers,
+    )
     family_after_removal = client.get(
         f"/api/families/{family_id}",
         headers=owner_headers,
@@ -1071,6 +1287,15 @@ def test_member_leave_and_removal_flow_permissions(
     assert member_leave.json()["detail"] == "MEMBER_NOT_ACTIVE"
     assert member_leave_again.status_code == 409
     assert member_leave_again.json()["detail"] == "MEMBER_NOT_ACTIVE"
+    assert removed_member_requisite.status_code == 403
+    assert removed_member_requisite.json()["detail"] == "PAYMENT_REQUISITE_FORBIDDEN"
+    assert removed_member_audit.status_code == 403
+    assert removed_member_audit.json()["detail"] == "FAMILY_AUDIT_FORBIDDEN"
+    assert owner_audit.status_code == 200
+    assert any(
+        item["action"] == "family_member_removed_by_owner"
+        for item in owner_audit.json()
+    )
     assert family_after_removal.status_code == 200
     assert family_after_removal.json()["active_members_count"] == 1
 

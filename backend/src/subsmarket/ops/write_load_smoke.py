@@ -28,6 +28,7 @@ from subsmarket.identity.models import User
 from subsmarket.notifications.models import NotificationJob
 
 LOCAL_DATABASE_HOSTS = {"localhost", "127.0.0.1", "::1"}
+MAX_WRITE_LOAD_FAMILIES = 2_500
 
 
 @dataclass(frozen=True)
@@ -119,8 +120,10 @@ def run_write_load(
     concurrency: int,
     allow_remote: bool = False,
 ) -> dict[str, object]:
-    if not 1 <= family_count <= 1000:
-        raise ValueError("family_count must be between 1 and 1000")
+    if not 1 <= family_count <= MAX_WRITE_LOAD_FAMILIES:
+        raise ValueError(
+            f"family_count must be between 1 and {MAX_WRITE_LOAD_FAMILIES}"
+        )
     if not 1 <= concurrency <= 100:
         raise ValueError("concurrency must be between 1 and 100")
 
@@ -152,7 +155,10 @@ def run_write_load(
                 status="active",
                 service_metadata={"temporary": True, "run_id": run_id},
             )
-            base_telegram_id = 8_000_000_000 + int(run_id[:8], 16) * 3000
+            base_telegram_id = (
+                8_000_000_000
+                + int(run_id[:8], 16) * (family_count * 2 + 1000)
+            )
             owners = [
                 User(
                     telegram_user_id=base_telegram_id + index,

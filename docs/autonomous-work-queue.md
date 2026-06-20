@@ -766,3 +766,17 @@ Last checkpoint:
   owner signal.
 - These counters give the future rating/anti-abuse layer a cheap source of
   truth without scanning all historical requests.
+
+2026-06-20 Family Engine backend hardening closure:
+
+- Added migration and live-PostgreSQL tests requiring RLS on every application
+  table and no Supabase client-role grants when those roles exist.
+- Expanded authorization tests across family mutation, requests, access,
+  invite management, payment actions, and prepayments.
+- Closed a privacy gap that allowed former members to request the payment
+  requisite or read later AuditLog events.
+- Verified both owner and candidate cancellation before access.
+- Completed a local 2500-family launch-burst rehearsal at concurrency 50 with
+  7500 successful writes, zero errors, and complete cleanup.
+- Saved the final backend audit in
+  `docs/family-engine-backend-audit-2026-06-20.md`.

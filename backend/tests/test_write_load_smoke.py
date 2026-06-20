@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from subsmarket.ops.write_load_smoke import (
+    MAX_WRITE_LOAD_FAMILIES,
     OperationResult,
     summarize_phase,
     validate_database_target,
@@ -47,3 +48,7 @@ def test_write_load_phase_summary_reports_latency_and_errors() -> None:
     assert summary.operations_per_second == 2
     assert summary.latency_ms_p50 == 20
     assert summary.latency_ms_p95 == 40
+
+
+def test_write_load_default_ceiling_matches_launch_burst_target() -> None:
+    assert MAX_WRITE_LOAD_FAMILIES == 2500

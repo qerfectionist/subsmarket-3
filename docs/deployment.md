@@ -468,6 +468,12 @@ cd backend
 .\.venv\Scripts\python -m subsmarket.ops.write_load_smoke
 ```
 
+For a launch-burst rehearsal on a local machine, raise `WRITE_LOAD_FAMILIES` up
+to `2500` and increase concurrency gradually, for example `50`, while watching
+PostgreSQL CPU, memory, and active connections. This scenario exercises family
+creation, join requests, approvals, and cleanup; it is not safe for production
+or shared staging data.
+
 Remote databases are rejected by default. Do not set
 `WRITE_LOAD_ALLOW_REMOTE=true` for production or shared staging databases.
 
