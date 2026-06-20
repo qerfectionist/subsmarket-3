@@ -8,6 +8,7 @@ __pycache__/
 .mypy_cache/
 .tmp/
 .vercel/
+data/research/
 *.db
 
 node_modules/

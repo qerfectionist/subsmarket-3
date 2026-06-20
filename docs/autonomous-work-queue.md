@@ -21,6 +21,9 @@ the approved SubsMarket product rules.
 - Do not store Telegram phone numbers.
 - Do not expose payment requisites before member access is confirmed.
 - Prefer small, verifiable increments with tests.
+- For product questions that can be answered from real market behavior, query
+  `data/research/market_chat.sqlite` first. Rebuild it with `npm run market:build-db`
+  if the Telegram export changes.
 - If a task becomes blocked by missing external credentials, skip it and continue
   with the next local task.
 - At the end of a long run, update the checkpoint section below.
