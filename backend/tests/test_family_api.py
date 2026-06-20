@@ -666,6 +666,144 @@ def test_non_member_cannot_view_member_payment_data(
     assert leave_response.json()["detail"] == "ONLY_MEMBER_CAN_LEAVE"
 
 
+def test_payment_actions_are_limited_to_correct_side(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    owner_headers = auth_headers(610060, "payment_owner", "Payment Owner")
+    member_headers = auth_headers(610061, "payment_member", "Payment Member")
+    outsider_headers = auth_headers(610062, "payment_outsider", "Outsider")
+    create_response = client.post(
+        "/api/families",
+        headers=owner_headers,
+        json={
+            "service_id": str(service.id),
+            "period": "monthly",
+            "max_members": 4,
+            "total_price_kzt": 3990,
+            "payment_day": 15,
+            "next_payment_date": (date.today() + timedelta(days=30)).isoformat(),
+            "payment_bank": "kaspi",
+            "payment_phone": "+77001234567",
+        },
+    )
+    family_id = create_response.json()["family"]["id"]
+    request_response = client.post(
+        f"/api/families/{family_id}/requests",
+        headers=member_headers,
+    )
+    client.post(
+        f"/api/families/requests/{request_response.json()['id']}/approve",
+        headers=owner_headers,
+    )
+    members_response = client.get(
+        f"/api/families/{family_id}/members",
+        headers=owner_headers,
+    )
+    member_id = next(
+        item for item in members_response.json() if item["role"] == "member"
+    )["id"]
+    client.post(
+        f"/api/families/members/{member_id}/access-provided",
+        headers=owner_headers,
+    )
+    access_confirmation = client.post(
+        f"/api/families/members/{member_id}/access-confirmed",
+        headers=member_headers,
+    )
+    payment_id = access_confirmation.json()["payment"]["id"]
+
+    owner_report = client.post(
+        f"/api/families/payments/{payment_id}/report-paid",
+        headers=owner_headers,
+    )
+    outsider_report = client.post(
+        f"/api/families/payments/{payment_id}/report-paid",
+        headers=outsider_headers,
+    )
+    member_confirm = client.post(
+        f"/api/families/payments/{payment_id}/confirm",
+        headers=member_headers,
+    )
+    outsider_confirm = client.post(
+        f"/api/families/payments/{payment_id}/confirm",
+        headers=outsider_headers,
+    )
+    outsider_not_received = client.post(
+        f"/api/families/payments/{payment_id}/not-received",
+        headers=outsider_headers,
+    )
+    member_not_received = client.post(
+        f"/api/families/payments/{payment_id}/not-received",
+        headers=member_headers,
+    )
+    report_response = client.post(
+        f"/api/families/payments/{payment_id}/report-paid",
+        headers=member_headers,
+    )
+    outsider_cancel_report = client.post(
+        f"/api/families/payments/{payment_id}/cancel-report",
+        headers=outsider_headers,
+    )
+    owner_cancel_report = client.post(
+        f"/api/families/payments/{payment_id}/cancel-report",
+        headers=owner_headers,
+    )
+    owner_not_received = client.post(
+        f"/api/families/payments/{payment_id}/not-received",
+        headers=owner_headers,
+    )
+    report_again = client.post(
+        f"/api/families/payments/{payment_id}/report-paid",
+        headers=member_headers,
+    )
+    owner_confirm = client.post(
+        f"/api/families/payments/{payment_id}/confirm",
+        headers=owner_headers,
+    )
+    member_confirm_after_paid = client.post(
+        f"/api/families/payments/{payment_id}/confirm",
+        headers=member_headers,
+    )
+    member_cancel_after_paid = client.post(
+        f"/api/families/payments/{payment_id}/cancel-report",
+        headers=member_headers,
+    )
+
+    assert create_response.status_code == 201
+    assert access_confirmation.status_code == 200
+    assert owner_report.status_code == 403
+    assert owner_report.json()["detail"] == "ONLY_MEMBER_CAN_REPORT_PAYMENT"
+    assert outsider_report.status_code == 403
+    assert outsider_report.json()["detail"] == "ONLY_MEMBER_CAN_REPORT_PAYMENT"
+    assert member_confirm.status_code == 403
+    assert member_confirm.json()["detail"] == "ONLY_OWNER_CAN_CONFIRM_PAYMENT"
+    assert outsider_confirm.status_code == 403
+    assert outsider_confirm.json()["detail"] == "ONLY_OWNER_CAN_CONFIRM_PAYMENT"
+    assert outsider_not_received.status_code == 403
+    assert outsider_not_received.json()["detail"] == "ONLY_OWNER_CAN_MARK_NOT_RECEIVED"
+    assert member_not_received.status_code == 403
+    assert member_not_received.json()["detail"] == "ONLY_OWNER_CAN_MARK_NOT_RECEIVED"
+    assert report_response.status_code == 200
+    assert report_response.json()["status"] == "payment_reported"
+    assert outsider_cancel_report.status_code == 403
+    assert outsider_cancel_report.json()["detail"] == "ONLY_MEMBER_CAN_CANCEL_REPORT"
+    assert owner_cancel_report.status_code == 403
+    assert owner_cancel_report.json()["detail"] == "ONLY_MEMBER_CAN_CANCEL_REPORT"
+    assert owner_not_received.status_code == 200
+    assert owner_not_received.json()["status"] == "due"
+    assert report_again.status_code == 200
+    assert report_again.json()["status"] == "payment_reported"
+    assert owner_confirm.status_code == 200
+    assert owner_confirm.json()["payment"]["status"] == "paid"
+    assert member_confirm_after_paid.status_code == 403
+    assert member_confirm_after_paid.json()["detail"] == (
+        "ONLY_OWNER_CAN_CONFIRM_PAYMENT"
+    )
+    assert member_cancel_after_paid.status_code == 409
+    assert member_cancel_after_paid.json()["detail"] == "PAYMENT_REPORT_NOT_ACTIVE"
+
+
 def test_family_by_id_requires_telegram_auth_in_production(
     client: TestClient,
     service: FamilyService,
