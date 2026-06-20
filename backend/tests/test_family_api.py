@@ -419,12 +419,22 @@ def test_family_invite_lifecycle_and_hidden_discovery(
         f"/api/families/{family_id}/invite",
         headers=owner_headers,
     ).json()["code"]
+    past_close_response = client.post(
+        f"/api/families/{family_id}/close",
+        headers=owner_headers,
+        json={"closes_on": (date.today() - timedelta(days=1)).isoformat()},
+    )
+    closes_on = date.today() + timedelta(days=30)
     close_response = client.post(
         f"/api/families/{family_id}/close",
         headers=owner_headers,
+        json={"closes_on": closes_on.isoformat()},
     )
+    assert past_close_response.status_code == 422
+    assert past_close_response.json()["detail"] == "FAMILY_CLOSE_DATE_IN_PAST"
     assert close_response.status_code == 200
     assert close_response.json()["is_search_visible"] is False
+    assert close_response.json()["closes_at"].startswith(closes_on.isoformat())
     closed_invite = client.get(
         f"/api/families/invites/{active_again}",
         headers=candidate_headers,
@@ -478,7 +488,11 @@ def test_non_owner_cannot_manage_family_or_requests(
             f"/api/families/requests/{request_id}/reject",
             headers=outsider_headers,
         ),
-        client.post(f"/api/families/{family_id}/close", headers=outsider_headers),
+        client.post(
+            f"/api/families/{family_id}/close",
+            headers=outsider_headers,
+            json={"closes_on": (date.today() + timedelta(days=30)).isoformat()},
+        ),
     ]
 
     assert create_response.status_code == 201
@@ -1117,10 +1131,12 @@ def test_full_closing_and_closed_family_api_rules(
     close_response = client.post(
         f"/api/families/{closing_family_id}/close",
         headers=closing_owner_headers,
+        json={"closes_on": (date.today() + timedelta(days=14)).isoformat()},
     )
     repeated_close = client.post(
         f"/api/families/{closing_family_id}/close",
         headers=closing_owner_headers,
+        json={"closes_on": (date.today() + timedelta(days=14)).isoformat()},
     )
     pending_candidate_requests = client.get(
         "/api/families/requests/me",
@@ -1169,6 +1185,7 @@ def test_full_closing_and_closed_family_api_rules(
     close_closed_again = client.post(
         f"/api/families/{closing_family_id}/close",
         headers=closing_owner_headers,
+        json={"closes_on": (date.today() + timedelta(days=14)).isoformat()},
     )
     closed_request = client.post(
         f"/api/families/{closing_family_id}/requests",

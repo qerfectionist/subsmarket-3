@@ -835,6 +835,7 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
 
     notification_count = 0
     for member in members:
+        closes_on = member.family.closes_at.date().isoformat()
         existing_jobs = list(
             db.scalars(
                 select(NotificationJob)
@@ -859,9 +860,10 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
                 "family_id": str(member.family_id),
                 "member_id": str(member.id),
                 "reminder_date": today.isoformat(),
+                "closes_on": closes_on,
                 "message": (
-                    "Напоминание: семья закрывается. Подтвердите, что увидели "
-                    "предупреждение."
+                    f"Напоминание: семья закрывается {closes_on}. "
+                    "Подтвердите, что увидели предупреждение."
                 ),
             },
         )

@@ -253,10 +253,11 @@ export function updateFamilyPaymentDay(
   });
 }
 
-export function closeFamily(familyId: string): Promise<Family> {
+export function closeFamily(familyId: string, closesOn: string): Promise<Family> {
   return postIdempotent<Family>(
     `family.close:${familyId}`,
-    `/api/families/${familyId}/close`
+    `/api/families/${familyId}/close`,
+    { closes_on: closesOn }
   );
 }
 

@@ -498,8 +498,8 @@ export function App() {
               updateFamilyPaymentDay(familyId, paymentDay, nextPaymentDate)
             )
           }
-          onCloseFamily={(familyId) =>
-            void runAction("close-family", () => closeFamily(familyId))
+          onCloseFamily={(familyId, closesOn) =>
+            void runAction("close-family", () => closeFamily(familyId, closesOn))
           }
           onConfirmAccess={(memberId) =>
             void runAction("confirm-access", async () => {

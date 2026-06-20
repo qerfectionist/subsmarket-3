@@ -10,6 +10,7 @@ from subsmarket.families.schemas import (
     AccessConfirmationResult,
     FamilyAuditLogOut,
     FamilyAuditLogPageOut,
+    FamilyCloseCreate,
     FamilyCreate,
     FamilyCreateResult,
     FamilyDescriptionUpdate,
@@ -453,6 +454,7 @@ def post_owner_family_invite_disabled(
 @router.post("/{family_id}/close", response_model=FamilyOut)
 def post_family_close(
     family_id: UUID,
+    payload: FamilyCloseCreate,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
@@ -462,6 +464,7 @@ def post_family_close(
             db,
             user,
             family_id,
+            closes_on=payload.closes_on,
             idempotency_key=idempotency_key,
         )
     )

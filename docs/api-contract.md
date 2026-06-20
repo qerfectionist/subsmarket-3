@@ -305,14 +305,24 @@ revokes its active code in the same transaction.
 
 Запустить закрытие семьи.
 
+Body:
+
+```json
+{
+  "closes_on": "2026-07-15"
+}
+```
+
 Backend:
 
 - переводит семью в `closing`;
-- устанавливает `closes_at = now + 3 calendar days`;
+- отклоняет прошедшую дату;
+- устанавливает `closes_at` на конец выбранного календарного дня по времени
+  Казахстана (UTC+5);
 - отменяет прием новых заявок;
 - отменяет будущие `scheduled` платежи и их неотправленные напоминания;
 - создает уведомления всем участникам;
-- создает acknowledgements.
+- фиксирует выбранную дату в AuditLog.
 
 ### POST /api/families/{family_id}/acknowledge-closing
 

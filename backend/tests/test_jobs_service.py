@@ -545,12 +545,20 @@ def test_closing_reminder_repeats_daily_until_member_acknowledges(
     candidate = make_user(db, 10)
     family = make_family(db, owner, service)
     member = add_member(db, family, candidate, status="active")
-    close_family(db, owner, family.id)
+    close_family(db, owner, family.id, closes_on=family.next_payment_date)
     family.closing_started_at = utcnow() - timedelta(hours=25)
     family.closes_at = utcnow() + timedelta(hours=47)
     db.commit()
 
     assert send_closing_acknowledgement_reminders(db) == 1
+    reminder = db.scalar(
+        select(NotificationJob).where(
+            NotificationJob.recipient_user_id == candidate.id,
+            NotificationJob.event_type == "family_closing_ack_reminder_member",
+        )
+    )
+    assert reminder is not None
+    assert reminder.payload["closes_on"] == family.closes_at.date().isoformat()
     assert send_closing_acknowledgement_reminders(db) == 0
 
     acknowledge_family_closing(db, candidate, family.id)

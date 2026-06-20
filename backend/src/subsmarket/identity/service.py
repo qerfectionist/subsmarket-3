@@ -10,7 +10,9 @@ from subsmarket.identity.schemas import TelegramUserData
 
 def upsert_user(db: Session, telegram_user: TelegramUserData) -> User:
     existing = db.scalar(
-        select(User).where(User.telegram_user_id == telegram_user.telegram_user_id)
+        select(User)
+        .where(User.telegram_user_id == telegram_user.telegram_user_id)
+        .with_for_update()
     )
     if existing:
         existing.username = telegram_user.username or existing.username
@@ -18,7 +20,6 @@ def upsert_user(db: Session, telegram_user: TelegramUserData) -> User:
         existing.last_name = telegram_user.last_name
         existing.photo_url = telegram_user.photo_url
         db.commit()
-        db.refresh(existing)
         return existing
 
     user = User(
@@ -45,7 +46,5 @@ def upsert_user(db: Session, telegram_user: TelegramUserData) -> User:
         existing.last_name = telegram_user.last_name
         existing.photo_url = telegram_user.photo_url
         db.commit()
-        db.refresh(existing)
         return existing
-    db.refresh(user)
     return user

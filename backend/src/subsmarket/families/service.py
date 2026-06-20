@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import secrets
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta, timezone
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -78,6 +78,7 @@ MEMBER_REMOVAL_REASONS = {
     "mutual_agreement",
     "other",
 }
+KAZAKHSTAN_TIMEZONE = timezone(timedelta(hours=5))
 PHONE_RE = re.compile(r"^\+?7\d{10}$")
 
 
@@ -2107,14 +2108,18 @@ def close_family(
     user: User,
     family_id: UUID,
     *,
+    closes_on: date,
     idempotency_key: str | None = None,
 ) -> Family:
+    if closes_on < utcnow().astimezone(KAZAKHSTAN_TIMEZONE).date():
+        raise HTTPException(status_code=422, detail="FAMILY_CLOSE_DATE_IN_PAST")
+
     claim = claim_idempotency(
         db,
         user_id=user.id,
         operation="family.close",
         idempotency_key=idempotency_key,
-        payload={"family_id": str(family_id)},
+        payload={"family_id": str(family_id), "closes_on": closes_on.isoformat()},
         resource_type="family",
     )
     if claim.is_replay:
@@ -2132,7 +2137,11 @@ def close_family(
         family.status = "closing"
         family.is_search_visible = False
         family.closing_started_at = now
-        family.closes_at = now + timedelta(days=3)
+        family.closes_at = datetime.combine(
+            closes_on,
+            time.max,
+            tzinfo=KAZAKHSTAN_TIMEZONE,
+        ).astimezone(UTC)
         _revoke_active_family_invite(
             db,
             family.id,
@@ -2152,14 +2161,17 @@ def close_family(
             actor_user_id=user.id,
             old_status=old_status,
             new_status=family.status,
-            details={"closes_at": family.closes_at.isoformat()},
+            details={
+                "closes_on": closes_on.isoformat(),
+                "closes_at": family.closes_at.isoformat(),
+            },
         )
         _enqueue_family_members_notification(
             db,
             family,
             event_type="family_closing_started",
             message=(
-                "Семья закрывается через 3 дня. "
+                f"Семья закрывается {closes_on.isoformat()}. "
                 "Подтвердите, что увидели уведомление."
             ),
         )

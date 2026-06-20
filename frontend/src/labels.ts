@@ -135,6 +135,7 @@ export const errorLabels: Record<string, string> = {
   ONLY_MEMBER_CAN_REQUEST_REMOVAL_CANCELLATION:
     "Попросить отменить удаление может только сам участник.",
   FAMILY_ALREADY_CLOSED: "Семья уже закрыта.",
+  FAMILY_CLOSE_DATE_IN_PAST: "Дата закрытия не может быть в прошлом.",
   FAMILY_NOT_CLOSING: "Семья сейчас не находится в процессе закрытия.",
   INVALID_PAYMENT_PHONE: "Укажите номер телефона для оплаты. Номера карт и IBAN запрещены.",
   PAYMENT_PHONE_ONLY_NO_CARD_OR_IBAN: "Укажите только номер телефона. Номера карт и IBAN запрещены.",

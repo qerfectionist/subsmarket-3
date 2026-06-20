@@ -107,8 +107,8 @@ Tasks:
   - payment requisites hidden before access confirmation;
   - owner cannot leave family like a normal member;
   - member can leave and frees a slot;
-  - closing starts a three-day warning;
-  - removal warning lasts 12 hours;
+  - closing uses an owner-selected calendar date;
+  - owner removal is immediate and requires a reason;
 - keep tests fast and local.
 
 ### 6. Documentation
@@ -149,8 +149,8 @@ Last checkpoint:
   - payment requisites hidden before access confirmation;
   - owner cannot leave family like a normal member;
   - member leaving frees a family slot;
-  - family close starts a three-day warning;
-  - member removal warning lasts 12 hours.
+  - family close uses an owner-selected calendar date;
+  - owner removal is immediate and requires a reason.
 - Verification passed:
   - `ruff check backend/src backend/alembic backend/tests`;
   - `compileall backend/src backend/tests`;
@@ -719,3 +719,16 @@ Last checkpoint:
   remain consistent.
 - Repeated the three new races 10 times each without deadlocks or database
   errors.
+
+2026-06-20 owner-selected family close date:
+
+- Replaced the fixed three-day family closing deadline with an owner-selected
+  calendar date.
+- The Mini App defaults the date to the family's next payment date.
+- The backend rejects past dates and closes the family at 23:59:59 of the
+  selected Kazakhstan calendar day (UTC+5).
+- Search hiding, request cancellation, future-payment cancellation, member
+  notifications, acknowledgement reminders, and AuditLog remain active.
+- Closing reminders include the selected date.
+- Removed a post-commit identity refresh race found in repeated Playwright runs;
+  existing PostgreSQL user rows are now locked during their short profile update.

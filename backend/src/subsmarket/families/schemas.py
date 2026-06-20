@@ -55,6 +55,10 @@ class FamilyMemberRemovalCreate(BaseModel):
     reason: FamilyMemberRemovalReason
 
 
+class FamilyCloseCreate(BaseModel):
+    closes_on: date
+
+
 class PublicOwner(BaseModel):
     first_name: str
     photo_url: str | None

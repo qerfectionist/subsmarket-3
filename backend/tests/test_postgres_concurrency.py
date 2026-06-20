@@ -541,7 +541,12 @@ def test_parallel_close_and_remove_finish_without_deadlock() -> None:
             assert owner is not None
             barrier.wait(timeout=10)
             try:
-                family = close_family(db, owner, case.family_id)
+                family = close_family(
+                    db,
+                    owner,
+                    case.family_id,
+                    closes_on=date.today() + timedelta(days=10),
+                )
                 results.append(f"close:{family.status}")
             except Exception as exc:  # pragma: no cover - reports exact DB error
                 db.rollback()

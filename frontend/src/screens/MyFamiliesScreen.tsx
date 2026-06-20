@@ -61,7 +61,7 @@ export function MyFamiliesScreen({
     paymentDay: number,
     nextPaymentDate: string
   ) => void;
-  onCloseFamily: (familyId: string) => void;
+  onCloseFamily: (familyId: string, closesOn: string) => void;
   onConfirmAccess: (memberId: string) => void;
   onGetRequisite: (memberId: string) => void;
   onAcknowledgeClosing: (familyId: string) => void;
@@ -319,7 +319,7 @@ function OwnerActions({
     paymentDay: number,
     nextPaymentDate: string
   ) => void;
-  onCloseFamily: (familyId: string) => void;
+  onCloseFamily: (familyId: string, closesOn: string) => void;
 }) {
   const [descriptionDraft, setDescriptionDraft] = useState(family.description ?? "");
   const [priceDraft, setPriceDraft] = useState(String(family.total_price_kzt));
@@ -327,17 +327,25 @@ function OwnerActions({
   const [nextPaymentDateDraft, setNextPaymentDateDraft] = useState(
     family.next_payment_date
   );
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultCloseDate =
+    family.next_payment_date < today ? today : family.next_payment_date;
+  const [closeDateDraft, setCloseDateDraft] = useState(defaultCloseDate);
 
   useEffect(() => {
     setDescriptionDraft(family.description ?? "");
     setPriceDraft(String(family.total_price_kzt));
     setPaymentDayDraft(String(family.payment_day));
     setNextPaymentDateDraft(family.next_payment_date);
+    setCloseDateDraft(
+      family.next_payment_date < today ? today : family.next_payment_date
+    );
   }, [
     family.description,
     family.next_payment_date,
     family.payment_day,
-    family.total_price_kzt
+    family.total_price_kzt,
+    today
   ]);
 
   const descriptionValue = descriptionDraft.trim();
@@ -361,16 +369,38 @@ function OwnerActions({
         >
           Заявки и участники
         </button>
+      </div>
+
+      <div className="owner-settings-grid">
+        <label>
+          Доступ работает до
+          <input
+            data-testid="close-family-date-input"
+            min={today}
+            type="date"
+            value={closeDateDraft}
+            onChange={(event) => setCloseDateDraft(event.target.value)}
+          />
+        </label>
         <button
           type="button"
           className="danger"
           data-testid="close-family-button"
-          disabled={busy !== null || ["closing", "closed"].includes(family.status)}
-          onClick={() => onCloseFamily(family.id)}
+          disabled={
+            busy !== null ||
+            !closeDateDraft ||
+            closeDateDraft < today ||
+            ["closing", "closed"].includes(family.status)
+          }
+          onClick={() => onCloseFamily(family.id, closeDateDraft)}
         >
-          Закрыть с предупреждением
+          Закрыть семью
         </button>
       </div>
+      <small className="muted">
+        Семья сразу исчезнет из поиска, а участники увидят точную дату окончания
+        доступа.
+      </small>
 
       <label>
         Описание семьи

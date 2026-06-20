@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -651,7 +651,7 @@ def test_closing_family_blocks_new_access_and_first_payment(
         member for member in members if member.user_id == second_candidate.id
     )
     mark_access_provided(db, owner, first_member.id)
-    close_family(db, owner, family.id)
+    close_family(db, owner, family.id, closes_on=family.next_payment_date)
 
     with pytest.raises(HTTPException) as provide_exc:
         mark_access_provided(db, owner, second_member.id)
@@ -1009,7 +1009,7 @@ def test_cancel_member_before_access_is_blocked_for_closing_family(
     )
     assert member is not None
     assert member.status == "awaiting_access"
-    close_family(db, owner, family.id)
+    close_family(db, owner, family.id, closes_on=family.next_payment_date)
 
     with pytest.raises(HTTPException) as exc:
         cancel_member_before_access(db, candidate, member.id)
@@ -1045,22 +1045,25 @@ def test_member_leave_cancels_future_payment_and_pending_reminder(
     assert reminder.status == "cancelled"
 
 
-def test_family_close_starts_three_day_warning(
+def test_family_close_uses_owner_selected_date(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 100)
     family = make_family(db, owner, subscription_service)
+    closes_on = date.today() + timedelta(days=10)
 
     closing_family = close_family(
         db,
         owner,
         family.id,
+        closes_on=closes_on,
         idempotency_key="family-close-test-key",
     )
     repeated_closing = close_family(
         db,
         owner,
         family.id,
+        closes_on=closes_on,
         idempotency_key="family-close-test-key",
     )
 
@@ -1069,9 +1072,30 @@ def test_family_close_starts_three_day_warning(
     assert repeated_closing.closes_at == closing_family.closes_at
     assert closing_family.closing_started_at is not None
     assert closing_family.closes_at is not None
-    assert closing_family.closes_at - closing_family.closing_started_at == timedelta(
-        days=3
-    )
+    expected_closes_at = datetime.combine(
+        closes_on,
+        time.max,
+        tzinfo=timezone(timedelta(hours=5)),
+    ).astimezone(UTC)
+    assert closing_family.closes_at.replace(tzinfo=UTC) == expected_closes_at
+
+
+def test_family_close_rejects_past_date(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 196)
+    family = make_family(db, owner, subscription_service)
+
+    with pytest.raises(HTTPException) as exc:
+        close_family(
+            db,
+            owner,
+            family.id,
+            closes_on=date.today() - timedelta(days=1),
+        )
+
+    assert exc.value.status_code == 422
+    assert exc.value.detail == "FAMILY_CLOSE_DATE_IN_PAST"
 
 
 def test_family_closing_cancels_future_payments(
@@ -1083,7 +1107,7 @@ def test_family_closing_cancels_future_payments(
     member, _ = make_active_member(db, owner, candidate, family)
     scheduled_payment = make_scheduled_payment(db, family, member)
 
-    close_family(db, owner, family.id)
+    close_family(db, owner, family.id, closes_on=family.next_payment_date)
 
     db.refresh(scheduled_payment)
     assert scheduled_payment.status == "cancelled"
@@ -1099,7 +1123,7 @@ def test_family_closing_cancels_pending_requests_without_restriction(
     family = make_family(db, owner, subscription_service)
     request = create_join_request(db, candidate, family.id)
 
-    close_family(db, owner, family.id)
+    close_family(db, owner, family.id, closes_on=family.next_payment_date)
 
     db.refresh(request)
     restriction = db.get(
@@ -1127,7 +1151,7 @@ def test_family_closing_blocks_new_member_removal(
     candidate = make_user(db, 195)
     family = make_family(db, owner, subscription_service)
     member, _ = make_active_member(db, owner, candidate, family)
-    close_family(db, owner, family.id)
+    close_family(db, owner, family.id, closes_on=family.next_payment_date)
 
     with pytest.raises(HTTPException) as exc:
         remove_member(db, owner, member.id, reason="other")
