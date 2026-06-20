@@ -8,8 +8,15 @@ from urllib.parse import urlencode
 
 import pytest
 from fastapi import HTTPException
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from subsmarket.core.config import settings
+from subsmarket.core.database import Base
+from subsmarket.identity.models import User
+from subsmarket.identity.schemas import TelegramUserData
+from subsmarket.identity.service import upsert_user
 from subsmarket.identity.telegram import _verify_init_data, parse_telegram_user
 
 
@@ -74,3 +81,47 @@ def test_parse_telegram_user_uses_verified_init_data(
     assert telegram_user.username == "telegram_user"
     assert telegram_user.first_name == "Telegram"
     assert telegram_user.photo_url == "https://t.me/i/userpic/320/demo.svg"
+
+
+def test_upsert_user_updates_existing_profile_without_duplicate() -> None:
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine, tables=[User.__table__])
+    SessionLocal = sessionmaker(
+        bind=engine,
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+    )
+
+    with SessionLocal() as db:
+        user = upsert_user(
+            db,
+            TelegramUserData(
+                telegram_user_id=777001,
+                username="old_username",
+                first_name="Old",
+            ),
+        )
+        user_id = user.id
+
+        updated = upsert_user(
+            db,
+            TelegramUserData(
+                telegram_user_id=777001,
+                username="new_username",
+                first_name="New",
+                last_name="User",
+                photo_url="https://example.com/avatar.png",
+            ),
+        )
+
+        assert updated.id == user_id
+        assert updated.username == "new_username"
+        assert updated.first_name == "New"
+        assert updated.last_name == "User"
+        assert updated.photo_url == "https://example.com/avatar.png"
+        assert db.query(User).count() == 1

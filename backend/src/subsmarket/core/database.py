@@ -17,7 +17,12 @@ engine = create_engine(
     settings.sqlalchemy_database_url,
     **settings.sqlalchemy_engine_kwargs,
 )
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False,
+    expire_on_commit=False,
+)
 
 
 def utcnow() -> datetime:

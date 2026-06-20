@@ -180,7 +180,7 @@ can run without a Sentry account.
 Render env values:
 
 ```text
-SENTRY_DSN=https://<public-key>@<org>.ingest.sentry.io/<project-id>
+SENTRY_DSN=<your-sentry-dsn>
 SENTRY_TRACES_SAMPLE_RATE=0
 SENTRY_SEND_DEFAULT_PII=false
 SENTRY_RELEASE=<optional-release-name-or-commit>
@@ -191,6 +191,15 @@ reported to Sentry with the current `APP_ENV` as the environment. Keep
 `SENTRY_SEND_DEFAULT_PII=false`; SubsMarket should not send Telegram user
 personal data or payment requisites into external error logs. Increase
 `SENTRY_TRACES_SAMPLE_RATE` later only if performance tracing is needed.
+
+After configuring the DSN, send one controlled event:
+
+```powershell
+npm run sentry:smoke
+```
+
+Monitoring, Gitleaks, heartbeat, and k6 account setup is documented in
+[monitoring-and-security-setup.md](monitoring-and-security-setup.md).
 
 ## Due jobs and notifications
 

@@ -1,0 +1,71 @@
+name: SubsMarket k6 load test
+
+on:
+  workflow_dispatch:
+    inputs:
+      virtual_users:
+        description: Concurrent virtual users
+        required: true
+        default: "10"
+        type: string
+      duration:
+        description: Test duration, for example 30s or 2m
+        required: true
+        default: "30s"
+        type: string
+      use_grafana_cloud:
+        description: Send the run to Grafana Cloud k6
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
+        with:
+          k6-version: "2.0.0"
+
+      - name: Validate target
+        env:
+          BASE_URL: ${{ secrets.SUBSMARKET_API_BASE_URL }}
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "SUBSMARKET_API_BASE_URL secret is required"
+            exit 1
+          fi
+
+      - name: Run k6 without Grafana Cloud
+        if: ${{ !inputs.use_grafana_cloud }}
+        env:
+          BASE_URL: ${{ secrets.SUBSMARKET_API_BASE_URL }}
+          TELEGRAM_INIT_DATA: ${{ secrets.LOAD_TEST_TELEGRAM_INIT_DATA }}
+          K6_VUS: ${{ inputs.virtual_users }}
+          K6_DURATION: ${{ inputs.duration }}
+        run: k6 run tools/k6/subsmarket-api.js
+
+      - name: Run k6 with Grafana Cloud
+        if: ${{ inputs.use_grafana_cloud }}
+        env:
+          BASE_URL: ${{ secrets.SUBSMARKET_API_BASE_URL }}
+          TELEGRAM_INIT_DATA: ${{ secrets.LOAD_TEST_TELEGRAM_INIT_DATA }}
+          K6_VUS: ${{ inputs.virtual_users }}
+          K6_DURATION: ${{ inputs.duration }}
+          K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
+          K6_CLOUD_PROJECT_ID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
+        run: |
+          if [ -z "$K6_CLOUD_TOKEN" ] || [ -z "$K6_CLOUD_PROJECT_ID" ]; then
+            echo "K6_CLOUD_TOKEN and K6_CLOUD_PROJECT_ID are required"
+            exit 1
+          fi
+          k6 cloud run tools/k6/subsmarket-api.js
+

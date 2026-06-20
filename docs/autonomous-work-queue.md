@@ -780,3 +780,17 @@ Last checkpoint:
   7500 successful writes, zero errors, and complete cleanup.
 - Saved the final backend audit in
   `docs/family-engine-backend-audit-2026-06-20.md`.
+
+2026-06-21 monitoring and security preparation:
+
+- Added a daily/push/PR Gitleaks workflow pinned to immutable action commits.
+- Scanned all 53 local Git commits with Gitleaks 8.30.1: no leaks found.
+- Added a Better Stack-compatible success heartbeat to the five-minute jobs
+  workflow.
+- Added a manual k6 workflow and API smoke/load scenario with explicit error,
+  latency, and check thresholds.
+- Verified the k6 scenario locally with k6 2.0.0: all checks passed.
+- Added a Sentry smoke command for validating the existing FastAPI integration
+  after a DSN is configured.
+- External setup still requires Sentry DSN, Better Stack heartbeat URL, and
+  optionally Grafana Cloud k6 credentials.
