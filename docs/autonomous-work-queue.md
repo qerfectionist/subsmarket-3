@@ -746,3 +746,13 @@ Last checkpoint:
   change notices, removal reasons, AuditLog, and hidden payment contacts.
 - Recorded separate future demand for GB and account listings without moving
   Marketplace work ahead of Family Engine completion.
+
+2026-06-20 market research follow-up implementation:
+
+- Added family availability confirmation:
+  - owners can confirm `Семья актуальна`;
+  - family search ranks recently confirmed families first;
+  - stale families are not hidden automatically in MVP;
+  - `family_availability_confirmed` is written to AuditLog.
+- Added ready Telegram chat text when a candidate opens the owner chat after an
+  active request.

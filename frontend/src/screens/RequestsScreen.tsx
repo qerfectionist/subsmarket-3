@@ -68,7 +68,12 @@ export function RequestsScreen({
                       type="button"
                       className="secondary"
                       data-testid="request-owner-chat-button"
-                      onClick={() => openTelegramUser(request.owner_username!)}
+                      onClick={() =>
+                        openTelegramUser(
+                          request.owner_username!,
+                          `Здравствуйте, я оставил заявку в вашу семью ${request.service_name} в SubsMarket.`
+                        )
+                      }
                     >
                       Написать владельцу
                     </button>

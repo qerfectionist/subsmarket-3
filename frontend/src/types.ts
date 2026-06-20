@@ -75,6 +75,8 @@ export type Family = {
   next_payment_date: string;
   description: string | null;
   owner_rules: string | null;
+  availability_confirmed_at: string | null;
+  availability_expires_at: string | null;
   is_search_visible: boolean;
   closing_started_at: string | null;
   closes_at: string | null;

@@ -212,6 +212,10 @@ export function updateFamilyVisibility(
   });
 }
 
+export function confirmFamilyAvailability(familyId: string): Promise<Family> {
+  return post<Family>(`/api/families/${familyId}/confirm-availability`);
+}
+
 export function getFamilyAuditLog(familyId: string): Promise<FamilyAuditLog[]> {
   return request<CursorPage<FamilyAuditLog>>(
     `/api/families/${familyId}/audit-log/page`

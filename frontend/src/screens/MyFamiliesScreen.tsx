@@ -29,6 +29,7 @@ export function MyFamiliesScreen({
   onUpdatePrice,
   onUpdatePaymentDay,
   onCloseFamily,
+  onConfirmAvailability,
   onConfirmAccess,
   onGetRequisite,
   onAcknowledgeClosing,
@@ -62,6 +63,7 @@ export function MyFamiliesScreen({
     nextPaymentDate: string
   ) => void;
   onCloseFamily: (familyId: string, closesOn: string) => void;
+  onConfirmAvailability: (familyId: string) => void;
   onConfirmAccess: (memberId: string) => void;
   onGetRequisite: (memberId: string) => void;
   onAcknowledgeClosing: (familyId: string) => void;
@@ -140,6 +142,7 @@ export function MyFamiliesScreen({
                       onUpdatePrice={onUpdatePrice}
                       onUpdatePaymentDay={onUpdatePaymentDay}
                       onCloseFamily={onCloseFamily}
+                      onConfirmAvailability={onConfirmAvailability}
                     />
                   ) : (
                     <MemberActions
@@ -307,7 +310,8 @@ function OwnerActions({
   onUpdateDescription,
   onUpdatePrice,
   onUpdatePaymentDay,
-  onCloseFamily
+  onCloseFamily,
+  onConfirmAvailability
 }: {
   family: Family;
   busy: string | null;
@@ -320,6 +324,7 @@ function OwnerActions({
     nextPaymentDate: string
   ) => void;
   onCloseFamily: (familyId: string, closesOn: string) => void;
+  onConfirmAvailability: (familyId: string) => void;
 }) {
   const [descriptionDraft, setDescriptionDraft] = useState(family.description ?? "");
   const [priceDraft, setPriceDraft] = useState(String(family.total_price_kzt));
@@ -369,7 +374,25 @@ function OwnerActions({
         >
           Заявки и участники
         </button>
+        <button
+          type="button"
+          className="secondary"
+          data-testid="confirm-availability-button"
+          disabled={busy !== null || !["active", "full"].includes(family.status)}
+          onClick={() => onConfirmAvailability(family.id)}
+        >
+          Семья актуальна
+        </button>
       </div>
+      <small className="muted">
+        Последнее подтверждение:{" "}
+        {family.availability_confirmed_at
+          ? new Intl.DateTimeFormat("ru-KZ", {
+              dateStyle: "short",
+              timeStyle: "short"
+            }).format(new Date(family.availability_confirmed_at))
+          : "нет данных"}
+      </small>
 
       <div className="owner-settings-grid">
         <label>

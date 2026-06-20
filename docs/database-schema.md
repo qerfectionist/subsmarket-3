@@ -98,6 +98,8 @@ families (
   next_payment_date date not null,
   description text,
   owner_rules text,
+  availability_confirmed_at timestamptz,
+  availability_expires_at timestamptz,
   price_updated_at timestamptz,
   closing_started_at timestamptz,
   closes_at timestamptz,
@@ -130,6 +132,9 @@ create index families_discovery_visible_type_created_idx
   where status = 'active'
     and is_search_visible = true
     and active_members_count < max_members;
+
+create index families_search_availability_idx
+  on families(status, is_search_visible, family_type, availability_confirmed_at);
 ```
 
 Правила:

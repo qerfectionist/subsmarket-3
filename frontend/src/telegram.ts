@@ -247,12 +247,16 @@ export function triggerTelegramImpact(
   webApp()?.HapticFeedback?.impactOccurred?.(style);
 }
 
-export function openTelegramUser(username: string) {
+export function openTelegramUser(username: string, text?: string) {
   const normalized = username.trim().replace(/^@/, "");
   if (!normalized) {
     return;
   }
-  const url = `https://t.me/${encodeURIComponent(normalized)}`;
+  const encodedUsername = encodeURIComponent(normalized);
+  const message = text?.trim();
+  const url = message
+    ? `https://t.me/${encodedUsername}?text=${encodeURIComponent(message)}`
+    : `https://t.me/${encodedUsername}`;
   if (webApp()?.openTelegramLink) {
     webApp()?.openTelegramLink?.(url);
     return;

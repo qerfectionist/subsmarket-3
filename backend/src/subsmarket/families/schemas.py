@@ -86,6 +86,8 @@ class FamilyOut(BaseModel):
     next_payment_date: date
     description: str | None
     owner_rules: str | None
+    availability_confirmed_at: datetime | None = None
+    availability_expires_at: datetime | None = None
     is_search_visible: bool
     closing_started_at: datetime | None = None
     closes_at: datetime | None = None

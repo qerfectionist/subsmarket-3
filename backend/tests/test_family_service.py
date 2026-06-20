@@ -32,6 +32,7 @@ from subsmarket.families.service import (
     cancel_member_before_access,
     close_family,
     confirm_access_received,
+    confirm_family_availability,
     confirm_payment_received,
     create_family,
     create_join_request,
@@ -376,6 +377,49 @@ def test_search_hides_own_pending_member_and_restricted_families(
     assert len(first_page) == 1
     assert len(second_page) == 1
     assert first_page[0].id != second_page[0].id
+
+
+def test_owner_can_confirm_family_availability(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 11)
+    family = make_family(db, owner, subscription_service)
+    original_confirmed_at = family.availability_confirmed_at
+
+    updated = confirm_family_availability(db, owner, family.id)
+
+    assert updated.availability_confirmed_at is not None
+    assert updated.availability_expires_at is not None
+    assert updated.availability_confirmed_at >= original_confirmed_at
+    assert updated.availability_expires_at - updated.availability_confirmed_at == (
+        timedelta(days=3)
+    )
+    audit_log = db.scalar(
+        select(FamilyAuditLog).where(
+            FamilyAuditLog.family_id == family.id,
+            FamilyAuditLog.action == "family_availability_confirmed",
+        )
+    )
+    assert audit_log is not None
+
+
+def test_search_prioritizes_recently_confirmed_families(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    candidate = make_user(db, 12)
+    stale_owner = make_user(db, 121)
+    fresh_owner = make_user(db, 122)
+    stale_family = make_family(db, stale_owner, subscription_service)
+    fresh_family = make_family(db, fresh_owner, subscription_service)
+    stale_family.availability_confirmed_at = utcnow() - timedelta(days=10)
+    stale_family.availability_expires_at = utcnow() - timedelta(days=7)
+    db.commit()
+
+    confirm_family_availability(db, fresh_owner, fresh_family.id)
+
+    families = list_searchable_families(db, candidate, limit=2)
+
+    assert [family.id for family in families] == [fresh_family.id, stale_family.id]
 
 
 def test_owner_username_is_visible_only_while_request_is_active(

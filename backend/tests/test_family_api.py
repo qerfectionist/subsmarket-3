@@ -211,6 +211,30 @@ def test_family_creation_is_idempotent(
     assert changed.json()["detail"] == "IDEMPOTENCY_KEY_REUSED"
 
 
+def test_owner_can_confirm_family_availability_via_api(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    owner_headers = auth_headers(610002, "availability_owner", "Availability Owner")
+    member_headers = auth_headers(610003, "availability_member", "Availability Member")
+    family_id = create_family_via_api(client, service, owner_headers)
+
+    owner_response = client.post(
+        f"/api/families/{family_id}/confirm-availability",
+        headers=owner_headers,
+    )
+    member_response = client.post(
+        f"/api/families/{family_id}/confirm-availability",
+        headers=member_headers,
+    )
+
+    assert owner_response.status_code == 200
+    assert owner_response.json()["availability_confirmed_at"] is not None
+    assert owner_response.json()["availability_expires_at"] is not None
+    assert member_response.status_code == 403
+    assert member_response.json()["detail"] == "ONLY_OWNER_CAN_CHANGE_FAMILY"
+
+
 def test_family_search_page_uses_cursor_without_duplicates(
     client: TestClient,
     service: FamilyService,

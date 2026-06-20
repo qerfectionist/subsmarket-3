@@ -46,6 +46,7 @@ from subsmarket.families.service import (
     cancel_payment_report,
     close_family,
     confirm_access_received,
+    confirm_family_availability,
     confirm_payment_received,
     create_family,
     create_family_invite,
@@ -407,6 +408,15 @@ def patch_family_visibility(
     user=Depends(get_current_user),
 ) -> FamilyOut:
     return to_family_out(update_family_visibility(db, user, family_id, payload))
+
+
+@router.post("/{family_id}/confirm-availability", response_model=FamilyOut)
+def post_family_availability_confirmed(
+    family_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyOut:
+    return to_family_out(confirm_family_availability(db, user, family_id))
 
 
 @router.get("/{family_id}/invite", response_model=FamilyInviteOut | None)

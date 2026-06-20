@@ -29,7 +29,8 @@ export function FamilyDetailsScreen({
   onCreateInvite,
   onRotateInvite,
   onDisableInvite,
-  onUpdateVisibility
+  onUpdateVisibility,
+  onConfirmAvailability
 }: {
   view: FamilyView | null;
   requisite: PaymentRequisite | null;
@@ -47,6 +48,7 @@ export function FamilyDetailsScreen({
   onRotateInvite: (familyId: string) => void;
   onDisableInvite: (familyId: string) => void;
   onUpdateVisibility: (familyId: string, isSearchVisible: boolean) => void;
+  onConfirmAvailability: (familyId: string) => void;
 }) {
   if (!view) {
     return (
@@ -95,6 +97,7 @@ export function FamilyDetailsScreen({
           onRotate={onRotateInvite}
           onDisable={onDisableInvite}
           onUpdateVisibility={onUpdateVisibility}
+          onConfirmAvailability={onConfirmAvailability}
         />
       )}
 
@@ -190,7 +193,12 @@ export function FamilyDetailsScreen({
               type="button"
               className="secondary"
               data-testid="owner-chat-button"
-              onClick={() => openTelegramUser(view.owner_username!)}
+              onClick={() =>
+                openTelegramUser(
+                  view.owner_username!,
+                  `Здравствуйте, я оставил заявку в вашу семью ${family.service_name} в SubsMarket.`
+                )
+              }
             >
               Написать владельцу
             </button>
@@ -228,7 +236,8 @@ function OwnerInvitePanel({
   onCreate,
   onRotate,
   onDisable,
-  onUpdateVisibility
+  onUpdateVisibility,
+  onConfirmAvailability
 }: {
   family: FamilyView["family"];
   invite: FamilyInvite | null;
@@ -237,6 +246,7 @@ function OwnerInvitePanel({
   onRotate: (familyId: string) => void;
   onDisable: (familyId: string) => void;
   onUpdateVisibility: (familyId: string, isSearchVisible: boolean) => void;
+  onConfirmAvailability: (familyId: string) => void;
 }) {
   const editable = ["active", "full"].includes(family.status);
   const formattedCode = invite
@@ -252,6 +262,12 @@ function OwnerInvitePanel({
         </strong>
         <p className="muted">
           По коду человек увидит карточку и отправит обычную заявку.
+        </p>
+        <p className="muted">
+          Последнее подтверждение:{" "}
+          {family.availability_confirmed_at
+            ? formatDateTime(family.availability_confirmed_at)
+            : "нет данных"}
         </p>
       </div>
       <div className="row-actions">
@@ -301,6 +317,15 @@ function OwnerInvitePanel({
           }
         >
           {family.is_search_visible ? "Скрыть из поиска" : "Показывать в поиске"}
+        </button>
+        <button
+          type="button"
+          className="secondary"
+          data-testid="detail-confirm-availability-button"
+          disabled={busy !== null || !editable}
+          onClick={() => onConfirmAvailability(family.id)}
+        >
+          Семья актуальна
         </button>
       </div>
     </section>

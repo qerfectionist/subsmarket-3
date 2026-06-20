@@ -8,6 +8,7 @@ import {
   cancelMemberBeforeAccess,
   cancelPaymentReport,
   closeFamily,
+  confirmFamilyAvailability,
   confirmAccessReceived,
   confirmPaymentReceived,
   createFamily,
@@ -501,6 +502,11 @@ export function App() {
           onCloseFamily={(familyId, closesOn) =>
             void runAction("close-family", () => closeFamily(familyId, closesOn))
           }
+          onConfirmAvailability={(familyId) =>
+            void runAction("confirm-availability", () =>
+              confirmFamilyAvailability(familyId)
+            ).then(() => load())
+          }
           onConfirmAccess={(memberId) =>
             void runAction("confirm-access", async () => {
               const result = await confirmAccessReceived(memberId);
@@ -636,6 +642,11 @@ export function App() {
           onUpdateVisibility={(familyId, isSearchVisible) =>
             void runAction("update-visibility", () =>
               updateFamilyVisibility(familyId, isSearchVisible)
+            ).then(() => openFamily(familyId, familyBackTab))
+          }
+          onConfirmAvailability={(familyId) =>
+            void runAction("confirm-availability", () =>
+              confirmFamilyAvailability(familyId)
             ).then(() => openFamily(familyId, familyBackTab))
           }
           onConfirmAccess={(memberId) =>

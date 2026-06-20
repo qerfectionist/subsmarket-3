@@ -80,6 +80,7 @@ MEMBER_REMOVAL_REASONS = {
 }
 KAZAKHSTAN_TIMEZONE = timezone(timedelta(hours=5))
 PHONE_RE = re.compile(r"^\+?7\d{10}$")
+FAMILY_AVAILABILITY_TTL = timedelta(days=3)
 
 
 def _trim_page(items: list, limit: int, cursor_factory) -> tuple[list, str | None]:
@@ -106,6 +107,25 @@ def _asc_datetime_uuid_condition(model, cursor: str, datetime_field: str):
     return or_(
         column > value,
         and_(column == value, model.id > item_id),
+    )
+
+
+def _desc_availability_datetime_uuid_condition(cursor: str):
+    payload = decode_cursor(cursor)
+    availability_confirmed_at = cursor_datetime(payload, "availability_confirmed_at")
+    created_at = cursor_datetime(payload, "created_at")
+    item_id = cursor_uuid(payload, "id")
+    return or_(
+        Family.availability_confirmed_at < availability_confirmed_at,
+        and_(
+            Family.availability_confirmed_at == availability_confirmed_at,
+            Family.created_at < created_at,
+        ),
+        and_(
+            Family.availability_confirmed_at == availability_confirmed_at,
+            Family.created_at == created_at,
+            Family.id < item_id,
+        ),
     )
 
 
@@ -153,6 +173,8 @@ def to_family_out(family: Family) -> FamilyOut:
         next_payment_date=family.next_payment_date,
         description=family.description,
         owner_rules=family.owner_rules,
+        availability_confirmed_at=family.availability_confirmed_at,
+        availability_expires_at=family.availability_expires_at,
         is_search_visible=family.is_search_visible,
         closing_started_at=family.closing_started_at,
         closes_at=family.closes_at,
@@ -311,6 +333,7 @@ def create_family(
     if active_owned_count and active_owned_count >= 2:
         raise HTTPException(status_code=409, detail="OWNER_ACTIVE_FAMILY_LIMIT_REACHED")
 
+    now = utcnow()
     family = Family(
         service_id=service.id,
         owner_user_id=user_id,
@@ -326,6 +349,8 @@ def create_family(
         next_payment_date=data.next_payment_date,
         description=data.description,
         owner_rules=data.owner_rules,
+        availability_confirmed_at=now,
+        availability_expires_at=now + FAMILY_AVAILABILITY_TTL,
     )
     db.add(family)
     db.flush()
@@ -505,6 +530,46 @@ def update_family_visibility(
         details={
             "old_is_search_visible": old_visibility,
             "new_is_search_visible": family.is_search_visible,
+        },
+    )
+    db.commit()
+    loaded = get_family_by_id(db, family.id)
+    if loaded is None:
+        raise RuntimeError("Updated family was not found")
+    return loaded
+
+
+def confirm_family_availability(
+    db: Session,
+    user: User,
+    family_id: UUID,
+) -> Family:
+    family = _get_owned_family_for_update(db, user, family_id)
+    if family.status not in {"active", "full"}:
+        raise HTTPException(status_code=409, detail="FAMILY_AVAILABILITY_NOT_EDITABLE")
+
+    now = utcnow()
+    old_confirmed_at = family.availability_confirmed_at
+    old_expires_at = family.availability_expires_at
+    family.availability_confirmed_at = now
+    family.availability_expires_at = now + FAMILY_AVAILABILITY_TTL
+    record_family_audit_event(
+        db,
+        family_id=family.id,
+        action="family_availability_confirmed",
+        actor_user_id=user.id,
+        details={
+            "old_availability_confirmed_at": (
+                old_confirmed_at.isoformat() if old_confirmed_at else None
+            ),
+            "new_availability_confirmed_at": (
+                family.availability_confirmed_at.isoformat()
+            ),
+            "old_availability_expires_at": (
+                old_expires_at.isoformat() if old_expires_at else None
+            ),
+            "new_availability_expires_at": family.availability_expires_at.isoformat(),
+            "ttl_days": FAMILY_AVAILABILITY_TTL.days,
         },
     )
     db.commit()
@@ -710,7 +775,11 @@ def list_searchable_families(
             .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
             .exists()
         )
-        .order_by(Family.created_at.desc())
+        .order_by(
+            Family.availability_confirmed_at.desc().nullslast(),
+            Family.created_at.desc(),
+            Family.id.desc(),
+        )
         .offset(offset)
         .limit(limit)
     )
@@ -756,19 +825,29 @@ def list_searchable_families_page(
             .where(FamilyMember.status.in_(ACTIVE_MEMBER_STATUSES))
             .exists()
         )
-        .order_by(Family.created_at.desc(), Family.id.desc())
+        .order_by(
+            Family.availability_confirmed_at.desc().nullslast(),
+            Family.created_at.desc(),
+            Family.id.desc(),
+        )
         .limit(limit + 1)
     )
     if family_type:
         stmt = stmt.where(Family.family_type == family_type)
     if cursor:
-        stmt = stmt.where(_desc_datetime_uuid_condition(Family, cursor))
+        stmt = stmt.where(_desc_availability_datetime_uuid_condition(cursor))
     items = list(db.scalars(stmt).all())
     return _trim_page(
         items,
         limit,
         lambda family: encode_cursor(
-            {"created_at": family.created_at, "id": family.id}
+            {
+                "availability_confirmed_at": (
+                    family.availability_confirmed_at or family.created_at
+                ),
+                "created_at": family.created_at,
+                "id": family.id,
+            }
         ),
     )
 

@@ -46,6 +46,12 @@ class Family(Base):
     next_payment_date: Mapped[date] = mapped_column(Date)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     owner_rules: Mapped[str | None] = mapped_column(Text, nullable=True)
+    availability_confirmed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    availability_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     price_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

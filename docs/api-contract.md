@@ -140,6 +140,14 @@ Backend исключает:
 - семьи, где нет свободных мест;
 - семьи в статусе `closing`.
 
+Search ordering prioritizes recently confirmed families first:
+
+- `availability_confirmed_at desc`;
+- `created_at desc`;
+- `id desc`.
+
+Owners can refresh this signal without changing capacity, price, or payments.
+
 ### POST /api/families
 
 Header `Idempotency-Key` is supported and used by the Mini App. Repeating the
@@ -289,6 +297,20 @@ Each event contains:
 
 Owner-only. Sets `is_search_visible`. Hidden families remain available through
 an active invite code.
+
+### POST /api/families/{family_id}/confirm-availability
+
+Owner-only. Confirms that the family card is still actual.
+
+Backend:
+
+- requires family status `active` or `full`;
+- updates `availability_confirmed_at = now`;
+- updates `availability_expires_at = now + 3 days`;
+- writes `family_availability_confirmed` to AuditLog.
+
+This does not close, hide, or delete stale families. Freshly confirmed families
+are simply ranked higher in discovery.
 
 ### Family invite management
 
