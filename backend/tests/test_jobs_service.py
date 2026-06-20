@@ -24,6 +24,7 @@ from subsmarket.families.service import (
     close_family,
     create_family,
     create_join_request,
+    get_family_owner_metric,
 )
 from subsmarket.identity.models import User
 from subsmarket.jobs.monitoring import get_jobs_status
@@ -151,6 +152,12 @@ def test_expired_request_notifies_both_sides_and_can_be_retried(db: Session) -> 
     assert request.status == "expired"
     assert repeated_count == 0
     assert repeated_notifications == 0
+    metric = get_family_owner_metric(db, owner.id)
+    assert metric is not None
+    assert metric.requests_received_count == 1
+    assert metric.requests_expired_count == 1
+    assert metric.responses_count == 0
+    assert metric.last_request_expired_at is not None
     assert (
         db.scalar(
             select(NotificationJob).where(

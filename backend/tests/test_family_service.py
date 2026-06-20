@@ -37,6 +37,7 @@ from subsmarket.families.service import (
     create_family,
     create_join_request,
     create_member_prepayment,
+    get_family_owner_metric,
     get_family_view,
     get_open_payment_requisite,
     leave_family,
@@ -605,6 +606,38 @@ def test_two_self_cancels_block_third_request_to_same_family(
 
     assert exc.value.status_code == 409
     assert exc.value.detail == "SELF_CANCEL_LIMIT_REACHED"
+
+
+def test_owner_request_metrics_track_decisions_and_candidate_cancels(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 52)
+    first_candidate = make_user(db, 53)
+    second_candidate = make_user(db, 54)
+    third_candidate = make_user(db, 55)
+    family = make_family(db, owner, subscription_service)
+
+    approved_request = create_join_request(db, first_candidate, family.id)
+    approved_request.created_at = utcnow() - timedelta(seconds=90)
+    db.commit()
+    approve_join_request(db, owner, approved_request.id)
+    rejected_request = create_join_request(db, second_candidate, family.id)
+    reject_join_request(db, owner, rejected_request.id)
+    cancelled_request = create_join_request(db, third_candidate, family.id)
+    cancel_join_request(db, third_candidate, cancelled_request.id)
+
+    metric = get_family_owner_metric(db, owner.id)
+
+    assert metric is not None
+    assert metric.requests_received_count == 3
+    assert metric.requests_approved_count == 1
+    assert metric.requests_rejected_count == 1
+    assert metric.requests_cancelled_by_candidate_count == 1
+    assert metric.requests_expired_count == 0
+    assert metric.responses_count == 2
+    assert metric.response_time_seconds_total >= 90
+    assert metric.last_request_received_at is not None
+    assert metric.last_response_at is not None
 
 
 def test_audit_log_is_written_for_family_creation(

@@ -756,3 +756,13 @@ Last checkpoint:
   - `family_availability_confirmed` is written to AuditLog.
 - Added ready Telegram chat text when a candidate opens the owner chat after an
   active request.
+
+2026-06-20 internal owner reliability metrics:
+
+- Added `family_owner_metrics` as an internal-only table, not a public rating.
+- The backend now records owner request volume, approvals, rejections, expired
+  requests, candidate self-cancels, and total response time.
+- Candidate self-cancel is tracked separately so it does not become a negative
+  owner signal.
+- These counters give the future rating/anti-abuse layer a cheap source of
+  truth without scanning all historical requests.

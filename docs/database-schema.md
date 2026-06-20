@@ -285,6 +285,42 @@ family_request_restrictions (
 Ограничение на три заявки на сервис требует транзакционной проверки, потому что
 сервис находится через `families.service_id`.
 
+## family_owner_metrics
+
+```sql
+family_owner_metrics (
+  id uuid primary key,
+  owner_user_id uuid not null unique references users(id) on delete cascade,
+  requests_received_count int not null default 0,
+  requests_approved_count int not null default 0,
+  requests_rejected_count int not null default 0,
+  requests_expired_count int not null default 0,
+  requests_cancelled_by_candidate_count int not null default 0,
+  responses_count int not null default 0,
+  response_time_seconds_total int not null default 0,
+  last_request_received_at timestamptz,
+  last_response_at timestamptz,
+  last_request_expired_at timestamptz,
+  created_at timestamptz not null,
+  updated_at timestamptz not null
+)
+```
+
+Indexes:
+
+```sql
+create index family_owner_metrics_owner_user_id_idx
+  on family_owner_metrics(owner_user_id);
+```
+
+Rules:
+
+- internal-only owner reliability foundation, not public rating in MVP;
+- updated when an owner receives, approves, rejects, or lets a request expire;
+- candidate self-cancel is counted separately and does not punish the owner;
+- response speed is stored as total seconds plus response count, so average
+  response time can be calculated later without scanning all requests.
+
 ## family_payments
 
 ```sql

@@ -19,7 +19,10 @@ from subsmarket.families.models import (
     FamilyPayment,
     FamilyRequest,
 )
-from subsmarket.families.service import cancel_scheduled_payments
+from subsmarket.families.service import (
+    cancel_scheduled_payments,
+    record_owner_request_expired,
+)
 from subsmarket.jobs.schemas import RunDueJobError, RunDueJobsResult
 from subsmarket.notifications.models import NotificationJob
 from subsmarket.notifications.service import enqueue_notification
@@ -287,6 +290,11 @@ def expire_family_requests(db: Session) -> tuple[int, int]:
         request.status = "expired"
         request.expired_at = now
         family = request.family
+        record_owner_request_expired(
+            db,
+            owner_user_id=family.owner_user_id,
+            expired_at=request.expired_at,
+        )
         record_family_audit_event(
             db,
             family_id=request.family_id,

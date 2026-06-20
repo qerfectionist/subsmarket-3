@@ -20,6 +20,7 @@ def upsert_user(db: Session, telegram_user: TelegramUserData) -> User:
         existing.last_name = telegram_user.last_name
         existing.photo_url = telegram_user.photo_url
         db.commit()
+        db.refresh(existing)
         return existing
 
     user = User(
@@ -46,5 +47,7 @@ def upsert_user(db: Session, telegram_user: TelegramUserData) -> User:
         existing.last_name = telegram_user.last_name
         existing.photo_url = telegram_user.photo_url
         db.commit()
+        db.refresh(existing)
         return existing
+    db.refresh(user)
     return user

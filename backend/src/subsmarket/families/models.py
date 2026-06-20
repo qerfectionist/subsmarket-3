@@ -225,6 +225,44 @@ class FamilyRequestRestriction(Base):
     )
 
 
+class FamilyOwnerMetric(Base):
+    __tablename__ = "family_owner_metrics"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        index=True,
+    )
+    requests_received_count: Mapped[int] = mapped_column(Integer, default=0)
+    requests_approved_count: Mapped[int] = mapped_column(Integer, default=0)
+    requests_rejected_count: Mapped[int] = mapped_column(Integer, default=0)
+    requests_expired_count: Mapped[int] = mapped_column(Integer, default=0)
+    requests_cancelled_by_candidate_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+    responses_count: Mapped[int] = mapped_column(Integer, default=0)
+    response_time_seconds_total: Mapped[int] = mapped_column(Integer, default=0)
+    last_request_received_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_response_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_request_expired_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+    owner: Mapped[User] = relationship()
+
+
 class FamilyPayment(Base):
     __tablename__ = "family_payments"
     __table_args__ = (

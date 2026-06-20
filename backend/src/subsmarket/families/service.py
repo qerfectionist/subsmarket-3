@@ -25,6 +25,7 @@ from subsmarket.families.models import (
     FamilyAuditLog,
     FamilyInvite,
     FamilyMember,
+    FamilyOwnerMetric,
     FamilyPayment,
     FamilyPaymentRequisite,
     FamilyRequest,
@@ -134,6 +135,101 @@ def calculate_member_share(total_price_kzt: int, max_members: int) -> tuple[int,
     member_share = ((raw_share + 49) // 50) * 50
     rounding_delta = member_share * max_members - total_price_kzt
     return member_share, rounding_delta
+
+
+def get_family_owner_metric(
+    db: Session,
+    owner_user_id: UUID,
+) -> FamilyOwnerMetric | None:
+    return db.scalar(
+        select(FamilyOwnerMetric).where(
+            FamilyOwnerMetric.owner_user_id == owner_user_id
+        )
+    )
+
+
+def record_owner_request_received(
+    db: Session,
+    *,
+    owner_user_id: UUID,
+    received_at: datetime,
+) -> FamilyOwnerMetric:
+    metric = _get_or_create_owner_metric_for_update(db, owner_user_id)
+    metric.requests_received_count += 1
+    metric.last_request_received_at = received_at
+    return metric
+
+
+def record_owner_request_cancelled_by_candidate(
+    db: Session,
+    *,
+    owner_user_id: UUID,
+) -> FamilyOwnerMetric:
+    metric = _get_or_create_owner_metric_for_update(db, owner_user_id)
+    metric.requests_cancelled_by_candidate_count += 1
+    return metric
+
+
+def record_owner_request_decision(
+    db: Session,
+    *,
+    owner_user_id: UUID,
+    request: FamilyRequest,
+    decision: str,
+) -> FamilyOwnerMetric:
+    metric = _get_or_create_owner_metric_for_update(db, owner_user_id)
+    decided_at = request.decided_at or utcnow()
+    created_at = _as_aware_utc(request.created_at)
+    decided_at = _as_aware_utc(decided_at)
+    response_seconds = max(0, int((decided_at - created_at).total_seconds()))
+    if decision == "approved":
+        metric.requests_approved_count += 1
+    elif decision == "rejected":
+        metric.requests_rejected_count += 1
+    else:
+        raise ValueError(f"Unsupported owner request decision: {decision}")
+    metric.responses_count += 1
+    metric.response_time_seconds_total += response_seconds
+    metric.last_response_at = decided_at
+    return metric
+
+
+def _as_aware_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
+def record_owner_request_expired(
+    db: Session,
+    *,
+    owner_user_id: UUID,
+    expired_at: datetime,
+) -> FamilyOwnerMetric:
+    metric = _get_or_create_owner_metric_for_update(db, owner_user_id)
+    metric.requests_expired_count += 1
+    metric.last_request_expired_at = expired_at
+    return metric
+
+
+def _get_or_create_owner_metric_for_update(
+    db: Session,
+    owner_user_id: UUID,
+) -> FamilyOwnerMetric:
+    owner = db.scalar(select(User).where(User.id == owner_user_id).with_for_update())
+    if owner is None:
+        raise RuntimeError("Family owner disappeared during metric update")
+    metric = db.scalar(
+        select(FamilyOwnerMetric)
+        .where(FamilyOwnerMetric.owner_user_id == owner_user_id)
+        .with_for_update()
+    )
+    if metric is not None:
+        return metric
+    metric = FamilyOwnerMetric(owner_user_id=owner_user_id)
+    db.add(metric)
+    db.flush()
+    return metric
 
 
 def normalize_payment_phone(value: str) -> str:
@@ -1359,6 +1455,11 @@ def create_join_request(
         target_request_id=request.id,
         new_status=request.status,
     )
+    record_owner_request_received(
+        db,
+        owner_user_id=family.owner_user_id,
+        received_at=request.created_at,
+    )
     enqueue_notification(
         db,
         recipient_user_id=family.owner_user_id,
@@ -1423,6 +1524,11 @@ def cancel_join_request(
                 "message": f"{user.first_name} отменил заявку.",
             },
         )
+        if reason == "user_cancelled":
+            record_owner_request_cancelled_by_candidate(
+                db,
+                owner_user_id=family.owner_user_id,
+            )
     db.commit()
     db.refresh(request)
     return request
@@ -1564,6 +1670,12 @@ def reject_join_request(db: Session, user: User, request_id: UUID) -> FamilyRequ
     old_status = request.status
     request.status = "rejected"
     request.decided_at = utcnow()
+    record_owner_request_decision(
+        db,
+        owner_user_id=family.owner_user_id,
+        request=request,
+        decision="rejected",
+    )
     db.add(
         FamilyRequestRestriction(
             family_id=request.family_id,
@@ -1628,6 +1740,12 @@ def approve_join_request(db: Session, user: User, request_id: UUID) -> FamilyReq
     old_family_status = family.status
     request.status = "approved"
     request.decided_at = utcnow()
+    record_owner_request_decision(
+        db,
+        owner_user_id=family.owner_user_id,
+        request=request,
+        decision="approved",
+    )
     member = FamilyMember(
         family_id=family.id,
         user_id=request.user_id,
