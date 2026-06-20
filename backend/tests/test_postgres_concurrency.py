@@ -3,21 +3,32 @@ from __future__ import annotations
 import os
 import threading
 import uuid
+from dataclasses import dataclass
 from datetime import date, timedelta
 
 import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine, delete, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from subsmarket.catalog.models import FamilyService
-from subsmarket.families.models import Family, FamilyInvite, FamilyRequest
+from subsmarket.families.models import (
+    Family,
+    FamilyInvite,
+    FamilyMember,
+    FamilyRequest,
+)
 from subsmarket.families.schemas import FamilyCreate
 from subsmarket.families.service import (
     approve_join_request,
+    close_family,
     create_family,
     create_family_invite,
     create_join_request,
+    leave_family,
+    mark_access_provided,
+    remove_member,
 )
 from subsmarket.identity.models import User
 from subsmarket.identity.schemas import TelegramUserData
@@ -411,6 +422,272 @@ def test_parallel_first_identity_requests_return_one_user() -> None:
             db.execute(delete(User).where(User.telegram_user_id == telegram_user_id))
             db.commit()
         engine.dispose()
+
+
+def test_parallel_removals_in_one_family_release_each_slot_once() -> None:
+    case = _create_joined_members_case(member_count=2)
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def remove(member_id: uuid.UUID) -> None:
+        with case.session_factory() as db:
+            owner = db.get(User, case.owner_id)
+            assert owner is not None
+            barrier.wait(timeout=10)
+            try:
+                member = remove_member(
+                    db,
+                    owner,
+                    member_id,
+                    reason="no_response",
+                )
+                results.append(member.status)
+            except Exception as exc:  # pragma: no cover - reports exact DB error
+                db.rollback()
+                results.append(f"database-error:{type(exc).__name__}:{exc}")
+
+    threads = [
+        threading.Thread(target=remove, args=(member_id,), daemon=True)
+        for member_id in case.member_ids
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert results == ["removed", "removed"]
+        with case.session_factory() as db:
+            family = db.get(Family, case.family_id)
+            assert family is not None
+            statuses = list(
+                db.scalars(
+                    select(FamilyMember.status).where(
+                        FamilyMember.id.in_(case.member_ids)
+                    )
+                ).all()
+            )
+            assert statuses == ["removed", "removed"]
+            assert family.active_members_count == 1
+    finally:
+        case.cleanup()
+
+
+def test_parallel_remove_and_leave_change_membership_once() -> None:
+    case = _create_joined_members_case(member_count=1)
+    member_id = case.member_ids[0]
+    candidate_id = case.candidate_ids[0]
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def remove() -> None:
+        with case.session_factory() as db:
+            owner = db.get(User, case.owner_id)
+            assert owner is not None
+            barrier.wait(timeout=10)
+            try:
+                member = remove_member(db, owner, member_id, reason="other")
+                results.append(member.status)
+            except HTTPException as exc:
+                db.rollback()
+                results.append(str(exc.detail))
+
+    def leave() -> None:
+        with case.session_factory() as db:
+            candidate = db.get(User, candidate_id)
+            assert candidate is not None
+            barrier.wait(timeout=10)
+            try:
+                member = leave_family(db, candidate, member_id)
+                results.append(member.status)
+            except HTTPException as exc:
+                db.rollback()
+                results.append(str(exc.detail))
+
+    threads = [
+        threading.Thread(target=remove, daemon=True),
+        threading.Thread(target=leave, daemon=True),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert len(set(results) & {"removed", "left"}) == 1
+        assert len(set(results) & {"MEMBER_NOT_REMOVABLE", "MEMBER_NOT_ACTIVE"}) == 1
+        with case.session_factory() as db:
+            family = db.get(Family, case.family_id)
+            member = db.get(FamilyMember, member_id)
+            assert family is not None
+            assert member is not None
+            assert member.status in {"removed", "left"}
+            assert family.active_members_count == 1
+    finally:
+        case.cleanup()
+
+
+def test_parallel_close_and_remove_finish_without_deadlock() -> None:
+    case = _create_joined_members_case(member_count=1)
+    member_id = case.member_ids[0]
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def close() -> None:
+        with case.session_factory() as db:
+            owner = db.get(User, case.owner_id)
+            assert owner is not None
+            barrier.wait(timeout=10)
+            try:
+                family = close_family(db, owner, case.family_id)
+                results.append(f"close:{family.status}")
+            except Exception as exc:  # pragma: no cover - reports exact DB error
+                db.rollback()
+                results.append(f"database-error:{type(exc).__name__}:{exc}")
+
+    def remove() -> None:
+        with case.session_factory() as db:
+            owner = db.get(User, case.owner_id)
+            assert owner is not None
+            barrier.wait(timeout=10)
+            try:
+                member = remove_member(db, owner, member_id, reason="other")
+                results.append(f"remove:{member.status}")
+            except HTTPException as exc:
+                db.rollback()
+                results.append(str(exc.detail))
+            except Exception as exc:  # pragma: no cover - reports exact DB error
+                db.rollback()
+                results.append(f"database-error:{type(exc).__name__}:{exc}")
+
+    threads = [
+        threading.Thread(target=close, daemon=True),
+        threading.Thread(target=remove, daemon=True),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert "close:closing" in results
+        assert not any(result.startswith("database-error") for result in results)
+        assert set(results) & {"remove:removed", "FAMILY_NOT_MUTABLE"}
+        with case.session_factory() as db:
+            family = db.get(Family, case.family_id)
+            member = db.get(FamilyMember, member_id)
+            assert family is not None
+            assert member is not None
+            assert family.status == "closing"
+            if member.status == "removed":
+                assert family.active_members_count == 1
+            else:
+                assert member.status == "awaiting_confirmation"
+                assert family.active_members_count == 2
+    finally:
+        case.cleanup()
+
+
+@dataclass
+class _JoinedMembersCase:
+    engine: Engine
+    session_factory: sessionmaker[Session]
+    service_id: uuid.UUID
+    owner_id: uuid.UUID
+    candidate_ids: list[uuid.UUID]
+    family_id: uuid.UUID
+    member_ids: list[uuid.UUID]
+
+    def cleanup(self) -> None:
+        user_ids = [self.owner_id, *self.candidate_ids]
+        with self.session_factory() as db:
+            db.execute(
+                delete(NotificationJob).where(
+                    NotificationJob.recipient_user_id.in_(user_ids)
+                )
+            )
+            db.execute(delete(Family).where(Family.id == self.family_id))
+            db.execute(delete(User).where(User.id.in_(user_ids)))
+            db.execute(delete(FamilyService).where(FamilyService.id == self.service_id))
+            db.commit()
+        self.engine.dispose()
+
+
+def _create_joined_members_case(*, member_count: int) -> _JoinedMembersCase:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=4, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+    telegram_suffix = int(suffix[:6], 16)
+
+    with session_factory() as db:
+        service = FamilyService(
+            slug=f"member-race-{suffix}",
+            name="Member Race Service",
+            variant=None,
+            family_type="subscription",
+            category="tests",
+            subcategory=None,
+            max_members=max(4, member_count + 1),
+            supported_periods=["monthly"],
+            status="active",
+            service_metadata={},
+        )
+        owner = User(
+            telegram_user_id=780000000 + telegram_suffix,
+            username=f"race_owner_{suffix}",
+            first_name="Owner",
+        )
+        candidates = [
+            User(
+                telegram_user_id=800000000 + telegram_suffix + index,
+                username=f"race_member_{index}_{suffix}",
+                first_name=f"Member {index}",
+            )
+            for index in range(member_count)
+        ]
+        db.add_all([service, owner, *candidates])
+        db.commit()
+        family = create_family(
+            db,
+            owner,
+            FamilyCreate(
+                service_id=service.id,
+                period="monthly",
+                max_members=max(4, member_count + 1),
+                total_price_kzt=4000,
+                payment_day=15,
+                next_payment_date=date.today() + timedelta(days=30),
+                payment_bank="kaspi",
+                payment_phone="+77001234567",
+            ),
+        )
+        member_ids: list[uuid.UUID] = []
+        for candidate in candidates:
+            request = create_join_request(db, candidate, family.id)
+            approve_join_request(db, owner, request.id)
+            member = db.scalar(
+                select(FamilyMember).where(
+                    FamilyMember.family_id == family.id,
+                    FamilyMember.user_id == candidate.id,
+                )
+            )
+            assert member is not None
+            mark_access_provided(db, owner, member.id)
+            member_ids.append(member.id)
+
+        return _JoinedMembersCase(
+            engine=engine,
+            session_factory=session_factory,
+            service_id=service.id,
+            owner_id=owner.id,
+            candidate_ids=[candidate.id for candidate in candidates],
+            family_id=family.id,
+            member_ids=member_ids,
+        )
 
 
 def _family_create_payload(

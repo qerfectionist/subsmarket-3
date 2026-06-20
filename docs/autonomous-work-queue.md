@@ -708,3 +708,14 @@ Last checkpoint:
   records.
 - Full families can still be viewed through their permanent invite code, with
   `can_request=false` and zero free slots.
+
+2026-06-20 member lifecycle concurrency verification:
+
+- Added real PostgreSQL concurrency coverage for:
+  - two owner removals in the same family;
+  - owner removal racing with voluntary member leave;
+  - family closing racing with owner removal.
+- Verified that each occupied slot is released at most once and family counters
+  remain consistent.
+- Repeated the three new races 10 times each without deadlocks or database
+  errors.
