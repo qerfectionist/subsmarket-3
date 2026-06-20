@@ -682,3 +682,16 @@ Last checkpoint:
   - recent notification failure samples without private user data.
 - GitHub Actions now prints this status after due jobs and notification
   dispatch complete.
+
+2026-06-20 local Family backend closure checks:
+
+- Added API coverage for subscription/tariff separation, owner-only management,
+  payment-role permissions, member leave, member removal, closing, full family,
+  closing family, and closed family rules.
+- Verified locally without deployment:
+  - `npm run check`: 135 backend tests passed, five PostgreSQL-only tests
+    skipped in the generic run, frontend build passed, and 3 Playwright tests
+    passed;
+  - PostgreSQL-only concurrency suite: 5 passed against Docker PostgreSQL;
+  - write-load smoke: 1000 families, 1000 requests, 1000 approvals, 0 errors,
+    cleanup confirmed with zero generated users, services, and families left.

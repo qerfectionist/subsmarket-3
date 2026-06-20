@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import date, timedelta
+from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,6 +13,8 @@ from sqlalchemy.pool import StaticPool
 from subsmarket.catalog.models import FamilyService
 from subsmarket.core.config import settings
 from subsmarket.core.database import Base, get_db
+from subsmarket.families.models import Family
+from subsmarket.jobs.service import close_due_families
 from subsmarket.main import app
 from subsmarket.models import import_models
 
@@ -72,6 +75,106 @@ def auth_headers(user_id: int, username: str, first_name: str) -> dict[str, str]
             f"{(user_id // 256) % 256}.{user_id % 256}"
         ),
     }
+
+
+def family_payload(
+    service: FamilyService,
+    *,
+    max_members: int = 4,
+    total_price_kzt: int = 4000,
+) -> dict[str, object]:
+    return {
+        "service_id": str(service.id),
+        "period": "monthly",
+        "max_members": max_members,
+        "total_price_kzt": total_price_kzt,
+        "payment_day": 15,
+        "next_payment_date": (date.today() + timedelta(days=30)).isoformat(),
+        "payment_bank": "kaspi",
+        "payment_phone": "+77001234567",
+    }
+
+
+def create_family_via_api(
+    client: TestClient,
+    service: FamilyService,
+    owner_headers: dict[str, str],
+    *,
+    max_members: int = 4,
+    total_price_kzt: int = 4000,
+) -> str:
+    response = client.post(
+        "/api/families",
+        headers=owner_headers,
+        json=family_payload(
+            service,
+            max_members=max_members,
+            total_price_kzt=total_price_kzt,
+        ),
+    )
+    assert response.status_code == 201
+    return str(response.json()["family"]["id"])
+
+
+def approve_member_via_api(
+    client: TestClient,
+    *,
+    family_id: str,
+    owner_headers: dict[str, str],
+    member_headers: dict[str, str],
+) -> str:
+    request_response = client.post(
+        f"/api/families/{family_id}/requests",
+        headers=member_headers,
+    )
+    assert request_response.status_code == 201
+    approve_response = client.post(
+        f"/api/families/requests/{request_response.json()['id']}/approve",
+        headers=owner_headers,
+    )
+    assert approve_response.status_code == 200
+    members_response = client.get(
+        f"/api/families/{family_id}/members",
+        headers=owner_headers,
+    )
+    assert members_response.status_code == 200
+    return str(
+        next(item for item in members_response.json() if item["role"] == "member")[
+            "id"
+        ]
+    )
+
+
+def activate_member_via_api(
+    client: TestClient,
+    *,
+    member_id: str,
+    owner_headers: dict[str, str],
+    member_headers: dict[str, str],
+) -> str:
+    access_response = client.post(
+        f"/api/families/members/{member_id}/access-provided",
+        headers=owner_headers,
+    )
+    assert access_response.status_code == 200
+    confirmation_response = client.post(
+        f"/api/families/members/{member_id}/access-confirmed",
+        headers=member_headers,
+    )
+    assert confirmation_response.status_code == 200
+    payment_id = str(confirmation_response.json()["payment"]["id"])
+    report_response = client.post(
+        f"/api/families/payments/{payment_id}/report-paid",
+        headers=member_headers,
+    )
+    assert report_response.status_code == 200
+    confirm_response = client.post(
+        f"/api/families/payments/{payment_id}/confirm",
+        headers=owner_headers,
+    )
+    assert confirm_response.status_code == 200
+    assert confirm_response.json()["member"]["status"] == "active"
+    return payment_id
 
 
 def test_family_creation_is_idempotent(
@@ -802,6 +905,273 @@ def test_payment_actions_are_limited_to_correct_side(
     )
     assert member_cancel_after_paid.status_code == 409
     assert member_cancel_after_paid.json()["detail"] == "PAYMENT_REPORT_NOT_ACTIVE"
+
+
+def test_member_leave_and_removal_flow_permissions(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    owner_headers = auth_headers(610070, "removal_owner", "Removal Owner")
+    member_headers = auth_headers(610071, "removal_member", "Removal Member")
+    outsider_headers = auth_headers(610072, "removal_outsider", "Outsider")
+    family_id = create_family_via_api(client, service, owner_headers)
+    member_id = approve_member_via_api(
+        client,
+        family_id=family_id,
+        owner_headers=owner_headers,
+        member_headers=member_headers,
+    )
+    activate_member_via_api(
+        client,
+        member_id=member_id,
+        owner_headers=owner_headers,
+        member_headers=member_headers,
+    )
+    owner_members = client.get(
+        f"/api/families/{family_id}/members",
+        headers=owner_headers,
+    ).json()
+    owner_member_id = next(item for item in owner_members if item["role"] == "owner")[
+        "id"
+    ]
+
+    owner_leave = client.post(
+        f"/api/families/members/{owner_member_id}/leave",
+        headers=owner_headers,
+    )
+    outsider_remove = client.post(
+        f"/api/families/members/{member_id}/remove",
+        headers=outsider_headers,
+    )
+    member_remove = client.post(
+        f"/api/families/members/{member_id}/remove",
+        headers=member_headers,
+    )
+    owner_remove = client.post(
+        f"/api/families/members/{member_id}/remove",
+        headers=owner_headers,
+    )
+    repeated_remove = client.post(
+        f"/api/families/members/{member_id}/remove",
+        headers=owner_headers,
+    )
+    outsider_ack = client.post(
+        f"/api/families/members/{member_id}/acknowledge-removal",
+        headers=outsider_headers,
+    )
+    member_ack = client.post(
+        f"/api/families/members/{member_id}/acknowledge-removal",
+        headers=member_headers,
+    )
+    outsider_cancel_request = client.post(
+        f"/api/families/members/{member_id}/request-removal-cancellation",
+        headers=outsider_headers,
+    )
+    member_cancel_request = client.post(
+        f"/api/families/members/{member_id}/request-removal-cancellation",
+        headers=member_headers,
+    )
+    outsider_revoke = client.post(
+        f"/api/families/members/{member_id}/revoke-removal",
+        headers=outsider_headers,
+    )
+    member_revoke = client.post(
+        f"/api/families/members/{member_id}/revoke-removal",
+        headers=member_headers,
+    )
+    owner_revoke = client.post(
+        f"/api/families/members/{member_id}/revoke-removal",
+        headers=owner_headers,
+    )
+    member_leave = client.post(
+        f"/api/families/members/{member_id}/leave",
+        headers=member_headers,
+    )
+    member_leave_again = client.post(
+        f"/api/families/members/{member_id}/leave",
+        headers=member_headers,
+    )
+    family_after_leave = client.get(
+        f"/api/families/{family_id}",
+        headers=owner_headers,
+    )
+
+    assert owner_leave.status_code == 400
+    assert owner_leave.json()["detail"] == "OWNER_MUST_CLOSE_FAMILY"
+    assert outsider_remove.status_code == 403
+    assert outsider_remove.json()["detail"] == "ONLY_OWNER_CAN_REMOVE_MEMBER"
+    assert member_remove.status_code == 403
+    assert member_remove.json()["detail"] == "ONLY_OWNER_CAN_REMOVE_MEMBER"
+    assert owner_remove.status_code == 200
+    assert owner_remove.json()["status"] == "removal_pending"
+    assert repeated_remove.status_code == 409
+    assert repeated_remove.json()["detail"] == "MEMBER_NOT_REMOVABLE"
+    assert outsider_ack.status_code == 403
+    assert outsider_ack.json()["detail"] == "ONLY_MEMBER_CAN_ACK_REMOVAL"
+    assert member_ack.status_code == 200
+    assert member_ack.json()["removal_acknowledged_at"] is not None
+    assert outsider_cancel_request.status_code == 403
+    assert outsider_cancel_request.json()["detail"] == (
+        "ONLY_MEMBER_CAN_REQUEST_REMOVAL_CANCELLATION"
+    )
+    assert member_cancel_request.status_code == 200
+    assert member_cancel_request.json()["removal_cancel_requested_at"] is not None
+    assert outsider_revoke.status_code == 403
+    assert outsider_revoke.json()["detail"] == "ONLY_OWNER_CAN_REVOKE_REMOVAL"
+    assert member_revoke.status_code == 403
+    assert member_revoke.json()["detail"] == "ONLY_OWNER_CAN_REVOKE_REMOVAL"
+    assert owner_revoke.status_code == 200
+    assert owner_revoke.json()["status"] == "active"
+    assert owner_revoke.json()["removal_scheduled_at"] is None
+    assert member_leave.status_code == 200
+    assert member_leave.json()["status"] == "left"
+    assert member_leave_again.status_code == 409
+    assert member_leave_again.json()["detail"] == "MEMBER_NOT_ACTIVE"
+    assert family_after_leave.status_code == 200
+    assert family_after_leave.json()["active_members_count"] == 1
+
+
+def test_full_closing_and_closed_family_api_rules(
+    client: TestClient,
+    db: Session,
+    service: FamilyService,
+) -> None:
+    full_owner_headers = auth_headers(610080, "full_owner", "Full Owner")
+    full_member_headers = auth_headers(610081, "full_member", "Full Member")
+    full_candidate_headers = auth_headers(
+        610082,
+        "full_candidate",
+        "Full Candidate",
+    )
+    full_family_id = create_family_via_api(
+        client,
+        service,
+        full_owner_headers,
+        max_members=2,
+    )
+    approve_member_via_api(
+        client,
+        family_id=full_family_id,
+        owner_headers=full_owner_headers,
+        member_headers=full_member_headers,
+    )
+
+    full_request = client.post(
+        f"/api/families/{full_family_id}/requests",
+        headers=full_candidate_headers,
+    )
+    full_invite = client.post(
+        f"/api/families/{full_family_id}/invite",
+        headers=full_owner_headers,
+    )
+
+    assert full_request.status_code == 409
+    assert full_request.json()["detail"] == "FAMILY_NOT_JOINABLE"
+    assert full_invite.status_code == 201
+    full_invite_lookup = client.get(
+        f"/api/families/invites/{full_invite.json()['code']}",
+        headers=full_candidate_headers,
+    )
+    assert full_invite_lookup.status_code == 409
+    assert full_invite_lookup.json()["detail"] == "FAMILY_INVITE_NOT_ACCEPTING"
+
+    closing_owner_headers = auth_headers(610083, "closing_owner", "Closing Owner")
+    closing_member_headers = auth_headers(
+        610084,
+        "closing_member",
+        "Closing Member",
+    )
+    pending_candidate_headers = auth_headers(
+        610085,
+        "closing_candidate",
+        "Closing Candidate",
+    )
+    new_candidate_headers = auth_headers(
+        610086,
+        "new_closing_candidate",
+        "New Closing Candidate",
+    )
+    closing_family_id = create_family_via_api(client, service, closing_owner_headers)
+    closing_member_id = approve_member_via_api(
+        client,
+        family_id=closing_family_id,
+        owner_headers=closing_owner_headers,
+        member_headers=closing_member_headers,
+    )
+    request_response = client.post(
+        f"/api/families/{closing_family_id}/requests",
+        headers=pending_candidate_headers,
+    )
+    invite_code = client.post(
+        f"/api/families/{closing_family_id}/invite",
+        headers=closing_owner_headers,
+    ).json()["code"]
+    close_response = client.post(
+        f"/api/families/{closing_family_id}/close",
+        headers=closing_owner_headers,
+    )
+    repeated_close = client.post(
+        f"/api/families/{closing_family_id}/close",
+        headers=closing_owner_headers,
+    )
+    pending_candidate_requests = client.get(
+        "/api/families/requests/me",
+        headers=pending_candidate_headers,
+    )
+    closing_request = client.post(
+        f"/api/families/{closing_family_id}/requests",
+        headers=new_candidate_headers,
+    )
+    closing_invite_lookup = client.get(
+        f"/api/families/invites/{invite_code}",
+        headers=new_candidate_headers,
+    )
+    closing_ack = client.post(
+        f"/api/families/{closing_family_id}/acknowledge-closing",
+        headers=closing_member_headers,
+    )
+    access_after_closing = client.post(
+        f"/api/families/members/{closing_member_id}/access-provided",
+        headers=closing_owner_headers,
+    )
+
+    assert request_response.status_code == 201
+    assert close_response.status_code == 200
+    assert close_response.json()["status"] == "closing"
+    assert close_response.json()["is_search_visible"] is False
+    assert repeated_close.status_code == 200
+    assert repeated_close.json()["id"] == closing_family_id
+    assert pending_candidate_requests.status_code == 200
+    assert pending_candidate_requests.json()[0]["status"] == "cancelled"
+    assert pending_candidate_requests.json()[0]["cancel_reason"] == "family_closing"
+    assert closing_request.status_code == 409
+    assert closing_request.json()["detail"] == "FAMILY_NOT_JOINABLE"
+    assert closing_invite_lookup.status_code == 410
+    assert closing_invite_lookup.json()["detail"] == "FAMILY_INVITE_INACTIVE"
+    assert closing_ack.status_code == 200
+    assert closing_ack.json()["closing_acknowledged_at"] is not None
+    assert access_after_closing.status_code == 409
+    assert access_after_closing.json()["detail"] == "FAMILY_NOT_MUTABLE"
+
+    family = db.get(Family, UUID(closing_family_id))
+    assert family is not None
+    family.closes_at = family.closing_started_at - timedelta(seconds=1)
+    db.commit()
+    closed_count, _ = close_due_families(db)
+    close_closed_again = client.post(
+        f"/api/families/{closing_family_id}/close",
+        headers=closing_owner_headers,
+    )
+    closed_request = client.post(
+        f"/api/families/{closing_family_id}/requests",
+        headers=auth_headers(610087, "closed_candidate", "Closed Candidate"),
+    )
+
+    assert closed_count == 1
+    assert close_closed_again.status_code == 409
+    assert close_closed_again.json()["detail"] == "FAMILY_ALREADY_CLOSED"
+    assert closed_request.status_code == 409
+    assert closed_request.json()["detail"] == "FAMILY_NOT_JOINABLE"
 
 
 def test_family_by_id_requires_telegram_auth_in_production(
