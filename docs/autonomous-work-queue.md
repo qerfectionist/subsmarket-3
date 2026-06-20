@@ -732,3 +732,14 @@ Last checkpoint:
 - Closing reminders include the selected date.
 - Removed a post-commit identity refresh race found in repeated Playwright runs;
   existing PostgreSQL user rows are now locked during their short profile update.
+
+2026-06-20 Telegram market chat research:
+
+- Analyzed 57,598 local Telegram export records covering 4,582 unique senders.
+- Saved only aggregated, de-identified findings in
+  `docs/market-chat-research-2026-06.md`.
+- Confirmed Family Engine priorities: operator/service separation, live slot
+  state, price transparency, access before payment, response deadlines, price
+  change notices, removal reasons, AuditLog, and hidden payment contacts.
+- Recorded separate future demand for GB and account listings without moving
+  Marketplace work ahead of Family Engine completion.
