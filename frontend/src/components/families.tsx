@@ -9,11 +9,20 @@ import {
 import type {
   Family,
   FamilyMember,
+  FamilyMemberRemovalReason,
   FamilyPayment,
   FamilyRequest,
   OwnerFamilyDetails
 } from "../types";
 import { Badge } from "./layout";
+
+const memberRemovalReasonLabels: Record<FamilyMemberRemovalReason, string> = {
+  no_payment: "Не оплатил",
+  no_response: "Нет связи",
+  access_issue: "Проблема с доступом",
+  mutual_agreement: "По договоренности",
+  other: "Другое"
+};
 
 export function OwnerDetails({
   family,
@@ -24,7 +33,6 @@ export function OwnerDetails({
   onRemindAccess,
   onCancelBeforeAccess,
   onRemove,
-  onRevokeRemoval,
   onConfirmPayment,
   onNotReceived,
   onRecordPrepayment
@@ -36,8 +44,10 @@ export function OwnerDetails({
   onAccessProvided: (member: FamilyMember) => Promise<unknown>;
   onRemindAccess: (member: FamilyMember) => Promise<unknown>;
   onCancelBeforeAccess: (member: FamilyMember) => Promise<unknown>;
-  onRemove: (member: FamilyMember) => Promise<unknown>;
-  onRevokeRemoval: (member: FamilyMember) => Promise<unknown>;
+  onRemove: (
+    member: FamilyMember,
+    reason: FamilyMemberRemovalReason
+  ) => Promise<unknown>;
   onConfirmPayment: (payment: FamilyPayment) => Promise<unknown>;
   onNotReceived: (payment: FamilyPayment) => Promise<unknown>;
   onRecordPrepayment: (
@@ -150,32 +160,17 @@ export function OwnerDetails({
                       Напомнить подтвердить
                     </button>
                   )}
-                  {member.status === "removal_pending" ? (
-                    <button
-                      type="button"
-                      className="secondary"
-                      data-testid="revoke-removal-button"
-                      onClick={() => void onRevokeRemoval(member)}
-                    >
-                      Отменить удаление
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="danger"
-                      data-testid="remove-member-button"
-                      onClick={() => void onRemove(member)}
-                    >
-                      Удалить через 12 часов
-                    </button>
+                  {["awaiting_confirmation", "payment_due", "active"].includes(
+                    member.status
+                  ) && (
+                    <OwnerMemberRemovalControl
+                      member={member}
+                      onRemove={onRemove}
+                    />
                   )}
                 </div>
               )}
             </div>
-            {member.status === "removal_pending" &&
-              member.removal_cancel_requested_at && (
-                <p className="muted">Участник просит отменить удаление.</p>
-              )}
             {member.role !== "owner" && member.status === "active" && (
               <OwnerPrepaymentControl
                 family={family}
@@ -227,6 +222,46 @@ export function OwnerDetails({
           ))
         )}
       </OwnerSection>
+    </div>
+  );
+}
+
+function OwnerMemberRemovalControl({
+  member,
+  onRemove
+}: {
+  member: FamilyMember;
+  onRemove: (
+    member: FamilyMember,
+    reason: FamilyMemberRemovalReason
+  ) => Promise<unknown>;
+}) {
+  const [reason, setReason] = useState<FamilyMemberRemovalReason>("other");
+
+  return (
+    <div className="owner-removal-control">
+      <select
+        aria-label="Причина удаления"
+        data-testid="remove-member-reason"
+        value={reason}
+        onChange={(event) =>
+          setReason(event.target.value as FamilyMemberRemovalReason)
+        }
+      >
+        {Object.entries(memberRemovalReasonLabels).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="danger"
+        data-testid="remove-member-button"
+        onClick={() => void onRemove(member, reason)}
+      >
+        Удалить сейчас
+      </button>
     </div>
   );
 }
@@ -320,7 +355,7 @@ function ownerMemberHint(status: string) {
     payment_reported: "Проверьте перевод и подтвердите оплату.",
     active: "Участник активен, первый платеж подтвержден.",
     removal_pending:
-      "Удаление запланировано. Участник может попросить об отмене, решение остается за вами."
+      "Старое отложенное удаление ожидает фоновой обработки."
   };
   return hints[status] ?? "Проверьте статус участника.";
 }

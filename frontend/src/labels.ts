@@ -26,7 +26,7 @@ export const statusLabels: Record<string, string> = {
   payment_reported: "Участник отметил оплату",
   paid: "Оплачено",
   overdue: "Просрочено",
-  removal_pending: "Удаление через 12 часов",
+  removal_pending: "Удаление обрабатывается",
   left: "Вышел",
   removed: "Удален",
   cancelled_before_access: "Отменено до доступа"

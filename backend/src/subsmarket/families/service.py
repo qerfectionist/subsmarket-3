@@ -71,6 +71,13 @@ ACTIVE_MEMBER_STATUSES = {
     "active",
     "removal_pending",
 }
+MEMBER_REMOVAL_REASONS = {
+    "no_payment",
+    "no_response",
+    "access_issue",
+    "mutual_agreement",
+    "other",
+}
 PHONE_RE = re.compile(r"^\+?7\d{10}$")
 
 
@@ -205,6 +212,7 @@ def to_member_out(member: FamilyMember) -> FamilyMemberOut:
         removal_scheduled_at=member.removal_scheduled_at,
         removal_acknowledged_at=member.removal_acknowledged_at,
         removal_cancel_requested_at=member.removal_cancel_requested_at,
+        removal_reason=member.removal_reason,
         left_at=member.left_at,
         removed_at=member.removed_at,
         cancelled_at=member.cancelled_at,
@@ -604,8 +612,6 @@ def resolve_family_invite(
     family = invite.family
     if invite.status != "active" or family.status in {"closing", "closed"}:
         raise HTTPException(status_code=410, detail="FAMILY_INVITE_INACTIVE")
-    if family.status != "active" or family.active_members_count >= family.max_members:
-        raise HTTPException(status_code=409, detail="FAMILY_INVITE_NOT_ACCEPTING")
     return get_family_view(db, user, family.id)
 
 
@@ -1858,19 +1864,23 @@ def leave_family(db: Session, user: User, member_id: UUID) -> FamilyMember:
     return member
 
 
-def schedule_member_removal(
+def remove_member(
     db: Session,
     user: User,
     member_id: UUID,
     *,
+    reason: str,
     idempotency_key: str | None = None,
 ) -> FamilyMember:
+    if reason not in MEMBER_REMOVAL_REASONS:
+        raise HTTPException(status_code=422, detail="INVALID_MEMBER_REMOVAL_REASON")
+
     claim = claim_idempotency(
         db,
         user_id=user.id,
-        operation="family_member.schedule_removal",
+        operation="family_member.remove",
         idempotency_key=idempotency_key,
-        payload={"member_id": str(member_id)},
+        payload={"member_id": str(member_id), "reason": reason},
         resource_type="family_member",
     )
     if claim.is_replay:
@@ -1894,32 +1904,45 @@ def schedule_member_removal(
     if member.status not in {"payment_due", "active", "awaiting_confirmation"}:
         raise HTTPException(status_code=409, detail="MEMBER_NOT_REMOVABLE")
 
+    now = utcnow()
     old_status = member.status
-    member.status = "removal_pending"
-    member.removal_scheduled_at = utcnow() + timedelta(hours=12)
+    member.status = "removed"
+    member.removed_at = now
+    member.removal_reason = reason
+    member.removal_scheduled_at = None
     member.removal_acknowledged_at = None
     member.removal_cancel_requested_at = None
+    cancel_scheduled_payments(
+        db,
+        family_id=family.id,
+        member_id=member.id,
+        reason="member_removed",
+        actor_user_id=user.id,
+    )
+    _release_family_slot(family)
     record_family_audit_event(
         db,
         family_id=family.id,
-        action="family_member_removal_scheduled",
+        action="family_member_removed_by_owner",
         actor_user_id=user.id,
         target_user_id=member.user_id,
         target_member_id=member.id,
         old_status=old_status,
         new_status=member.status,
         details={
-            "removal_scheduled_at": member.removal_scheduled_at.isoformat(),
+            "removed_at": member.removed_at.isoformat(),
+            "reason": reason,
         },
     )
     enqueue_notification(
         db,
         recipient_user_id=member.user_id,
-        event_type="family_member_removal_scheduled",
+        event_type="family_member_removed",
         payload={
             "family_id": str(family.id),
             "member_id": str(member.id),
-            "message": "Владелец запустил удаление из семьи. У вас есть 12 часов.",
+            "reason": reason,
+            "message": "Владелец удалил вас из семьи. Причина записана в истории.",
         },
     )
     complete_idempotency(

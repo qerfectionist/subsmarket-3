@@ -695,3 +695,16 @@ Last checkpoint:
   - PostgreSQL-only concurrency suite: 5 passed against Docker PostgreSQL;
   - write-load smoke: 1000 families, 1000 requests, 1000 approvals, 0 errors,
     cleanup confirmed with zero generated users, services, and families left.
+
+2026-06-20 immediate owner removal rule:
+
+- Replaced the 12-hour owner-removal flow with immediate removal.
+- The owner must choose one reason: no payment, no response, access issue,
+  mutual agreement, or other.
+- Removal now immediately frees the slot, cancels future scheduled payments,
+  records the reason in `family_members` and AuditLog, and notifies the member.
+- Removed acknowledgement, cancellation-request, and revoke actions from the
+  Mini App; legacy backend endpoints remain only for old `removal_pending`
+  records.
+- Full families can still be viewed through their permanent invite code, with
+  `can_request=false` and zero free slots.

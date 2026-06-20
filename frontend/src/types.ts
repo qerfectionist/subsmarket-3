@@ -38,6 +38,13 @@ export type FamilyService = {
 
 export type FamilyType = "subscription" | "tariff";
 
+export type FamilyMemberRemovalReason =
+  | "no_payment"
+  | "no_response"
+  | "access_issue"
+  | "mutual_agreement"
+  | "other";
+
 export type CursorPage<T> = {
   items: T[];
   next_cursor: string | null;
@@ -137,6 +144,7 @@ export type FamilyMember = {
   removal_scheduled_at: string | null;
   removal_acknowledged_at: string | null;
   removal_cancel_requested_at: string | null;
+  removal_reason: FamilyMemberRemovalReason | null;
   left_at: string | null;
   removed_at: string | null;
   cancelled_at: string | null;

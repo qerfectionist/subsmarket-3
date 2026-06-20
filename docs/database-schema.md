@@ -180,6 +180,7 @@ family_members (
   removal_scheduled_at timestamptz,
   removal_acknowledged_at timestamptz,
   removal_cancel_requested_at timestamptz,
+  removal_reason text,
   left_at timestamptz,
   removed_at timestamptz,
   cancelled_at timestamptz,
@@ -340,16 +341,17 @@ create index family_payments_reported_paid_reminder_idx
 - будущий `scheduled` платеж становится `cancelled` при выходе, удалении или
   закрытии семьи, а причина остается в `cancel_reason`.
 
-## Предупреждения жизненного цикла
+## Жизненный цикл удаления и закрытия
 
 Правила:
 
-- удаление хранится в `family_members.removal_scheduled_at` и выполняется через
-  12 часов, если владелец не отозвал решение;
-- подтверждение предупреждения хранится в `removal_acknowledged_at` и не
-  останавливает удаление;
-- просьба участника об отмене хранится в `removal_cancel_requested_at`, но
-  отменить удаление может только владелец;
+- новое удаление участника выполняется владельцем сразу;
+- причина хранится в `family_members.removal_reason`;
+- допустимые причины: `no_payment`, `no_response`, `access_issue`,
+  `mutual_agreement`, `other`;
+- `removal_scheduled_at`, `removal_acknowledged_at` и
+  `removal_cancel_requested_at` сохранены только для совместимости со старыми
+  записями `removal_pending`;
 - подтверждение предупреждения о закрытии хранится в
   `family_members.closing_acknowledged_at`;
 - закрытие семьи длится 3 календарных дня;

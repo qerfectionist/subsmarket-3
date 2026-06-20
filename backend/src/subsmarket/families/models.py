@@ -151,6 +151,7 @@ class FamilyMember(Base):
     removal_cancel_requested_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    removal_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     left_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

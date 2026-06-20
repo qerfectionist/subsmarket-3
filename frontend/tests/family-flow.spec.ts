@@ -154,29 +154,18 @@ test("owner and member complete the first payment family flow", async ({ page })
   await clickAndWait(page, "owner-record-prepayment-button");
   await expect(page.locator(".payment-list").last()).toContainText("предоплата");
 
+  await page.getByTestId("remove-member-reason").selectOption("no_response");
   await clickAndWait(page, "remove-member-button");
-  await expect(page.getByTestId("revoke-removal-button")).toBeVisible();
+  await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
 
   await switchDevUser(page, "200002");
   await openNav(page, 3);
-  await expect(page.getByText("Вас планируют удалить")).toBeVisible();
-  await expect(page.getByTestId("acknowledge-removal-button")).toBeVisible();
-  await expect(
-    page.getByTestId("request-removal-cancellation-button")
-  ).toBeVisible();
-  await clickAndWait(page, "acknowledge-removal-button");
-  await expect(page.getByTestId("acknowledge-removal-button")).toHaveCount(0);
-  await expect(page.getByTestId("family-workspace")).toHaveCount(1);
-  await clickAndWait(page, "request-removal-cancellation-button");
-  await expect(page.getByText("Владелец получил просьбу")).toBeVisible();
-  await expect(page.getByTestId("family-workspace")).toHaveCount(1);
+  await expect(page.getByTestId("family-workspace")).toHaveCount(0);
 
   await switchDevUser(page, "200001");
   await openNav(page, 3);
   await page.getByTestId("owner-details-button").click();
-  await expect(page.getByText("Участник просит отменить удаление.")).toBeVisible();
-  await clickAndWait(page, "revoke-removal-button");
-  await expect(page.getByTestId("remove-member-button")).toBeVisible();
+  await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
 
   const relevantMessages = messages.filter(
     (message) =>

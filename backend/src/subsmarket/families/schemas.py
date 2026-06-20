@@ -8,6 +8,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 FamilyPeriod = Literal["monthly", "yearly"]
 PaymentBank = Literal["kaspi", "halyk", "freedom", "jusan"]
+FamilyMemberRemovalReason = Literal[
+    "no_payment",
+    "no_response",
+    "access_issue",
+    "mutual_agreement",
+    "other",
+]
 
 
 class FamilyCreate(BaseModel):
@@ -42,6 +49,10 @@ class FamilyVisibilityUpdate(BaseModel):
 
 class PrepaymentPeriodsCreate(BaseModel):
     periods: int = Field(ge=1, le=12)
+
+
+class FamilyMemberRemovalCreate(BaseModel):
+    reason: FamilyMemberRemovalReason
 
 
 class PublicOwner(BaseModel):
@@ -146,6 +157,7 @@ class FamilyMemberOut(BaseModel):
     removal_scheduled_at: datetime | None = None
     removal_acknowledged_at: datetime | None = None
     removal_cancel_requested_at: datetime | None = None
+    removal_reason: str | None = None
     left_at: datetime | None = None
     removed_at: datetime | None = None
     cancelled_at: datetime | None = None

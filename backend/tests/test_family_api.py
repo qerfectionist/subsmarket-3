@@ -942,18 +942,22 @@ def test_member_leave_and_removal_flow_permissions(
     outsider_remove = client.post(
         f"/api/families/members/{member_id}/remove",
         headers=outsider_headers,
+        json={"reason": "other"},
     )
     member_remove = client.post(
         f"/api/families/members/{member_id}/remove",
         headers=member_headers,
+        json={"reason": "other"},
     )
     owner_remove = client.post(
         f"/api/families/members/{member_id}/remove",
         headers=owner_headers,
+        json={"reason": "no_response"},
     )
     repeated_remove = client.post(
         f"/api/families/members/{member_id}/remove",
         headers=owner_headers,
+        json={"reason": "no_response"},
     )
     outsider_ack = client.post(
         f"/api/families/members/{member_id}/acknowledge-removal",
@@ -991,7 +995,7 @@ def test_member_leave_and_removal_flow_permissions(
         f"/api/families/members/{member_id}/leave",
         headers=member_headers,
     )
-    family_after_leave = client.get(
+    family_after_removal = client.get(
         f"/api/families/{family_id}",
         headers=owner_headers,
     )
@@ -1003,32 +1007,34 @@ def test_member_leave_and_removal_flow_permissions(
     assert member_remove.status_code == 403
     assert member_remove.json()["detail"] == "ONLY_OWNER_CAN_REMOVE_MEMBER"
     assert owner_remove.status_code == 200
-    assert owner_remove.json()["status"] == "removal_pending"
+    assert owner_remove.json()["status"] == "removed"
+    assert owner_remove.json()["removal_reason"] == "no_response"
+    assert owner_remove.json()["removed_at"] is not None
+    assert owner_remove.json()["removal_scheduled_at"] is None
     assert repeated_remove.status_code == 409
     assert repeated_remove.json()["detail"] == "MEMBER_NOT_REMOVABLE"
     assert outsider_ack.status_code == 403
     assert outsider_ack.json()["detail"] == "ONLY_MEMBER_CAN_ACK_REMOVAL"
-    assert member_ack.status_code == 200
-    assert member_ack.json()["removal_acknowledged_at"] is not None
+    assert member_ack.status_code == 409
+    assert member_ack.json()["detail"] == "MEMBER_REMOVAL_NOT_PENDING"
     assert outsider_cancel_request.status_code == 403
     assert outsider_cancel_request.json()["detail"] == (
         "ONLY_MEMBER_CAN_REQUEST_REMOVAL_CANCELLATION"
     )
-    assert member_cancel_request.status_code == 200
-    assert member_cancel_request.json()["removal_cancel_requested_at"] is not None
+    assert member_cancel_request.status_code == 409
+    assert member_cancel_request.json()["detail"] == "MEMBER_REMOVAL_NOT_PENDING"
     assert outsider_revoke.status_code == 403
     assert outsider_revoke.json()["detail"] == "ONLY_OWNER_CAN_REVOKE_REMOVAL"
     assert member_revoke.status_code == 403
     assert member_revoke.json()["detail"] == "ONLY_OWNER_CAN_REVOKE_REMOVAL"
-    assert owner_revoke.status_code == 200
-    assert owner_revoke.json()["status"] == "active"
-    assert owner_revoke.json()["removal_scheduled_at"] is None
-    assert member_leave.status_code == 200
-    assert member_leave.json()["status"] == "left"
+    assert owner_revoke.status_code == 409
+    assert owner_revoke.json()["detail"] == "MEMBER_REMOVAL_NOT_PENDING"
+    assert member_leave.status_code == 409
+    assert member_leave.json()["detail"] == "MEMBER_NOT_ACTIVE"
     assert member_leave_again.status_code == 409
     assert member_leave_again.json()["detail"] == "MEMBER_NOT_ACTIVE"
-    assert family_after_leave.status_code == 200
-    assert family_after_leave.json()["active_members_count"] == 1
+    assert family_after_removal.status_code == 200
+    assert family_after_removal.json()["active_members_count"] == 1
 
 
 def test_full_closing_and_closed_family_api_rules(
@@ -1072,8 +1078,10 @@ def test_full_closing_and_closed_family_api_rules(
         f"/api/families/invites/{full_invite.json()['code']}",
         headers=full_candidate_headers,
     )
-    assert full_invite_lookup.status_code == 409
-    assert full_invite_lookup.json()["detail"] == "FAMILY_INVITE_NOT_ACCEPTING"
+    assert full_invite_lookup.status_code == 200
+    assert full_invite_lookup.json()["family"]["status"] == "full"
+    assert full_invite_lookup.json()["family"]["free_slots"] == 0
+    assert full_invite_lookup.json()["can_request"] is False
 
     closing_owner_headers = auth_headers(610083, "closing_owner", "Closing Owner")
     closing_member_headers = auth_headers(

@@ -228,11 +228,13 @@ Resolves an active 8-digit family invite and returns the personalized
 `FamilyViewOut`. The family may be hidden from general search. A code never
 bypasses the normal join-request and owner-approval flow.
 
+If the family is full, lookup still returns `200` with `family.status=full`,
+`free_slots=0`, and `can_request=false`.
+
 Errors:
 
 - `400 INVALID_FAMILY_INVITE_CODE`;
 - `404 FAMILY_INVITE_NOT_FOUND`;
-- `409 FAMILY_INVITE_NOT_ACCEPTING` when the family is full;
 - `410 FAMILY_INVITE_INACTIVE` after rotation, disabling, or family closing.
 
 Lookup attempts are rate limited. The limiter covers valid and invalid code
@@ -522,27 +524,42 @@ Backend:
 
 ### POST /api/families/members/{member_id}/remove
 
-Владелец запускает удаление.
+Владелец немедленно удаляет участника.
+
+Body:
+
+```json
+{
+  "reason": "no_payment"
+}
+```
+
+Допустимые причины: `no_payment`, `no_response`, `access_issue`,
+`mutual_agreement`, `other`.
 
 Backend:
 
-- переводит member в `removal_pending`;
-- создает 12-часовое предупреждение;
-- уведомляет участника.
+- переводит member в `removed`;
+- записывает причину и время удаления;
+- сразу освобождает место;
+- отменяет будущие платежи участника;
+- уведомляет участника;
+- сохраняет действие в AuditLog.
 
 ### POST /api/families/members/{member_id}/acknowledge-removal
 
-Кнопка `Понятно`. Backend фиксирует, что участник увидел предупреждение. Место
-остается занятым, платежи не отменяются, 12-часовой срок продолжает идти.
+Legacy endpoint только для старых записей `removal_pending`. Новый MVP-поток
+его не использует.
 
 ### POST /api/families/members/{member_id}/request-removal-cancellation
 
-Участник просит владельца отменить удаление. Запрос уведомляет владельца, но не
-останавливает срок и сам по себе не отменяет удаление.
+Legacy endpoint только для старых записей `removal_pending`. Новый MVP-поток
+его не использует.
 
 ### POST /api/families/members/{member_id}/revoke-removal
 
-Только владелец отменяет удаление до выполнения.
+Legacy endpoint только для старых записей `removal_pending`. Новый MVP-поток
+его не использует.
 
 ## Payments
 

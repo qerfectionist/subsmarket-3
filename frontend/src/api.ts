@@ -8,6 +8,7 @@ import type {
   FamilyInvite,
   FamilyMember,
   FamilyMemberPayments,
+  FamilyMemberRemovalReason,
   FamilyPayment,
   FamilyRequest,
   FamilyService,
@@ -346,29 +347,15 @@ export function leaveFamily(memberId: string): Promise<FamilyMember> {
   return post<FamilyMember>(`/api/families/members/${memberId}/leave`);
 }
 
-export function scheduleMemberRemoval(memberId: string): Promise<FamilyMember> {
-  return postIdempotent<FamilyMember>(
-    `family_member.schedule_removal:${memberId}`,
-    `/api/families/members/${memberId}/remove`
-  );
-}
-
-export function acknowledgeMemberRemoval(memberId: string): Promise<FamilyMember> {
-  return post<FamilyMember>(
-    `/api/families/members/${memberId}/acknowledge-removal`
-  );
-}
-
-export function requestMemberRemovalCancellation(
-  memberId: string
+export function scheduleMemberRemoval(
+  memberId: string,
+  reason: FamilyMemberRemovalReason
 ): Promise<FamilyMember> {
-  return post<FamilyMember>(
-    `/api/families/members/${memberId}/request-removal-cancellation`
+  return postIdempotent<FamilyMember>(
+    `family_member.remove:${memberId}`,
+    `/api/families/members/${memberId}/remove`,
+    { reason }
   );
-}
-
-export function revokeMemberRemoval(memberId: string): Promise<FamilyMember> {
-  return post<FamilyMember>(`/api/families/members/${memberId}/revoke-removal`);
 }
 
 export function getPaymentRequisite(memberId: string): Promise<PaymentRequisite> {

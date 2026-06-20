@@ -17,6 +17,7 @@ from subsmarket.families.schemas import (
     FamilyMemberOut,
     FamilyMemberPageOut,
     FamilyMemberPaymentsOut,
+    FamilyMemberRemovalCreate,
     FamilyOut,
     FamilyPageOut,
     FamilyPaymentDayUpdate,
@@ -77,12 +78,12 @@ from subsmarket.families.service import (
     record_owner_prepaid_periods,
     reject_join_request,
     remind_access_confirmation,
+    remove_member,
     report_payment_paid,
     request_member_removal_cancellation,
     resolve_family_invite,
     revoke_member_removal,
     rotate_family_invite,
-    schedule_member_removal,
     to_audit_log_out,
     to_family_out,
     to_family_request_out,
@@ -570,14 +571,16 @@ def post_member_leave(
 @router.post("/members/{member_id}/remove", response_model=FamilyMemberOut)
 def post_member_remove(
     member_id: UUID,
+    payload: FamilyMemberRemovalCreate,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyMemberOut:
-    member = schedule_member_removal(
+    member = remove_member(
         db,
         user,
         member_id,
+        reason=payload.reason,
         idempotency_key=idempotency_key,
     )
     return to_member_out(member)

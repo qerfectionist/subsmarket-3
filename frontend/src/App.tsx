@@ -3,7 +3,6 @@ import type { FormEvent } from "react";
 
 import {
   acknowledgeFamilyClosing,
-  acknowledgeMemberRemoval,
   approveFamilyRequest,
   cancelFamilyRequest,
   cancelMemberBeforeAccess,
@@ -43,9 +42,7 @@ import {
   remindAccessConfirmation,
   rejectFamilyRequest,
   reportPaymentPaid,
-  requestMemberRemovalCancellation,
   rotateFamilyInvite,
-  revokeMemberRemoval,
   scheduleMemberRemoval,
   setActiveDevTelegramUser,
   updateFamilyDescription,
@@ -72,6 +69,7 @@ import type {
   FamilyAuditLog,
   FamilyCreate,
   FamilyInvite,
+  FamilyMemberRemovalReason,
   FamilyRequest,
   FamilyService,
   FamilyView,
@@ -524,14 +522,6 @@ export function App() {
           onAcknowledgeClosing={(familyId) =>
             void runAction("ack-closing", () => acknowledgeFamilyClosing(familyId))
           }
-          onAcknowledgeRemoval={(memberId) =>
-            void runAction("ack-removal", () => acknowledgeMemberRemoval(memberId))
-          }
-          onRequestRemovalCancellation={(memberId) =>
-            void runAction("request-removal-cancellation", () =>
-              requestMemberRemovalCancellation(memberId)
-            )
-          }
           onLeaveFamily={(memberId) =>
             void runAction("leave-family", () => leaveFamily(memberId))
           }
@@ -571,13 +561,10 @@ export function App() {
               cancelMemberBeforeAccess(member.id)
             ).then(() => loadOwnerDetails(familyId))
           }
-          onRemoveMember={(familyId, member) =>
-            runAction("remove-member", () => scheduleMemberRemoval(member.id)).then(
-              () => loadOwnerDetails(familyId)
-            )
-          }
-          onRevokeRemoval={(familyId, member) =>
-            runAction("revoke-removal", () => revokeMemberRemoval(member.id)).then(
+          onRemoveMember={(familyId, member, reason: FamilyMemberRemovalReason) =>
+            runAction("remove-member", () =>
+              scheduleMemberRemoval(member.id, reason)
+            ).then(
               () => loadOwnerDetails(familyId)
             )
           }

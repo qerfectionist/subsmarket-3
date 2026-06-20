@@ -53,10 +53,10 @@ from subsmarket.families.service import (
     record_owner_prepaid_periods,
     reject_join_request,
     remind_access_confirmation,
+    remove_member,
     report_payment_paid,
     request_member_removal_cancellation,
     revoke_member_removal,
-    schedule_member_removal,
     to_family_out,
     to_family_request_out,
     update_family_payment_day,
@@ -65,7 +65,6 @@ from subsmarket.families.service import (
 from subsmarket.identity.models import User
 from subsmarket.jobs.service import (
     create_regular_payments,
-    execute_member_removals,
     send_access_confirmation_reminders,
     send_owner_payment_confirmation_reminders,
 )
@@ -1131,12 +1130,12 @@ def test_family_closing_blocks_new_member_removal(
     close_family(db, owner, family.id)
 
     with pytest.raises(HTTPException) as exc:
-        schedule_member_removal(db, owner, member.id)
+        remove_member(db, owner, member.id, reason="other")
 
     assert exc.value.detail == "FAMILY_NOT_MUTABLE"
 
 
-def test_member_removal_warning_lasts_twelve_hours(
+def test_member_removal_is_immediate_and_idempotent(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 110)
@@ -1153,31 +1152,40 @@ def test_member_removal_warning_lasts_twelve_hours(
     assert member is not None
     mark_access_provided(db, owner, member.id)
 
-    scheduled_member = schedule_member_removal(
+    removed_member = remove_member(
         db,
         owner,
         member.id,
+        reason="no_response",
         idempotency_key="member-removal-test-key",
     )
-    repeated_schedule = schedule_member_removal(
+    repeated_removal = remove_member(
         db,
         owner,
         member.id,
+        reason="no_response",
         idempotency_key="member-removal-test-key",
     )
 
-    assert scheduled_member.status == "removal_pending"
-    assert repeated_schedule.id == scheduled_member.id
-    assert repeated_schedule.removal_scheduled_at == (
-        scheduled_member.removal_scheduled_at
+    db.refresh(family)
+    assert removed_member.status == "removed"
+    assert removed_member.removal_reason == "no_response"
+    assert removed_member.removed_at is not None
+    assert removed_member.removal_scheduled_at is None
+    assert repeated_removal.id == removed_member.id
+    assert repeated_removal.removed_at == removed_member.removed_at
+    assert family.active_members_count == 1
+    audit_log = db.scalar(
+        select(FamilyAuditLog).where(
+            FamilyAuditLog.family_id == family.id,
+            FamilyAuditLog.action == "family_member_removed_by_owner",
+        )
     )
-    assert scheduled_member.updated_at is not None
-    assert scheduled_member.removal_scheduled_at is not None
-    delay = scheduled_member.removal_scheduled_at - scheduled_member.updated_at
-    assert timedelta(hours=11, minutes=59) <= delay <= timedelta(hours=12, minutes=1)
+    assert audit_log is not None
+    assert audit_log.details["reason"] == "no_response"
 
 
-def test_member_removal_timeout_cancels_future_payments(
+def test_member_removal_cancels_future_payments_immediately(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 112)
@@ -1185,84 +1193,46 @@ def test_member_removal_timeout_cancels_future_payments(
     family = make_family(db, owner, subscription_service)
     member, _ = make_active_member(db, owner, candidate, family)
     scheduled_payment = make_scheduled_payment(db, family, member)
-    schedule_member_removal(db, owner, member.id)
-    request_member_removal_cancellation(db, candidate, member.id)
-    member.removal_scheduled_at = utcnow() - timedelta(minutes=1)
-    db.commit()
-
-    removed_count, _ = execute_member_removals(db)
+    remove_member(db, owner, member.id, reason="no_payment")
 
     db.refresh(member)
+    db.refresh(family)
     db.refresh(scheduled_payment)
-    assert removed_count == 1
     assert member.status == "removed"
+    assert member.removal_reason == "no_payment"
+    assert family.active_members_count == 1
     assert scheduled_payment.status == "cancelled"
     assert scheduled_payment.cancel_reason == "member_removed"
 
 
-def test_member_acknowledgement_keeps_slot_and_payments_active(
+def test_member_removal_rejects_unknown_reason(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 114)
     candidate = make_user(db, 115)
     family = make_family(db, owner, subscription_service)
     member, _ = make_active_member(db, owner, candidate, family)
-    scheduled_payment = make_scheduled_payment(db, family, member)
-    scheduled_member = schedule_member_removal(db, owner, member.id)
-    removal_deadline = scheduled_member.removal_scheduled_at
-    occupied_slots = family.active_members_count
+    with pytest.raises(HTTPException) as exc:
+        remove_member(db, owner, member.id, reason="invalid")
 
-    acknowledged_member = acknowledge_member_removal(db, candidate, member.id)
-
-    db.refresh(family)
-    db.refresh(scheduled_payment)
-    assert acknowledged_member.status == "removal_pending"
-    assert acknowledged_member.removal_acknowledged_at is not None
-    assert acknowledged_member.removal_scheduled_at == removal_deadline
-    assert acknowledged_member.removed_at is None
-    assert family.active_members_count == occupied_slots
-    assert scheduled_payment.status == "scheduled"
+    assert exc.value.status_code == 422
+    assert exc.value.detail == "INVALID_MEMBER_REMOVAL_REASON"
 
 
-def test_member_can_request_cancellation_without_stopping_removal_timer(
+def test_legacy_removal_actions_are_unavailable_after_immediate_removal(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 116)
     candidate = make_user(db, 117)
     family = make_family(db, owner, subscription_service)
     member, _ = make_active_member(db, owner, candidate, family)
-    scheduled_member = schedule_member_removal(db, owner, member.id)
-    removal_deadline = scheduled_member.removal_scheduled_at
+    remove_member(db, owner, member.id, reason="mutual_agreement")
 
-    requested_member = request_member_removal_cancellation(db, candidate, member.id)
-
-    assert requested_member.status == "removal_pending"
-    assert requested_member.removal_cancel_requested_at is not None
-    assert requested_member.removal_scheduled_at == removal_deadline
-    owner_notification = db.scalar(
-        select(NotificationJob).where(
-            NotificationJob.recipient_user_id == owner.id,
-            NotificationJob.event_type
-            == "family_member_removal_cancellation_requested",
-        )
-    )
-    assert owner_notification is not None
-
-
-def test_owner_revoke_clears_member_removal_responses(
-    db: Session, subscription_service: FamilyService
-) -> None:
-    owner = make_user(db, 118)
-    candidate = make_user(db, 119)
-    family = make_family(db, owner, subscription_service)
-    member, _ = make_active_member(db, owner, candidate, family)
-    schedule_member_removal(db, owner, member.id)
-    acknowledge_member_removal(db, candidate, member.id)
-    request_member_removal_cancellation(db, candidate, member.id)
-
-    restored_member = revoke_member_removal(db, owner, member.id)
-
-    assert restored_member.status == "active"
-    assert restored_member.removal_scheduled_at is None
-    assert restored_member.removal_acknowledged_at is None
-    assert restored_member.removal_cancel_requested_at is None
+    for action, actor in (
+        (acknowledge_member_removal, candidate),
+        (request_member_removal_cancellation, candidate),
+        (revoke_member_removal, owner),
+    ):
+        with pytest.raises(HTTPException) as exc:
+            action(db, actor, member.id)
+        assert exc.value.detail == "MEMBER_REMOVAL_NOT_PENDING"

@@ -7,6 +7,7 @@ import { bankLabels } from "../labels";
 import type {
   Family,
   FamilyMember,
+  FamilyMemberRemovalReason,
   FamilyPayment,
   FamilyRequest,
   FamilyType,
@@ -31,8 +32,6 @@ export function MyFamiliesScreen({
   onConfirmAccess,
   onGetRequisite,
   onAcknowledgeClosing,
-  onAcknowledgeRemoval,
-  onRequestRemovalCancellation,
   onLeaveFamily,
   onCreatePrepayment,
   onReportPayment,
@@ -43,7 +42,6 @@ export function MyFamiliesScreen({
   onRemindAccess,
   onCancelBeforeAccess,
   onRemoveMember,
-  onRevokeRemoval,
   onConfirmPayment,
   onNotReceived,
   onRecordPrepayment
@@ -67,8 +65,6 @@ export function MyFamiliesScreen({
   onConfirmAccess: (memberId: string) => void;
   onGetRequisite: (memberId: string) => void;
   onAcknowledgeClosing: (familyId: string) => void;
-  onAcknowledgeRemoval: (memberId: string) => void;
-  onRequestRemovalCancellation: (memberId: string) => void;
   onLeaveFamily: (memberId: string) => void;
   onCreatePrepayment: (memberId: string) => void;
   onReportPayment: (payment: FamilyPayment) => Promise<unknown>;
@@ -78,8 +74,11 @@ export function MyFamiliesScreen({
   onAccessProvided: (familyId: string, member: FamilyMember) => Promise<unknown>;
   onRemindAccess: (familyId: string, member: FamilyMember) => Promise<unknown>;
   onCancelBeforeAccess: (familyId: string, member: FamilyMember) => Promise<unknown>;
-  onRemoveMember: (familyId: string, member: FamilyMember) => Promise<unknown>;
-  onRevokeRemoval: (familyId: string, member: FamilyMember) => Promise<unknown>;
+  onRemoveMember: (
+    familyId: string,
+    member: FamilyMember,
+    reason: FamilyMemberRemovalReason
+  ) => Promise<unknown>;
   onConfirmPayment: (familyId: string, payment: FamilyPayment) => Promise<unknown>;
   onNotReceived: (familyId: string, payment: FamilyPayment) => Promise<unknown>;
   onRecordPrepayment: (
@@ -151,8 +150,6 @@ export function MyFamiliesScreen({
                       onConfirmAccess={onConfirmAccess}
                       onGetRequisite={onGetRequisite}
                       onAcknowledgeClosing={onAcknowledgeClosing}
-                      onAcknowledgeRemoval={onAcknowledgeRemoval}
-                      onRequestRemovalCancellation={onRequestRemovalCancellation}
                       onLeaveFamily={onLeaveFamily}
                       onCreatePrepayment={onCreatePrepayment}
                     />
@@ -187,9 +184,8 @@ export function MyFamiliesScreen({
                     onCancelBeforeAccess={(member) =>
                       onCancelBeforeAccess(item.family.id, member)
                     }
-                    onRemove={(member) => onRemoveMember(item.family.id, member)}
-                    onRevokeRemoval={(member) =>
-                      onRevokeRemoval(item.family.id, member)
+                    onRemove={(member, reason) =>
+                      onRemoveMember(item.family.id, member, reason)
                     }
                     onConfirmPayment={(payment) =>
                       onConfirmPayment(item.family.id, payment)
@@ -248,10 +244,8 @@ function getMemberStep(member: FamilyMember, payment?: FamilyPayment) {
   if (member.status === "removal_pending") {
     return {
       tone: "danger",
-      title: "Вас планируют удалить",
-      text: member.removal_cancel_requested_at
-        ? "Вы попросили отменить удаление. Решение остается за владельцем, а 12-часовой срок продолжает идти."
-        : "Подтвердите, что увидели предупреждение, или попросите владельца отменить удаление."
+      title: "Удаление обрабатывается",
+      text: "Это старое отложенное удаление. Новых действий от вас не требуется."
     };
   }
   if (payment?.status === "due" || payment?.status === "overdue") {
@@ -473,8 +467,6 @@ function MemberActions({
   onConfirmAccess,
   onGetRequisite,
   onAcknowledgeClosing,
-  onAcknowledgeRemoval,
-  onRequestRemovalCancellation,
   onLeaveFamily,
   onCreatePrepayment
 }: {
@@ -485,8 +477,6 @@ function MemberActions({
   onConfirmAccess: (memberId: string) => void;
   onGetRequisite: (memberId: string) => void;
   onAcknowledgeClosing: (familyId: string) => void;
-  onAcknowledgeRemoval: (memberId: string) => void;
-  onRequestRemovalCancellation: (memberId: string) => void;
   onLeaveFamily: (memberId: string) => void;
   onCreatePrepayment: (memberId: string) => void;
 }) {
@@ -534,32 +524,6 @@ function MemberActions({
           Понятно, семья закрывается
         </button>
       )}
-      {member.status === "removal_pending" && !member.removal_acknowledged_at && (
-        <button
-          type="button"
-          data-testid="acknowledge-removal-button"
-          disabled={busy !== null}
-          onClick={() => onAcknowledgeRemoval(member.id)}
-        >
-          Понятно, меня удаляют
-        </button>
-      )}
-      {member.status === "removal_pending" &&
-        !member.removal_cancel_requested_at && (
-          <button
-            type="button"
-            className="secondary"
-            data-testid="request-removal-cancellation-button"
-            disabled={busy !== null}
-            onClick={() => onRequestRemovalCancellation(member.id)}
-          >
-            Попросить отменить
-          </button>
-        )}
-      {member.status === "removal_pending" &&
-        member.removal_cancel_requested_at && (
-          <p className="muted">Владелец получил просьбу отменить удаление.</p>
-        )}
       <button
         type="button"
         className="danger"
