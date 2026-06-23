@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { FamilyCard, OwnerDetails, PaymentList } from "../components/families";
 import { Badge, EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
 import { RequisiteBox } from "../components/RequisiteBox";
+import { FamilyListSkeleton } from "../components/skeleton";
 import { statusText } from "../format";
 import type {
   Family,
@@ -22,6 +23,7 @@ export function MyFamiliesScreen({
   ownerDetails,
   requisites,
   busy,
+  isLoading,
   onChangeFamilyType,
   onOpenFamily,
   onLoadOwnerDetails,
@@ -52,6 +54,7 @@ export function MyFamiliesScreen({
   ownerDetails: Record<string, OwnerFamilyDetails>;
   requisites: Record<string, PaymentRequisite>;
   busy: string | null;
+  isLoading?: boolean;
   onChangeFamilyType: (familyType: FamilyType) => void;
   onOpenFamily: (familyId: string) => void;
   onLoadOwnerDetails: (familyId: string) => void;
@@ -95,7 +98,9 @@ export function MyFamiliesScreen({
       description="Здесь видны семьи, где вы владелец или участник."
     >
       <FamilyTypeSwitch value={myFamilyType} onChange={onChangeFamilyType} />
-      {families.length === 0 ? (
+      {isLoading && families.length === 0 ? (
+        <FamilyListSkeleton count={3} />
+      ) : families.length === 0 ? (
         <EmptyState title="У вас пока нет семей">
           Создайте семью или отправьте заявку в поиске.
         </EmptyState>

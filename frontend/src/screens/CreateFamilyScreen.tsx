@@ -138,6 +138,7 @@ export function CreateFamilyScreen({
             data-testid="create-max-members-input"
             inputMode="numeric"
             type="number"
+            aria-invalid={Boolean(errors.max_members)}
             value={createForm.max_members}
             onChange={(event) =>
               onChangeForm((current) => ({
@@ -147,7 +148,9 @@ export function CreateFamilyScreen({
             }
           />
           {errors.max_members && (
-            <small className="field-error">{errors.max_members}</small>
+            <small className="field-error" role="alert" aria-live="polite">
+              {errors.max_members}
+            </small>
           )}
         </label>
         <label className="half">
@@ -157,6 +160,7 @@ export function CreateFamilyScreen({
             data-testid="create-total-price-input"
             inputMode="numeric"
             type="number"
+            aria-invalid={Boolean(errors.total_price_kzt)}
             value={createForm.total_price_kzt}
             onChange={(event) =>
               onChangeForm((current) => ({
@@ -166,7 +170,9 @@ export function CreateFamilyScreen({
             }
           />
           {errors.total_price_kzt && (
-            <small className="field-error">{errors.total_price_kzt}</small>
+            <small className="field-error" role="alert" aria-live="polite">
+              {errors.total_price_kzt}
+            </small>
           )}
         </label>
         <label className="half">
@@ -177,6 +183,7 @@ export function CreateFamilyScreen({
             data-testid="create-payment-day-input"
             inputMode="numeric"
             type="number"
+            aria-invalid={Boolean(errors.payment_day)}
             value={createForm.payment_day}
             onChange={(event) =>
               onChangeForm((current) => ({
@@ -186,7 +193,9 @@ export function CreateFamilyScreen({
             }
           />
           {errors.payment_day && (
-            <small className="field-error">{errors.payment_day}</small>
+            <small className="field-error" role="alert" aria-live="polite">
+              {errors.payment_day}
+            </small>
           )}
         </label>
         <label className="half">
@@ -194,6 +203,7 @@ export function CreateFamilyScreen({
           <input
             data-testid="create-next-payment-date-input"
             type="date"
+            aria-invalid={Boolean(errors.next_payment_date)}
             value={createForm.next_payment_date}
             onChange={(event) =>
               onChangeForm((current) => ({
@@ -203,7 +213,9 @@ export function CreateFamilyScreen({
             }
           />
           {errors.next_payment_date && (
-            <small className="field-error">{errors.next_payment_date}</small>
+            <small className="field-error" role="alert" aria-live="polite">
+              {errors.next_payment_date}
+            </small>
           )}
         </label>
         <label className="half">
@@ -231,6 +243,7 @@ export function CreateFamilyScreen({
             data-testid="create-payment-phone-input"
             inputMode="tel"
             placeholder="+77001234567"
+            aria-invalid={Boolean(errors.payment_phone)}
             value={createForm.payment_phone}
             onChange={(event) =>
               onChangeForm((current) => ({
@@ -240,7 +253,9 @@ export function CreateFamilyScreen({
             }
           />
           {errors.payment_phone ? (
-            <small className="field-error">{errors.payment_phone}</small>
+            <small className="field-error" role="alert" aria-live="polite">
+              {errors.payment_phone}
+            </small>
           ) : (
             <small className="field-helper">
               Только номер телефона для Kaspi, Halyk, Freedom или Jusan. Номер карты

@@ -28,6 +28,22 @@
   text-rendering: optimizeLegibility;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not(.tma-light) {
+    --app-bg: #0f1620;
+    --app-surface: #182230;
+    --app-secondary-bg: #1f2a3a;
+    --app-text: #f1f4f9;
+    --app-muted: #8a96a8;
+    --app-link: #4f8dff;
+    --app-accent: #4f8dff;
+    --app-accent-text: #ffffff;
+    --app-danger: #ff6b6b;
+    --app-bottom-bar-bg: #182230;
+    --app-border: rgba(148, 163, 184, 0.22);
+  }
+}
+
 * {
   box-sizing: border-box;
 }

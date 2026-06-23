@@ -163,6 +163,10 @@ function applyTelegramTheme() {
   setCssVar("--app-danger", theme.destructive_text_color ?? "#b42318");
   setCssVar("--app-bottom-bar-bg", theme.bottom_bar_bg_color ?? "#ffffff");
 
+  const root = document.documentElement;
+  root.classList.remove("tma-light", "tma-dark");
+  root.classList.add(app?.colorScheme === "dark" ? "tma-dark" : "tma-light");
+
   if (supportsWebAppVersion("6.1")) {
     app?.setHeaderColor?.(theme.secondary_bg_color ?? theme.bg_color ?? "#eef3fb");
     app?.setBackgroundColor?.(theme.bg_color ?? "#eef3fb");

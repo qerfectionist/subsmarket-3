@@ -1,4 +1,5 @@
 import { Badge, EmptyState, Panel } from "../components/layout";
+import { PanelSkeleton } from "../components/skeleton";
 import { formatDateTime, statusText } from "../format";
 import {
   familyKindLabels,
@@ -10,10 +11,12 @@ import { openTelegramUser } from "../telegram";
 export function RequestsScreen({
   requests,
   busy,
+  isLoading,
   onCancelRequest
 }: {
   requests: FamilyRequest[];
   busy: string | null;
+  isLoading?: boolean;
   onCancelRequest: (requestId: string) => void;
 }) {
   return (
@@ -21,7 +24,9 @@ export function RequestsScreen({
       title="Мои заявки"
       description="Повторная заявка после отказа запрещена."
     >
-      {requests.length === 0 ? (
+      {isLoading && requests.length === 0 ? (
+        <PanelSkeleton lines={3} />
+      ) : requests.length === 0 ? (
         <EmptyState title="Заявок пока нет">
           Отправьте заявку в поиске.
         </EmptyState>

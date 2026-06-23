@@ -84,6 +84,7 @@ import {
   setTelegramClosingConfirmation,
   showTelegramConfirm,
   getTelegramStartParam,
+  triggerTelegramImpact,
   triggerTelegramNotification,
   triggerTelegramSelection
 } from "./telegram";
@@ -240,6 +241,7 @@ export function App() {
   }
 
   function openFamily(familyId: string, backTab: Tab = tab) {
+    triggerTelegramImpact("light");
     setSelectedFamilyId(familyId);
     setFamilyBackTab(backTab === "family" ? "search" : backTab);
     setTab("family");
@@ -482,7 +484,11 @@ export function App() {
         <DevUserSwitch value={devUser} onChange={(id) => void switchDevUser(id)} />
       )}
 
-      {error && <div className="inline-error">{error}</div>}
+      {error && (
+        <div className="inline-error" role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
 
       {tab === "home" && (
         <HomeScreen
@@ -552,6 +558,7 @@ export function App() {
           ownerDetails={ownerDetails}
           requisites={requisites}
           busy={busy}
+          isLoading={myFamiliesQuery.isLoading}
           onChangeFamilyType={setMyFamilyType}
           onOpenFamily={(familyId) => openFamily(familyId, "mine")}
           onLoadOwnerDetails={(familyId) => void loadOwnerDetails(familyId)}
@@ -682,6 +689,7 @@ export function App() {
         <RequestsScreen
           requests={myRequests}
           busy={busy}
+          isLoading={myRequestsQuery.isLoading}
           onCancelRequest={(requestId) =>
             void runMutation("cancel-request", () => cancelRequestMutation.mutateAsync(requestId))
           }
@@ -699,6 +707,7 @@ export function App() {
           auditLogs={selectedFamilyAudit}
           invite={selectedFamilyInvite}
           busy={busy}
+          isLoading={familyViewQuery.isLoading}
           onBack={() => {
             setSelectedFamilyId(null);
             setTab(familyBackTab);
@@ -793,25 +802,26 @@ export function App() {
           onClose={() => setUndoRemoval(null)}
           before={<span style={{ fontSize: 20 }}>⚠</span>}
           after={
-            <Snackbar.Button
-              data-testid="undo-removal-button"
-              onClick={async () => {
-                try {
-                  await revokeRemovalMutation.mutateAsync({
-                    familyId: undoRemoval.familyId,
-                    memberId: undoRemoval.memberId
-                  });
-                  setToast("Удаление отменено");
-                  await loadOwnerDetails(undoRemoval.familyId);
-                } catch (err) {
-                  setError(formatError(err));
-                } finally {
-                  setUndoRemoval(null);
-                }
-              }}
-            >
-              Отменить
-            </Snackbar.Button>
+            <span data-testid="undo-removal-button">
+              <Snackbar.Button
+                onClick={async () => {
+                  try {
+                    await revokeRemovalMutation.mutateAsync({
+                      familyId: undoRemoval.familyId,
+                      memberId: undoRemoval.memberId
+                    });
+                    setToast("Удаление отменено");
+                    await loadOwnerDetails(undoRemoval.familyId);
+                  } catch (err) {
+                    setError(formatError(err));
+                  } finally {
+                    setUndoRemoval(null);
+                  }
+                }}
+              >
+                Отменить
+              </Snackbar.Button>
+            </span>
           }
         >
           Участник будет удалён через 12 часов

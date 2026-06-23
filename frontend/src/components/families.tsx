@@ -147,8 +147,11 @@ export function OwnerDetails({
       )}
 
       {ownerTab === "members" && (
-        <Section header={`Участники · ${details.members.length}`}>
-        {details.members.map((member) => (
+        <Section header={`Участники · ${nonOwnerMembers.length}`}>
+        {nonOwnerMembers.length === 0 ? (
+          <Cell subtitle="У вас пока нет участников. Создайте приглашение или ожидайте заявки." />
+        ) : (
+        nonOwnerMembers.map((member) => (
           <div className="member-block" key={member.id}>
             <Cell
               title={`@${member.user.username} · ${member.role === "owner" ? "владелец" : "участник"}`}
@@ -216,8 +219,9 @@ export function OwnerDetails({
               onNotReceived={(payment) => onNotReceived(payment)}
             />
           </div>
-        ))}
-      </Section>
+        ))
+        )}
+        </Section>
       )}
 
       {ownerTab === "payments" && (

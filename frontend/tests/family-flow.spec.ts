@@ -302,11 +302,11 @@ test("undo member removal via snackbar restores the member", async ({ page }) =>
   await expect(page.getByText("Участник будет удалён через 12 часов")).toBeVisible();
   await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
 
-  await page.getByTestId("undo-removal-button").click({ force: true });
+  await page.locator('[data-testid="undo-removal-button"] button').click({ force: true });
   await waitForNetworkQuiet(page);
 
-  await expect(page.getByTestId("remove-member-button")).toBeVisible();
   await expect(page.getByText("Участник будет удалён через 12 часов")).toHaveCount(0);
+  await expect(page.getByTestId("remove-member-button")).toBeVisible();
 });
 
 async function switchDevUser(page: Page, userId: string) {

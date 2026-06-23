@@ -1,5 +1,6 @@
 import { FamilyCard } from "../components/families";
 import { Badge, EmptyState, Panel } from "../components/layout";
+import { PanelSkeleton } from "../components/skeleton";
 import { RequisiteBox } from "../components/RequisiteBox";
 import { formatDate, formatDateTime, statusText } from "../format";
 import { familyKindLabels, periodLabels } from "../labels";
@@ -18,6 +19,7 @@ export function FamilyDetailsScreen({
   view,
   requisite,
   busy,
+  isLoading,
   onBack,
   onRefresh,
   onCreateRequest,
@@ -38,6 +40,7 @@ export function FamilyDetailsScreen({
   auditLogs: FamilyAuditLog[];
   invite: FamilyInvite | null;
   busy: string | null;
+  isLoading?: boolean;
   onBack: () => void;
   onRefresh: () => void;
   onCreateRequest: (familyId: string) => void;
@@ -51,6 +54,13 @@ export function FamilyDetailsScreen({
   onUpdateVisibility: (familyId: string, isSearchVisible: boolean) => void;
   onConfirmAvailability: (familyId: string) => void;
 }) {
+  if (isLoading && !view) {
+    return (
+      <Panel title="Семья" description="Загружаем данные семьи…">
+        <PanelSkeleton lines={4} />
+      </Panel>
+    );
+  }
   if (!view) {
     return (
       <Panel
