@@ -6,7 +6,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from subsmarket.core.config import settings
-from subsmarket.core.database import utcnow
+from subsmarket.core.database import kz_today, utcnow
 from subsmarket.families.models import (
     Family,
     FamilyMember,
@@ -27,7 +27,7 @@ RECENT_FAILURE_WINDOW = timedelta(hours=24)
 
 def get_jobs_status(db: Session) -> JobsStatusResult:
     now = utcnow()
-    today = date.today()
+    today = kz_today()
     notification_queue = _notification_queue_status(db, now=now)
     due_backlog = _due_backlog_status(db, now=now, today=today)
     warnings = _status_warnings(notification_queue, due_backlog)

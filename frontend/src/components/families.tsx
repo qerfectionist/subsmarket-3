@@ -1,4 +1,11 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+
+import {
+  Button,
+  Card,
+  Cell,
+  Section
+} from "@telegram-apps/telegram-ui";
 
 import { formatDate, formatDateTime, statusText } from "../format";
 import {
@@ -61,116 +68,140 @@ export function OwnerDetails({
       .map((payment) => ({ member, payment }))
   );
   const nonOwnerMembers = details.members.filter((member) => member.role !== "owner");
+  const [ownerTab, setOwnerTab] = useState<"requests" | "members" | "payments">(
+    details.requests.length > 0 ? "requests" : "members"
+  );
+  useEffect(() => {
+    if (details.requests.length === 0 && ownerTab === "requests") {
+      setOwnerTab("members");
+    }
+  }, [details.requests.length, ownerTab]);
 
   return (
     <div className="owner-details">
-      <div className="owner-task-grid">
-        <TaskCounter
-          label="Заявки"
-          testId="owner-requests-count"
-          value={details.requests.length}
-        />
-        <TaskCounter
-          label="Участники"
-          testId="owner-members-count"
-          value={nonOwnerMembers.length}
-        />
-        <TaskCounter
-          label="Оплаты"
-          testId="owner-pending-payments-count"
-          value={pendingPayments.length}
-        />
+      <div className="owner-tabs">
+        <Button
+          type="button"
+          size="s"
+          mode={ownerTab === "requests" ? "filled" : "plain"}
+          onClick={() => setOwnerTab("requests")}
+        >
+          Заявки{details.requests.length > 0 ? ` · ${details.requests.length}` : ""}
+        </Button>
+        <Button
+          type="button"
+          size="s"
+          mode={ownerTab === "members" ? "filled" : "plain"}
+          onClick={() => setOwnerTab("members")}
+        >
+          Участники · {details.members.length}
+        </Button>
+        <Button
+          type="button"
+          size="s"
+          mode={ownerTab === "payments" ? "filled" : "plain"}
+          onClick={() => setOwnerTab("payments")}
+        >
+          Оплаты{pendingPayments.length > 0 ? ` · ${pendingPayments.length}` : ""}
+        </Button>
       </div>
 
-      <OwnerSection title="Заявки" count={details.requests.length}>
-        {details.requests.length === 0 ? (
-          <p className="muted">Новых заявок нет.</p>
-        ) : (
+      {ownerTab === "requests" && (
+        <Section header={`Заявки · ${details.requests.length}`}>
+          {details.requests.length === 0 ? (
+            <Cell subtitle="Новых заявок нет." />
+          ) : (
           details.requests.map((request) => (
-            <div className="list-row task-row" key={request.id}>
-              <div>
-                <strong>@{request.candidate.username}</strong>
-                <p>{request.candidate.first_name}</p>
-                <small>Кандидат ждет решения владельца.</small>
-              </div>
-              <div className="row-actions">
-                <button
-                  type="button"
-                  data-testid="approve-request-button"
-                  onClick={() => void onApprove(request)}
-                >
-                  Принять
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  data-testid="reject-request-button"
-                  onClick={() => void onReject(request)}
-                >
-                  Отклонить
-                </button>
-              </div>
-            </div>
+            <Cell
+              key={request.id}
+              before={<span className="cell-avatar-acronym">{"@"}</span>}
+              title={`@${request.candidate.username}`}
+              subtitle={request.candidate.first_name}
+              description="Кандидат ждет решения владельца."
+              after={
+                <div className="row-actions">
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="filled"
+                    data-testid="approve-request-button"
+                    onClick={() => void onApprove(request)}
+                  >
+                    Принять
+                  </Button>
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="plain"
+                    data-testid="reject-request-button"
+                    onClick={() => void onReject(request)}
+                  >
+                    Отклонить
+                  </Button>
+                </div>
+              }
+            />
           ))
         )}
-      </OwnerSection>
+      </Section>
+      )}
 
-      <OwnerSection title="Участники" count={details.members.length}>
+      {ownerTab === "members" && (
+        <Section header={`Участники · ${details.members.length}`}>
         {details.members.map((member) => (
           <div className="member-block" key={member.id}>
-            <div className="list-row task-row">
-              <div>
-                <strong>
-                  @{member.user.username} ·{" "}
-                  {member.role === "owner" ? "владелец" : "участник"}
-                </strong>
-                <p>{statusText(member.status)}</p>
-                {member.role !== "owner" && (
-                  <small>{ownerMemberHint(member.status)}</small>
-                )}
-              </div>
-              {member.role !== "owner" && (
-                <div className="row-actions">
-                  {member.status === "awaiting_access" && (
-                    <>
-                      <button
+            <Cell
+              title={`@${member.user.username} · ${member.role === "owner" ? "владелец" : "участник"}`}
+              subtitle={statusText(member.status)}
+              description={member.role !== "owner" ? ownerMemberHint(member.status) : undefined}
+              after={
+                member.role !== "owner" ? (
+                  <div className="row-actions">
+                    {member.status === "awaiting_access" && (
+                      <>
+                        <Button
+                          type="button"
+                          size="s"
+                          mode="filled"
+                          data-testid="access-provided-button"
+                          onClick={() => void onAccessProvided(member)}
+                        >
+                          Доступ выдан
+                        </Button>
+                        <Button
+                          type="button"
+                          size="s"
+                          mode="plain"
+                          data-testid="cancel-before-access-button"
+                          onClick={() => void onCancelBeforeAccess(member)}
+                        >
+                          Отменить до доступа
+                        </Button>
+                      </>
+                    )}
+                    {member.status === "awaiting_confirmation" && (
+                      <Button
                         type="button"
-                        data-testid="access-provided-button"
-                        onClick={() => void onAccessProvided(member)}
+                        size="s"
+                        mode="plain"
+                        data-testid="remind-access-button"
+                        onClick={() => void onRemindAccess(member)}
                       >
-                        Доступ выдан
-                      </button>
-                      <button
-                        type="button"
-                        className="secondary"
-                        data-testid="cancel-before-access-button"
-                        onClick={() => void onCancelBeforeAccess(member)}
-                      >
-                        Отменить до доступа
-                      </button>
-                    </>
-                  )}
-                  {member.status === "awaiting_confirmation" && (
-                    <button
-                      type="button"
-                      className="secondary"
-                      data-testid="remind-access-button"
-                      onClick={() => void onRemindAccess(member)}
-                    >
-                      Напомнить подтвердить
-                    </button>
-                  )}
-                  {["awaiting_confirmation", "payment_due", "active"].includes(
-                    member.status
-                  ) && (
-                    <OwnerMemberRemovalControl
-                      member={member}
-                      onRemove={onRemove}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+                        Напомнить
+                      </Button>
+                    )}
+                    {["awaiting_confirmation", "payment_due", "active"].includes(
+                      member.status
+                    ) && (
+                      <OwnerMemberRemovalControl
+                        member={member}
+                        onRemove={onRemove}
+                      />
+                    )}
+                  </div>
+                ) : undefined
+              }
+            />
             {member.role !== "owner" && member.status === "active" && (
               <OwnerPrepaymentControl
                 family={family}
@@ -186,42 +217,47 @@ export function OwnerDetails({
             />
           </div>
         ))}
-      </OwnerSection>
+      </Section>
+      )}
 
-      <OwnerSection title="Оплаты на подтверждение" count={pendingPayments.length}>
+      {ownerTab === "payments" && (
+        <Section header={`Оплаты на подтверждение · ${pendingPayments.length}`}>
         {pendingPayments.length === 0 ? (
-          <p className="muted">Нет оплат, которые ждут подтверждения.</p>
+          <Cell subtitle="Нет оплат, которые ждут подтверждения." />
         ) : (
           pendingPayments.map(({ member, payment }) => (
-            <div className="list-row task-row" key={payment.id}>
-              <div>
-                <strong>
-                  @{member.user.username} · {payment.amount_kzt.toLocaleString("ru-KZ")} ₸
-                </strong>
-                <p>{paymentKindText(payment.kind)} · {statusText(payment.status)}</p>
-                <small>Проверьте перевод вне SubsMarket и подтвердите вручную.</small>
-              </div>
-              <div className="row-actions">
-                <button
-                  type="button"
-                  data-testid="confirm-payment-button"
-                  onClick={() => void onConfirmPayment(payment)}
-                >
-                  Подтвердить
-                </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  data-testid="payment-not-received-button"
-                  onClick={() => void onNotReceived(payment)}
-                >
-                  Не получил
-                </button>
-              </div>
-            </div>
+            <Cell
+              key={payment.id}
+              title={`@${member.user.username} · ${payment.amount_kzt.toLocaleString("ru-KZ")} ₸`}
+              subtitle={`${paymentKindText(payment.kind)} · ${statusText(payment.status)}`}
+              description="Проверьте перевод вне SubsMarket и подтвердите вручную."
+              after={
+                <div className="row-actions">
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="filled"
+                    data-testid="confirm-payment-button"
+                    onClick={() => void onConfirmPayment(payment)}
+                  >
+                    Подтвердить
+                  </Button>
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="plain"
+                    data-testid="payment-not-received-button"
+                    onClick={() => void onNotReceived(payment)}
+                  >
+                    Не получил
+                  </Button>
+                </div>
+              }
+            />
           ))
         )}
-      </OwnerSection>
+      </Section>
+      )}
     </div>
   );
 }
@@ -254,14 +290,15 @@ function OwnerMemberRemovalControl({
           </option>
         ))}
       </select>
-      <button
+      <Button
         type="button"
-        className="danger"
+        size="s"
+        mode="plain"
         data-testid="remove-member-button"
         onClick={() => void onRemove(member, reason)}
       >
-        Удалить сейчас
-      </button>
+        Удалить
+      </Button>
     </div>
   );
 }
@@ -294,14 +331,15 @@ function OwnerPrepaymentControl({
           ))}
         </select>
       </label>
-      <button
+      <Button
         type="button"
-        className="secondary"
+        size="s"
+        mode="plain"
         data-testid="owner-record-prepayment-button"
         onClick={() => void onRecord(member, periods)}
       >
-        Отметить предоплату
-      </button>
+        Отметить
+      </Button>
       <small>
         Используйте только после договоренности и фактического перевода вне
         SubsMarket.
@@ -310,40 +348,24 @@ function OwnerPrepaymentControl({
   );
 }
 
-function OwnerSection({
-  title,
-  count,
-  children
-}: {
-  title: string;
-  count: number;
-  children: ReactNode;
-}) {
+function TaskCounter({ value }: { value: number }) {
   return (
-    <section className="owner-task-section">
-      <div className="owner-section-header">
-        <h4>{title}</h4>
-        <span>{count}</span>
-      </div>
-      <div className="owner-task-list">{children}</div>
-    </section>
-  );
-}
-
-function TaskCounter({
-  label,
-  value,
-  testId
-}: {
-  label: string;
-  value: number;
-  testId: string;
-}) {
-  return (
-    <div data-testid={testId}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
+    <span
+      style={{
+        alignItems: "center",
+        background: "var(--app-secondary-bg, #f7f9fd)",
+        borderRadius: 12,
+        display: "inline-flex",
+        fontSize: 18,
+        fontWeight: 800,
+        height: 40,
+        justifyContent: "center",
+        minWidth: 40,
+        padding: "0 10px"
+      }}
+    >
+      {value}
+    </span>
   );
 }
 
@@ -386,119 +408,105 @@ export function PaymentList({
 }) {
   if (payments.length === 0) {
     return (
-      <div className="payment-list">
-        <div className="list-row compact">
-          <div>
-            <strong>Платежей пока нет</strong>
-            <p>
-              Они появятся после подтверждения доступа или перед следующей датой
-              оплаты.
-            </p>
-          </div>
-        </div>
-      </div>
+      <Section>
+        <Cell subtitle="Платежей пока нет" description="Они появятся после подтверждения доступа или перед следующей датой оплаты." />
+      </Section>
     );
   }
   return (
-    <div className="payment-list">
+    <Section className="payment-list">
       {payments.map((payment) => (
-        <div className="list-row compact" key={payment.id}>
-          <div>
-            <strong>
-              {payment.amount_kzt.toLocaleString("ru-KZ")} ₸ ·{" "}
-              {statusText(payment.status)}
-            </strong>
-            <p>
-              {paymentKindText(payment.kind)} · {periodLabels[payment.period]} · до{" "}
-              {formatDateTime(payment.due_at)}
-            </p>
-            {payment.cancel_reason && (
-              <small>
-                {paymentCancelReasonLabels[payment.cancel_reason] ??
-                  payment.cancel_reason}
-              </small>
-            )}
-          </div>
-          {!ownerMode && (
-            <div className="row-actions">
-              {(payment.status === "due" || payment.status === "overdue") && onReport && (
-                <button
-                  type="button"
-                  data-testid="report-payment-button"
-                  onClick={() => void onReport(payment)}
-                >
-                  Оплатил
-                </button>
-              )}
-              {payment.status === "payment_reported" && onCancel && (
-                <button
-                  type="button"
-                  className="secondary"
-                  data-testid="cancel-payment-report-button"
-                  onClick={() => void onCancel(payment)}
-                >
-                  Отменить отметку
-                </button>
-              )}
-            </div>
-          )}
-          {ownerMode && payment.status === "payment_reported" && (
-            <div className="row-actions">
-              {onConfirm && (
-                <button
-                  type="button"
-                  data-testid="confirm-payment-button"
-                  onClick={() => void onConfirm(payment)}
-                >
-                  Подтвердить
-                </button>
-              )}
-              {onNotReceived && (
-                <button
-                  type="button"
-                  className="secondary"
-                  data-testid="payment-not-received-button"
-                  onClick={() => void onNotReceived(payment)}
-                >
-                  Не получил
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+        <Cell
+          key={payment.id}
+          title={`${payment.amount_kzt.toLocaleString("ru-KZ")} ₸ · ${statusText(payment.status)}`}
+          subtitle={`${paymentKindText(payment.kind)} · ${periodLabels[payment.period]} · до ${formatDateTime(payment.due_at)}`}
+          description={
+            payment.cancel_reason
+              ? paymentCancelReasonLabels[payment.cancel_reason] ?? payment.cancel_reason
+              : undefined
+          }
+          after={
+            !ownerMode ? (
+              <div className="row-actions">
+                {(payment.status === "due" || payment.status === "overdue") && onReport && (
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="filled"
+                    data-testid="report-payment-button"
+                    onClick={() => void onReport(payment)}
+                  >
+                    Оплатил
+                  </Button>
+                )}
+                {payment.status === "payment_reported" && onCancel && (
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="plain"
+                    data-testid="cancel-payment-report-button"
+                    onClick={() => void onCancel(payment)}
+                  >
+                    Отменить
+                  </Button>
+                )}
+              </div>
+            ) : ownerMode && payment.status === "payment_reported" ? (
+              <div className="row-actions">
+                {onConfirm && (
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="filled"
+                    data-testid="confirm-payment-button"
+                    onClick={() => void onConfirm(payment)}
+                  >
+                    Подтвердить
+                  </Button>
+                )}
+                {onNotReceived && (
+                  <Button
+                    type="button"
+                    size="s"
+                    mode="plain"
+                    data-testid="payment-not-received-button"
+                    onClick={() => void onNotReceived(payment)}
+                  >
+                    Не получил
+                  </Button>
+                )}
+              </div>
+            ) : undefined
+          }
+        />
       ))}
-    </div>
+    </Section>
   );
 }
 
 export function FamilyCard({ family, children }: { family: Family; children?: ReactNode }) {
   return (
-    <article
-      className="family-card"
+    <div
       data-family-id={family.id}
       data-family-type={family.family_type}
       data-testid="family-card"
     >
-      <div className="card-topline">
-        <span className="card-topline-left">
-          <Badge>{statusText(family.status)}</Badge>
-          <span className={`type-label type-label-${family.family_type}`}>
-            {familyKindLabels[family.family_type]}
+      <Card>
+      <Cell
+        before={
+          <span className="card-topline-left">
+            <Badge>{statusText(family.status)}</Badge>
+            <span className={`type-label type-label-${family.family_type}`}>
+              {familyKindLabels[family.family_type]}
+            </span>
           </span>
-        </span>
-        <span>{periodLabels[family.period]}</span>
-      </div>
-      <h3>
-        {family.service_name}
-        {family.service_variant ? ` ${family.service_variant}` : ""}
-      </h3>
-      <p>{family.description || "Описание пока не добавлено."}</p>
-      {family.owner_rules && (
-        <div className="owner-rules-preview">
-          <span>Правила владельца</span>
-          <p>{family.owner_rules}</p>
-        </div>
-      )}
+        }
+        after={<span>{periodLabels[family.period]}</span>}
+        title={family.service_name + (family.service_variant ? ` ${family.service_variant}` : "")}
+        subtitle={family.description || "Описание пока не добавлено."}
+        description={family.owner_rules}
+        multiline
+      />
       <div className="metrics">
         <Metric
           label="Доля"
@@ -521,7 +529,8 @@ export function FamilyCard({ family, children }: { family: Family; children?: Re
         <div className="warning">Закрывается {formatDateTime(family.closes_at)}</div>
       )}
       {children && <div className="card-actions">{children}</div>}
-    </article>
+      </Card>
+    </div>
   );
 }
 

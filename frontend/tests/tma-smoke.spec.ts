@@ -26,23 +26,23 @@ test("Mini App renders home, search, and family details", async ({ page }) => {
   await expect(page.locator(".bottom-nav")).toBeVisible();
 
   await page.locator(".bottom-nav button").nth(1).click();
-  await expect(page.locator(".panel")).toBeVisible();
+  await expect(page.locator("section").first()).toBeVisible();
 
-  const detailButtons = page.locator(".family-card button.secondary");
+  const detailButtons = page.getByTestId("open-family-button");
   if ((await detailButtons.count()) > 0) {
     await detailButtons.first().click();
     await expect(page.locator(".detail-grid")).toBeVisible();
   }
 
   await page.locator(".bottom-nav button").nth(2).click();
-  await expect(page.locator("form.form-grid")).toBeVisible();
+  await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-share-preview")).toBeVisible();
 
   await page.locator(".bottom-nav button").nth(3).click();
-  await expect(page.locator(".panel")).toBeVisible();
+  await expect(page.locator("section").first()).toBeVisible();
 
   await page.locator(".bottom-nav button").nth(4).click();
-  await expect(page.locator(".panel")).toBeVisible();
+  await expect(page.locator("section").first()).toBeVisible();
 
   const relevantMessages = messages.filter(
     (message) =>

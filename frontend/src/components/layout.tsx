@@ -1,5 +1,13 @@
 import type { ReactNode } from "react";
 
+import {
+  Avatar,
+  Button,
+  Cell,
+  List,
+  Section
+} from "@telegram-apps/telegram-ui";
+
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
 import { familyTypeLabels } from "../labels";
@@ -13,17 +21,15 @@ export function AppHeader({
   userName: string;
   firstName?: string;
 }) {
+  const acronym = (firstName ?? userName).slice(0, 2).toUpperCase();
   return (
-    <header className="app-header">
-      <div>
-        <span>SubsMarket</span>
-        <h1>Подписки и тарифы</h1>
-      </div>
-      <div className="avatar-card">
-        <strong>@{userName}</strong>
-        <small>{firstName}</small>
-      </div>
-    </header>
+    <Section>
+      <Cell
+        before={<Avatar size={28} acronym={acronym} />}
+        title={`@${userName}`}
+        subtitle={firstName}
+      />
+    </Section>
   );
 }
 
@@ -35,27 +41,32 @@ export function DevUserSwitch({
   onChange: (userId: string) => void;
 }) {
   return (
-    <section
-      className="dev-user-switch"
+    <Section
+      header="Dev mode"
       aria-label="Dev user switch"
       data-testid="dev-user-switch"
     >
-      <div>
-        <strong>Dev mode</strong>
-        <span>Текущий пользователь: @{value.username}</span>
-      </div>
-      <select
-        data-testid="dev-user-select"
-        value={String(value.id)}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {DEV_TELEGRAM_USERS.map((user) => (
-          <option key={user.id} value={user.id}>
-            {user.label} · @{user.username}
-          </option>
-        ))}
-      </select>
-    </section>
+      <Cell subtitle={`Текущий пользователь: @${value.username}`}>
+        <select
+          data-testid="dev-user-select"
+          value={String(value.id)}
+          onChange={(event) => onChange(event.target.value)}
+          style={{
+            background: "var(--app-surface, #fff)",
+            border: "1px solid var(--app-border, #cbd5e1)",
+            borderRadius: 12,
+            padding: "10px 12px",
+            width: "100%"
+          }}
+        >
+          {DEV_TELEGRAM_USERS.map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.label} · @{user.username}
+            </option>
+          ))}
+        </select>
+      </Cell>
+    </Section>
   );
 }
 
@@ -71,16 +82,17 @@ export function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="panel">
-      <div className="panel-header">
-        <div>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
-        {action}
-      </div>
+    <Section
+      header={
+        <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <span>{title}</span>
+          {action}
+        </span>
+      }
+      footer={description}
+    >
       {children}
-    </section>
+    </Section>
   );
 }
 
@@ -113,28 +125,31 @@ export function FamilyTypeSwitch({
   onChange: (value: FamilyType) => void;
 }) {
   return (
-    <div className="family-type-switch" role="tablist" aria-label="Тип семьи">
+    <List style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 8 }}>
       {(["subscription", "tariff"] as FamilyType[]).map((type) => (
-        <button
+        <Button
           key={type}
           type="button"
           data-testid={`family-type-${type}`}
-          className={value === type ? "type-pill type-pill-active" : "type-pill"}
+          mode={value === type ? "filled" : "plain"}
+          stretched
           onClick={() => onChange(type)}
         >
           {familyTypeLabels[type]}
-        </button>
+        </Button>
       ))}
-    </div>
+    </List>
   );
 }
 
 export function BottomNav({
   active,
-  onChange
+  onChange,
+  badges
 }: {
   active: Tab;
   onChange: (tab: Tab) => void;
+  badges?: Partial<Record<Tab, number>>;
 }) {
   return (
     <nav className="bottom-nav" aria-label="Главная навигация">
@@ -144,9 +159,15 @@ export function BottomNav({
       <NavItem
         active={active === "mine" || active === "family"}
         label="Семьи"
+        badge={badges?.mine}
         onClick={() => onChange("mine")}
       />
-      <NavItem active={active === "requests"} label="Заявки" onClick={() => onChange("requests")} />
+      <NavItem
+        active={active === "requests"}
+        label="Заявки"
+        badge={badges?.requests}
+        onClick={() => onChange("requests")}
+      />
     </nav>
   );
 }
@@ -154,11 +175,13 @@ export function BottomNav({
 function NavItem({
   active,
   label,
-  onClick
+  onClick,
+  badge
 }: {
   active: boolean;
   label: string;
   onClick: () => void;
+  badge?: number;
 }) {
   function handleClick() {
     triggerTelegramSelection();
@@ -174,6 +197,9 @@ function NavItem({
     >
       <span>{navIcon(label)}</span>
       <small>{label}</small>
+      {badge !== undefined && badge > 0 && (
+        <span className="nav-badge">{badge > 9 ? "9+" : badge}</span>
+      )}
     </button>
   );
 }

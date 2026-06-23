@@ -29,6 +29,33 @@ type TelegramBackButton = {
   offClick?: (handler: () => void) => void;
 };
 
+type TelegramBottomButton = {
+  type?: "main" | "secondary";
+  text?: string;
+  color?: string;
+  textColor?: string;
+  isVisible?: boolean;
+  isActive?: boolean;
+  hasShineEffect?: boolean;
+  isProgressVisible?: boolean;
+  setText?: (text: string) => void;
+  show?: () => void;
+  hide?: () => void;
+  enable?: () => void;
+  disable?: () => void;
+  showProgress?: (leaveActive?: boolean) => void;
+  hideProgress?: () => void;
+  setParams?: (params: Record<string, unknown>) => void;
+  onClick?: (handler: () => void) => void;
+  offClick?: (handler: () => void) => void;
+};
+
+type TelegramPopupButton = {
+  id?: string;
+  type?: "default" | "ok" | "close" | "cancel" | "destructive";
+  text?: string;
+};
+
 type TelegramHapticFeedback = {
   impactOccurred?: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
   notificationOccurred?: (type: "error" | "success" | "warning") => void;
@@ -41,6 +68,7 @@ type TelegramWebApp = {
     start_param?: string;
   };
   version?: string;
+  platform?: string;
   colorScheme?: "light" | "dark";
   themeParams?: TelegramThemeParams;
   viewportHeight?: number;
@@ -48,6 +76,8 @@ type TelegramWebApp = {
   safeAreaInset?: TelegramInset;
   contentSafeAreaInset?: TelegramInset;
   BackButton?: TelegramBackButton;
+  MainButton?: TelegramBottomButton;
+  SecondaryButton?: TelegramBottomButton;
   HapticFeedback?: TelegramHapticFeedback;
   ready?: () => void;
   expand?: () => void;
@@ -58,6 +88,16 @@ type TelegramWebApp = {
   enableVerticalSwipes?: () => void;
   enableClosingConfirmation?: () => void;
   disableClosingConfirmation?: () => void;
+  showPopup?: (
+    params: {
+      title?: string;
+      message: string;
+      buttons?: TelegramPopupButton[];
+    },
+    callback?: (buttonId: string) => void
+  ) => void;
+  showAlert?: (message: string, callback?: () => void) => void;
+  showConfirm?: (message: string, callback?: (ok: boolean) => void) => void;
   openTelegramLink?: (url: string) => void;
   isVersionAtLeast?: (version: string) => boolean;
   onEvent?: (
@@ -65,7 +105,9 @@ type TelegramWebApp = {
       | "themeChanged"
       | "viewportChanged"
       | "safeAreaChanged"
-      | "contentSafeAreaChanged",
+      | "contentSafeAreaChanged"
+      | "mainButtonClicked"
+      | "secondaryButtonClicked",
     handler: () => void
   ) => void;
   offEvent?: (
@@ -73,7 +115,9 @@ type TelegramWebApp = {
       | "themeChanged"
       | "viewportChanged"
       | "safeAreaChanged"
-      | "contentSafeAreaChanged",
+      | "contentSafeAreaChanged"
+      | "mainButtonClicked"
+      | "secondaryButtonClicked",
     handler: () => void
   ) => void;
 };
@@ -262,4 +306,136 @@ export function openTelegramUser(username: string, text?: string) {
     return;
   }
   window.open(url, "_blank", "noopener,noreferrer");
+}
+
+export function showTelegramAlert(message: string): Promise<void> {
+  return new Promise((resolve) => {
+    const app = webApp();
+    if (!app?.showAlert || !supportsWebAppVersion("6.2")) {
+      window.alert(message);
+      resolve();
+      return;
+    }
+    app.showAlert(message, () => resolve());
+  });
+}
+
+export function showTelegramConfirm(message: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const app = webApp();
+    if (!app?.showConfirm || !supportsWebAppVersion("6.2")) {
+      resolve(window.confirm(message));
+      return;
+    }
+    app.showConfirm(message, (ok) => resolve(ok));
+  });
+}
+
+export function showTelegramPopup(params: {
+  title?: string;
+  message: string;
+  buttons?: TelegramPopupButton[];
+}): Promise<string> {
+  return new Promise((resolve) => {
+    const app = webApp();
+    if (!app?.showPopup || !supportsWebAppVersion("6.2")) {
+      const ok = window.confirm(params.message);
+      resolve(ok ? "ok" : "cancel");
+      return;
+    }
+    app.showPopup(params, (buttonId) => resolve(buttonId));
+  });
+}
+
+export function setTelegramClosingConfirmation(enabled: boolean) {
+  const app = webApp();
+  if (!supportsWebAppVersion("6.2")) {
+    return;
+  }
+  if (enabled) {
+    app?.enableClosingConfirmation?.();
+  } else {
+    app?.disableClosingConfirmation?.();
+  }
+}
+
+let activeMainButtonHandler: (() => void) | null = null;
+
+export function setTelegramMainButton(
+  text: string,
+  handler: () => void,
+  options?: {
+    color?: string;
+    textColor?: string;
+    shineEffect?: boolean;
+    progress?: boolean;
+    disabled?: boolean;
+  }
+) {
+  const button = webApp()?.MainButton;
+  if (!button || !supportsWebAppVersion("6.1")) {
+    return () => {};
+  }
+
+  if (activeMainButtonHandler) {
+    button.offClick?.(activeMainButtonHandler);
+    activeMainButtonHandler = null;
+  }
+
+  button.setText?.(text);
+  if (options?.color) {
+    button.setParams?.({ color: options.color });
+  }
+  if (options?.textColor) {
+    button.setParams?.({ text_color: options.textColor });
+  }
+  if (options?.shineEffect !== undefined) {
+    button.setParams?.({ has_shine_effect: options.shineEffect });
+  }
+  if (options?.progress) {
+    button.showProgress?.(options.disabled !== false);
+  } else {
+    button.hideProgress?.();
+  }
+  if (options?.disabled) {
+    button.disable?.();
+  } else {
+    button.enable?.();
+  }
+
+  activeMainButtonHandler = handler;
+  button.onClick?.(handler);
+  button.show?.();
+
+  return () => {
+    button.offClick?.(handler);
+    if (activeMainButtonHandler === handler) {
+      activeMainButtonHandler = null;
+    }
+  };
+}
+
+export function hideTelegramMainButton() {
+  const button = webApp()?.MainButton;
+  if (!button || !supportsWebAppVersion("6.1")) {
+    return;
+  }
+  if (activeMainButtonHandler) {
+    button.offClick?.(activeMainButtonHandler);
+    activeMainButtonHandler = null;
+  }
+  button.hideProgress?.();
+  button.hide?.();
+}
+
+export function setTelegramMainButtonProgress(visible: boolean) {
+  const button = webApp()?.MainButton;
+  if (!button || !supportsWebAppVersion("6.1")) {
+    return;
+  }
+  if (visible) {
+    button.showProgress?.(false);
+  } else {
+    button.hideProgress?.();
+  }
 }

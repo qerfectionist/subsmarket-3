@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { FamilyCard } from "../components/families";
 import { EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
+import { FamilyListSkeleton } from "../components/skeleton";
 import { serviceTitle } from "../format";
 import { familyTypeLabels } from "../labels";
 import type { Family, FamilyService, FamilyType } from "../types";
@@ -13,6 +14,7 @@ export function SearchScreen({
   familyFilter,
   filteredFamilies,
   busy,
+  isLoading,
   onChangeFamilyType,
   onChangeFamilyFilter,
   onRefresh,
@@ -28,6 +30,7 @@ export function SearchScreen({
   familyFilter: string;
   filteredFamilies: Family[];
   busy: string | null;
+  isLoading?: boolean;
   onChangeFamilyType: (familyType: FamilyType) => void;
   onChangeFamilyFilter: (value: string) => void;
   onRefresh: () => void;
@@ -92,7 +95,9 @@ export function SearchScreen({
           Обновить
         </button>
       </div>
-      {filteredFamilies.length === 0 ? (
+      {isLoading && filteredFamilies.length === 0 ? (
+        <FamilyListSkeleton count={4} />
+      ) : filteredFamilies.length === 0 ? (
         <EmptyState title="Пока нет доступных семей">
           <span>
             В этом разделе пока нет доступных семей. Можно создать первую семью

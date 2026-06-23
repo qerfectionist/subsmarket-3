@@ -628,6 +628,14 @@ textarea {
   margin-top: -2px;
 }
 
+.field-error {
+  color: var(--app-danger);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: -2px;
+}
+
 .wide {
   grid-column: 1 / -1;
 }
@@ -971,6 +979,14 @@ textarea {
   display: grid;
   gap: 10px;
   padding: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.owner-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .owner-details h4 {
@@ -1099,6 +1115,7 @@ textarea {
   gap: 2px;
   justify-items: center;
   padding: 8px 4px;
+  position: relative;
 }
 
 .nav-item span {
@@ -1116,6 +1133,24 @@ textarea {
   color: var(--app-bg);
 }
 
+.nav-badge {
+  align-items: center;
+  background: #ef4444;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 900;
+  height: 18px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 18px;
+  padding: 0 5px;
+  position: absolute;
+  right: 8px;
+  top: 4px;
+}
+
 @media (min-width: 720px) {
   .app-shell {
     max-width: 520px;
@@ -1126,4 +1161,62 @@ textarea {
   .form-grid label.half {
     grid-column: 1 / -1;
   }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--app-surface) 80%, transparent) 0%,
+    color-mix(in srgb, var(--app-secondary-bg) 80%, transparent) 50%,
+    color-mix(in srgb, var(--app-surface) 80%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 16px;
+  color: transparent !important;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 24px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.skeleton-line {
+  border-radius: 12px;
+  height: 14px;
+}
+
+.skeleton-line.skeleton-line-lg {
+  height: 22px;
+}
+
+.skeleton-line.skeleton-line-sm {
+  height: 10px;
+  width: 60%;
+}
+
+.skeleton-line.skeleton-line-metrics {
+  border-radius: 16px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  height: 56px;
+}
+
+.skeleton-block {
+  border-radius: 20px;
+  height: 120px;
 }

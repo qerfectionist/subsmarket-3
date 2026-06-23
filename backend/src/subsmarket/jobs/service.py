@@ -10,7 +10,7 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from subsmarket.core.config import settings
-from subsmarket.core.database import utcnow
+from subsmarket.core.database import kz_today, utcnow
 from subsmarket.families.audit import record_family_audit_event
 from subsmarket.families.calendar import add_payment_period, payment_due_at
 from subsmarket.families.models import (
@@ -456,7 +456,7 @@ def mark_overdue_first_payments(db: Session) -> tuple[int, int]:
 
 
 def create_regular_payments(db: Session) -> int:
-    today = date.today()
+    today = kz_today()
     families = list(
         db.scalars(
             select(Family)
@@ -679,7 +679,7 @@ def mark_overdue_regular_payments(db: Session) -> tuple[int, int]:
 
 
 def send_regular_payment_reminders(db: Session) -> int:
-    today = date.today()
+    today = kz_today()
     scheduled_payments = list(
         db.scalars(
             select(FamilyPayment)
@@ -944,14 +944,13 @@ def _enqueue_member_notification_once(
     event_type: str,
     message: str,
 ) -> int:
-    jobs = list(
-        db.scalars(
-            select(NotificationJob)
-            .where(NotificationJob.recipient_user_id == recipient_user_id)
-            .where(NotificationJob.event_type == event_type)
-        ).all()
+    existing = db.scalar(
+        select(NotificationJob.id)
+        .where(NotificationJob.recipient_user_id == recipient_user_id)
+        .where(NotificationJob.event_type == event_type)
+        .where(NotificationJob.payload["member_id"].as_string() == str(member.id))
     )
-    if any(job.payload.get("member_id") == str(member.id) for job in jobs):
+    if existing is not None:
         return 0
 
     enqueue_notification(
@@ -975,21 +974,23 @@ def _payment_notification_exists(
     payment_id: UUID,
     reminder_date: date | None,
 ) -> bool:
-    jobs = list(
-        db.scalars(
-            select(NotificationJob)
-            .where(NotificationJob.recipient_user_id == recipient_user_id)
-            .where(NotificationJob.event_type == event_type)
-        ).all()
+    stmt = (
+        select(NotificationJob.id)
+        .where(NotificationJob.recipient_user_id == recipient_user_id)
+        .where(NotificationJob.event_type == event_type)
+        .where(NotificationJob.payload["payment_id"].as_string() == str(payment_id))
     )
-    for job in jobs:
-        if job.payload.get("payment_id") != str(payment_id):
-            continue
-        if reminder_date is None:
-            return True
-        if job.payload.get("reminder_date") == reminder_date.isoformat():
-            return True
-    return False
+    if reminder_date is None:
+        return db.scalar(stmt) is not None
+    return (
+        db.scalar(
+            stmt.where(
+                NotificationJob.payload["reminder_date"].as_string()
+                == reminder_date.isoformat()
+            )
+        )
+        is not None
+    )
 
 
 def execute_member_removals(db: Session) -> tuple[int, int]:

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
-from subsmarket.core.database import get_db
+from subsmarket.core.database import get_auth_db, get_db
 from subsmarket.families.schemas import (
     AccessConfirmationResult,
     FamilyAuditLogOut,
@@ -97,6 +97,7 @@ from subsmarket.families.service import (
     update_family_price,
     update_family_visibility,
 )
+from subsmarket.identity.models import User
 from subsmarket.identity.service import upsert_user
 from subsmarket.identity.telegram import parse_telegram_user
 
@@ -108,11 +109,17 @@ MAX_CURSOR_LENGTH = 512
 
 def get_current_user(
     db: Session = Depends(get_db),
+    auth_db: Session = Depends(get_auth_db),
     telegram_user=Depends(parse_telegram_user),
 ):
     if not telegram_user.username:
         raise HTTPException(status_code=403, detail="USERNAME_REQUIRED")
-    return upsert_user(db, telegram_user)
+    user = upsert_user(auth_db, telegram_user)
+    fresh = db.get(User, user.id)
+    if fresh is None:
+        db.expire_all()
+        fresh = db.get(User, user.id)
+    return fresh
 
 
 @router.post("", response_model=FamilyCreateResult, status_code=201)

@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 
 import { FamilyCard, OwnerDetails, PaymentList } from "../components/families";
 import { Badge, EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
+import { RequisiteBox } from "../components/RequisiteBox";
 import { statusText } from "../format";
-import { bankLabels } from "../labels";
 import type {
   Family,
   FamilyMember,
@@ -159,11 +159,7 @@ export function MyFamiliesScreen({
                   )}
                 </div>
                 {requisites[item.membership.id] && (
-                  <div className="requisite-box">
-                    <strong>Реквизиты открыты:</strong>{" "}
-                    {bankLabels[requisites[item.membership.id].bank]} ·{" "}
-                    {requisites[item.membership.id].phone}
-                  </div>
+                  <RequisiteBox requisite={requisites[item.membership.id]} />
                 )}
                 {item.payments.length > 0 && (
                   <PaymentList

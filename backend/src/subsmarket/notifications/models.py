@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from subsmarket.core.database import Base, utcnow
@@ -13,6 +13,14 @@ from subsmarket.identity.models import User
 
 class NotificationJob(Base):
     __tablename__ = "notification_jobs"
+    __table_args__ = (
+        Index(
+            "notification_jobs_recipient_event_created_idx",
+            "recipient_user_id",
+            "event_type",
+            "created_at",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     recipient_user_id: Mapped[uuid.UUID] = mapped_column(

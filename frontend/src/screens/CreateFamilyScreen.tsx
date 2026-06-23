@@ -5,6 +5,37 @@ import { serviceTitle } from "../format";
 import { bankLabels, familyTypeLabels, periodLabels } from "../labels";
 import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 
+const PHONE_RE = /^\+?7\d{10}$/;
+const TODAY = new Date().toISOString().split("T")[0];
+
+interface FieldErrors {
+  payment_phone?: string;
+  total_price_kzt?: string;
+  payment_day?: string;
+  next_payment_date?: string;
+  max_members?: string;
+}
+
+function validateForm(form: FamilyCreate, service: FamilyService | null): FieldErrors {
+  const errors: FieldErrors = {};
+  if (form.payment_phone && !PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
+    errors.payment_phone = "Формат: +7 и 10 цифр (например, +77001234567)";
+  }
+  if (form.total_price_kzt <= 0) {
+    errors.total_price_kzt = "Цена должна быть больше нуля";
+  }
+  if (form.payment_day < 1 || form.payment_day > 31) {
+    errors.payment_day = "День от 1 до 31";
+  }
+  if (form.next_payment_date && form.next_payment_date < TODAY) {
+    errors.next_payment_date = "Дата не может быть в прошлом";
+  }
+  if (service && form.max_members > service.max_members) {
+    errors.max_members = `Максимум для этого сервиса: ${service.max_members}`;
+  }
+  return errors;
+}
+
 export function CreateFamilyScreen({
   familyType,
   typedServices,
@@ -32,6 +63,8 @@ export function CreateFamilyScreen({
   );
   const freeMemberSlots = Math.max(0, createForm.max_members - 1);
   const familySubject = familyType === "tariff" ? "тарифа" : "подписки";
+  const errors = validateForm(createForm, service);
+  const hasErrors = Object.keys(errors).length > 0;
 
   return (
     <Panel
@@ -113,6 +146,9 @@ export function CreateFamilyScreen({
               }))
             }
           />
+          {errors.max_members && (
+            <small className="field-error">{errors.max_members}</small>
+          )}
         </label>
         <label className="half">
           Общая цена, ₸
@@ -129,6 +165,9 @@ export function CreateFamilyScreen({
               }))
             }
           />
+          {errors.total_price_kzt && (
+            <small className="field-error">{errors.total_price_kzt}</small>
+          )}
         </label>
         <label className="half">
           День оплаты
@@ -146,6 +185,9 @@ export function CreateFamilyScreen({
               }))
             }
           />
+          {errors.payment_day && (
+            <small className="field-error">{errors.payment_day}</small>
+          )}
         </label>
         <label className="half">
           Следующая дата оплаты
@@ -160,6 +202,9 @@ export function CreateFamilyScreen({
               }))
             }
           />
+          {errors.next_payment_date && (
+            <small className="field-error">{errors.next_payment_date}</small>
+          )}
         </label>
         <label className="half">
           Банк
@@ -194,10 +239,14 @@ export function CreateFamilyScreen({
               }))
             }
           />
-          <small className="field-helper">
-            Только номер телефона для Kaspi, Halyk, Freedom или Jusan. Номер карты
-            и IBAN нельзя указывать.
-          </small>
+          {errors.payment_phone ? (
+            <small className="field-error">{errors.payment_phone}</small>
+          ) : (
+            <small className="field-helper">
+              Только номер телефона для Kaspi, Halyk, Freedom или Jusan. Номер карты
+              и IBAN нельзя указывать.
+            </small>
+          )}
         </label>
         <label className="wide">
           Описание
@@ -234,7 +283,7 @@ export function CreateFamilyScreen({
         <button
           type="submit"
           data-testid="create-family-submit"
-          disabled={busy !== null || servicesCount === 0}
+          disabled={busy !== null || servicesCount === 0 || hasErrors}
         >
           Создать семью
         </button>

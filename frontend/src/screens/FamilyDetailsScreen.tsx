@@ -1,7 +1,8 @@
 import { FamilyCard } from "../components/families";
 import { Badge, EmptyState, Panel } from "../components/layout";
+import { RequisiteBox } from "../components/RequisiteBox";
 import { formatDate, formatDateTime, statusText } from "../format";
-import { bankLabels, familyKindLabels, periodLabels } from "../labels";
+import { familyKindLabels, periodLabels } from "../labels";
 import type {
   FamilyAuditLog,
   FamilyInvite,
@@ -209,12 +210,7 @@ export function FamilyDetailsScreen({
         </div>
       </section>
 
-      {requisite && (
-        <div className="requisite-box">
-          <strong>Реквизиты открыты:</strong> {bankLabels[requisite.bank]} ·{" "}
-          {requisite.phone}
-        </div>
-      )}
+      {requisite && <RequisiteBox requisite={requisite} />}
 
       {membership && (
         <FamilyPaymentActions

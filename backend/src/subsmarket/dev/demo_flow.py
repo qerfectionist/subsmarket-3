@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Any
 
 import httpx
@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
 
 from subsmarket.core.config import settings
-from subsmarket.core.database import SessionLocal, utcnow
+from subsmarket.core.database import SessionLocal, kz_today, utcnow
 from subsmarket.families.models import (
     Family,
     FamilyAuditLog,
@@ -158,7 +158,7 @@ def set_demo_family_next_payment_date(days_until: int) -> None:
         )
         if not families:
             raise AssertionError("Demo families were not created")
-        next_payment_date = date.today() + timedelta(days=days_until)
+        next_payment_date = kz_today() + timedelta(days=days_until)
         for family in families:
             family.next_payment_date = next_payment_date
         db.commit()
@@ -235,7 +235,7 @@ def run_family_flow(
             "max_members": min(4, service["max_members"]),
             "total_price_kzt": 3990 if family_type == "subscription" else 7990,
             "payment_day": 15,
-            "next_payment_date": (date.today() + timedelta(days=30)).isoformat(),
+            "next_payment_date": (kz_today() + timedelta(days=30)).isoformat(),
             "description": (
                 f"Demo {family_type} family: access first, payment after check."
             ),

@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
-from datetime import date, timedelta
+from datetime import timedelta
 from uuid import UUID
 
 from sqlalchemy import create_engine, delete, func, select
@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from subsmarket.catalog.models import FamilyService
 from subsmarket.core.config import normalize_sqlalchemy_database_url
+from subsmarket.core.database import kz_today
 from subsmarket.families.models import Family, FamilyMember, FamilyRequest
 from subsmarket.families.schemas import FamilyCreate
 from subsmarket.families.service import (
@@ -197,7 +198,7 @@ def run_write_load(
                         max_members=2,
                         total_price_kzt=2000,
                         payment_day=15,
-                        next_payment_date=date.today() + timedelta(days=30),
+                        next_payment_date=kz_today() + timedelta(days=30),
                         description="Temporary write load family",
                         payment_bank="kaspi",
                         payment_phone="+77001234567",

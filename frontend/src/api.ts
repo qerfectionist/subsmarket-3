@@ -363,6 +363,10 @@ export function scheduleMemberRemoval(
   );
 }
 
+export function revokeMemberRemoval(memberId: string): Promise<FamilyMember> {
+  return post<FamilyMember>(`/api/families/members/${memberId}/revoke-removal`);
+}
+
 export function getPaymentRequisite(memberId: string): Promise<PaymentRequisite> {
   return request<PaymentRequisite>(
     `/api/families/members/${memberId}/payment-requisite`
