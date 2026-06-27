@@ -300,6 +300,53 @@ def test_family_search_page_uses_cursor_without_duplicates(
     assert invalid_cursor.json()["detail"] == "INVALID_PAGE_CURSOR"
 
 
+def test_family_search_page_cursor_handles_unconfirmed_availability(
+    client: TestClient,
+    db: Session,
+    service: FamilyService,
+) -> None:
+    candidate_headers = auth_headers(610106, "cursor_null_candidate", "Candidate")
+    family_ids: list[str] = []
+    for index in range(3):
+        family_id = create_family_via_api(
+            client,
+            service,
+            auth_headers(
+                610120 + index,
+                f"cursor_null_owner_{index}",
+                f"Owner {index}",
+            ),
+        )
+        family = db.get(Family, UUID(family_id))
+        assert family is not None
+        family.availability_confirmed_at = None
+        family.availability_expires_at = None
+        family_ids.append(family_id)
+    db.commit()
+
+    first_page = client.get(
+        "/api/families/page?limit=2",
+        headers=candidate_headers,
+    )
+    assert first_page.status_code == 200
+    first_body = first_page.json()
+    first_ids = {item["id"] for item in first_body["items"]}
+    assert len(first_ids) == 2
+    assert first_body["next_cursor"]
+
+    second_page = client.get(
+        f"/api/families/page?limit=2&cursor={first_body['next_cursor']}",
+        headers=candidate_headers,
+    )
+    assert second_page.status_code == 200
+    second_body = second_page.json()
+    second_ids = {item["id"] for item in second_body["items"]}
+    assert len(second_ids) == 1
+    assert first_ids.isdisjoint(second_ids)
+    assert first_ids | second_ids == set(family_ids)
+    assert second_body["next_cursor"] is None
+
+
 def test_family_search_keeps_subscriptions_and_tariffs_separate(
     client: TestClient,
     db: Session,

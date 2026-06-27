@@ -45,8 +45,15 @@ def validate_telegram_state(
 
 
 def _telegram_result(client: httpx.Client, method: str) -> dict[str, Any]:
-    response = client.get(method)
-    response.raise_for_status()
+    try:
+        response = client.get(method)
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise RuntimeError(
+            f"Telegram {method} failed with HTTP {exc.response.status_code}"
+        ) from None
+    except httpx.HTTPError as exc:
+        raise RuntimeError(f"Telegram {method} failed: {type(exc).__name__}") from None
     payload = response.json()
     if not payload.get("ok"):
         raise RuntimeError(f"Telegram {method} failed")

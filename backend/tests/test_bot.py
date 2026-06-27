@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import httpx
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from subsmarket.bot.api import verify_webhook_secret
 from subsmarket.bot.service import START_MESSAGE, handle_telegram_update
-from subsmarket.bot.set_webhook import build_set_webhook_payload
+from subsmarket.bot.set_webhook import build_set_webhook_payload, set_webhook
 from subsmarket.core.config import settings
 from subsmarket.main import app
 
@@ -114,6 +115,36 @@ def test_set_webhook_payload_uses_secret_token(monkeypatch: pytest.MonkeyPatch) 
         "drop_pending_updates": True,
         "secret_token": "secret",
     }
+
+
+def test_set_webhook_http_errors_do_not_expose_bot_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bot_token = "123456:secret-token"
+    monkeypatch.setattr(settings, "telegram_bot_token", bot_token)
+    monkeypatch.setattr(
+        settings,
+        "telegram_webhook_url",
+        "https://api.example.com/api/telegram/webhook",
+    )
+
+    def fake_post(
+        url: str,
+        *,
+        json: dict[str, object],
+        timeout: float,
+    ) -> httpx.Response:
+        request = httpx.Request("POST", url)
+        raise httpx.ConnectError(f"connect failed for {url}", request=request)
+
+    monkeypatch.setattr("subsmarket.bot.set_webhook.httpx.post", fake_post)
+
+    with pytest.raises(RuntimeError) as exc:
+        set_webhook()
+
+    message = str(exc.value)
+    assert message == "TELEGRAM_SET_WEBHOOK_HTTP_ERROR: ConnectError"
+    assert bot_token not in message
 
 
 def test_webhook_endpoint_requires_valid_secret(

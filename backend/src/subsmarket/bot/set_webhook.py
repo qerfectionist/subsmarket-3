@@ -23,12 +23,17 @@ def set_webhook() -> dict[str, object]:
     if not settings.telegram_bot_token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN_NOT_CONFIGURED")
 
-    response = httpx.post(
-        f"https://api.telegram.org/bot{settings.telegram_bot_token}/setWebhook",
-        json=build_set_webhook_payload(),
-        timeout=10.0,
-    )
-    response.raise_for_status()
+    try:
+        response = httpx.post(
+            f"https://api.telegram.org/bot{settings.telegram_bot_token}/setWebhook",
+            json=build_set_webhook_payload(),
+            timeout=10.0,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise RuntimeError(
+            f"TELEGRAM_SET_WEBHOOK_HTTP_ERROR: {type(exc).__name__}"
+        ) from None
     payload = response.json()
     if not payload.get("ok"):
         raise RuntimeError(f"TELEGRAM_SET_WEBHOOK_FAILED: {payload}")

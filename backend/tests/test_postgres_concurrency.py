@@ -100,6 +100,7 @@ def test_two_approvals_cannot_take_the_same_last_place() -> None:
         request_ids = [first_request.id, second_request.id]
         user_ids = [owner.id, first_candidate.id, second_candidate.id]
         service_id = service.id
+        db.commit()
 
     barrier = threading.Barrier(2)
     results: list[str] = []
@@ -111,6 +112,7 @@ def test_two_approvals_cannot_take_the_same_last_place() -> None:
             barrier.wait(timeout=10)
             try:
                 approve_join_request(db, owner, request_id)
+                db.commit()
                 results.append("approved")
             except HTTPException as exc:
                 db.rollback()
@@ -193,6 +195,7 @@ def test_parallel_family_creation_cannot_exceed_owner_limit() -> None:
         )
         owner_id = owner.id
         service_id = service.id
+        db.commit()
 
     barrier = threading.Barrier(2)
     results: list[str] = []
@@ -211,7 +214,9 @@ def test_parallel_family_creation_cannot_exceed_owner_limit() -> None:
                         total_price_kzt=total_price_kzt,
                     ),
                 )
-                results.append(str(family.id))
+                family_id = str(family.id)
+                db.commit()
+                results.append(family_id)
             except HTTPException as exc:
                 db.rollback()
                 results.append(str(exc.detail))
@@ -283,7 +288,9 @@ def test_parallel_idempotent_family_creation_returns_one_family() -> None:
                 _family_create_payload(service_id, total_price_kzt=4000),
                 idempotency_key=f"parallel-family-{suffix}",
             )
-            results.append(str(family.id))
+            family_id = str(family.id)
+            db.commit()
+            results.append(family_id)
 
     threads = [threading.Thread(target=create, daemon=True) for _ in range(2)]
     for thread in threads:
@@ -341,6 +348,7 @@ def test_parallel_family_invite_creation_returns_one_active_code() -> None:
         owner_id = owner.id
         family_id = family.id
         service_id = service.id
+        db.commit()
 
     barrier = threading.Barrier(2)
     results: list[str] = []
@@ -351,7 +359,9 @@ def test_parallel_family_invite_creation_returns_one_active_code() -> None:
             assert owner is not None
             barrier.wait(timeout=10)
             invite = create_family_invite(db, owner, family_id)
-            results.append(invite.code)
+            code = invite.code
+            db.commit()
+            results.append(code)
 
     threads = [threading.Thread(target=create_invite, daemon=True) for _ in range(2)]
     for thread in threads:
@@ -441,7 +451,9 @@ def test_parallel_removals_in_one_family_release_each_slot_once() -> None:
                     member_id,
                     reason="no_response",
                 )
-                results.append(member.status)
+                status = member.status
+                db.commit()
+                results.append(status)
             except Exception as exc:  # pragma: no cover - reports exact DB error
                 db.rollback()
                 results.append(f"database-error:{type(exc).__name__}:{exc}")
@@ -488,7 +500,9 @@ def test_parallel_remove_and_leave_change_membership_once() -> None:
             barrier.wait(timeout=10)
             try:
                 member = remove_member(db, owner, member_id, reason="other")
-                results.append(member.status)
+                status = member.status
+                db.commit()
+                results.append(status)
             except HTTPException as exc:
                 db.rollback()
                 results.append(str(exc.detail))
@@ -500,7 +514,9 @@ def test_parallel_remove_and_leave_change_membership_once() -> None:
             barrier.wait(timeout=10)
             try:
                 member = leave_family(db, candidate, member_id)
-                results.append(member.status)
+                status = member.status
+                db.commit()
+                results.append(status)
             except HTTPException as exc:
                 db.rollback()
                 results.append(str(exc.detail))
@@ -547,7 +563,9 @@ def test_parallel_close_and_remove_finish_without_deadlock() -> None:
                     case.family_id,
                     closes_on=date.today() + timedelta(days=10),
                 )
-                results.append(f"close:{family.status}")
+                status = family.status
+                db.commit()
+                results.append(f"close:{status}")
             except Exception as exc:  # pragma: no cover - reports exact DB error
                 db.rollback()
                 results.append(f"database-error:{type(exc).__name__}:{exc}")
@@ -559,7 +577,9 @@ def test_parallel_close_and_remove_finish_without_deadlock() -> None:
             barrier.wait(timeout=10)
             try:
                 member = remove_member(db, owner, member_id, reason="other")
-                results.append(f"remove:{member.status}")
+                status = member.status
+                db.commit()
+                results.append(f"remove:{status}")
             except HTTPException as exc:
                 db.rollback()
                 results.append(str(exc.detail))
@@ -684,6 +704,7 @@ def _create_joined_members_case(*, member_count: int) -> _JoinedMembersCase:
             mark_access_provided(db, owner, member.id)
             member_ids.append(member.id)
 
+        db.commit()
         return _JoinedMembersCase(
             engine=engine,
             session_factory=session_factory,

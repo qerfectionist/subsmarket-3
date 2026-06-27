@@ -12,6 +12,7 @@ from subsmarket.families._internal import (
     _asc_datetime_uuid_condition,
     _desc_availability_datetime_uuid_condition,
     _desc_datetime_uuid_condition,
+    _desc_due_created_uuid_condition,
     _trim_page,
 )
 from subsmarket.families.models import (
@@ -283,6 +284,7 @@ def list_searchable_families_page(
         limit,
         lambda family: encode_cursor(
             {
+                "has_availability": family.availability_confirmed_at is not None,
                 "availability_confirmed_at": (
                     family.availability_confirmed_at or family.created_at
                 ),
@@ -480,7 +482,7 @@ def list_my_payments_page(
         .limit(limit + 1)
     )
     if cursor:
-        stmt = stmt.where(_desc_datetime_uuid_condition(FamilyPayment, cursor))
+        stmt = stmt.where(_desc_due_created_uuid_condition(FamilyPayment, cursor))
     items = list(db.scalars(stmt).all())
     return _trim_page(
         items,

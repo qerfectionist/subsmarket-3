@@ -61,6 +61,22 @@ def _desc_datetime_uuid_condition(model, cursor: str):
     )
 
 
+def _desc_due_created_uuid_condition(model, cursor: str):
+    payload = decode_cursor(cursor)
+    due_at = cursor_datetime(payload, "due_at")
+    created_at = cursor_datetime(payload, "created_at")
+    item_id = cursor_uuid(payload, "id")
+    return or_(
+        model.due_at < due_at,
+        and_(model.due_at == due_at, model.created_at < created_at),
+        and_(
+            model.due_at == due_at,
+            model.created_at == created_at,
+            model.id < item_id,
+        ),
+    )
+
+
 def _asc_datetime_uuid_condition(model, cursor: str, datetime_field: str):
     payload = decode_cursor(cursor)
     value = cursor_datetime(payload, datetime_field)
@@ -74,9 +90,22 @@ def _asc_datetime_uuid_condition(model, cursor: str, datetime_field: str):
 
 def _desc_availability_datetime_uuid_condition(cursor: str):
     payload = decode_cursor(cursor)
-    availability_confirmed_at = cursor_datetime(payload, "availability_confirmed_at")
+    has_availability_value = payload.get("has_availability", "True")
+    if has_availability_value not in {"True", "False"}:
+        raise HTTPException(status_code=400, detail="INVALID_PAGE_CURSOR")
+    has_availability = has_availability_value == "True"
     created_at = cursor_datetime(payload, "created_at")
     item_id = cursor_uuid(payload, "id")
+    if not has_availability:
+        return and_(
+            Family.availability_confirmed_at.is_(None),
+            or_(
+                Family.created_at < created_at,
+                and_(Family.created_at == created_at, Family.id < item_id),
+            ),
+        )
+
+    availability_confirmed_at = cursor_datetime(payload, "availability_confirmed_at")
     return or_(
         Family.availability_confirmed_at < availability_confirmed_at,
         and_(
@@ -88,6 +117,7 @@ def _desc_availability_datetime_uuid_condition(cursor: str):
             Family.created_at == created_at,
             Family.id < item_id,
         ),
+        Family.availability_confirmed_at.is_(None),
     )
 
 

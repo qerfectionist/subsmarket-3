@@ -466,21 +466,19 @@ def remind_access_confirmation(
         )
 
     now = utcnow()
-    recent_jobs = list(
-        db.scalars(
-            select(NotificationJob)
-            .where(NotificationJob.recipient_user_id == member.user_id)
-            .where(
-                NotificationJob.event_type
-                == "family_access_confirmation_reminder_member"
-            )
-            .where(
-                NotificationJob.created_at
-                >= now - timedelta(seconds=settings.access_reminder_cooldown_seconds)
-            )
-        ).all()
+    recent_job_id = db.scalar(
+        select(NotificationJob.id)
+        .where(NotificationJob.recipient_user_id == member.user_id)
+        .where(
+            NotificationJob.event_type == "family_access_confirmation_reminder_member"
+        )
+        .where(NotificationJob.payload["member_id"].as_string() == str(member.id))
+        .where(
+            NotificationJob.created_at
+            >= now - timedelta(seconds=settings.access_reminder_cooldown_seconds)
+        )
     )
-    if any(job.payload.get("member_id") == str(member.id) for job in recent_jobs):
+    if recent_job_id is not None:
         raise HTTPException(status_code=429, detail="ACCESS_REMINDER_COOLDOWN")
 
     record_family_audit_event(

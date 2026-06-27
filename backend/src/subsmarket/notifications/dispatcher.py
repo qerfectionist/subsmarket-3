@@ -57,7 +57,10 @@ class TelegramBotSender:
                 timeout=10.0,
             )
         except httpx.HTTPError as exc:
-            raise NotificationSendError(str(exc), permanent=False) from exc
+            raise NotificationSendError(
+                f"TELEGRAM_SEND_HTTP_ERROR: {type(exc).__name__}",
+                permanent=False,
+            ) from None
 
         payload = _response_payload(response)
         if response.status_code >= 400:

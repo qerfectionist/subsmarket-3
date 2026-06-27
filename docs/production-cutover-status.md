@@ -99,7 +99,7 @@ Result:
 
 - API smoke: OK.
 - Read-only load smoke: OK, 30 requests, concurrency 5, 0 errors.
-- Load smoke p95: about 2448 ms on the current test deployment.
+- Load smoke p95: about 3035 ms on the current test deployment.
 - Telegram smoke: OK, webhook and menu button point to production domains.
 - Sentry smoke: OK, controlled event delivered.
 
@@ -131,15 +131,15 @@ Result:
 
 - backend lint: OK;
 - backend compile: OK;
-- backend tests: OK, 150 passed, 9 skipped;
+- backend tests: OK, 159 passed, 9 skipped;
+- PostgreSQL concurrency/security tests: OK, 9 passed against local Docker
+  Postgres;
 - frontend build: OK;
 - Playwright E2E: OK, 7 passed;
 - diff check: OK, only Windows LF/CRLF warnings.
 
-One Playwright assertion was adjusted before this run: it no longer waits for a
-short-lived toast after member removal. The stable state is still checked:
-the removed member disappears from the owner's actions and from the member's
-workspace.
+The latest backend hardening run added regression coverage for search/payment
+cursor pagination and Telegram token-safe error handling.
 
 ## Production Config Verification
 

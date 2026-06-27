@@ -317,3 +317,30 @@ def test_telegram_sender_includes_mini_app_button(
             ]
         },
     }
+
+
+def test_telegram_sender_http_errors_do_not_expose_bot_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bot_token = "123456:secret-token"
+
+    def fake_post(
+        url: str,
+        *,
+        json: dict[str, object],
+        timeout: float,
+    ) -> httpx.Response:
+        request = httpx.Request("POST", url)
+        raise httpx.ConnectError(f"connect failed for {url}", request=request)
+
+    monkeypatch.setattr(
+        "subsmarket.notifications.dispatcher.httpx.post",
+        fake_post,
+    )
+
+    with pytest.raises(NotificationSendError) as exc:
+        TelegramBotSender(bot_token=bot_token).send_message(700001, "Open app")
+
+    message = str(exc.value)
+    assert "TELEGRAM_SEND_HTTP_ERROR: ConnectError" == message
+    assert bot_token not in message

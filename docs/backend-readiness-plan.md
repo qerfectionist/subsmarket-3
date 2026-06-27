@@ -17,10 +17,30 @@ Backend checks completed:
   and legacy removal locks.
 - List APIs have bounded `limit` values and cursor page endpoints for high
   volume screens.
+- Search cursor pagination handles both confirmed-availability families and
+  unconfirmed families without dropping items between pages.
+- Shared rate limiting is wired through Redis and checked by `/ready`.
 - Production domains are live:
   - Mini App: `https://subsmarket.xyz`
   - API: `https://api.subsmarket.xyz`
 - Read-only production check passes with `npm run production:check`.
+
+## Hardening Pass: 2026-06-27
+
+Changes completed after reviewing ECC practices:
+
+- fixed search cursor pagination for families without
+  `availability_confirmed_at`;
+- fixed "my payments" cursor pagination so pages follow `due_at`, not only
+  `created_at`;
+- moved access-reminder and closing-reminder notification dedup checks from
+  Python payload filtering to SQL JSON filters;
+- changed daily owner-payment and family-closing reminder dedup dates to use
+  Kazakhstan business date through `kz_today()`;
+- sanitized Telegram HTTP errors so bot tokens are not stored in notification
+  errors or printed by webhook setup failures;
+- added regression tests for both cursor issues and Telegram token-safe error
+  handling.
 
 ## Before Public Launch
 
@@ -85,7 +105,24 @@ npm run production:check
 
 Do not run write-heavy load tests against production user data.
 
-### 5. Production Env Cleanup
+### 5. Backend Hot Path Review
+
+Before a public burst, re-check the paths most likely to fail under load:
+
+- family creation by many owners at once;
+- many candidates applying to the same almost-full family;
+- approval, rejection, candidate cancel, and request expiration running close
+  together;
+- first payment creation after access confirmation;
+- regular payment generation around the monthly/yearly payment date;
+- notification deduplication for repeated reminders;
+- invite-code lookup for full, hidden, closing, and closed families;
+- paginated search, my families, requests, payments, members, and audit logs.
+
+Pass condition: targeted tests exist for any changed behavior, and the full
+backend test suite passes.
+
+### 6. Production Env Cleanup
 
 Verify Render production env values:
 
@@ -106,6 +143,8 @@ Verify Render production env values:
 - Marketplace Engine for accounts and mobile data.
 - Complex operator tariff slot types.
 - Queue system beyond GitHub Actions and notification outbox.
+- Project-local Codex skills derived from the ECC analysis, if they become more
+  useful than the current docs/checklists.
 
 ## Useful Commands
 

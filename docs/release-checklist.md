@@ -21,7 +21,25 @@ Pass condition:
 
 Windows LF/CRLF warnings are acceptable.
 
-## 2. Production Smoke
+## 2. Backend Hardening Gate
+
+Before deploying backend changes, verify that the change does not weaken these
+Family Engine hot paths:
+
+- family creation keeps the owner active-family limit;
+- join request approval cannot overfill the last slot;
+- search/list endpoints stay bounded by `limit` and use cursor endpoints for
+  high-volume screens;
+- access confirmation creates only one first payment;
+- regular payment jobs do not duplicate payments or reminders;
+- owner/member removal and family closing keep member counts consistent;
+- rate limiting still reports `redis` in production;
+- no development route is exposed in OpenAPI.
+
+If the change touches one of these paths, run the closest targeted backend test
+before `npm run check`.
+
+## 3. Production Smoke
 
 Run:
 
@@ -48,7 +66,7 @@ Expected:
 {"status":"ok","database":"ok","rate_limit":"redis"}
 ```
 
-## 3. Manual Telegram Check
+## 4. Manual Telegram Check
 
 Open `@subscription_market_bot` and the Mini App from Telegram.
 
@@ -66,16 +84,18 @@ Minimum manual flow:
 
 If time is short, at least test family creation and request creation.
 
-## 4. Monitoring
+## 5. Monitoring
 
 Verify:
 
 - UptimeRobot monitor for `https://api.subsmarket.xyz/health` is green;
 - GitHub uptime workflow exists: `.github/workflows/uptime-check.yml`;
+- GitHub background jobs workflow exists: `.github/workflows/subsmarket-jobs.yml`;
+- `/api/internal/jobs/health` returns `status=ok`;
 - Render service is healthy;
 - Sentry has no unexpected new backend errors.
 
-## 5. Secrets
+## 6. Secrets
 
 Before release:
 
@@ -87,7 +107,16 @@ Before release:
 - `SENTRY_SEND_DEFAULT_PII=false`;
 - no secret was committed.
 
-## 6. Rollback
+## 7. Agent Safety
+
+Do not run broad third-party AI-agent installers, hooks, or MCP setup scripts
+directly against the repository or the global Codex folder before a release.
+Use dry-run first and prefer project-local docs/checklists over hidden global
+automation.
+
+Current ECC decision: [ecc-adoption-plan.md](ecc-adoption-plan.md).
+
+## 8. Rollback
 
 If the frontend breaks:
 

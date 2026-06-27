@@ -46,6 +46,7 @@ from subsmarket.families.service import (
     list_my_families,
     list_my_join_requests,
     list_my_payments,
+    list_my_payments_page,
     list_owner_family_requests,
     list_searchable_families,
     mark_access_provided,
@@ -200,6 +201,60 @@ def make_scheduled_payment(
     db.commit()
     db.refresh(payment)
     return payment
+
+
+def test_my_payments_cursor_follows_due_date_order(
+    db: Session,
+    subscription_service: FamilyService,
+) -> None:
+    owner = make_user(db, 301)
+    candidate = make_user(db, 302)
+    family = make_family(db, owner, subscription_service)
+    member = FamilyMember(
+        family_id=family.id,
+        user_id=candidate.id,
+        role="member",
+        status="active",
+    )
+    db.add(member)
+    db.flush()
+    base = utcnow()
+    payments: list[FamilyPayment] = []
+    for index, days_until_due in enumerate((30, 20, 10)):
+        payment = FamilyPayment(
+            family_id=family.id,
+            member_id=member.id,
+            kind="regular",
+            status="scheduled",
+            amount_kzt=family.member_share_kzt,
+            period=family.period,
+            period_start=date.today() + timedelta(days=days_until_due),
+            period_end=date.today() + timedelta(days=days_until_due + 30),
+            due_at=base + timedelta(days=days_until_due),
+            created_at=base + timedelta(minutes=index),
+        )
+        payments.append(payment)
+        db.add(payment)
+    db.commit()
+
+    first_page, first_cursor = list_my_payments_page(db, candidate, limit=1)
+    second_page, second_cursor = list_my_payments_page(
+        db,
+        candidate,
+        limit=1,
+        cursor=first_cursor,
+    )
+    third_page, third_cursor = list_my_payments_page(
+        db,
+        candidate,
+        limit=1,
+        cursor=second_cursor,
+    )
+
+    assert [payment.id for payment in first_page] == [payments[0].id]
+    assert [payment.id for payment in second_page] == [payments[1].id]
+    assert [payment.id for payment in third_page] == [payments[2].id]
+    assert third_cursor is None
 
 
 def test_price_share_is_rounded_to_nearest_50_kzt() -> None:

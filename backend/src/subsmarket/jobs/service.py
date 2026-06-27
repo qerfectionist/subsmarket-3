@@ -795,7 +795,7 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
                     "Напоминание: участник отметил оплату, но вы еще не "
                     "подтвердили получение."
                 ),
-                reminder_date=now.date(),
+                reminder_date=kz_today(),
             )
             continue
 
@@ -823,7 +823,7 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
 
 def send_closing_acknowledgement_reminders(db: Session) -> int:
     now = utcnow()
-    today = now.date()
+    today = kz_today()
     members = list(
         db.scalars(
             select(FamilyMember)
@@ -844,21 +844,20 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
     notification_count = 0
     for member in members:
         closes_on = member.family.closes_at.date().isoformat()
-        existing_jobs = list(
-            db.scalars(
-                select(NotificationJob)
-                .where(NotificationJob.recipient_user_id == member.user_id)
-                .where(
-                    NotificationJob.event_type
-                    == "family_closing_ack_reminder_member"
-                )
-            ).all()
+        existing_job_id = db.scalar(
+            select(NotificationJob.id)
+            .where(NotificationJob.recipient_user_id == member.user_id)
+            .where(NotificationJob.event_type == "family_closing_ack_reminder_member")
+            .where(
+                NotificationJob.payload["family_id"].as_string()
+                == str(member.family_id)
+            )
+            .where(
+                NotificationJob.payload["reminder_date"].as_string()
+                == today.isoformat()
+            )
         )
-        if any(
-            job.payload.get("family_id") == str(member.family_id)
-            and job.payload.get("reminder_date") == today.isoformat()
-            for job in existing_jobs
-        ):
+        if existing_job_id is not None:
             continue
         enqueue_notification(
             db,

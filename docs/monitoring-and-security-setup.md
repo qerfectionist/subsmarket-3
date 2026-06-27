@@ -5,6 +5,26 @@ small amount of account setup that cannot be completed from the repository.
 
 ## Already implemented
 
+### Agent and tool safety
+
+SubsMarket should not install broad third-party AI-agent bundles directly into
+the repository or the global Codex/Claude configuration during release work.
+This includes hooks, MCP configs, global `AGENTS.md` replacements, and hidden
+auto-run scripts.
+
+Rules:
+
+- run dry-run first for any external installer;
+- prefer project-local docs and checklists over global AI-agent config changes;
+- do not commit generated secrets, `.env` files, Render/Vercel/Supabase tokens,
+  Redis URLs, Telegram bot tokens, or Sentry auth tokens;
+- revoke temporary platform API tokens after use;
+- do not add external hooks that can run shell commands automatically without a
+  separate security review.
+
+The current ECC analysis is documented in
+[ecc-adoption-plan.md](ecc-adoption-plan.md).
+
 ### Gitleaks
 
 Workflow: `.github/workflows/security.yml`.
@@ -207,3 +227,17 @@ or added to frontend environment variables.
 instances or a public launch burst, configure `RATE_LIMIT_REDIS_URL` with a
 shared Redis-compatible service such as Upstash. Without this, each backend
 instance would count limits separately.
+
+## Backend hot-path monitoring
+
+During the first public traffic burst, watch these backend signals more closely
+than frontend UI polish:
+
+- `/ready` must continue reporting `database=ok` and `rate_limit=redis`;
+- `/api/internal/jobs/health` must stay `ok`;
+- Sentry should not show new errors from family creation, join requests,
+  payments, reminders, or notification dispatch;
+- Render logs should not show connection-pool exhaustion or repeated database
+  timeouts;
+- GitHub background jobs should keep sending the heartbeat after successful
+  due-job and notification runs.
