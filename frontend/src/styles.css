@@ -1359,9 +1359,10 @@ textarea {
   max-width: 394px;
   padding: 7px 8px 8px;
   position: fixed;
+  pointer-events: auto;
   transform: translateX(-50%);
   width: calc(100% - 28px);
-  z-index: 20;
+  z-index: 1000;
 }
 
 .nav-item {

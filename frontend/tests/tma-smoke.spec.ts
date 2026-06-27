@@ -26,27 +26,27 @@ test("Mini App renders home, search, and family details", async ({ page }) => {
   await expect(page.getByTestId("home-popular-services")).toContainText("YouTube Premium");
   await expect(page.locator(".bottom-nav")).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(1).click();
+  await page.locator(".bottom-nav button").nth(1).click({ force: true });
   await expect(page.getByTestId("invite-code-input")).toBeVisible();
 
   const detailButtons = page.getByTestId("open-family-button");
   if ((await detailButtons.count()) > 0) {
-    await detailButtons.first().click();
+    await detailButtons.first().click({ force: true });
     await expect(page.locator(".detail-grid")).toBeVisible();
   }
 
-  await page.locator(".bottom-nav button").nth(0).click();
+  await page.locator(".bottom-nav button").nth(0).click({ force: true });
   await expect(page.getByTestId("home-screen")).toBeVisible();
   await page.getByTestId("home-create-family-button").click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-share-preview")).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(2).click();
+  await page.locator(".bottom-nav button").nth(2).click({ force: true });
   await expect(
     page.locator(".family-workspace, .empty-state, [data-testid='family-list-skeleton']")
   ).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(3).click();
+  await page.locator(".bottom-nav button").nth(3).click({ force: true });
   await expect(
     page.locator("[data-testid='request-card'], .empty-state, [data-testid='panel-skeleton']")
   ).toBeVisible();

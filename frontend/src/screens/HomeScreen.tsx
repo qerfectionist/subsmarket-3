@@ -1,4 +1,9 @@
-import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
+import {
+  Button as WorldButton,
+  Chip,
+  CircularIcon,
+  ListItem
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import { ServiceLogo } from "../components/branding";
 import type { Family, FamilyRequest, FamilyType, MyFamily } from "../types";
@@ -167,25 +172,22 @@ export function HomeScreen({
         </div>
         <div className="popular-service-list" data-testid="home-popular-services">
           {popularServices.map((service) => (
-            <WorldButton
+            <ListItem
               key={service.slug}
               type="button"
-              variant="tertiary"
-              className="popular-service-row"
+              label={service.name}
+              description={`${service.price} за место`}
+              startAdornment={
+                <ServiceLogo
+                  serviceSlug={service.slug}
+                  serviceName={service.name}
+                  familyType="subscription"
+                  size={42}
+                />
+              }
+              endAdornment={<Chip label={service.slots} variant="success" />}
               onClick={() => onSearch("subscription")}
-            >
-              <ServiceLogo
-                serviceSlug={service.slug}
-                serviceName={service.name}
-                familyType="subscription"
-                size={42}
-              />
-              <span className="popular-service-copy">
-                <strong>{service.name}</strong>
-                <small>{service.price} за место</small>
-              </span>
-              <span className="popular-service-slots">{service.slots}</span>
-            </WorldButton>
+            />
           ))}
         </div>
       </section>
@@ -194,45 +196,41 @@ export function HomeScreen({
 }
 
 function DirectionCard({ direction }: { direction: Direction }) {
-  const content = (
-    <>
-      <span className={`direction-icon direction-icon-${direction.tone}`} aria-hidden>
+  const startAdornment = (
+    <CircularIcon className={`direction-icon direction-icon-${direction.tone}`} size="md">
         <DirectionGlyph id={direction.id} />
-      </span>
-      <span className="direction-copy">
-        <strong>{direction.title}</strong>
-        <small>{direction.subtitle}</small>
-      </span>
-      <span className={direction.enabled ? "direction-status" : "direction-status muted-pill"}>
-        {direction.status}
-      </span>
-    </>
+    </CircularIcon>
+  );
+  const endAdornment = (
+    <Chip
+      label={direction.status}
+      variant={direction.enabled ? "success" : "default"}
+    />
   );
 
   if (!direction.enabled) {
     return (
-      <div
-        className="direction-card direction-card-disabled"
-        role="button"
-        tabIndex={0}
-        aria-disabled="true"
+      <ListItem
+        label={direction.title}
+        description={direction.subtitle}
+        startAdornment={startAdornment}
+        endAdornment={endAdornment}
+        disabled
         data-testid="home-direction-row"
-      >
-        {content}
-      </div>
+      />
     );
   }
 
   return (
-    <WorldButton
+    <ListItem
       type="button"
-      variant="tertiary"
-      className="direction-card"
+      label={direction.title}
+      description={direction.subtitle}
+      startAdornment={startAdornment}
+      endAdornment={endAdornment}
       data-testid="home-direction-row"
       onClick={direction.onClick}
-    >
-      {content}
-    </WorldButton>
+    />
   );
 }
 
@@ -248,19 +246,14 @@ function QuickAction({
   onClick: () => void;
 }) {
   return (
-    <WorldButton
+    <ListItem
       type="button"
-      variant="tertiary"
-      className="quick-action-card"
+      label={title}
+      description={subtitle}
+      endAdornment={count > 0 ? <Chip label={String(count)} variant="error" /> : undefined}
       data-testid="home-quick-action"
       onClick={onClick}
-    >
-      <span className="quick-action-copy">
-        <strong>{title}</strong>
-        <small>{subtitle}</small>
-      </span>
-      {count > 0 ? <span className="quick-action-count">{count}</span> : null}
-    </WorldButton>
+    />
   );
 }
 
