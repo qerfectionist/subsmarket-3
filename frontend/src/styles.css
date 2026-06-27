@@ -1516,8 +1516,6 @@ body {
 
 button {
   border-radius: 16px;
-  font-weight: 750;
-  letter-spacing: -0.01em;
   min-height: 44px;
   transition:
     transform 0.16s ease,
@@ -1643,27 +1641,19 @@ button:active {
   z-index: 1;
 }
 
-.eyebrow {
+.home-kicker {
   color: var(--app-link);
   display: block;
-  font-size: 12px;
-  font-weight: 850;
-  letter-spacing: 0.08em;
   margin-bottom: 5px;
   text-transform: uppercase;
 }
 
-.hero-copy h1 {
-  font-size: 22px;
-  letter-spacing: -0.065em;
-  line-height: 1.02;
+.home-heading {
   margin: 0;
 }
 
-.hero-copy p {
+.home-lead {
   color: var(--app-muted);
-  font-size: 12px;
-  line-height: 1.35;
   margin: 7px 0 0;
 }
 
@@ -1681,14 +1671,11 @@ button:active {
 
 .hero-stats strong {
   display: block;
-  font-size: 19px;
-  letter-spacing: -0.04em;
 }
 
 .hero-stats span {
   color: var(--app-muted);
   display: block;
-  font-size: 12px;
   margin-top: 2px;
 }
 
@@ -1697,8 +1684,7 @@ button:active {
 }
 
 .home-title {
-  font-size: 17px;
-  font-weight: 820;
+  margin: 0;
 }
 
 .home-directions {
@@ -1771,15 +1757,6 @@ button:active {
   color: #d97706;
 }
 
-.direction-copy strong {
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.direction-copy small {
-  font-size: 11px;
-}
-
 .home-actions-strip {
   display: grid;
   gap: 10px;
@@ -1805,14 +1782,11 @@ button:active {
 .primary-action-card span {
   color: rgba(255, 255, 255, 0.7);
   display: block;
-  font-size: 12px;
   width: 100%;
 }
 
 .primary-action-card strong {
   display: block;
-  font-size: 16px;
-  letter-spacing: -0.03em;
   width: 100%;
 }
 

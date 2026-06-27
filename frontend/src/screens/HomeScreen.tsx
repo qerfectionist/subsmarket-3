@@ -2,7 +2,8 @@ import {
   Button as WorldButton,
   Chip,
   CircularIcon,
-  ListItem
+  ListItem,
+  Typography
 } from "@worldcoin/mini-apps-ui-kit-react";
 
 import { ServiceLogo } from "../components/branding";
@@ -96,28 +97,42 @@ export function HomeScreen({
     <div className="home-app" data-testid="home-screen">
       <section className="hero-card">
         <div className="hero-copy">
-          <span className="eyebrow">SubsMarket</span>
-          <h1>Семьи для подписок и тарифов</h1>
-          <p>
+          <Typography as="span" variant="label" level={2} className="home-kicker">
+            SubsMarket
+          </Typography>
+          <Typography as="h1" variant="heading" level={4} className="home-heading">
+            Семьи для подписок и тарифов
+          </Typography>
+          <Typography as="p" variant="body" level={3} className="home-lead">
             Создавайте семью, принимайте заявки и контролируйте оплаты в одном
             Mini App.
-          </p>
+          </Typography>
         </div>
         <div className="hero-stats" aria-label="Сводка">
           <div>
-            <strong>{openFamilies.length}</strong>
-            <span>семей в поиске</span>
+            <Typography as="strong" variant="number" level={4}>
+              {openFamilies.length}
+            </Typography>
+            <Typography as="span" variant="body" level={4}>
+              семей в поиске
+            </Typography>
           </div>
           <div>
-            <strong>{activeFamilies.length}</strong>
-            <span>моих семей</span>
+            <Typography as="strong" variant="number" level={4}>
+              {activeFamilies.length}
+            </Typography>
+            <Typography as="span" variant="body" level={4}>
+              моих семей
+            </Typography>
           </div>
         </div>
       </section>
 
       <section className="home-section">
         <div className="home-section-heading">
-          <h2 className="home-title">Что нужно?</h2>
+          <Typography as="h2" variant="subtitle" level={2} className="home-title">
+            Что нужно?
+          </Typography>
         </div>
         <div
           className="home-directions"
@@ -138,8 +153,12 @@ export function HomeScreen({
           fullWidth
           onClick={() => onCreate("subscription")}
         >
-          <span>Создать семью</span>
-          <strong>Открыть места и собрать участников</strong>
+          <Typography as="span" variant="label" level={2}>
+            Создать семью
+          </Typography>
+          <Typography as="strong" variant="subtitle" level={2}>
+            Открыть места и собрать участников
+          </Typography>
         </WorldButton>
         <div className="home-quick-actions" data-testid="home-quick-actions">
           <QuickAction
@@ -159,7 +178,9 @@ export function HomeScreen({
 
       <section className="home-section">
         <div className="home-section-heading">
-          <h2 className="home-title">Популярное</h2>
+          <Typography as="h2" variant="subtitle" level={2} className="home-title">
+            Популярное
+          </Typography>
           <WorldButton
             type="button"
             variant="tertiary"
