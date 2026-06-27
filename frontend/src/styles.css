@@ -1719,10 +1719,13 @@ button:active {
   display: grid;
   gap: 10px;
   grid-template-columns: auto minmax(0, 1fr);
+  justify-content: stretch;
+  justify-items: start;
   min-height: 68px;
   padding: 10px 100px 10px 10px;
   position: relative;
   text-align: left;
+  width: 100%;
 }
 
 .direction-card-disabled {
@@ -1788,18 +1791,28 @@ button:active {
   color: #fff;
   display: grid;
   gap: 5px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  justify-items: start;
+  line-height: 1.15;
+  min-height: 78px;
   padding: 14px;
   text-align: left;
+  width: 100%;
 }
 
 .primary-action-card span {
   color: rgba(255, 255, 255, 0.7);
+  display: block;
   font-size: 12px;
+  width: 100%;
 }
 
 .primary-action-card strong {
+  display: block;
   font-size: 16px;
   letter-spacing: -0.03em;
+  width: 100%;
 }
 
 .home-quick-actions {
@@ -1810,7 +1823,10 @@ button:active {
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 22px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  justify-content: stretch;
+  justify-items: start;
   min-height: 78px;
+  width: 100%;
 }
 
 .popular-service-list {
@@ -1820,8 +1836,13 @@ button:active {
 }
 
 .popular-service-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  justify-content: stretch;
+  justify-items: start;
   min-height: 68px;
   padding: 12px 14px;
+  width: 100%;
 }
 
 .popular-service-slots {
