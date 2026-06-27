@@ -41,6 +41,14 @@ const checks = [
     },
   },
   {
+    name: "Background jobs health",
+    module: "subsmarket.ops.jobs_health_smoke",
+    optionalEnv: ["PRODUCTION_INTERNAL_JOB_TOKEN", "INTERNAL_JOB_TOKEN"],
+    env: {
+      PRODUCTION_API_URL: productionApiUrl,
+    },
+  },
+  {
     name: "Sentry smoke",
     module: "subsmarket.ops.sentry_smoke",
     env: {},
@@ -49,6 +57,15 @@ const checks = [
 
 for (const check of checks) {
   console.log(`\n== ${check.name} ==`);
+  if (
+    check.optionalEnv &&
+    !check.optionalEnv.some((name) => Boolean(process.env[name]))
+  ) {
+    console.log(
+      `Skipped: set ${check.optionalEnv.join(" or ")} to run this check.`
+    );
+    continue;
+  }
   const result = spawnSync(
     process.execPath,
     [runPython, "-m", check.module],

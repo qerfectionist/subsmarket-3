@@ -312,6 +312,18 @@ background job status is `attention`. This prevents external heartbeat monitors
 from reporting success while stale notifications or recent failed Telegram
 notifications need attention.
 
+The same protected health check is included in the production smoke command when
+the internal token is available locally:
+
+```powershell
+$env:PRODUCTION_INTERNAL_JOB_TOKEN='<same value as Render INTERNAL_JOB_TOKEN>'
+npm run production:check
+```
+
+If neither `PRODUCTION_INTERNAL_JOB_TOKEN` nor `INTERNAL_JOB_TOKEN` is set, the
+general production check skips only this protected background jobs health check
+and prints the skip explicitly.
+
 GitHub Actions workflow:
 
 ```text

@@ -44,6 +44,7 @@ before `npm run check`.
 Run:
 
 ```powershell
+$env:PRODUCTION_INTERNAL_JOB_TOKEN='<same value as Render INTERNAL_JOB_TOKEN>'
 npm run production:check
 ```
 
@@ -51,8 +52,13 @@ Pass condition:
 
 - API smoke: OK;
 - read-only load smoke: OK;
+- background jobs health: OK;
 - Telegram smoke: OK;
 - Sentry smoke: OK.
+
+If `PRODUCTION_INTERNAL_JOB_TOKEN` is missing, `production:check` explicitly
+skips only the protected background jobs health check. Do not treat that as a
+full pre-launch pass.
 
 Then check:
 
