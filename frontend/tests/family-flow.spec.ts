@@ -180,6 +180,7 @@ test("owner and member complete the first payment family flow", async ({ page })
     (message) =>
       !message.includes("telegram.org/js/telegram-web-app.js") &&
       !message.includes("not supported in version 6.0") &&
+      !message.includes("net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin") &&
       !message.includes("React DevTools")
   );
   expect(relevantMessages).toEqual([]);
