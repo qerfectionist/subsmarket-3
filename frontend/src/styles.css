@@ -1893,3 +1893,181 @@ button:active {
 .create-preview strong {
   color: #fff;
 }
+
+/* Search screen mobile pass */
+.search-overview-card {
+  align-items: center;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.14), transparent 42%),
+    var(--app-surface);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.search-overview-card div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.search-overview-card span {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.search-overview-card strong {
+  color: var(--app-text);
+  font-size: 18px;
+  letter-spacing: -0.04em;
+}
+
+.search-create-button {
+  background: #111827;
+  color: #fff;
+  min-height: 42px;
+  padding: 0 16px;
+}
+
+.search-invite-card {
+  align-items: center;
+  background: var(--app-surface);
+  margin-top: 0;
+}
+
+.invite-toolbar {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.invite-toolbar input {
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  min-width: 0;
+}
+
+.invite-toolbar button {
+  padding: 0 16px;
+}
+
+.search-filter-card {
+  align-items: end;
+  background: var(--app-surface);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.search-filter-card label {
+  color: var(--app-muted);
+  display: grid;
+  font-size: 12px;
+  font-weight: 750;
+  gap: 6px;
+}
+
+.search-filter-card select {
+  min-width: 0;
+}
+
+.search-filter-card button {
+  padding: 0 16px;
+}
+
+.family-card {
+  display: grid;
+  gap: 12px;
+}
+
+.family-card-head {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.family-card-head-copy {
+  min-width: 0;
+}
+
+.family-card-title {
+  font-size: 19px;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  margin: 0;
+}
+
+.family-card .card-topline {
+  justify-content: flex-start;
+  margin: 7px 0 0;
+}
+
+.family-card-offer {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1.25fr 1fr;
+}
+
+.family-card-offer div {
+  background: #f5f7fc;
+  border-radius: 18px;
+  display: grid;
+  gap: 2px;
+  padding: 11px 12px;
+}
+
+.family-card-offer span {
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.family-card-offer strong {
+  color: var(--app-text);
+  font-size: 18px;
+  letter-spacing: -0.04em;
+}
+
+.family-card-subtitle,
+.family-card-rules {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.family-card-rules {
+  background: #f8fafc;
+  border-radius: 16px;
+  color: #475569;
+  padding: 10px 12px;
+}
+
+.family-card .card-footer {
+  background: transparent;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  color: var(--app-muted);
+  font-size: 12px;
+  padding-top: 10px;
+}
+
+.family-card .card-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1.35fr;
+  margin-top: 0;
+}
+
+.family-card .card-actions button {
+  width: 100%;
+}

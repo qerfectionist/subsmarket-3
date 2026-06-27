@@ -42,11 +42,13 @@ export function SearchScreen({
 }) {
   const [inviteCode, setInviteCode] = useState("");
   const normalizedInviteCode = inviteCode.replace(/\D/g, "").slice(0, 8);
+  const visibleFamiliesCount = filteredFamilies.length;
+  const typeTitle = familyTypeLabels[familyType];
 
   return (
     <Panel
-      title={`Найти семью: ${familyTypeLabels[familyType].toLowerCase()}`}
-      description="В поиске показываются только активные семьи со свободными местами."
+      title="Поиск семей"
+      description="Выберите направление, откройте семью или отправьте заявку владельцу."
       action={
         services.length === 0 ? (
           <button type="button" disabled={busy !== null} onClick={onImportCatalog}>
@@ -55,11 +57,30 @@ export function SearchScreen({
         ) : undefined
       }
     >
+      <section className="search-overview-card">
+        <div>
+          <span>
+            {visibleFamiliesCount} семей · {typedServices.length} сервисов
+          </span>
+          <strong>{typeTitle}</strong>
+        </div>
+        <button
+          type="button"
+          className="search-create-button"
+          onClick={() => onCreateFamily(familyType)}
+        >
+          Создать
+        </button>
+      </section>
+
       <FamilyTypeSwitch value={familyType} onChange={onChangeFamilyType} />
-      <div className="invite-code-card">
-        <strong>Есть код приглашения?</strong>
-        <p className="muted">Введите 8 цифр, чтобы открыть семью вне общего поиска.</p>
-        <div className="toolbar">
+
+      <div className="invite-code-card search-invite-card">
+        <div>
+          <strong>Есть код?</strong>
+          <p className="muted">Введите 8 цифр, чтобы открыть конкретную семью.</p>
+        </div>
+        <div className="invite-toolbar">
           <input
             aria-label="Код приглашения"
             data-testid="invite-code-input"
@@ -79,44 +100,35 @@ export function SearchScreen({
           </button>
         </div>
       </div>
-      <div className="toolbar">
-        <select
-          value={familyFilter}
-          onChange={(event) => onChangeFamilyFilter(event.target.value)}
-        >
-          <option value="all">Все сервисы</option>
-          {typedServices.map((item) => (
-            <option key={item.id} value={item.id}>
-              {serviceTitle(item)}
-            </option>
-          ))}
-        </select>
+
+      <div className="search-filter-card">
+        <label>
+          <span>Сервис</span>
+          <select
+            value={familyFilter}
+            onChange={(event) => onChangeFamilyFilter(event.target.value)}
+          >
+            <option value="all">Все сервисы</option>
+            {typedServices.map((item) => (
+              <option key={item.id} value={item.id}>
+                {serviceTitle(item)}
+              </option>
+            ))}
+          </select>
+        </label>
         <button type="button" onClick={onRefresh} disabled={busy !== null}>
           Обновить
         </button>
       </div>
+
       {isLoading && filteredFamilies.length === 0 ? (
         <FamilyListSkeleton count={4} />
       ) : filteredFamilies.length === 0 ? (
-        <EmptyState title="Пока нет доступных семей">
+        <EmptyState title="Пока нет семей">
           <span>
-            В этом разделе пока нет доступных семей. Можно создать первую семью
-            или попробовать другой сервис.
+            По выбранному направлению сейчас нет свободных мест. Можно сменить сервис
+            или открыть свою семью для участников.
           </span>
-          <div className="empty-state-points" aria-label="Почему список может быть пустым">
-            <span>
-              <b>1</b>
-              Заполненные семьи скрываются из поиска автоматически.
-            </span>
-            <span>
-              <b>2</b>
-              После отказа эта семья больше не будет раздражать повторной заявкой.
-            </span>
-            <span>
-              <b>3</b>
-              Можно создать свою семью, если нужного варианта пока нет.
-            </span>
-          </div>
           <button
             type="button"
             data-testid="empty-create-family-button"
