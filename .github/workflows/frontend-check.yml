@@ -48,7 +48,7 @@ jobs:
           backend/.venv/bin/python -m pip install -e "backend/[dev]"
 
       - name: Install frontend dependencies
-        run: npm ci --prefix frontend
+        run: npm ci --prefix frontend --legacy-peer-deps
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
