@@ -1487,3 +1487,409 @@ textarea {
   border-radius: 20px;
   height: 120px;
 }
+
+/* Mobile app redesign pass */
+:root {
+  --app-bg: #f2f5fb;
+  --app-surface: #ffffff;
+  --app-secondary-bg: #f6f8fc;
+  --app-text: #111827;
+  --app-muted: #6b7280;
+  --app-link: #2563eb;
+  --app-accent: #2563eb;
+  --app-accent-text: #ffffff;
+  --app-border: rgba(17, 24, 39, 0.08);
+  --app-shadow: 0 18px 46px rgba(15, 23, 42, 0.08);
+  --app-radius-xl: 28px;
+  --app-radius-lg: 22px;
+  --app-radius-md: 16px;
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% -10%, rgba(37, 99, 235, 0.12), transparent 34%),
+    var(--app-bg);
+}
+
+button {
+  border-radius: 16px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  min-height: 44px;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.app-shell {
+  max-width: 430px;
+  padding:
+    calc(14px + var(--app-content-safe-area-top) + env(safe-area-inset-top))
+    calc(14px + var(--app-content-safe-area-right) + env(safe-area-inset-right))
+    calc(104px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom))
+    calc(14px + var(--app-content-safe-area-left) + env(safe-area-inset-left));
+}
+
+.app-topbar {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 24px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  margin-bottom: 14px;
+  padding: 10px 12px;
+}
+
+.app-user-avatar {
+  background: linear-gradient(135deg, #e0ecff, #f6e8ff);
+  color: #2563eb;
+  height: 40px;
+  width: 40px;
+}
+
+.app-icon-button {
+  background: #f3f6ff;
+  color: #2563eb;
+}
+
+.app-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.app-panel-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 4px 2px 0;
+}
+
+.app-panel-head h1 {
+  font-size: 28px;
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+  margin: 0;
+}
+
+.app-panel-head p {
+  color: var(--app-muted);
+  font-size: 14px;
+  line-height: 1.35;
+  margin: 7px 0 0;
+}
+
+.app-panel-action {
+  flex: 0 0 auto;
+}
+
+.app-panel-action .row-actions {
+  justify-content: flex-end;
+}
+
+.app-panel-body {
+  display: grid;
+  gap: 14px;
+}
+
+.hero-card,
+.app-panel-body > .invite-code-card,
+.family-card,
+.family-workspace,
+.owner-settings-card,
+.detail-section,
+.status-block,
+.empty-state,
+.payment-row,
+.owner-details {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: var(--app-radius-xl);
+  box-shadow: var(--app-shadow);
+}
+
+.home-app {
+  gap: 12px;
+}
+
+.hero-card {
+  display: grid;
+  gap: 8px;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
+}
+
+.hero-card::after {
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.18), transparent 70%);
+  content: "";
+  height: 180px;
+  position: absolute;
+  right: -80px;
+  top: -70px;
+  width: 180px;
+}
+
+.hero-copy,
+.hero-stats {
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  color: var(--app-link);
+  display: block;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.hero-copy h1 {
+  font-size: 22px;
+  letter-spacing: -0.065em;
+  line-height: 1.02;
+  margin: 0;
+}
+
+.hero-copy p {
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 7px 0 0;
+}
+
+.hero-stats {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.hero-stats div {
+  background: #f5f7fc;
+  border-radius: 16px;
+  padding: 8px 10px;
+}
+
+.hero-stats strong {
+  display: block;
+  font-size: 19px;
+  letter-spacing: -0.04em;
+}
+
+.hero-stats span {
+  color: var(--app-muted);
+  display: block;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.home-section {
+  gap: 8px;
+}
+
+.home-title {
+  font-size: 17px;
+  font-weight: 820;
+}
+
+.home-directions {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 8px;
+  overflow: visible;
+}
+
+.direction-card {
+  align-items: center;
+  background: var(--app-surface);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  color: var(--app-text);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 68px;
+  padding: 10px 100px 10px 10px;
+  position: relative;
+  text-align: left;
+}
+
+.direction-card-disabled {
+  opacity: 0.72;
+}
+
+.direction-status {
+  background: #eaf1ff;
+  border-radius: 999px;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 850;
+  padding: 4px 8px;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+.muted-pill {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.direction-icon {
+  border-radius: 16px;
+  height: 44px;
+  width: 44px;
+}
+
+.direction-icon-blue {
+  background: #eaf1ff;
+  color: #2563eb;
+}
+
+.direction-icon-violet {
+  background: #f2eaff;
+  color: #7c3aed;
+}
+
+.direction-icon-amber {
+  background: #fff6dd;
+  color: #d97706;
+}
+
+.direction-copy strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.direction-copy small {
+  font-size: 11px;
+}
+
+.home-actions-strip {
+  display: grid;
+  gap: 10px;
+}
+
+.primary-action-card {
+  align-items: flex-start;
+  background: #111827;
+  border-radius: 22px;
+  color: #fff;
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  text-align: left;
+}
+
+.primary-action-card span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+.primary-action-card strong {
+  font-size: 16px;
+  letter-spacing: -0.03em;
+}
+
+.home-quick-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quick-action-card {
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  min-height: 78px;
+}
+
+.popular-service-list {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: var(--app-shadow);
+}
+
+.popular-service-row {
+  min-height: 68px;
+  padding: 12px 14px;
+}
+
+.popular-service-slots {
+  background: #edfdf5;
+  color: #059669;
+}
+
+.text-button,
+.home-link-button {
+  background: transparent;
+  color: var(--app-link);
+  min-height: 0;
+  padding: 4px 0;
+}
+
+.family-type-switch {
+  background: #e9eef8;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 20px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 6px;
+}
+
+.bottom-nav {
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 26px;
+  box-shadow: 0 20px 52px rgba(15, 23, 42, 0.17);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 390px;
+  padding: 8px;
+}
+
+.nav-item {
+  border-radius: 18px;
+  min-height: 54px;
+}
+
+.nav-item-active {
+  background: #eef4ff;
+  color: #2563eb;
+}
+
+.form-grid,
+.stack,
+.card-grid,
+.payment-list,
+.owner-task-section,
+.owner-task-list {
+  gap: 12px;
+}
+
+.create-preview {
+  background: #111827;
+  border: 0;
+  border-radius: 26px;
+  color: #fff;
+}
+
+.create-preview div {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.create-preview span,
+.create-preview p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.create-preview strong {
+  color: #fff;
+}

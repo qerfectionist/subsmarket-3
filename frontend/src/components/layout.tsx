@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Button, List, Section } from "@telegram-apps/telegram-ui";
+import { Button, List } from "@telegram-apps/telegram-ui";
 
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
@@ -74,17 +74,16 @@ export function Panel({
   children: ReactNode;
 }) {
   return (
-    <Section
-      header={
-        <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <span>{title}</span>
-          {action}
-        </span>
-      }
-      footer={description}
-    >
-      {children}
-    </Section>
+    <section className="app-panel">
+      <div className="app-panel-head">
+        <div>
+          <h1>{title}</h1>
+          <p>{description}</p>
+        </div>
+        {action ? <div className="app-panel-action">{action}</div> : null}
+      </div>
+      <div className="app-panel-body">{children}</div>
+    </section>
   );
 }
 
@@ -117,7 +116,7 @@ export function FamilyTypeSwitch({
   onChange: (value: FamilyType) => void;
 }) {
   return (
-    <List style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: 8 }}>
+    <List className="family-type-switch">
       {(["subscription", "tariff"] as FamilyType[]).map((type) => (
         <Button
           key={type}
@@ -147,7 +146,6 @@ export function BottomNav({
     <nav className="bottom-nav" aria-label="Главная навигация">
       <NavItem active={active === "home"} icon="home" label="Главная" onClick={() => onChange("home")} />
       <NavItem active={active === "search"} icon="search" label="Поиск" onClick={() => onChange("search")} />
-      <NavItem active={active === "create"} icon="create" label="Создать" onClick={() => onChange("create")} />
       <NavItem
         active={active === "mine" || active === "family"}
         icon="families"
@@ -174,7 +172,7 @@ function NavItem({
   badge
 }: {
   active: boolean;
-  icon: "home" | "search" | "create" | "families" | "requests";
+  icon: "home" | "search" | "families" | "requests";
   label: string;
   onClick: () => void;
   badge?: number;
@@ -209,7 +207,7 @@ function BellIcon() {
   );
 }
 
-function NavIcon({ icon }: { icon: "home" | "search" | "create" | "families" | "requests" }) {
+function NavIcon({ icon }: { icon: "home" | "search" | "families" | "requests" }) {
   const common = {
     viewBox: "0 0 24 24",
     "aria-hidden": true,
@@ -231,15 +229,6 @@ function NavIcon({ icon }: { icon: "home" | "search" | "create" | "families" | "
       <svg {...common}>
         <circle cx="10.8" cy="10.8" r="5.9" />
         <path d="m15.2 15.2 4.2 4.2" />
-      </svg>
-    );
-  }
-
-  if (icon === "create") {
-    return (
-      <svg {...common}>
-        <path d="M12 5v14" />
-        <path d="M5 12h14" />
       </svg>
     );
   }

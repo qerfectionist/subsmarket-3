@@ -35,16 +35,18 @@ test("Mini App renders home, search, and family details", async ({ page }) => {
     await expect(page.locator(".detail-grid")).toBeVisible();
   }
 
-  await page.locator(".bottom-nav button").nth(2).click();
+  await page.locator(".bottom-nav button").nth(0).click();
+  await expect(page.getByTestId("home-screen")).toBeVisible();
+  await page.getByTestId("home-create-family-button").click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-share-preview")).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(3).click();
+  await page.locator(".bottom-nav button").nth(2).click();
   await expect(
     page.locator(".family-workspace, .empty-state, [data-testid='family-list-skeleton']")
   ).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(4).click();
+  await page.locator(".bottom-nav button").nth(3).click();
   await expect(
     page.locator("[data-testid='request-card'], .empty-state, [data-testid='panel-skeleton']")
   ).toBeVisible();

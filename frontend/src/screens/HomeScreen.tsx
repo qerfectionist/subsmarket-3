@@ -1,11 +1,13 @@
 import { ServiceLogo } from "../components/branding";
 import type { Family, FamilyRequest, FamilyType, MyFamily } from "../types";
 
-type ServiceDirection = {
-  id: "subscriptions" | "accounts" | "gigabytes";
+type Direction = {
+  id: "family" | "accounts" | "gigabytes";
   title: string;
   subtitle: string;
-  tone: "blue" | "mint" | "violet";
+  status: string;
+  tone: "blue" | "violet" | "amber";
+  enabled: boolean;
   onClick?: () => void;
 };
 
@@ -13,33 +15,29 @@ const popularServices = [
   {
     name: "YouTube Premium",
     slug: "youtube-premium",
-    price: "Доля от 650 ₸",
-    slots: "1–6 мест"
+    price: "от 650 ₸",
+    slots: "1-6 мест"
   },
   {
     name: "Spotify Premium",
     slug: "spotify-family",
-    price: "Доля от 590 ₸",
-    slots: "1–6 мест"
+    price: "от 590 ₸",
+    slots: "1-6 мест"
   },
   {
     name: "Apple One",
     slug: "apple-one",
-    price: "Доля от 1 290 ₸",
-    slots: "1–6 мест"
-  },
-  {
-    name: "Duolingo Super",
-    slug: "duolingo-super",
-    price: "Доля от 490 ₸",
-    slots: "1–3 места"
+    price: "от 1 290 ₸",
+    slots: "1-6 мест"
   }
 ];
 
 export function HomeScreen({
+  families,
   myFamilies,
   myRequests,
   onSearch,
+  onCreate,
   onMine,
   onRequests
 }: {
@@ -53,61 +51,99 @@ export function HomeScreen({
 }) {
   const activeRequests = myRequests.filter((request) => request.status === "pending");
   const activeFamilies = myFamilies.filter((item) =>
-    ["active", "full", "closing"].includes(item.membership.status)
+    ["active", "full", "closing", "awaiting_access", "awaiting_confirmation"].includes(
+      item.membership.status
+    )
   );
+  const openFamilies = families.filter((family) => family.free_slots > 0);
 
-  const directions: ServiceDirection[] = [
+  const directions: Direction[] = [
     {
-      id: "subscriptions",
-      title: "Семейные подписки",
-      subtitle: "YouTube, Spotify, Duolingo",
+      id: "family",
+      title: "Подписки и тарифы",
+      subtitle: "YouTube, Spotify, операторы",
+      status: "Работает",
       tone: "blue",
+      enabled: true,
       onClick: () => onSearch("subscription")
     },
     {
       id: "accounts",
       title: "Аккаунты и доступы",
-      subtitle: "AI, обучение, сервисы",
-      tone: "mint"
+      subtitle: "AI-сервисы, обучение, цифровые продукты",
+      status: "Скоро",
+      tone: "violet",
+      enabled: false
     },
     {
       id: "gigabytes",
       title: "Гигабайты / интернет",
-      subtitle: "мобильный интернет",
-      tone: "violet"
+      subtitle: "Витрина мобильного интернета",
+      status: "Позже",
+      tone: "amber",
+      enabled: false
     }
   ];
 
   return (
     <div className="home-app" data-testid="home-screen">
+      <section className="hero-card">
+        <div className="hero-copy">
+          <span className="eyebrow">SubsMarket</span>
+          <h1>Семьи для подписок и тарифов</h1>
+          <p>
+            Создавайте семью, принимайте заявки и контролируйте оплаты в одном
+            Mini App.
+          </p>
+        </div>
+        <div className="hero-stats" aria-label="Сводка">
+          <div>
+            <strong>{openFamilies.length}</strong>
+            <span>семей в поиске</span>
+          </div>
+          <div>
+            <strong>{activeFamilies.length}</strong>
+            <span>моих семей</span>
+          </div>
+        </div>
+      </section>
+
       <section className="home-section">
-        <h2 className="home-title">Что ищете?</h2>
+        <div className="home-section-heading">
+          <h2 className="home-title">Что нужно?</h2>
+        </div>
         <div
           className="home-directions"
           aria-label="Разделы SubsMarket"
           data-testid="home-directions"
         >
           {directions.map((direction) => (
-            <DirectionRow key={direction.id} direction={direction} />
+            <DirectionCard key={direction.id} direction={direction} />
           ))}
         </div>
       </section>
 
-      <section className="home-section">
-        <h3 className="home-section-title">Быстрые действия</h3>
+      <section className="home-actions-strip" aria-label="Быстрые действия">
+        <button
+          type="button"
+          className="primary-action-card"
+          data-testid="home-create-family-button"
+          onClick={() => onCreate("subscription")}
+        >
+          <span>Создать семью</span>
+          <strong>Открыть места и собрать участников</strong>
+        </button>
         <div className="home-quick-actions" data-testid="home-quick-actions">
           <QuickAction
             title="Мои семьи"
             subtitle={activeFamilies.length > 0 ? "Активные" : "Пока пусто"}
             count={activeFamilies.length}
-            icon="families"
             onClick={onMine}
           />
           <QuickAction
-            title="Мои заявки"
-            subtitle={activeRequests.length > 0 ? "Ожидают ответа" : "Нет активных"}
+            title="Заявки"
+            subtitle={activeRequests.length > 0 ? "Ждут ответа" : "Нет активных"}
             count={activeRequests.length}
-            icon="requests"
             onClick={onRequests}
           />
         </div>
@@ -115,13 +151,13 @@ export function HomeScreen({
 
       <section className="home-section">
         <div className="home-section-heading">
-          <h3 className="home-section-title">Популярные сервисы</h3>
+          <h2 className="home-title">Популярное</h2>
           <button
             type="button"
-            className="home-link-button"
+            className="text-button"
             onClick={() => onSearch("subscription")}
           >
-            Смотреть все
+            Все семьи
           </button>
         </div>
         <div className="popular-service-list" data-testid="home-popular-services">
@@ -140,12 +176,9 @@ export function HomeScreen({
               />
               <span className="popular-service-copy">
                 <strong>{service.name}</strong>
-                <small>{service.price}</small>
+                <small>{service.price} за место</small>
               </span>
               <span className="popular-service-slots">{service.slots}</span>
-              <span className="home-row-arrow" aria-hidden>
-                ›
-              </span>
             </button>
           ))}
         </div>
@@ -154,7 +187,7 @@ export function HomeScreen({
   );
 }
 
-function DirectionRow({ direction }: { direction: ServiceDirection }) {
+function DirectionCard({ direction }: { direction: Direction }) {
   const content = (
     <>
       <span className={`direction-icon direction-icon-${direction.tone}`} aria-hidden>
@@ -164,16 +197,16 @@ function DirectionRow({ direction }: { direction: ServiceDirection }) {
         <strong>{direction.title}</strong>
         <small>{direction.subtitle}</small>
       </span>
-      <span className="home-row-arrow" aria-hidden>
-        ›
+      <span className={direction.enabled ? "direction-status" : "direction-status muted-pill"}>
+        {direction.status}
       </span>
     </>
   );
 
-  if (!direction.onClick) {
+  if (!direction.enabled) {
     return (
       <div
-        className="direction-row"
+        className="direction-card direction-card-disabled"
         role="button"
         tabIndex={0}
         aria-disabled="true"
@@ -187,7 +220,7 @@ function DirectionRow({ direction }: { direction: ServiceDirection }) {
   return (
     <button
       type="button"
-      className="direction-row"
+      className="direction-card"
       data-testid="home-direction-row"
       onClick={direction.onClick}
     >
@@ -200,13 +233,11 @@ function QuickAction({
   title,
   subtitle,
   count,
-  icon,
   onClick
 }: {
   title: string;
   subtitle: string;
   count: number;
-  icon: "families" | "requests";
   onClick: () => void;
 }) {
   return (
@@ -216,9 +247,6 @@ function QuickAction({
       data-testid="home-quick-action"
       onClick={onClick}
     >
-      <span className={`quick-action-icon quick-action-icon-${icon}`} aria-hidden>
-        <QuickActionGlyph icon={icon} />
-      </span>
       <span className="quick-action-copy">
         <strong>{title}</strong>
         <small>{subtitle}</small>
@@ -228,57 +256,33 @@ function QuickAction({
   );
 }
 
-function DirectionGlyph({ id }: { id: ServiceDirection["id"] }) {
-  if (id === "subscriptions") {
+function DirectionGlyph({ id }: { id: Direction["id"] }) {
+  if (id === "family") {
     return (
       <svg viewBox="0 0 24 24" className="home-glyph">
-        <circle cx="9" cy="9" r="3.1" />
-        <circle cx="16.5" cy="9.8" r="2.5" />
-        <path d="M3.9 18.7c.7-3.2 2.4-5 5.1-5s4.5 1.8 5.2 5" />
-        <path d="M13.8 15c2.3.1 3.8 1.4 4.4 3.7" />
+        <circle cx="9" cy="9" r="3" />
+        <circle cx="16.4" cy="9.8" r="2.5" />
+        <path d="M4 19c.7-3.2 2.4-5 5-5s4.3 1.8 5 5" />
+        <path d="M13.6 15c2.4.1 3.9 1.5 4.5 4" />
       </svg>
     );
   }
-
   if (id === "accounts") {
     return (
       <svg viewBox="0 0 24 24" className="home-glyph">
-        <circle cx="8.2" cy="15.8" r="3.2" />
-        <path d="M10.6 13.4 18 6" />
-        <path d="m15.6 8.4 2 2" />
-        <path d="m17.5 6.5 1.7 1.7" />
+        <circle cx="8" cy="16" r="3" />
+        <path d="M10.4 13.6 18 6" />
+        <path d="m15.8 8.2 2 2" />
+        <path d="m17.6 6.4 1.8 1.8" />
       </svg>
     );
   }
-
   return (
     <svg viewBox="0 0 24 24" className="home-glyph">
       <circle cx="12" cy="12" r="8" />
       <path d="M4.5 12h15" />
-      <path d="M12 4.2c2 2.2 3 4.8 3 7.8s-1 5.6-3 7.8" />
-      <path d="M12 4.2c-2 2.2-3 4.8-3 7.8s1 5.6 3 7.8" />
-    </svg>
-  );
-}
-
-function QuickActionGlyph({ icon }: { icon: "families" | "requests" }) {
-  if (icon === "families") {
-    return (
-      <svg viewBox="0 0 24 24" className="home-glyph">
-        <circle cx="8.5" cy="8.8" r="2.7" />
-        <circle cx="16.2" cy="9.5" r="2.2" />
-        <path d="M3.9 18.8c.7-3.1 2.3-4.8 4.7-4.8s4 1.7 4.7 4.8" />
-        <path d="M13.6 15.1c2.1.2 3.5 1.5 4.1 3.7" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 24 24" className="home-glyph">
-      <path d="M7 4.7h8.1l2.9 2.9v11.7H7z" />
-      <path d="M15 5v3h3" />
-      <path d="M9.7 12h5.4" />
-      <path d="M9.7 15.2h3.8" />
+      <path d="M12 4.3c2 2.2 3 4.8 3 7.7s-1 5.5-3 7.7" />
+      <path d="M12 4.3c-2 2.2-3 4.8-3 7.7s1 5.5 3 7.7" />
     </svg>
   );
 }
