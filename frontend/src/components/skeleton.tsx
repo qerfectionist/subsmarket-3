@@ -20,6 +20,24 @@ export function FamilyListSkeleton({ count = 3 }: { count?: number }) {
   );
 }
 
+export function CellListSkeleton({ count = 4 }: { count?: number }) {
+  return (
+    <div className="cell-list-skeleton" aria-hidden="true" data-testid="cell-list-skeleton">
+      {Array.from({ length: count }, (_, index) => (
+        <div key={index} className="cell-list-skeleton-row">
+          <div className="skeleton skeleton-avatar" />
+          <div className="cell-list-skeleton-copy">
+            <div className="skeleton skeleton-line skeleton-line-lg" />
+            <div className="skeleton skeleton-line skeleton-line-sm" />
+            <div className="skeleton skeleton-line" />
+          </div>
+          <div className="skeleton skeleton-chevron" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function PanelSkeleton({ lines = 4 }: { lines?: number }) {
   return (
     <div className="panel" aria-hidden="true" data-testid="panel-skeleton">

@@ -17,10 +17,12 @@ PostgreSQL provider for the current setup, but only through `DATABASE_URL`.
 Current production endpoints:
 
 ```text
-Mini App: https://subsmarket-3.vercel.app
-Backend: https://subsmarket-api.onrender.com
-Health: https://subsmarket-api.onrender.com/health
-Readiness: https://subsmarket-api.onrender.com/ready
+Mini App: https://subsmarket.xyz
+Mini App www: https://www.subsmarket.xyz
+Backend: https://api.subsmarket.xyz
+Backend fallback: https://subsmarket-api.onrender.com
+Health: https://api.subsmarket.xyz/health
+Readiness: https://api.subsmarket.xyz/ready
 ```
 
 The current Render instance uses the Free plan. It can sleep after inactivity,
@@ -107,11 +109,11 @@ python -m subsmarket.bot.set_webhook
 The production webhook currently points to:
 
 ```text
-https://subsmarket-api.onrender.com/api/telegram/webhook
+https://api.subsmarket.xyz/api/telegram/webhook
 ```
 
 The bot's Main Mini App URL in BotFather must also point to
-`https://subsmarket-3.vercel.app`. This setting is separate from the webhook
+`https://subsmarket.xyz`. This setting is separate from the webhook
 and may override the default chat menu button configured through Bot API.
 
 Current bot behavior is intentionally thin:
@@ -298,6 +300,18 @@ notifications from the last 24 hours, due Family Engine backlog counts, and up
 to 10 recent notification failure samples. It does not include payment
 requisites, Telegram message text, or user profiles.
 
+For heartbeat monitoring, use the strict health endpoint:
+
+```text
+GET /api/internal/jobs/health
+X-Internal-Job-Token: <INTERNAL_JOB_TOKEN>
+```
+
+It returns the same payload as `/status`, but responds with HTTP 503 when the
+background job status is `attention`. This prevents external heartbeat monitors
+from reporting success while stale notifications or recent failed Telegram
+notifications need attention.
+
 GitHub Actions workflow:
 
 ```text
@@ -439,22 +453,29 @@ After deployment, run the credential-free production smoke check:
 
 ```powershell
 $env:PRODUCTION_API_URL='https://<backend-domain>'
-cd backend
-.\.venv\Scripts\python -m subsmarket.ops.production_smoke
+npm run production:smoke
 ```
 
 It verifies health, database readiness, required OpenAPI routes, and that the
 development reset endpoint is not exposed.
 
+For the current production domain, the default all-in-one check is:
+
+```powershell
+npm run production:check
+```
+
+It runs API readiness, a small read-only load smoke, Telegram configuration
+smoke, and Sentry smoke.
+
 For a read-only parallel load smoke:
 
 ```powershell
-$env:LOAD_SMOKE_BASE_URL='https://subsmarket-api.onrender.com'
+$env:LOAD_SMOKE_BASE_URL='https://api.subsmarket.xyz'
 $env:LOAD_SMOKE_REQUESTS='100'
 $env:LOAD_SMOKE_CONCURRENCY='10'
 $env:LOAD_SMOKE_WARMUP_REQUESTS='5'
-cd backend
-.\.venv\Scripts\python -m subsmarket.ops.load_smoke
+npm run production:load-smoke
 ```
 
 It calls only `/health`, `/ready`, and the public catalog, then reports error
@@ -498,10 +519,9 @@ After setting the Telegram webhook and Main Mini App URL, run the read-only
 Telegram production smoke check:
 
 ```powershell
-$env:TELEGRAM_WEBHOOK_URL='https://subsmarket-api.onrender.com/api/telegram/webhook'
-$env:TELEGRAM_MINI_APP_URL='https://subsmarket-3.vercel.app'
-cd backend
-.\.venv\Scripts\python -m subsmarket.ops.telegram_production_smoke
+$env:TELEGRAM_WEBHOOK_URL='https://api.subsmarket.xyz/api/telegram/webhook'
+$env:TELEGRAM_MINI_APP_URL='https://subsmarket.xyz'
+npm run telegram:smoke
 ```
 
 It verifies bot identity, webhook URL and delivery state, accepted update
@@ -513,7 +533,7 @@ The backend accepts both `postgresql://...` and `postgresql+psycopg://...`.
 Frontend:
 
 ```text
-VITE_API_BASE_URL=https://subsmarket-api.onrender.com
+VITE_API_BASE_URL=https://api.subsmarket.xyz
 ```
 
 ## Scaling path

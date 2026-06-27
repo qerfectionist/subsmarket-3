@@ -11,6 +11,7 @@ type TelegramThemeParams = {
   secondary_bg_color?: string;
   section_bg_color?: string;
   section_header_text_color?: string;
+  section_separator_color?: string;
   subtitle_text_color?: string;
   text_color?: string;
 };
@@ -152,23 +153,32 @@ function applyTelegramTheme() {
   const app = webApp();
   const theme = app?.themeParams ?? {};
 
-  setCssVar("--app-bg", theme.bg_color ?? "#eef3fb");
+  setCssVar("--app-bg", theme.bg_color ?? "#eef1f6");
   setCssVar("--app-surface", theme.section_bg_color ?? "#ffffff");
-  setCssVar("--app-secondary-bg", theme.secondary_bg_color ?? "#f7f9fd");
+  setCssVar("--app-secondary-bg", theme.secondary_bg_color ?? "#e4e9f2");
+  setCssVar("--app-header-bg", theme.header_bg_color ?? theme.secondary_bg_color ?? "#f7f9fd");
   setCssVar("--app-text", theme.text_color ?? "#111827");
   setCssVar("--app-muted", theme.hint_color ?? "#667085");
-  setCssVar("--app-link", theme.link_color ?? "#2f6fed");
-  setCssVar("--app-accent", theme.button_color ?? "#2f6fed");
-  setCssVar("--app-accent-text", theme.button_text_color ?? "#ffffff");
+  setCssVar("--app-subtitle", theme.subtitle_text_color ?? theme.hint_color ?? "#667085");
+  setCssVar("--app-section-header", theme.section_header_text_color ?? theme.text_color ?? "#111827");
+  setCssVar("--app-link", theme.link_color ?? "#2481cc");
+  setCssVar("--app-accent", theme.button_color ?? "#2481cc");
+  setCssVar("--app-accent-text", theme.accent_text_color ?? theme.button_text_color ?? "#ffffff");
   setCssVar("--app-danger", theme.destructive_text_color ?? "#b42318");
   setCssVar("--app-bottom-bar-bg", theme.bottom_bar_bg_color ?? "#ffffff");
+  setCssVar(
+    "--app-border",
+    theme.section_separator_color ?? "rgba(17, 24, 39, 0.08)"
+  );
 
   const root = document.documentElement;
   root.classList.remove("tma-light", "tma-dark");
   root.classList.add(app?.colorScheme === "dark" ? "tma-dark" : "tma-light");
 
   if (supportsWebAppVersion("6.1")) {
-    app?.setHeaderColor?.(theme.secondary_bg_color ?? theme.bg_color ?? "#eef3fb");
+    app?.setHeaderColor?.(
+      theme.header_bg_color ?? theme.secondary_bg_color ?? theme.bg_color ?? "#eef3fb"
+    );
     app?.setBackgroundColor?.(theme.bg_color ?? "#eef3fb");
   }
   if (supportsWebAppVersion("7.10")) {

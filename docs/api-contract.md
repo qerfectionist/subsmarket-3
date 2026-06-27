@@ -717,3 +717,17 @@ Returns background health counters:
 `status` is `ok` when there are no warnings and `attention` when the backend
 sees stale notifications, recent notification failures, or backlog that exceeds
 one configured processing capacity.
+
+### GET /api/internal/jobs/health
+
+Protected by `X-Internal-Job-Token`.
+
+Returns the same payload as `/api/internal/jobs/status`.
+
+HTTP status:
+
+- `200` when `status=ok`;
+- `503` when `status=attention`.
+
+Use this endpoint for heartbeat checks. Use `/status` for dashboards and manual
+inspection.

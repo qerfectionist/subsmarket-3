@@ -32,6 +32,12 @@ jobs:
             --header "X-Internal-Job-Token: ${{ secrets.INTERNAL_JOB_TOKEN }}" \
             "${{ secrets.SUBSMARKET_API_BASE_URL }}/api/internal/jobs/status"
 
+      - name: Check jobs health
+        run: |
+          curl --fail --show-error --silent --max-time 30 \
+            --header "X-Internal-Job-Token: ${{ secrets.INTERNAL_JOB_TOKEN }}" \
+            "${{ secrets.SUBSMARKET_API_BASE_URL }}/api/internal/jobs/health"
+
       - name: Report successful jobs heartbeat
         if: ${{ success() }}
         run: |

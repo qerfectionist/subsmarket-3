@@ -58,7 +58,14 @@ def run_request_with_headers(
 ) -> RequestResult:
     started = time.perf_counter()
     try:
-        request = Request(f"{base_url.rstrip('/')}{path}", headers=headers)
+        request = Request(
+            f"{base_url.rstrip('/')}{path}",
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "SubsMarket load smoke",
+                **headers,
+            },
+        )
         with urlopen(
             request,
             timeout=timeout_seconds,

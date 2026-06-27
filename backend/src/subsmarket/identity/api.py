@@ -21,10 +21,15 @@ def _me_response(db: Session, auth_db: Session, telegram_user) -> MeResponse:
         )
 
     user = upsert_user(auth_db, telegram_user)
-    fresh = db.get(User, user.id)
+    user_id = user.id
+    # Avoid holding the auth session's connection while the response session
+    # needs a connection from the same pool.
+    if auth_db is not db:
+        auth_db.close()
+    fresh = db.get(User, user_id)
     if fresh is None:
         db.expire_all()
-        fresh = db.get(User, user.id)
+        fresh = db.get(User, user_id)
     return MeResponse(ok=True, user=fresh)
 
 

@@ -45,8 +45,7 @@ Tasks:
   - cancel before access;
   - confirm payment;
   - mark payment not received;
-  - schedule member removal;
-  - revoke removal;
+  - remove a member immediately with a required reason;
 - keep member usernames visible only where the user has the right to see them;
 - keep family terminology in all visible copy.
 

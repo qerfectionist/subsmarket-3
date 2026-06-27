@@ -25,7 +25,6 @@ from subsmarket.families.schemas import (
     PrepaymentPeriodsCreate,
 )
 from subsmarket.families.service import (
-    acknowledge_member_removal,
     approve_join_request,
     calculate_member_share,
     cancel_join_request,
@@ -57,8 +56,6 @@ from subsmarket.families.service import (
     remind_access_confirmation,
     remove_member,
     report_payment_paid,
-    request_member_removal_cancellation,
-    revoke_member_removal,
     to_family_out,
     to_family_request_out,
     update_family_payment_day,
@@ -1236,7 +1233,7 @@ def test_family_closing_blocks_new_member_removal(
     assert exc.value.detail == "FAMILY_NOT_MUTABLE"
 
 
-def test_member_removal_is_deferred_and_idempotent(
+def test_member_removal_is_immediate_and_idempotent(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 110)
@@ -1269,23 +1266,23 @@ def test_member_removal_is_deferred_and_idempotent(
     )
 
     db.refresh(family)
-    assert removed_member.status == "removal_pending"
+    assert removed_member.status == "removed"
     assert removed_member.removal_reason == "no_response"
-    assert removed_member.removed_at is None
-    assert removed_member.removal_scheduled_at is not None
+    assert removed_member.removed_at is not None
+    assert removed_member.removal_scheduled_at is None
     assert repeated_removal.id == removed_member.id
-    assert family.active_members_count == 2
+    assert family.active_members_count == 1
     audit_log = db.scalar(
         select(FamilyAuditLog).where(
             FamilyAuditLog.family_id == family.id,
-            FamilyAuditLog.action == "family_member_removal_scheduled",
+            FamilyAuditLog.action == "family_member_removed_by_owner",
         )
     )
     assert audit_log is not None
     assert audit_log.details["reason"] == "no_response"
 
 
-def test_member_removal_does_not_cancel_future_payments_immediately(
+def test_member_removal_cancels_future_payments_immediately(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 112)
@@ -1298,10 +1295,11 @@ def test_member_removal_does_not_cancel_future_payments_immediately(
     db.refresh(member)
     db.refresh(family)
     db.refresh(scheduled_payment)
-    assert member.status == "removal_pending"
+    assert member.status == "removed"
     assert member.removal_reason == "no_payment"
-    assert family.active_members_count == 2
-    assert scheduled_payment.status == "scheduled"
+    assert family.active_members_count == 1
+    assert scheduled_payment.status == "cancelled"
+    assert scheduled_payment.cancel_reason == "member_removed"
 
 
 def test_member_removal_rejects_unknown_reason(
@@ -1316,26 +1314,3 @@ def test_member_removal_rejects_unknown_reason(
 
     assert exc.value.status_code == 422
     assert exc.value.detail == "INVALID_MEMBER_REMOVAL_REASON"
-
-
-def test_removal_actions_are_available_after_deferred_removal(
-    db: Session, subscription_service: FamilyService
-) -> None:
-    owner = make_user(db, 116)
-    candidate = make_user(db, 117)
-    family = make_family(db, owner, subscription_service)
-    member, _ = make_active_member(db, owner, candidate, family)
-    remove_member(db, owner, member.id, reason="mutual_agreement")
-
-    db.refresh(member)
-    assert member.status == "removal_pending"
-
-    acknowledged = acknowledge_member_removal(db, candidate, member.id)
-    assert acknowledged.removal_acknowledged_at is not None
-
-    cancel_requested = request_member_removal_cancellation(db, candidate, member.id)
-    assert cancel_requested.removal_cancel_requested_at is not None
-
-    revoked = revoke_member_removal(db, owner, member.id)
-    assert revoked.status == "active"
-    assert revoked.removal_scheduled_at is None

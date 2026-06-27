@@ -30,9 +30,10 @@ def test_production_config_checker_accepts_required_env(
     monkeypatch.setattr(settings, "telegram_webhook_secret", "secret")
     monkeypatch.setattr(settings, "payment_requisite_secret", "prod-secret")
     monkeypatch.setattr(settings, "internal_job_token", "job-secret")
-    monkeypatch.setattr(settings, "rate_limit_redis_url", None)
-    monkeypatch.setattr(settings, "sentry_dsn", None)
+    monkeypatch.setattr(settings, "rate_limit_redis_url", "rediss://redis.example")
+    monkeypatch.setattr(settings, "sentry_dsn", "https://sentry.example/1")
     monkeypatch.setattr(settings, "sentry_traces_sample_rate", 0.0)
+    monkeypatch.setattr(settings, "sentry_send_default_pii", False)
     monkeypatch.setattr(
         settings,
         "cors_allowed_origins",
@@ -102,6 +103,9 @@ def test_production_config_checker_rejects_excessive_db_connection_budget(
     monkeypatch.setattr(settings, "telegram_webhook_secret", "secret")
     monkeypatch.setattr(settings, "payment_requisite_secret", "prod-secret")
     monkeypatch.setattr(settings, "internal_job_token", "job-secret")
+    monkeypatch.setattr(settings, "rate_limit_redis_url", "rediss://redis.example")
+    monkeypatch.setattr(settings, "sentry_dsn", "https://sentry.example/1")
+    monkeypatch.setattr(settings, "sentry_send_default_pii", False)
     monkeypatch.setattr(
         settings,
         "cors_allowed_origins",
@@ -160,6 +164,18 @@ def test_production_config_checker_rejects_invalid_optional_redis_url(
     )
 
 
+def test_production_config_checker_requires_redis_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "rate_limit_redis_url", None)
+
+    checks = check_production_config()
+    failed = {check.key: check.problem for check in checks if not check.ok}
+
+    assert failed["RATE_LIMIT_REDIS_URL"] == "missing"
+
+
 def test_production_config_checker_rejects_invalid_optional_sentry_dsn(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -169,6 +185,30 @@ def test_production_config_checker_rejects_invalid_optional_sentry_dsn(
     failed = {check.key: check.problem for check in checks if not check.ok}
 
     assert failed["SENTRY_DSN"] == "must start with http:// or https://"
+
+
+def test_production_config_checker_requires_sentry_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "sentry_dsn", None)
+
+    checks = check_production_config()
+    failed = {check.key: check.problem for check in checks if not check.ok}
+
+    assert failed["SENTRY_DSN"] == "missing"
+
+
+def test_production_config_checker_rejects_sentry_pii_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "sentry_send_default_pii", True)
+
+    checks = check_production_config()
+    failed = {check.key: check.problem for check in checks if not check.ok}
+
+    assert failed["SENTRY_SEND_DEFAULT_PII"] == "must be false in production"
 
 
 def test_production_config_checker_rejects_invalid_sentry_sample_rate(

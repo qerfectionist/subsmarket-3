@@ -205,6 +205,7 @@ def run_write_load(
                     ),
                     idempotency_key=f"load-family-{run_id}-{owner_id}",
                 )
+                db.commit()
                 return family.id
 
         create_items = list(zip(owner_ids, candidate_ids, strict=True))
@@ -227,6 +228,7 @@ def run_write_load(
                     family_id,
                     idempotency_key=f"load-request-{run_id}-{candidate_id}",
                 )
+                db.commit()
                 return request.id
 
         request_items = list(zip(candidate_ids, family_ids, strict=True))
@@ -244,6 +246,7 @@ def run_write_load(
                 if owner is None:
                     raise RuntimeError("Load owner disappeared")
                 request = approve_join_request(db, owner, request_id)
+                db.commit()
                 return request.id
 
         approve_items = list(zip(owner_ids, request_ids, strict=True))

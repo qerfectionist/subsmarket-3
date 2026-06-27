@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from subsmarket.core.config import settings
@@ -48,3 +50,18 @@ def get_internal_jobs_status(
     db: Session = Depends(get_db),
 ) -> JobsStatusResult:
     return get_jobs_status(db)
+
+
+@router.get(
+    "/health",
+    response_model=JobsStatusResult,
+    responses={503: {"model": JobsStatusResult}},
+)
+def get_internal_jobs_health(
+    _: None = Depends(require_internal_job_token),
+    db: Session = Depends(get_db),
+) -> JobsStatusResult | JSONResponse:
+    status = get_jobs_status(db)
+    if status.status == "ok":
+        return status
+    return JSONResponse(status_code=503, content=jsonable_encoder(status))

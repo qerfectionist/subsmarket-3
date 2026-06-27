@@ -268,13 +268,18 @@ def _request_key(request: Request, rule: RateLimitRule) -> str:
 
 def _telegram_user_id(request: Request) -> str | None:
     init_data = request.headers.get("x-telegram-init-data")
-    if not init_data:
-        return None
-    try:
-        user_json = parse_qs(init_data, keep_blank_values=True).get("user", [""])[0]
-        telegram_user_id = json.loads(user_json).get("id")
-    except (AttributeError, json.JSONDecodeError, TypeError, ValueError):
-        return None
-    if not isinstance(telegram_user_id, int) or telegram_user_id <= 0:
-        return None
-    return str(telegram_user_id)
+    if init_data:
+        try:
+            user_json = parse_qs(init_data, keep_blank_values=True).get("user", [""])[0]
+            telegram_user_id = json.loads(user_json).get("id")
+        except (AttributeError, json.JSONDecodeError, TypeError, ValueError):
+            return None
+        if isinstance(telegram_user_id, int) and telegram_user_id > 0:
+            return str(telegram_user_id)
+
+    # The development auth adapter uses this header instead of signed initData.
+    # It is deliberately ignored outside development.
+    dev_user_id = request.headers.get("x-dev-telegram-user-id")
+    if settings.is_development and dev_user_id and dev_user_id.isdecimal():
+        return dev_user_id if int(dev_user_id) > 0 else None
+    return None

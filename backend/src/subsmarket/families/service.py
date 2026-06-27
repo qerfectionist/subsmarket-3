@@ -34,15 +34,12 @@ from subsmarket.families.invites import (  # noqa: F401
 )
 from subsmarket.families.members import (  # noqa: F401
     acknowledge_family_closing,
-    acknowledge_member_removal,
     cancel_member_before_access,
     close_family,
     leave_family,
     mark_access_provided,
     remind_access_confirmation,
     remove_member,
-    request_member_removal_cancellation,
-    revoke_member_removal,
 )
 from subsmarket.families.payments import (  # noqa: F401
     cancel_payment_report,

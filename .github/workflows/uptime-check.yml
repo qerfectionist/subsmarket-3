@@ -1,0 +1,56 @@
+name: SubsMarket uptime check
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  uptime-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      API_BASE_URL: ${{ vars.SUBSMARKET_API_BASE_URL || 'https://api.subsmarket.xyz' }}
+    steps:
+      - name: Check health and readiness
+        run: |
+          set -euo pipefail
+
+          curl --fail --show-error --silent --max-time 30 \
+            --header "Accept: application/json" \
+            --user-agent "SubsMarket GitHub uptime check" \
+            "$API_BASE_URL/health" > health.json
+
+          curl --fail --show-error --silent --max-time 30 \
+            --header "Accept: application/json" \
+            --user-agent "SubsMarket GitHub uptime check" \
+            "$API_BASE_URL/ready" > ready.json
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          health = json.loads(Path("health.json").read_text())
+          ready = json.loads(Path("ready.json").read_text())
+
+          problems = []
+          if health.get("status") != "ok":
+              problems.append("health status is not ok")
+          if ready.get("database") != "ok":
+              problems.append("database readiness is not ok")
+
+          print(
+              "health={health_status} database={database_status} "
+              "rate_limit={rate_limit_status}".format(
+                  health_status=health.get("status"),
+                  database_status=ready.get("database"),
+                  rate_limit_status=ready.get("rate_limit", "unknown"),
+              )
+          )
+
+          if problems:
+              raise SystemExit("; ".join(problems))
+          PY

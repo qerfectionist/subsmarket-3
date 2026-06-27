@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 from typing import Any
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 REQUIRED_PATHS = {
     "/health",
@@ -19,7 +19,14 @@ FORBIDDEN_PATHS = {"/api/dev/reset-demo-data"}
 
 
 def fetch_json(base_url: str, path: str) -> dict[str, Any]:
-    with urlopen(f"{base_url.rstrip('/')}{path}", timeout=15) as response:
+    request = Request(
+        f"{base_url.rstrip('/')}{path}",
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "SubsMarket production smoke",
+        },
+    )
+    with urlopen(request, timeout=15) as response:
         if response.status != 200:
             raise RuntimeError(f"{path} returned HTTP {response.status}")
         return json.loads(response.read().decode("utf-8"))

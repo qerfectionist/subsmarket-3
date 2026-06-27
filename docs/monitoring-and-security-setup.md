@@ -24,15 +24,17 @@ SHAs.
 
 Workflow: `.github/workflows/subsmarket-jobs.yml`.
 
-After due jobs, Telegram dispatch, and job-status checks all succeed, the
-workflow calls the URL stored in the GitHub secret:
+After due jobs, Telegram dispatch, `/api/internal/jobs/status`, and the strict
+`/api/internal/jobs/health` check all succeed, the workflow calls the URL stored
+in the GitHub secret:
 
 ```text
 JOBS_HEARTBEAT_URL
 ```
 
-If any earlier step fails, no heartbeat is sent and the monitor eventually
-alerts. The URL is optional locally and must never be committed.
+If any earlier step fails, or if background jobs report `attention`, no
+heartbeat is sent and the monitor eventually alerts. The URL is optional locally
+and must never be committed.
 
 Recommended monitor settings:
 
@@ -43,10 +45,28 @@ Recommended monitor settings:
 The job runs every 5 minutes, but GitHub scheduled workflows can be delayed, so
 a strict five-minute heartbeat would produce false alarms.
 
+### GitHub uptime check
+
+Workflow: `.github/workflows/uptime-check.yml`.
+
+This is a no-secret fallback monitor. It runs every 10 minutes and checks:
+
+- `https://api.subsmarket.xyz/health`;
+- `https://api.subsmarket.xyz/ready`.
+
+It fails if the API is down or database readiness is not `ok`. It prints the
+current rate-limit backend (`local`, `redis`, or `fallback`) for visibility but
+does not fail on `local`, because the current test deployment uses one backend
+instance.
+
+GitHub scheduled workflows can be delayed, so this workflow is useful as a
+basic safety net. It should not replace a real external uptime monitor with
+Telegram/email alerts.
+
 Create a separate uptime monitor for:
 
 ```text
-https://subsmarket-api.onrender.com/health
+https://api.subsmarket.xyz/health
 ```
 
 Recommended interval: 3 minutes. Add `/ready` as a second monitor after Render
@@ -99,6 +119,37 @@ npm run sentry:smoke
 The command sends one controlled informational event and prints only its event
 ID, not the DSN.
 
+### Production check command
+
+Use this before and after larger deploys:
+
+```powershell
+npm run production:check
+```
+
+It performs:
+
+- API smoke: `/health`, `/ready`, required OpenAPI routes, and no exposed
+  development reset route;
+- small read-only load smoke against `https://api.subsmarket.xyz`;
+- Telegram smoke: bot, webhook, menu button, and Mini App availability;
+- Sentry smoke: one controlled informational event.
+
+Default load settings are intentionally small (`30` requests, concurrency `5`,
+p95 threshold `5000ms`) so the command is safe for the current test deployment
+with free Redis. For paid staging or production rehearsals, increase gradually
+and tighten the latency threshold with:
+
+```powershell
+$env:LOAD_SMOKE_REQUESTS='100'
+$env:LOAD_SMOKE_CONCURRENCY='10'
+$env:LOAD_SMOKE_MAX_P95_MS='3000'
+npm run production:check
+```
+
+The command is still read-only by default. Do not run write-heavy load tests
+against production data.
+
 ## External account values still required
 
 ### Sentry
@@ -119,6 +170,25 @@ No Sentry auth token is required for the backend integration.
 Create one heartbeat monitor and provide its unique ping URL. It will be stored
 as the GitHub Actions secret `JOBS_HEARTBEAT_URL`.
 
+Create one uptime monitor for:
+
+```text
+https://api.subsmarket.xyz/health
+```
+
+Recommended interval: 3 minutes while on the test deployment. Add a second
+monitor for `/ready` after the backend is on an always-on plan, because `/ready`
+checks database connectivity and can be noisier during cold starts.
+
+Optional repository variable:
+
+```text
+SUBSMARKET_API_BASE_URL=https://api.subsmarket.xyz
+```
+
+If the variable is not set, the GitHub uptime workflow uses the production API
+domain above.
+
 ### Grafana Cloud
 
 Cloud execution is optional. Create a k6 project only before production load
@@ -130,3 +200,10 @@ testing and provide:
 These values will be stored in GitHub Actions secrets and must not be committed
 or added to frontend environment variables.
 
+## Scaling note
+
+`/ready` reports rate limit backend as `local`, `redis`, or `fallback`.
+`local` is acceptable for a single test instance. Before multiple Render
+instances or a public launch burst, configure `RATE_LIMIT_REDIS_URL` with a
+shared Redis-compatible service such as Upstash. Without this, each backend
+instance would count limits separately.

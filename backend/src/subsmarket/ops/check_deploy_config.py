@@ -49,13 +49,18 @@ def check_production_config() -> list[ConfigCheck]:
             DEFAULT_PAYMENT_SECRET,
         ),
         _present("INTERNAL_JOB_TOKEN", settings.internal_job_token),
-        _optional_redis_url(settings.rate_limit_redis_url),
-        _optional_http_url("SENTRY_DSN", settings.sentry_dsn),
+        _production_redis_url(settings.app_env, settings.rate_limit_redis_url),
+        _production_http_url("SENTRY_DSN", settings.app_env, settings.sentry_dsn),
         _bounded_float(
             "SENTRY_TRACES_SAMPLE_RATE",
             settings.sentry_traces_sample_rate,
             minimum=0.0,
             maximum=1.0,
+        ),
+        _production_false(
+            "SENTRY_SEND_DEFAULT_PII",
+            settings.app_env,
+            settings.sentry_send_default_pii,
         ),
         _production_origins(settings.cors_origins),
         _positive_int("NOTIFICATION_MAX_ATTEMPTS", settings.notification_max_attempts),
@@ -184,6 +189,18 @@ def _optional_http_url(key: str, value: str | None) -> ConfigCheck:
     return ConfigCheck(key=key, ok=True)
 
 
+def _production_http_url(
+    key: str,
+    app_env: str,
+    value: str | None,
+) -> ConfigCheck:
+    if app_env != "production":
+        return _optional_http_url(key, value)
+    if not value:
+        return ConfigCheck(key=key, ok=False, problem="missing")
+    return _optional_http_url(key, value)
+
+
 def _database_connection_budget(pool_size: int, max_overflow: int) -> ConfigCheck:
     total = pool_size + max_overflow
     if total > 20:
@@ -215,6 +232,14 @@ def _optional_redis_url(value: str | None) -> ConfigCheck:
     return ConfigCheck(key="RATE_LIMIT_REDIS_URL", ok=True)
 
 
+def _production_redis_url(app_env: str, value: str | None) -> ConfigCheck:
+    if app_env != "production":
+        return _optional_redis_url(value)
+    if not value:
+        return ConfigCheck(key="RATE_LIMIT_REDIS_URL", ok=False, problem="missing")
+    return _optional_redis_url(value)
+
+
 def _production_origins(origins: list[str]) -> ConfigCheck:
     if not origins or "*" in origins:
         return ConfigCheck(
@@ -229,6 +254,12 @@ def _production_origins(origins: list[str]) -> ConfigCheck:
             problem="all origins must start with https://",
         )
     return ConfigCheck(key="CORS_ALLOWED_ORIGINS", ok=True)
+
+
+def _production_false(key: str, app_env: str, value: bool) -> ConfigCheck:
+    if app_env == "production" and value:
+        return ConfigCheck(key=key, ok=False, problem="must be false in production")
+    return ConfigCheck(key=key, ok=True)
 
 
 def main() -> None:

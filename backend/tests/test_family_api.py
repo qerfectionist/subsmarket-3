@@ -1210,34 +1210,6 @@ def test_member_leave_and_removal_flow_permissions(
         headers=owner_headers,
         json={"reason": "no_response"},
     )
-    outsider_ack = client.post(
-        f"/api/families/members/{member_id}/acknowledge-removal",
-        headers=outsider_headers,
-    )
-    member_ack = client.post(
-        f"/api/families/members/{member_id}/acknowledge-removal",
-        headers=member_headers,
-    )
-    outsider_cancel_request = client.post(
-        f"/api/families/members/{member_id}/request-removal-cancellation",
-        headers=outsider_headers,
-    )
-    member_cancel_request = client.post(
-        f"/api/families/members/{member_id}/request-removal-cancellation",
-        headers=member_headers,
-    )
-    outsider_revoke = client.post(
-        f"/api/families/members/{member_id}/revoke-removal",
-        headers=outsider_headers,
-    )
-    member_revoke = client.post(
-        f"/api/families/members/{member_id}/revoke-removal",
-        headers=member_headers,
-    )
-    owner_revoke = client.post(
-        f"/api/families/members/{member_id}/revoke-removal",
-        headers=owner_headers,
-    )
     member_leave = client.post(
         f"/api/families/members/{member_id}/leave",
         headers=member_headers,
@@ -1270,28 +1242,14 @@ def test_member_leave_and_removal_flow_permissions(
     assert member_remove.status_code == 403
     assert member_remove.json()["detail"] == "ONLY_OWNER_CAN_REMOVE_MEMBER"
     assert owner_remove.status_code == 200
-    assert owner_remove.json()["status"] == "removal_pending"
+    assert owner_remove.json()["status"] == "removed"
     assert owner_remove.json()["removal_reason"] == "no_response"
-    assert owner_remove.json()["removed_at"] is None
-    assert owner_remove.json()["removal_scheduled_at"] is not None
+    assert owner_remove.json()["removed_at"] is not None
+    assert owner_remove.json()["removal_scheduled_at"] is None
     assert repeated_remove.status_code == 409
     assert repeated_remove.json()["detail"] == "MEMBER_NOT_REMOVABLE"
-    assert outsider_ack.status_code == 403
-    assert outsider_ack.json()["detail"] == "ONLY_MEMBER_CAN_ACK_REMOVAL"
-    assert member_ack.status_code == 200
-    assert outsider_cancel_request.status_code == 403
-    assert outsider_cancel_request.json()["detail"] == (
-        "ONLY_MEMBER_CAN_REQUEST_REMOVAL_CANCELLATION"
-    )
-    assert member_cancel_request.status_code == 200
-    assert outsider_revoke.status_code == 403
-    assert outsider_revoke.json()["detail"] == "ONLY_OWNER_CAN_REVOKE_REMOVAL"
-    assert member_revoke.status_code == 403
-    assert member_revoke.json()["detail"] == "ONLY_OWNER_CAN_REVOKE_REMOVAL"
-    assert owner_revoke.status_code == 200
-    assert owner_revoke.json()["status"] == "active"
-    assert member_leave.status_code == 200
-    assert member_leave.json()["status"] == "left"
+    assert member_leave.status_code == 409
+    assert member_leave.json()["detail"] == "MEMBER_NOT_ACTIVE"
     assert member_leave_again.status_code == 409
     assert member_leave_again.json()["detail"] == "MEMBER_NOT_ACTIVE"
     assert removed_member_requisite.status_code == 403
@@ -1300,7 +1258,7 @@ def test_member_leave_and_removal_flow_permissions(
     assert removed_member_audit.json()["detail"] == "FAMILY_AUDIT_FORBIDDEN"
     assert owner_audit.status_code == 200
     assert any(
-        item["action"] == "family_member_removal_scheduled"
+        item["action"] == "family_member_removed_by_owner"
         for item in owner_audit.json()
     )
     assert family_after_removal.status_code == 200

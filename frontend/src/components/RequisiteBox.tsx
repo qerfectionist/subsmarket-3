@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import { Button } from "@telegram-apps/telegram-ui";
 
 import { bankLabels } from "../labels";
@@ -37,27 +36,33 @@ export function RequisiteBox({ requisite }: { requisite: PaymentRequisite }) {
 
   return (
     <div className="requisite-box">
-      <strong>Реквизиты:</strong> {bankLabel} · {phoneDisplay}
-      <Button
-        type="button"
-        size="s"
-        mode="plain"
-        data-testid="requisite-toggle-button"
-        onClick={handleReveal}
-      >
-        {revealed ? "Скрыть" : "Показать"}
-      </Button>
-      {revealed && (
+      <p>
+        <strong>{bankLabel}</strong>
+        <br />
+        {phoneDisplay}
+      </p>
+      <div className="row-actions">
         <Button
-          type="button"
           size="s"
-          mode="plain"
-          data-testid="requisite-copy-button"
-          onClick={handleCopy}
+          mode="bezeled"
+          stretched
+          data-testid="requisite-toggle-button"
+          onClick={handleReveal}
         >
-          {copied ? "Скопировано" : "Копировать"}
+          {revealed ? "Скрыть" : "Показать"}
         </Button>
-      )}
+        {revealed ? (
+          <Button
+            size="s"
+            mode="plain"
+            stretched
+            data-testid="requisite-copy-button"
+            onClick={handleCopy}
+          >
+            {copied ? "Скопировано" : "Копировать"}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

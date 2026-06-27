@@ -56,8 +56,7 @@ import {
   useReportPaymentPaid,
   useResolveInviteCode,
   useRotateFamilyInvite,
-  useRevokeMemberRemoval,
-  useScheduleMemberRemoval,
+  useRemoveMember,
   useUpdateFamilyDescription,
   useUpdateFamilyPaymentDay,
   useUpdateFamilyPrice,
@@ -79,8 +78,6 @@ import type {
 } from "./types";
 import {
   setTelegramBackButton,
-  setTelegramMainButton,
-  hideTelegramMainButton,
   setTelegramClosingConfirmation,
   showTelegramConfirm,
   getTelegramStartParam,
@@ -127,10 +124,6 @@ export function App() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [undoRemoval, setUndoRemoval] = useState<{
-    familyId: string;
-    memberId: string;
-  } | null>(null);
   const startParamHandled = useRef(false);
 
   const familyViewQuery = useFamilyView(selectedFamilyId);
@@ -152,7 +145,7 @@ export function App() {
   const selectedFamilyAudit = familyAuditQuery.data ?? [];
   const selectedFamilyInvite = familyInviteQuery.data ?? null;
 
-  const loadState: LoadState = meQuery.isLoading
+  const loadState: LoadState = meQuery.isPending
     ? "loading"
     : meQuery.isError
       ? "error"
@@ -270,6 +263,7 @@ export function App() {
     setOwnerDetails({});
     setRequisites({});
     setSelectedFamilyId(null);
+    setTab("home");
     queryClient.clear();
   }
 
@@ -293,8 +287,7 @@ export function App() {
   const remindAccessMutation = useRemindAccessConfirmation();
   const cancelBeforeAccessMutation = useCancelMemberBeforeAccess();
   const confirmAccessMutation = useConfirmAccessReceived();
-  const leaveFamilyMutation = useScheduleMemberRemoval();
-  const revokeRemovalMutation = useRevokeMemberRemoval();
+  const removeMemberMutation = useRemoveMember();
   const ackClosingMutation = useAcknowledgeFamilyClosing();
   const createPrepaymentMutation = useCreateMemberPrepayment();
   const recordPrepaymentMutation = useRecordOwnerPrepaidPeriods();
@@ -378,27 +371,6 @@ export function App() {
   useEffect(() => {
     setTelegramClosingConfirmation(Boolean(busy) || createFormDirty);
   }, [busy, createFormDirty]);
-
-  useEffect(() => {
-    if (tab !== "create") {
-      hideTelegramMainButton();
-      return;
-    }
-    const cleanup = setTelegramMainButton(
-      "Создать семью",
-      () => void handleCreateFamily({ preventDefault: () => {} } as FormEvent),
-      {
-        progress: createFamilyMutation.isPending,
-        disabled:
-          createFamilyMutation.isPending ||
-          busy !== null ||
-          services.length === 0 ||
-          !createForm.service_id ||
-          !createForm.payment_phone.trim()
-      }
-    );
-    return cleanup;
-  }, [tab, createForm, services.length, createFamilyMutation.isPending, busy]);
 
   const typedServices = useMemo(
     () => services.filter((service) => service.family_type === familyType),
@@ -663,8 +635,11 @@ export function App() {
                 `Удалить @${member.user.username} из семьи? Причина: ${reason}.`
               );
               if (!ok) return;
-              await leaveFamilyMutation.mutateAsync({ familyId, memberId: member.id, reason });
-              setUndoRemoval({ familyId, memberId: member.id });
+                await removeMemberMutation.mutateAsync({
+                  familyId,
+                  memberId: member.id,
+                  reason
+                });
             }).then(() => loadOwnerDetails(familyId))
           }
           onConfirmPayment={(familyId, payment) =>
@@ -786,7 +761,7 @@ export function App() {
         }}
       />
 
-      {toast && !undoRemoval && (
+      {toast && (
         <Snackbar
           duration={3000}
           onClose={() => setToast(null)}
@@ -796,37 +771,6 @@ export function App() {
         </Snackbar>
       )}
 
-      {undoRemoval && (
-        <Snackbar
-          duration={8000}
-          onClose={() => setUndoRemoval(null)}
-          before={<span style={{ fontSize: 20 }}>⚠</span>}
-          after={
-            <span data-testid="undo-removal-button">
-              <Snackbar.Button
-                onClick={async () => {
-                  try {
-                    await revokeRemovalMutation.mutateAsync({
-                      familyId: undoRemoval.familyId,
-                      memberId: undoRemoval.memberId
-                    });
-                    setToast("Удаление отменено");
-                    await loadOwnerDetails(undoRemoval.familyId);
-                  } catch (err) {
-                    setError(formatError(err));
-                  } finally {
-                    setUndoRemoval(null);
-                  }
-                }}
-              >
-                Отменить
-              </Snackbar.Button>
-            </span>
-          }
-        >
-          Участник будет удалён через 12 часов
-        </Snackbar>
-      )}
     </Shell>
   );
 }

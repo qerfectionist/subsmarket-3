@@ -1,0 +1,78 @@
+:root {
+  --app-bg: #eef1f6;
+  --app-surface: #ffffff;
+  --app-secondary-bg: #e4e9f2;
+  --app-text: #0f1419;
+  --app-muted: #5c6678;
+  --app-link: #2481cc;
+  --app-accent: #2481cc;
+  --app-accent-soft: #dbeafe;
+  --app-accent-text: #ffffff;
+  --app-danger: #e53935;
+  --app-success: #16a34a;
+  --app-warning: #ea8c00;
+  --app-info: #2481cc;
+  --app-bottom-bar-bg: rgba(255, 255, 255, 0.94);
+  --app-header-bg: #eef1f6;
+  --app-subtitle: #5c6678;
+  --app-section-header: #3d4654;
+  --app-border: rgba(15, 20, 25, 0.07);
+  --app-border-strong: rgba(15, 20, 25, 0.12);
+  --app-radius-sm: 10px;
+  --app-radius-md: 12px;
+  --app-radius-lg: 16px;
+  --app-radius-xl: 20px;
+  --app-shadow-sm: 0 1px 3px rgba(15, 20, 25, 0.06);
+  --app-shadow: 0 6px 20px rgba(15, 20, 25, 0.08);
+  --app-shadow-nav: 0 -4px 24px rgba(15, 20, 25, 0.08);
+  --app-font-weight-medium: 500;
+  --app-font-weight-semibold: 600;
+  --app-font-weight-bold: 700;
+  --app-safe-area-top: 0px;
+  --app-safe-area-right: 0px;
+  --app-safe-area-bottom: 0px;
+  --app-safe-area-left: 0px;
+  --app-content-safe-area-top: 0px;
+  --app-content-safe-area-right: 0px;
+  --app-content-safe-area-bottom: 0px;
+  --app-content-safe-area-left: 0px;
+  --app-viewport-stable-height: 100dvh;
+  --app-page-inset: 16px;
+  --app-group-radius: 14px;
+  --app-tabbar-height: 58px;
+  color: var(--app-text);
+  background: var(--app-bg);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI",
+    Roboto, ui-sans-serif, system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.tma-light) {
+    --app-bg: #0e1117;
+    --app-surface: #1a1f28;
+    --app-secondary-bg: #242b36;
+    --app-text: #f0f3f8;
+    --app-muted: #8b95a8;
+    --app-link: #5eb3f0;
+    --app-accent: #5eb3f0;
+    --app-accent-soft: rgba(94, 179, 240, 0.16);
+    --app-accent-text: #ffffff;
+    --app-danger: #ff6b6b;
+    --app-success: #4ade80;
+    --app-warning: #fbbf24;
+    --app-info: #5eb3f0;
+    --app-bottom-bar-bg: rgba(26, 31, 40, 0.96);
+    --app-header-bg: #0e1117;
+    --app-subtitle: #8b95a8;
+    --app-section-header: #c5cdd9;
+    --app-border: rgba(255, 255, 255, 0.08);
+    --app-border-strong: rgba(255, 255, 255, 0.14);
+    --app-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.28);
+    --app-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+    --app-shadow-nav: 0 -4px 24px rgba(0, 0, 0, 0.4);
+  }
+}

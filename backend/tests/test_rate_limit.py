@@ -276,6 +276,73 @@ def test_telegram_scoped_limit_reads_user_id_from_init_data() -> None:
     assert client.post("/limited", headers=headers).status_code == 429
 
 
+def test_telegram_scoped_limit_reads_development_user_header(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "app_env", "development")
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [
+            RateLimitRule(
+                "test",
+                "POST",
+                re.compile(r"/limited"),
+                1,
+                60,
+                key_by_telegram_user=True,
+            )
+        ]
+    )
+    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+
+    @app.post("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+    shared_ip = {"x-forwarded-for": "10.0.0.1"}
+
+    assert client.post(
+        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "3001"}
+    ).status_code == 200
+    assert client.post(
+        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "3002"}
+    ).status_code == 200
+    assert client.post(
+        "/limited",
+        headers={"x-forwarded-for": "10.0.0.2", "x-dev-telegram-user-id": "3001"},
+    ).status_code == 429
+
+
+def test_production_limit_ignores_development_header(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "app_env", "production")
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [
+            RateLimitRule(
+                "test",
+                "POST",
+                re.compile(r"/limited"),
+                1,
+                60,
+                key_by_telegram_user=True,
+            )
+        ]
+    )
+    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+
+    @app.post("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+    shared_ip = {"x-forwarded-for": "10.0.0.1"}
+    assert client.post(
+        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "4001"}
+    ).status_code == 200
+    assert client.post(
+        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "4002"}
+    ).status_code == 429
+
+
 def test_redis_rate_limiter_shares_counts_between_instances() -> None:
     rule = RateLimitRule("test", "POST", re.compile(r"/limited"), 2, 60)
     redis = FakeRedis()

@@ -51,24 +51,26 @@ test("owner and member complete the first payment family flow", async ({ page })
   });
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
-  await expect(page.locator(".home-hero")).toBeVisible();
-  await expect(page.locator(".home-hero")).toContainText("Найдите семью для подписки");
-  await expect(page.locator(".trust-strip")).toContainText("Доступ");
+  await expect(page.getByTestId("home-screen")).toBeVisible();
+  await expect(page.getByTestId("home-direction-row")).toHaveCount(3);
+  await expect(page.getByTestId("home-quick-action")).toHaveCount(2);
+  await expect(page.getByTestId("home-popular-services")).toContainText("YouTube Premium");
   await expect(page.getByTestId("dev-user-select")).toHaveValue("200001");
 
   await openNav(page, 2);
   await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-share-preview")).toContainText("650 ₸");
-  await page.getByTestId("create-total-price-input").fill("3990");
-  await page.getByTestId("create-max-members-input").fill("4");
+  await fillCreateField(page, "create-total-price-input", "3990");
+  await fillCreateField(page, "create-max-members-input", "4");
   await expect(page.getByTestId("create-share-preview")).toContainText("1 000 ₸");
-  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
-  await page.getByTestId("create-description-input").fill("E2E subscription family");
-  await page.getByTestId("create-owner-rules-input").fill("Access first, payment after check.");
-  await page.getByTestId("create-family-submit").click({ force: true });
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await fillCreateField(page, "create-description-input", "E2E subscription family");
+  await fillCreateField(page, "create-owner-rules-input", "Access first, payment after check.");
+  await submitCreateFamily(page);
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
   await expect(page.locator(".family-workspace")).toContainText("Access first");
 
+  await expect(page.getByTestId("owner-description-input")).toBeVisible();
   await page.getByTestId("owner-description-input").fill("Updated owner description");
   await clickAndWait(page, "owner-save-description-button");
   await expect(page.getByTestId("owner-description-input")).toHaveValue(
@@ -86,8 +88,12 @@ test("owner and member complete the first payment family flow", async ({ page })
     nextPaymentDate
   );
 
-  await page.getByTestId("workspace-open-family-button").click({ force: true });
-  await clickAndWait(page, "create-invite-button");
+  await openFamilyDetailsFromMine(page);
+  const createInviteButton = page.getByTestId("create-invite-button");
+  if ((await createInviteButton.count()) > 0) {
+    await clickAndWait(page, "create-invite-button");
+  }
+  await expect(page.getByTestId("owner-invite-code")).toBeVisible();
   const inviteCode = (await page.getByTestId("owner-invite-code").innerText()).replace(
     /\s/g,
     ""
@@ -125,11 +131,9 @@ test("owner and member complete the first payment family flow", async ({ page })
   await switchDevUser(page, "200002");
   await openNav(page, 3);
   await expect(page.getByTestId("confirm-access-button")).toBeVisible();
-  await page.getByTestId("confirm-access-button").click({ force: true });
+  await clickAndWait(page, "confirm-access-button");
   await expect(page.locator(".requisite-box")).toBeVisible();
-  await expect(page.getByTestId("report-payment-button")).toBeVisible();
-  await page.getByTestId("report-payment-button").click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "report-payment-button");
   await expect(page.getByTestId("cancel-payment-report-button")).toBeVisible();
 
   await switchDevUser(page, "200001");
@@ -162,11 +166,10 @@ test("owner and member complete the first payment family flow", async ({ page })
   await page.getByTestId("remove-member-button").click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
-  await expect(page.getByText("Участник будет удалён")).toBeVisible();
 
   await switchDevUser(page, "200002");
   await openNav(page, 3);
-  await expect(page.getByTestId("family-workspace")).toHaveCount(1);
+  await expect(page.getByTestId("family-workspace")).toHaveCount(0);
 
   await switchDevUser(page, "200001");
   await openNav(page, 3);
@@ -189,11 +192,11 @@ test("subscription and tariff families stay in separate storefronts", async ({
   await openNav(page, 2);
   await page.getByTestId("family-type-tariff").click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
-  await page.getByTestId("create-total-price-input").fill("12000");
-  await page.getByTestId("create-max-members-input").fill("4");
-  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
-  await page.getByTestId("create-description-input").fill("Семейный тариф оператора");
-  await page.getByTestId("create-family-submit").click({ force: true });
+  await fillCreateField(page, "create-total-price-input", "12000");
+  await fillCreateField(page, "create-max-members-input", "4");
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await fillCreateField(page, "create-description-input", "Семейный тариф оператора");
+  await submitCreateFamily(page);
 
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
   await expect(page.getByTestId("family-card")).toHaveAttribute(
@@ -218,25 +221,26 @@ test("create family form validates phone in real time", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openNav(page, 2);
 
-  await page.getByTestId("create-payment-phone-input").fill("123");
+  await fillCreateField(page, "create-payment-phone-input", "123");
   await expect(page.locator(".field-error")).toBeVisible();
   await expect(page.locator(".field-error")).toContainText("Формат");
 
-  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
   await expect(page.locator(".field-error")).toHaveCount(0);
 
-  await page.getByTestId("create-total-price-input").fill("0");
+  await fillCreateField(page, "create-total-price-input", "0");
   await expect(page.locator(".field-error")).toBeVisible();
   await expect(page.locator(".field-error")).toContainText("больше нуля");
 
+  await goToCreateWizardStep(page, 3);
   await expect(page.getByTestId("create-family-submit")).toBeDisabled();
 });
 
 test("requisite phone is masked until revealed", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openNav(page, 2);
-  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
-  await page.getByTestId("create-family-submit").click({ force: true });
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await submitCreateFamily(page);
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
 
   await switchDevUser(page, "200002");
@@ -265,8 +269,8 @@ test("requisite phone is masked until revealed", async ({ page }) => {
 test("owner tabs switch between requests members and payments", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openNav(page, 2);
-  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
-  await page.getByTestId("create-family-submit").click({ force: true });
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await submitCreateFamily(page);
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
 
   await page.getByTestId("owner-details-button").click({ force: true });
@@ -274,11 +278,11 @@ test("owner tabs switch between requests members and payments", async ({ page })
   await expect(page.getByTestId("approve-request-button")).toHaveCount(0);
 });
 
-test("undo member removal via snackbar restores the member", async ({ page }) => {
+test("owner removes a member immediately with a reason", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openNav(page, 2);
-  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
-  await page.getByTestId("create-family-submit").click({ force: true });
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await submitCreateFamily(page);
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
 
   await switchDevUser(page, "200002");
@@ -299,32 +303,95 @@ test("undo member removal via snackbar restores the member", async ({ page }) =>
   await page.getByTestId("remove-member-button").click({ force: true });
   await waitForNetworkQuiet(page);
 
-  await expect(page.getByText("Участник будет удалён через 12 часов")).toBeVisible();
   await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
-
-  await page.locator('[data-testid="undo-removal-button"] button').click({ force: true });
-  await waitForNetworkQuiet(page);
-
-  await expect(page.getByText("Участник будет удалён через 12 часов")).toHaveCount(0);
-  await expect(page.getByTestId("remove-member-button")).toBeVisible();
 });
+
+const CREATE_FIELD_STEP: Record<string, number> = {
+  "create-service-select": 0,
+  "create-period-select": 0,
+  "create-max-members-input": 1,
+  "create-total-price-input": 1,
+  "create-payment-day-input": 1,
+  "create-next-payment-date-input": 1,
+  "create-bank-select": 2,
+  "create-payment-phone-input": 2,
+  "create-description-input": 3,
+  "create-owner-rules-input": 3
+};
+
+async function fillCreateField(page: Page, testId: string, value: string) {
+  await goToCreateWizardStep(page, CREATE_FIELD_STEP[testId] ?? 0);
+  await page.getByTestId(testId).fill(value);
+}
+
+async function goToCreateWizardStep(page: Page, targetStep: number) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const currentStep = Number(
+      await page.locator(".wizard-step-current .wizard-step-index").innerText()
+    );
+    if (currentStep - 1 === targetStep) {
+      return;
+    }
+    if (currentStep - 1 < targetStep) {
+      await page.getByTestId("create-family-submit").click({ force: true });
+      await page.waitForTimeout(80);
+      continue;
+    }
+    await page.getByRole("button", { name: "Назад" }).click({ force: true });
+    await page.waitForTimeout(80);
+  }
+}
+
+async function submitCreateFamily(page: Page) {
+  await goToCreateWizardStep(page, 3);
+  const submit = page.getByTestId("create-family-submit");
+  await submit.scrollIntoViewIfNeeded();
+  await submit.click({ force: true });
+  await waitForNetworkQuiet(page);
+}
 
 async function switchDevUser(page: Page, userId: string) {
   await waitForNetworkQuiet(page);
   await page.getByTestId("dev-user-select").selectOption(userId);
   await expect(page.getByTestId("dev-user-select")).toHaveValue(userId);
-  await expect(page.locator(".home-hero, section").first()).toBeVisible();
+  await expect(page.getByTestId("home-screen")).toBeVisible();
   await waitForNetworkQuiet(page);
 }
 
 async function openNav(page: Page, index: number) {
   await page.locator(".bottom-nav button").nth(index).click({ force: true });
-  await expect(page.locator(".home-hero, section").first()).toBeVisible();
+  await expect(navScreenLocator(page, index)).toBeVisible();
+}
+
+function navScreenLocator(page: Page, index: number) {
+  switch (index) {
+    case 0:
+      return page.getByTestId("home-screen");
+    case 1:
+      return page.getByTestId("invite-code-input");
+    case 2:
+      return page.getByTestId("create-family-form");
+    case 3:
+      return page.locator(".family-workspace, .empty-state, [data-testid='family-list-skeleton']");
+    case 4:
+      return page.locator("[data-testid='request-card'], .empty-state, [data-testid='panel-skeleton']");
+    default:
+      return page.locator(".native-screen, .home-page");
+  }
+}
+
+async function openFamilyDetailsFromMine(page: Page) {
+  await page.getByTestId("workspace-open-family-button").first().click({ force: true });
+  await waitForNetworkQuiet(page);
+  await expect(page.locator(".detail-grid")).toBeVisible();
 }
 
 async function clickAndWait(page: Page, testId: string) {
-  await expect(page.getByTestId(testId)).toBeEnabled();
-  await page.getByTestId(testId).click({ force: true });
+  const target = page.getByTestId(testId);
+  await expect(target).toBeEnabled();
+  await target.scrollIntoViewIfNeeded();
+  // DOM click: telegram-ui Section/Cell overlays intercept Playwright pointer events.
+  await target.evaluate((element) => (element as HTMLElement).click());
   await waitForNetworkQuiet(page);
 }
 
