@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
 
 import { FamilyCard } from "../components/families";
 import { EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
@@ -51,9 +52,14 @@ export function SearchScreen({
       description="Выберите направление, откройте семью или отправьте заявку владельцу."
       action={
         services.length === 0 ? (
-          <button type="button" disabled={busy !== null} onClick={onImportCatalog}>
+          <WorldButton
+            type="button"
+            size="sm"
+            disabled={busy !== null}
+            onClick={onImportCatalog}
+          >
             Импортировать каталог
-          </button>
+          </WorldButton>
         ) : undefined
       }
     >
@@ -64,13 +70,14 @@ export function SearchScreen({
           </span>
           <strong>{typeTitle}</strong>
         </div>
-        <button
+        <WorldButton
           type="button"
           className="search-create-button"
+          size="sm"
           onClick={() => onCreateFamily(familyType)}
         >
           Создать
-        </button>
+        </WorldButton>
       </section>
 
       <FamilyTypeSwitch value={familyType} onChange={onChangeFamilyType} />
@@ -90,14 +97,15 @@ export function SearchScreen({
             value={inviteCode}
             onChange={(event) => setInviteCode(event.target.value)}
           />
-          <button
+          <WorldButton
             type="button"
             data-testid="open-invite-button"
+            size="sm"
             disabled={busy !== null || normalizedInviteCode.length !== 8}
             onClick={() => onOpenInvite(normalizedInviteCode)}
           >
             Открыть
-          </button>
+          </WorldButton>
         </div>
       </div>
 
@@ -116,9 +124,9 @@ export function SearchScreen({
             ))}
           </select>
         </label>
-        <button type="button" onClick={onRefresh} disabled={busy !== null}>
+        <WorldButton type="button" size="sm" onClick={onRefresh} disabled={busy !== null}>
           Обновить
-        </button>
+        </WorldButton>
       </div>
 
       {isLoading && filteredFamilies.length === 0 ? (
@@ -129,34 +137,37 @@ export function SearchScreen({
             По выбранному направлению сейчас нет свободных мест. Можно сменить сервис
             или открыть свою семью для участников.
           </span>
-          <button
+          <WorldButton
             type="button"
             data-testid="empty-create-family-button"
+            fullWidth
             onClick={() => onCreateFamily(familyType)}
           >
             Создать семью
-          </button>
+          </WorldButton>
         </EmptyState>
       ) : (
         <div className="card-grid">
           {filteredFamilies.map((family) => (
             <FamilyCard key={family.id} family={family}>
-              <button
+              <WorldButton
                 type="button"
-                className="secondary"
+                variant="secondary"
+                size="sm"
                 data-testid="open-family-button"
                 onClick={() => onOpenFamily(family.id)}
               >
                 Подробнее
-              </button>
-              <button
+              </WorldButton>
+              <WorldButton
                 type="button"
                 data-testid="send-request-button"
+                size="sm"
                 disabled={busy !== null}
                 onClick={() => onCreateRequest(family.id)}
               >
                 Отправить заявку
-              </button>
+              </WorldButton>
             </FamilyCard>
           ))}
         </div>

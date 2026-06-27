@@ -1,3 +1,5 @@
+import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
+
 import { ServiceLogo } from "../components/branding";
 import type { Family, FamilyRequest, FamilyType, MyFamily } from "../types";
 
@@ -124,15 +126,16 @@ export function HomeScreen({
       </section>
 
       <section className="home-actions-strip" aria-label="Быстрые действия">
-        <button
+        <WorldButton
           type="button"
           className="primary-action-card"
           data-testid="home-create-family-button"
+          fullWidth
           onClick={() => onCreate("subscription")}
         >
           <span>Создать семью</span>
           <strong>Открыть места и собрать участников</strong>
-        </button>
+        </WorldButton>
         <div className="home-quick-actions" data-testid="home-quick-actions">
           <QuickAction
             title="Мои семьи"
@@ -152,19 +155,22 @@ export function HomeScreen({
       <section className="home-section">
         <div className="home-section-heading">
           <h2 className="home-title">Популярное</h2>
-          <button
+          <WorldButton
             type="button"
+            variant="tertiary"
+            size="sm"
             className="text-button"
             onClick={() => onSearch("subscription")}
           >
             Все семьи
-          </button>
+          </WorldButton>
         </div>
         <div className="popular-service-list" data-testid="home-popular-services">
           {popularServices.map((service) => (
-            <button
+            <WorldButton
               key={service.slug}
               type="button"
+              variant="tertiary"
               className="popular-service-row"
               onClick={() => onSearch("subscription")}
             >
@@ -179,7 +185,7 @@ export function HomeScreen({
                 <small>{service.price} за место</small>
               </span>
               <span className="popular-service-slots">{service.slots}</span>
-            </button>
+            </WorldButton>
           ))}
         </div>
       </section>
@@ -218,14 +224,15 @@ function DirectionCard({ direction }: { direction: Direction }) {
   }
 
   return (
-    <button
+    <WorldButton
       type="button"
+      variant="tertiary"
       className="direction-card"
       data-testid="home-direction-row"
       onClick={direction.onClick}
     >
       {content}
-    </button>
+    </WorldButton>
   );
 }
 
@@ -241,8 +248,9 @@ function QuickAction({
   onClick: () => void;
 }) {
   return (
-    <button
+    <WorldButton
       type="button"
+      variant="tertiary"
       className="quick-action-card"
       data-testid="home-quick-action"
       onClick={onClick}
@@ -252,7 +260,7 @@ function QuickAction({
         <small>{subtitle}</small>
       </span>
       {count > 0 ? <span className="quick-action-count">{count}</span> : null}
-    </button>
+    </WorldButton>
   );
 }
 

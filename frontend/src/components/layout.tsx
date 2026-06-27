@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-import { Button, List } from "@telegram-apps/telegram-ui";
+import { List } from "@telegram-apps/telegram-ui";
+import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
 
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
@@ -118,16 +119,17 @@ export function FamilyTypeSwitch({
   return (
     <List className="family-type-switch">
       {(["subscription", "tariff"] as FamilyType[]).map((type) => (
-        <Button
+        <WorldButton
           key={type}
           type="button"
           data-testid={`family-type-${type}`}
-          mode={value === type ? "filled" : "plain"}
-          stretched
+          variant={value === type ? "primary" : "tertiary"}
+          size="sm"
+          fullWidth
           onClick={() => onChange(type)}
         >
           {familyTypeLabels[type]}
-        </Button>
+        </WorldButton>
       ))}
     </List>
   );
