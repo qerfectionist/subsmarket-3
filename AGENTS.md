@@ -18,6 +18,8 @@ npm run check             # всё подряд
 Backend-скрипты и Playwright `webServer` кроссплатформенные (`scripts/run-python.mjs`,
 `frontend/playwright.config.ts`). CI: `.github/workflows/frontend-check.yml` (build + E2E на
 `ubuntu-latest`). UX-контракт экранов: `frontend/docs/ux-states.md`.
+Дизайн-система Mini App: `docs/design-system.md`; frontend-краткая версия:
+`frontend/docs/design-system.md`.
 
 Тесты, требующие PostgreSQL:
 `test_postgres_concurrency.py`, `test_postgres_schema_security.py`.
@@ -324,6 +326,9 @@ app.dependency_overrides[get_auth_db] = lambda: db
 - `main.tsx` подключает World styles и `Toaster`.
 
 **Конвенция:**
+- Перед крупными UI-правками читать `docs/design-system.md` и
+  `frontend/docs/design-system.md`. Не чинить отдельный экран вопреки общей
+  системе.
 - Новые UI-элементы сначала искать в `@worldcoin/mini-apps-ui-kit-react`.
 - Для иконок использовать `lucide-react`, не добавлять новые inline SVG без
   явной причины.
