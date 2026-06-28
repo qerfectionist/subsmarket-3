@@ -29,7 +29,7 @@ export function AppHeader({
   return (
     <TopBar
       className="app-topbar"
-      title="SubsMarket"
+      title=""
       startAdornment={
         <span className="app-user-avatar" aria-hidden>
           {acronym}
