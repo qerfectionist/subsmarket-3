@@ -54,8 +54,9 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByTestId("home-screen")).toBeVisible();
   await expect(page.getByTestId("home-search-family-button")).toBeVisible();
   await expect(page.getByTestId("home-create-family-button")).toBeVisible();
-  await expect(page.getByTestId("home-direction-row")).toHaveCount(3);
-  await expect(page.getByTestId("home-quick-action")).toHaveCount(2);
+  await expect(page.getByTestId("home-today-task")).toHaveCount(3);
+  await expect(page.locator(".home-fast-card")).toHaveCount(4);
+  await expect(page.getByTestId("home-recommendations")).toBeVisible();
   await expect(page.getByTestId("dev-user-select")).toHaveAttribute(
     "data-value",
     "200001"
