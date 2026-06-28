@@ -1,4 +1,10 @@
 import { useCallback, useState, type Dispatch, FormEvent, SetStateAction } from "react";
+import {
+  Button as WorldButton,
+  Input,
+  Select,
+  TextArea
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import { FamilyTypeSwitch, Panel } from "../components/layout";
 import {
@@ -201,64 +207,60 @@ export function CreateFamilyScreen({
 
       <form className="form-grid" data-testid="create-family-form" onSubmit={handleFormSubmit}>
         <div className={step === "service" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <label>
-              Сервис
-              <select
+            <div>
+              <Select
                 required
                 data-testid="create-service-select"
                 value={createForm.service_id}
-                onChange={(event) => {
+                placeholder="Сервис"
+                options={typedServices.map((item) => ({
+                  value: item.id,
+                  label: serviceTitle(item)
+                }))}
+                onChange={(value) => {
                   const nextService = typedServices.find(
-                    (item) => item.id === event.target.value
+                    (item) => item.id === value
                   );
                   onChangeForm((current) => ({
                     ...current,
-                    service_id: event.target.value,
+                    service_id: value,
                     max_members: Math.min(
                       current.max_members,
                       nextService?.max_members ?? 8
                     )
                   }));
                 }}
-              >
-                {typedServices.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {serviceTitle(item)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="half">
-              Период
-              <select
+              />
+            </div>
+            <div className="half">
+              <Select
                 data-testid="create-period-select"
                 value={createForm.period}
-                onChange={(event) =>
+                placeholder="Период"
+                options={(service?.supported_periods ?? ["monthly"]).map((period) => ({
+                  value: period,
+                  label: periodLabels[period]
+                }))}
+                onChange={(value) =>
                   onChangeForm((current) => ({
                     ...current,
-                    period: event.target.value as FamilyCreate["period"]
+                    period: value as FamilyCreate["period"]
                   }))
                 }
-              >
-                {(service?.supported_periods ?? ["monthly"]).map((period) => (
-                  <option key={period} value={period}>
-                    {periodLabels[period]}
-                  </option>
-                ))}
-              </select>
-            </label>
+              />
+            </div>
         </div>
 
         <div className={step === "terms" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <label className="half">
-              Всего мест
-              <input
+            <div className="half">
+              <Input
+                label="Всего мест"
                 min={2}
                 max={service?.max_members ?? 8}
                 data-testid="create-max-members-input"
                 inputMode="numeric"
                 type="number"
-                aria-invalid={Boolean(errors.max_members)}
+                error={Boolean(errors.max_members)}
                 value={createForm.max_members}
                 onChange={(event) =>
                   onChangeForm((current) => ({
@@ -272,15 +274,15 @@ export function CreateFamilyScreen({
                   {errors.max_members}
                 </small>
               ) : null}
-            </label>
-            <label className="half">
-              Общая цена, ₸
-              <input
+            </div>
+            <div className="half">
+              <Input
+                label="Общая цена, ₸"
                 min={1}
                 data-testid="create-total-price-input"
                 inputMode="numeric"
                 type="number"
-                aria-invalid={Boolean(errors.total_price_kzt)}
+                error={Boolean(errors.total_price_kzt)}
                 value={createForm.total_price_kzt}
                 onChange={(event) =>
                   onChangeForm((current) => ({
@@ -294,16 +296,16 @@ export function CreateFamilyScreen({
                   {errors.total_price_kzt}
                 </small>
               ) : null}
-            </label>
-            <label className="half">
-              День оплаты
-              <input
+            </div>
+            <div className="half">
+              <Input
+                label="День оплаты"
                 min={1}
                 max={31}
                 data-testid="create-payment-day-input"
                 inputMode="numeric"
                 type="number"
-                aria-invalid={Boolean(errors.payment_day)}
+                error={Boolean(errors.payment_day)}
                 value={createForm.payment_day}
                 onChange={(event) =>
                   onChangeForm((current) => ({
@@ -317,13 +319,13 @@ export function CreateFamilyScreen({
                   {errors.payment_day}
                 </small>
               ) : null}
-            </label>
-            <label className="half">
-              Следующая дата оплаты
-              <input
+            </div>
+            <div className="half">
+              <Input
+                label="Следующая дата оплаты"
                 data-testid="create-next-payment-date-input"
                 type="date"
-                aria-invalid={Boolean(errors.next_payment_date)}
+                error={Boolean(errors.next_payment_date)}
                 value={createForm.next_payment_date}
                 onChange={(event) =>
                   onChangeForm((current) => ({
@@ -337,37 +339,34 @@ export function CreateFamilyScreen({
                   {errors.next_payment_date}
                 </small>
               ) : null}
-            </label>
+            </div>
         </div>
 
         <div className={step === "payment" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <label className="half">
-              Банк
-              <select
+            <div className="half">
+              <Select
                 data-testid="create-bank-select"
                 value={createForm.payment_bank}
-                onChange={(event) =>
+                placeholder="Банк"
+                options={Object.entries(bankLabels).map(([value, label]) => ({
+                  value,
+                  label
+                }))}
+                onChange={(value) =>
                   onChangeForm((current) => ({
                     ...current,
-                    payment_bank: event.target.value as FamilyCreate["payment_bank"]
+                    payment_bank: value as FamilyCreate["payment_bank"]
                   }))
                 }
-              >
-                {Object.entries(bankLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Номер телефона для оплаты
-              <input
+              />
+            </div>
+            <div>
+              <Input
                 required
+                label="Номер телефона для оплаты"
                 data-testid="create-payment-phone-input"
                 inputMode="tel"
-                placeholder="+77001234567"
-                aria-invalid={Boolean(errors.payment_phone)}
+                error={Boolean(errors.payment_phone)}
                 value={createForm.payment_phone}
                 onChange={(event) =>
                   onChangeForm((current) => ({
@@ -386,13 +385,13 @@ export function CreateFamilyScreen({
                   карты и IBAN нельзя указывать.
                 </small>
               )}
-            </label>
+            </div>
         </div>
 
         <div className={step === "details" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <label className="wide">
-              Описание
-              <textarea
+            <div className="wide">
+              <TextArea
+                label="Описание"
                 data-testid="create-description-input"
                 rows={3}
                 value={createForm.description ?? ""}
@@ -403,10 +402,10 @@ export function CreateFamilyScreen({
                   }))
                 }
               />
-            </label>
-            <label className="wide">
-              Правила владельца
-              <textarea
+            </div>
+            <div className="wide">
+              <TextArea
+                label="Правила владельца"
                 data-testid="create-owner-rules-input"
                 rows={3}
                 value={createForm.owner_rules ?? ""}
@@ -417,7 +416,7 @@ export function CreateFamilyScreen({
                   }))
                 }
               />
-            </label>
+            </div>
             <div className="wide summary">
               Реквизиты увидит только участник после подтверждения доступа. Номера
               карт и IBAN запрещены.
@@ -427,17 +426,17 @@ export function CreateFamilyScreen({
         <div className="create-wizard-footer">
           <div className="wizard-nav">
             {stepIndex > 0 ? (
-              <button type="button" className="secondary" onClick={goBack}>
+              <WorldButton type="button" variant="secondary" onClick={goBack}>
                 Назад
-              </button>
+              </WorldButton>
             ) : null}
-            <button
+            <WorldButton
               type="submit"
               data-testid="create-family-submit"
               disabled={submitDisabled}
             >
               {submitLabel}
-            </button>
+            </WorldButton>
           </div>
         </div>
       </form>

@@ -1,4 +1,9 @@
 import { useState } from "react";
+import {
+  Button as WorldButton,
+  Select,
+  Typography
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import type { Family, FamilyMember } from "../../types";
 
@@ -16,32 +21,29 @@ export function OwnerPrepaymentControl({
 
   return (
     <div className="owner-prepayment-control">
-      <label>
-        Оплачено будущих периодов
-        <select
-          data-testid="owner-prepayment-periods"
-          value={periods}
-          onChange={(event) => setPeriods(Number(event.target.value))}
-        >
-          {options.map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
+      <div data-testid="owner-prepayment-periods" data-value={String(periods)}>
+        <Select
+          value={String(periods)}
+          placeholder="Оплачено будущих периодов"
+          onChange={(value) => setPeriods(Number(value))}
+          options={options.map((value) => ({
+            value: String(value),
+            label: String(value)
+          }))}
+        />
+      </div>
+      <WorldButton
         type="button"
-        className="secondary"
+        variant="secondary"
         data-testid="owner-record-prepayment-button"
         onClick={() => void onRecord(member, periods)}
       >
         Отметить
-      </button>
-      <small>
+      </WorldButton>
+      <Typography as="small" variant="body" level={4}>
         Используйте только после договоренности и фактического перевода вне
         SubsMarket.
-      </small>
+      </Typography>
     </div>
   );
 }

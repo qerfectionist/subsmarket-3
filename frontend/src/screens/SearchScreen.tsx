@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
+import {
+  Button as WorldButton,
+  SearchField,
+  Select
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import { FamilyCard } from "../components/families";
 import { EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
@@ -88,12 +92,14 @@ export function SearchScreen({
           <p className="muted">Введите 8 цифр, чтобы открыть конкретную семью.</p>
         </div>
         <div className="invite-toolbar">
-          <input
+          <SearchField
             aria-label="Код приглашения"
             data-testid="invite-code-input"
             inputMode="numeric"
             maxLength={9}
-            placeholder="4827 1936"
+            label="Код приглашения"
+            showPasteButton
+            pasteButtonLabel="Вставить"
             value={inviteCode}
             onChange={(event) => setInviteCode(event.target.value)}
           />
@@ -110,20 +116,18 @@ export function SearchScreen({
       </div>
 
       <div className="search-filter-card">
-        <label>
-          <span>Сервис</span>
-          <select
-            value={familyFilter}
-            onChange={(event) => onChangeFamilyFilter(event.target.value)}
-          >
-            <option value="all">Все сервисы</option>
-            {typedServices.map((item) => (
-              <option key={item.id} value={item.id}>
-                {serviceTitle(item)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          value={familyFilter}
+          onChange={onChangeFamilyFilter}
+          placeholder="Сервис"
+          options={[
+            { value: "all", label: "Все сервисы" },
+            ...typedServices.map((item) => ({
+              value: item.id,
+              label: serviceTitle(item)
+            }))
+          ]}
+        />
         <WorldButton type="button" size="sm" onClick={onRefresh} disabled={busy !== null}>
           Обновить
         </WorldButton>

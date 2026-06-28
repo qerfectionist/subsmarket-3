@@ -55,7 +55,10 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByTestId("home-direction-row")).toHaveCount(3);
   await expect(page.getByTestId("home-quick-action")).toHaveCount(2);
   await expect(page.getByTestId("home-popular-services")).toContainText("YouTube Premium");
-  await expect(page.getByTestId("dev-user-select")).toHaveValue("200001");
+  await expect(page.getByTestId("dev-user-select")).toHaveAttribute(
+    "data-value",
+    "200001"
+  );
 
   await openCreate(page);
   await expect(page.getByTestId("create-family-form")).toBeVisible();
@@ -158,11 +161,11 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByTestId("confirm-payment-button").first()).toBeVisible();
   await page.getByTestId("confirm-payment-button").first().click({ force: true });
   await expect(page.getByTestId("owner-prepayment-periods")).toBeVisible();
-  await page.getByTestId("owner-prepayment-periods").selectOption("2");
+  await selectWorldOption(page, "owner-prepayment-periods", "2");
   await clickAndWait(page, "owner-record-prepayment-button");
   await expect(page.locator(".payment-list").last()).toContainText("предоплата");
 
-  await page.getByTestId("remove-member-reason").selectOption("no_response");
+  await selectWorldOption(page, "remove-member-reason", "Нет связи");
   await page.getByTestId("remove-member-button").click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
@@ -300,7 +303,7 @@ test("owner removes a member immediately with a reason", async ({ page }) => {
   await waitForNetworkQuiet(page);
 
   await expect(page.getByTestId("remove-member-button")).toBeVisible();
-  await page.getByTestId("remove-member-reason").selectOption("no_response");
+  await selectWorldOption(page, "remove-member-reason", "Нет связи");
   await page.getByTestId("remove-member-button").click({ force: true });
   await waitForNetworkQuiet(page);
 
@@ -353,9 +356,22 @@ async function submitCreateFamily(page: Page) {
 
 async function switchDevUser(page: Page, userId: string) {
   await waitForNetworkQuiet(page);
-  await page.getByTestId("dev-user-select").selectOption(userId);
-  await expect(page.getByTestId("dev-user-select")).toHaveValue(userId);
+  const label = userId === "200001" ? "Owner · @demo_owner" : "Member · @demo_member";
+  await selectWorldOption(page, "dev-user-select", label);
+  await expect(page.getByTestId("dev-user-select")).toHaveAttribute(
+    "data-value",
+    userId
+  );
   await expect(page.getByTestId("home-screen")).toBeVisible();
+  await waitForNetworkQuiet(page);
+}
+
+async function selectWorldOption(page: Page, testId: string, optionName: string) {
+  const select = page.getByTestId(testId);
+  await select.locator("button").click({ force: true });
+  await page.getByRole("option", { name: optionName, exact: true }).click({
+    force: true
+  });
   await waitForNetworkQuiet(page);
 }
 

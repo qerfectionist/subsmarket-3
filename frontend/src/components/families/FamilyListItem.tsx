@@ -1,4 +1,4 @@
-import { Cell, Navigation } from "@telegram-apps/telegram-ui";
+import { Button as WorldButton, Chip, ListItem } from "@worldcoin/mini-apps-ui-kit-react";
 
 import { ServiceLogo } from "../branding";
 import { formatDate } from "../../format";
@@ -24,8 +24,10 @@ export function FamilyListItem({
       data-family-type={family.family_type}
       data-testid="family-card"
     >
-      <Cell
-        before={
+      <ListItem
+        label={`${family.service_name}${family.service_variant ? ` ${family.service_variant}` : ""}`}
+        description={`${family.member_share_kzt.toLocaleString("ru-KZ")} ₸ · ${family.free_slots} ${slotLabel(family.free_slots)} · ${periodLabels[family.period]} · ${formatDate(family.next_payment_date)}`}
+        startAdornment={
           <ServiceLogo
             serviceSlug={family.service_slug}
             serviceName={family.service_name}
@@ -33,29 +35,21 @@ export function FamilyListItem({
             size={40}
           />
         }
-        subtitle={`${family.member_share_kzt.toLocaleString("ru-KZ")} ₸ · ${family.free_slots} ${slotLabel(family.free_slots)} · ${periodLabels[family.period]}`}
-        description={`Оплата ${formatDate(family.next_payment_date)} · ${family.owner.first_name}`}
-        after={<Navigation />}
-        multiline
+        endAdornment={<Chip label={familyKindLabels[family.family_type]} variant="default" />}
         data-testid="open-family-button"
         onClick={onOpen}
-      >
-        {family.service_name}
-        {family.service_variant ? ` ${family.service_variant}` : ""}
-        <span className={`type-label type-label-${family.family_type}`}>
-          {familyKindLabels[family.family_type]}
-        </span>
-      </Cell>
+      />
       <div className="family-list-item-action-row">
         <StatusBadge status={family.status} />
-        <button
+        <WorldButton
           type="button"
+          size="sm"
           data-testid="send-request-button"
           disabled={busy !== null}
           onClick={onRequest}
         >
           Заявка
-        </button>
+        </WorldButton>
       </div>
     </article>
   );

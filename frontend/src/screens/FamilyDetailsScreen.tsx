@@ -1,3 +1,8 @@
+import {
+  Button as WorldButton,
+  Typography
+} from "@worldcoin/mini-apps-ui-kit-react";
+
 import { FamilyCard } from "../components/families";
 import { Badge, EmptyState, Panel } from "../components/layout";
 import { PanelSkeleton } from "../components/skeleton";
@@ -66,7 +71,11 @@ export function FamilyDetailsScreen({
       <Panel
         title="Семья"
         description="Откройте семью из поиска или из раздела Мои семьи."
-        action={<button onClick={onBack}>Назад</button>}
+        action={
+          <WorldButton type="button" size="sm" variant="secondary" onClick={onBack}>
+            Назад
+          </WorldButton>
+        }
       >
         <EmptyState title="Семья не выбрана">
           Выберите семью, чтобы посмотреть детали.
@@ -83,17 +92,18 @@ export function FamilyDetailsScreen({
       description={familyKindLabels[family.family_type]}
       action={
         <div className="row-actions">
-          <button type="button" className="secondary" onClick={onBack}>
+          <WorldButton type="button" size="sm" variant="secondary" onClick={onBack}>
             Назад
-          </button>
-          <button
+          </WorldButton>
+          <WorldButton
             type="button"
-            className="secondary"
+            size="sm"
+            variant="secondary"
             data-testid="family-detail-refresh-button"
             onClick={onRefresh}
           >
             Обновить
-          </button>
+          </WorldButton>
         </div>
       }
     >
@@ -122,20 +132,22 @@ export function FamilyDetailsScreen({
       </section>
 
       <section className="detail-section">
-        <h3>Описание</h3>
-        <p>{family.description || "Описание пока не добавлено."}</p>
+        <Typography as="h3" variant="subtitle" level={2}>Описание</Typography>
+        <Typography as="p" variant="body" level={3}>
+          {family.description || "Описание пока не добавлено."}
+        </Typography>
       </section>
 
       <section className="detail-section">
-        <h3>Правила владельца</h3>
-        <p>
+        <Typography as="h3" variant="subtitle" level={2}>Правила владельца</Typography>
+        <Typography as="p" variant="body" level={3}>
           {family.owner_rules ||
             "Владелец пока не добавил отдельные правила. Договоритесь в Telegram перед вступлением."}
-        </p>
+        </Typography>
       </section>
 
       <section className="detail-section">
-        <h3>Ваш статус</h3>
+        <Typography as="h3" variant="subtitle" level={2}>Ваш статус</Typography>
         {membership ? (
           <StatusBlock
             title={statusText(membership.status)}
@@ -166,43 +178,43 @@ export function FamilyDetailsScreen({
       />
 
       <section className="detail-section">
-        <h3>Действия</h3>
+        <Typography as="h3" variant="subtitle" level={2}>Действия</Typography>
         <div className="workspace-actions">
           {!membership && !request && view.can_request && (
-            <button
+            <WorldButton
               type="button"
               data-testid="detail-send-request-button"
               disabled={busy !== null}
               onClick={() => onCreateRequest(family.id)}
             >
               Отправить заявку
-            </button>
+            </WorldButton>
           )}
           {membership?.status === "awaiting_confirmation" && (
-            <button
+            <WorldButton
               type="button"
               data-testid="detail-confirm-access-button"
               disabled={busy !== null}
               onClick={() => onConfirmAccess(membership.id)}
             >
               Доступ получен
-            </button>
+            </WorldButton>
           )}
           {membership?.access_confirmed_at && (
-            <button
+            <WorldButton
               type="button"
-              className="secondary"
+              variant="secondary"
               data-testid="detail-show-requisite-button"
               disabled={busy !== null}
               onClick={() => onGetRequisite(membership.id)}
             >
               Показать реквизиты
-            </button>
+            </WorldButton>
           )}
           {view.owner_username && membership?.role !== "owner" && (
-            <button
+            <WorldButton
               type="button"
-              className="secondary"
+              variant="secondary"
               data-testid="owner-chat-button"
               onClick={() =>
                 openTelegramUser(
@@ -212,7 +224,7 @@ export function FamilyDetailsScreen({
               }
             >
               Написать владельцу
-            </button>
+            </WorldButton>
           )}
           {!view.can_request && !membership && request && (
             <Badge>{statusText(request.status)}</Badge>
@@ -262,60 +274,66 @@ function OwnerInvitePanel({
   return (
     <section className="invite-owner-card">
       <div>
-        <span className="muted">Код приглашения</span>
-        <strong data-testid="owner-invite-code">
+        <Typography as="span" variant="body" level={4} className="muted">
+          Код приглашения
+        </Typography>
+        <Typography as="strong" variant="subtitle" level={2} data-testid="owner-invite-code">
           {formattedCode ?? "Код ещё не создан"}
-        </strong>
-        <p className="muted">
+        </Typography>
+        <Typography as="p" variant="body" level={3} className="muted">
           По коду человек увидит карточку и отправит обычную заявку.
-        </p>
-        <p className="muted">
+        </Typography>
+        <Typography as="p" variant="body" level={3} className="muted">
           Последнее подтверждение:{" "}
           {family.availability_confirmed_at
             ? formatDateTime(family.availability_confirmed_at)
             : "нет данных"}
-        </p>
+        </Typography>
       </div>
       <div className="row-actions">
         {!invite ? (
-          <button
+          <WorldButton
             type="button"
             data-testid="create-invite-button"
             disabled={busy !== null || !editable}
             onClick={() => onCreate(family.id)}
           >
             Создать код
-          </button>
+          </WorldButton>
         ) : (
           <>
-            <button
+            <WorldButton
               type="button"
-              className="secondary"
+              variant="secondary"
+              size="sm"
               onClick={() => void copyInviteCode(invite.code)}
             >
               Копировать
-            </button>
-            <button
+            </WorldButton>
+            <WorldButton
               type="button"
-              className="secondary"
+              variant="secondary"
+              size="sm"
               disabled={busy !== null || !editable}
               onClick={() => onRotate(family.id)}
             >
               Заменить код
-            </button>
-            <button
+            </WorldButton>
+            <WorldButton
               type="button"
-              className="danger"
+              variant="secondary"
+              size="sm"
               disabled={busy !== null || !editable}
               onClick={() => onDisable(family.id)}
             >
               Отключить код
-            </button>
+            </WorldButton>
           </>
         )}
-        <button
+        <WorldButton
           type="button"
-          className="secondary"
+          variant="secondary"
+          size="sm"
           data-testid="toggle-family-visibility-button"
           disabled={busy !== null || !editable}
           onClick={() =>
@@ -323,16 +341,17 @@ function OwnerInvitePanel({
           }
         >
           {family.is_search_visible ? "Скрыть из поиска" : "Показывать в поиске"}
-        </button>
-        <button
+        </WorldButton>
+        <WorldButton
           type="button"
-          className="secondary"
+          variant="secondary"
+          size="sm"
           data-testid="detail-confirm-availability-button"
           disabled={busy !== null || !editable}
           onClick={() => onConfirmAvailability(family.id)}
         >
           Семья актуальна
-        </button>
+        </WorldButton>
       </div>
     </section>
   );
@@ -356,8 +375,8 @@ async function copyInviteCode(code: string) {
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="detail-item">
-      <span>{label}</span>
-      <strong>{value}</strong>
+      <Typography as="span" variant="body" level={4}>{label}</Typography>
+      <Typography as="strong" variant="subtitle" level={3}>{value}</Typography>
     </div>
   );
 }
@@ -365,8 +384,8 @@ function DetailItem({ label, value }: { label: string; value: string }) {
 function StatusBlock({ title, text }: { title: string; text: string }) {
   return (
     <div className="status-block">
-      <strong>{title}</strong>
-      <p>{text}</p>
+      <Typography as="strong" variant="subtitle" level={3}>{title}</Typography>
+      <Typography as="p" variant="body" level={3}>{text}</Typography>
     </div>
   );
 }
@@ -423,12 +442,12 @@ function FamilyFlowSteps({
 
   return (
     <section className="detail-section">
-      <h3>Порядок сделки</h3>
+      <Typography as="h3" variant="subtitle" level={2}>Порядок сделки</Typography>
       <div className="flow-steps">
         {steps.map((step) => (
           <div className={`flow-step flow-step-${step.state}`} key={step.title}>
-            <strong>{step.title}</strong>
-            <p>{step.text}</p>
+            <Typography as="strong" variant="subtitle" level={3}>{step.title}</Typography>
+            <Typography as="p" variant="body" level={3}>{step.text}</Typography>
           </div>
         ))}
       </div>
@@ -450,38 +469,38 @@ function FamilyPaymentActions({
   }
   return (
     <section className="detail-section">
-      <h3>Платежи</h3>
+      <Typography as="h3" variant="subtitle" level={2}>Платежи</Typography>
       {payments.map((payment) => (
         <div className="list-row" key={payment.id}>
           <div>
-            <strong>
+            <Typography as="strong" variant="subtitle" level={3}>
               {payment.amount_kzt.toLocaleString("ru-KZ")} ₸ ·{" "}
               {statusText(payment.status)}
-            </strong>
-            <p>
+            </Typography>
+            <Typography as="p" variant="body" level={3}>
               {paymentKindText(payment.kind)} · {periodLabels[payment.period]} · до{" "}
               {formatDateTime(payment.due_at)}
-            </p>
+            </Typography>
             <PaymentTimeline payment={payment} />
           </div>
           {(payment.status === "due" || payment.status === "overdue") && (
-            <button
+            <WorldButton
               type="button"
               data-testid="detail-report-payment-button"
               onClick={() => void onReportPayment(payment)}
             >
               Оплатил
-            </button>
+            </WorldButton>
           )}
           {payment.status === "payment_reported" && (
-            <button
+            <WorldButton
               type="button"
-              className="secondary"
+              variant="secondary"
               data-testid="detail-cancel-payment-report-button"
               onClick={() => void onCancelPaymentReport(payment)}
             >
               Отменить отметку
-            </button>
+            </WorldButton>
           )}
         </div>
       ))}

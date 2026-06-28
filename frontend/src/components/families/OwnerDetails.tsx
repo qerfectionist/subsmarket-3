@@ -1,4 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
+import {
+  Button as WorldButton,
+  Typography
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import { statusText } from "../../format";
 import type {
@@ -25,8 +29,14 @@ function OwnerPanel({
 }) {
   return (
     <section className="owner-panel">
-      <h4>{title}</h4>
-      {empty ? <p className="muted">{empty}</p> : children}
+      <Typography as="h4" variant="subtitle" level={2}>
+        {title}
+      </Typography>
+      {empty ? (
+        <Typography as="p" variant="body" level={3} className="muted">
+          {empty}
+        </Typography>
+      ) : children}
     </section>
   );
 }
@@ -45,9 +55,19 @@ function OwnerListRow({
   return (
     <article className="owner-list-row">
       <div>
-        <strong>{title}</strong>
-        {subtitle ? <p>{subtitle}</p> : null}
-        {description ? <small>{description}</small> : null}
+        <Typography as="strong" variant="subtitle" level={3}>
+          {title}
+        </Typography>
+        {subtitle ? (
+          <Typography as="p" variant="body" level={3}>
+            {subtitle}
+          </Typography>
+        ) : null}
+        {description ? (
+          <Typography as="small" variant="body" level={4}>
+            {description}
+          </Typography>
+        ) : null}
       </div>
       {children ? <div className="row-actions">{children}</div> : null}
     </article>
@@ -108,10 +128,12 @@ export function OwnerDetails({
         role="tablist"
         aria-label="Управление семьёй"
       >
-        <button
+        <WorldButton
           type="button"
           role="tab"
           aria-selected={ownerTab === "requests"}
+          variant={ownerTab === "requests" ? "primary" : "tertiary"}
+          size="sm"
           className={
             ownerTab === "requests"
               ? "segmented-option segmented-option-active"
@@ -120,11 +142,13 @@ export function OwnerDetails({
           onClick={() => setOwnerTab("requests")}
         >
           Заявки{details.requests.length > 0 ? ` · ${details.requests.length}` : ""}
-        </button>
-        <button
+        </WorldButton>
+        <WorldButton
           type="button"
           role="tab"
           aria-selected={ownerTab === "members"}
+          variant={ownerTab === "members" ? "primary" : "tertiary"}
+          size="sm"
           className={
             ownerTab === "members"
               ? "segmented-option segmented-option-active"
@@ -133,11 +157,13 @@ export function OwnerDetails({
           onClick={() => setOwnerTab("members")}
         >
           Участники · {details.members.length}
-        </button>
-        <button
+        </WorldButton>
+        <WorldButton
           type="button"
           role="tab"
           aria-selected={ownerTab === "payments"}
+          variant={ownerTab === "payments" ? "primary" : "tertiary"}
+          size="sm"
           className={
             ownerTab === "payments"
               ? "segmented-option segmented-option-active"
@@ -146,7 +172,7 @@ export function OwnerDetails({
           onClick={() => setOwnerTab("payments")}
         >
           Оплаты{pendingPayments.length > 0 ? ` · ${pendingPayments.length}` : ""}
-        </button>
+        </WorldButton>
       </div>
 
       {ownerTab === "requests" && (
@@ -165,21 +191,23 @@ export function OwnerDetails({
               subtitle={request.candidate.first_name}
               description="Кандидат ждет решения владельца."
             >
-              <button
+              <WorldButton
                 type="button"
+                size="sm"
                 data-testid="approve-request-button"
                 onClick={() => void onApprove(request)}
               >
                 Принять
-              </button>
-              <button
+              </WorldButton>
+              <WorldButton
                 type="button"
-                className="secondary"
+                variant="secondary"
+                size="sm"
                 data-testid="reject-request-button"
                 onClick={() => void onReject(request)}
               >
                 Отклонить
-              </button>
+              </WorldButton>
             </OwnerListRow>
           ))}
         </OwnerPanel>
@@ -203,32 +231,35 @@ export function OwnerDetails({
               >
                 {member.status === "awaiting_access" && (
                   <>
-                    <button
+                    <WorldButton
                       type="button"
+                      size="sm"
                       data-testid="access-provided-button"
                       onClick={() => void onAccessProvided(member)}
                     >
                       Доступ выдан
-                    </button>
-                    <button
+                    </WorldButton>
+                    <WorldButton
                       type="button"
-                      className="secondary"
+                      variant="secondary"
+                      size="sm"
                       data-testid="cancel-before-access-button"
                       onClick={() => void onCancelBeforeAccess(member)}
                     >
                       Отменить до доступа
-                    </button>
+                    </WorldButton>
                   </>
                 )}
                 {member.status === "awaiting_confirmation" && (
-                  <button
+                  <WorldButton
                     type="button"
-                    className="secondary"
+                    variant="secondary"
+                    size="sm"
                     data-testid="remind-access-button"
                     onClick={() => void onRemindAccess(member)}
                   >
                     Напомнить
-                  </button>
+                  </WorldButton>
                 )}
               </OwnerListRow>
               {["awaiting_confirmation", "payment_due", "active"].includes(
@@ -268,21 +299,23 @@ export function OwnerDetails({
               subtitle={`${paymentKindText(payment.kind)} · ${statusText(payment.status)}`}
               description="Проверьте перевод вне SubsMarket и подтвердите вручную."
             >
-              <button
+              <WorldButton
                 type="button"
+                size="sm"
                 data-testid="confirm-payment-button"
                 onClick={() => void onConfirmPayment(payment)}
               >
                 Подтвердить
-              </button>
-              <button
+              </WorldButton>
+              <WorldButton
                 type="button"
-                className="secondary"
+                variant="secondary"
+                size="sm"
                 data-testid="payment-not-received-button"
                 onClick={() => void onNotReceived(payment)}
               >
                 Не получил
-              </button>
+              </WorldButton>
             </OwnerListRow>
           ))}
         </OwnerPanel>

@@ -1,4 +1,10 @@
 import { useEffect, useState } from "react";
+import {
+  Button as WorldButton,
+  Input,
+  TextArea,
+  Typography
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import { FamilyCard, OwnerDetails, PaymentList } from "../components/families";
 import { Badge, EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
@@ -117,14 +123,15 @@ export function MyFamiliesScreen({
               >
                 <FamilyCard family={item.family}>
                   <Badge>{statusText(item.membership.status)}</Badge>
-                  <button
+                  <WorldButton
                     type="button"
-                    className="secondary"
+                    variant="secondary"
+                    size="sm"
                     data-testid="workspace-open-family-button"
                     onClick={() => onOpenFamily(item.family.id)}
                   >
                     Подробнее
-                  </button>
+                  </WorldButton>
                 </FamilyCard>
                 {item.membership.role === "owner" && (
                   <OwnerWorkSummary
@@ -367,25 +374,27 @@ function OwnerActions({
   return (
     <div className="owner-settings-card">
       <div className="row-actions">
-        <button
+        <WorldButton
           type="button"
+          size="sm"
           data-testid="owner-details-button"
           disabled={busy !== null}
           onClick={() => onLoadOwnerDetails(family.id)}
         >
           Заявки и участники
-        </button>
-        <button
+        </WorldButton>
+        <WorldButton
           type="button"
-          className="secondary"
+          variant="secondary"
+          size="sm"
           data-testid="confirm-availability-button"
           disabled={busy !== null || !["active", "full"].includes(family.status)}
           onClick={() => onConfirmAvailability(family.id)}
         >
           Семья актуальна
-        </button>
+        </WorldButton>
       </div>
-      <small className="muted">
+      <Typography as="small" variant="body" level={4} className="muted">
         Последнее подтверждение:{" "}
         {family.availability_confirmed_at
           ? new Intl.DateTimeFormat("ru-KZ", {
@@ -393,22 +402,20 @@ function OwnerActions({
               timeStyle: "short"
             }).format(new Date(family.availability_confirmed_at))
           : "нет данных"}
-      </small>
+      </Typography>
 
       <div className="owner-settings-grid">
-        <label>
-          Доступ работает до
-          <input
-            data-testid="close-family-date-input"
-            min={today}
-            type="date"
-            value={closeDateDraft}
-            onChange={(event) => setCloseDateDraft(event.target.value)}
-          />
-        </label>
-        <button
+        <Input
+          label="Доступ работает до"
+          data-testid="close-family-date-input"
+          min={today}
+          type="date"
+          value={closeDateDraft}
+          onChange={(event) => setCloseDateDraft(event.target.value)}
+        />
+        <WorldButton
           type="button"
-          className="danger"
+          variant="secondary"
           data-testid="close-family-button"
           disabled={
             busy !== null ||
@@ -419,26 +426,23 @@ function OwnerActions({
           onClick={() => onCloseFamily(family.id, closeDateDraft)}
         >
           Закрыть семью
-        </button>
+        </WorldButton>
       </div>
-      <small className="muted">
+      <Typography as="small" variant="body" level={4} className="muted">
         Семья сразу исчезнет из поиска, а участники увидят точную дату окончания
         доступа.
-      </small>
+      </Typography>
 
-      <label>
-        Описание семьи
-        <textarea
-          data-testid="owner-description-input"
-          rows={3}
-          value={descriptionDraft}
-          onChange={(event) => setDescriptionDraft(event.target.value)}
-          placeholder="Например: как выдаёте доступ и когда отвечаете в Telegram"
-        />
-      </label>
-      <button
+      <TextArea
+        label="Описание семьи"
+        data-testid="owner-description-input"
+        rows={3}
+        value={descriptionDraft}
+        onChange={(event) => setDescriptionDraft(event.target.value)}
+      />
+      <WorldButton
         type="button"
-        className="secondary"
+        variant="secondary"
         data-testid="owner-save-description-button"
         disabled={busy !== null}
         onClick={() =>
@@ -446,57 +450,51 @@ function OwnerActions({
         }
       >
         Сохранить описание
-      </button>
+      </WorldButton>
 
       <div className="owner-settings-grid">
-        <label>
-          Общая цена
-          <input
-            data-testid="owner-price-input"
-            min={1}
-            type="number"
-            value={priceDraft}
-            onChange={(event) => setPriceDraft(event.target.value)}
-          />
-        </label>
-        <button
+        <Input
+          label="Общая цена"
+          data-testid="owner-price-input"
+          min={1}
+          type="number"
+          value={priceDraft}
+          onChange={(event) => setPriceDraft(event.target.value)}
+        />
+        <WorldButton
           type="button"
-          className="secondary"
+          variant="secondary"
           data-testid="owner-save-price-button"
           disabled={busy !== null || !canSubmitPrice}
           onClick={() => onUpdatePrice(family.id, priceValue)}
         >
           Изменить цену
-        </button>
+        </WorldButton>
       </div>
-      <small className="muted">
+      <Typography as="small" variant="body" level={4} className="muted">
         Цену можно менять один раз в месяц. Участники получат уведомление.
-      </small>
+      </Typography>
 
       <div className="owner-settings-grid">
-        <label>
-          День оплаты
-          <input
-            data-testid="owner-payment-day-input"
-            max={31}
-            min={1}
-            type="number"
-            value={paymentDayDraft}
-            onChange={(event) => setPaymentDayDraft(event.target.value)}
-          />
-        </label>
-        <label>
-          Следующая дата
-          <input
-            data-testid="owner-next-payment-date-input"
-            type="date"
-            value={nextPaymentDateDraft}
-            onChange={(event) => setNextPaymentDateDraft(event.target.value)}
-          />
-        </label>
-        <button
+        <Input
+          label="День оплаты"
+          data-testid="owner-payment-day-input"
+          max={31}
+          min={1}
+          type="number"
+          value={paymentDayDraft}
+          onChange={(event) => setPaymentDayDraft(event.target.value)}
+        />
+        <Input
+          label="Следующая дата"
+          data-testid="owner-next-payment-date-input"
+          type="date"
+          value={nextPaymentDateDraft}
+          onChange={(event) => setNextPaymentDateDraft(event.target.value)}
+        />
+        <WorldButton
           type="button"
-          className="secondary"
+          variant="secondary"
           data-testid="owner-save-payment-day-button"
           disabled={busy !== null || !canSubmitPaymentDay}
           onClick={() =>
@@ -504,11 +502,11 @@ function OwnerActions({
           }
         >
           Изменить дату оплаты
-        </button>
+        </WorldButton>
       </div>
-      <small className="muted">
+      <Typography as="small" variant="body" level={4} className="muted">
         Дату оплаты можно менять только пока семья ещё не была полностью собрана.
-      </small>
+      </Typography>
     </div>
   );
 }
@@ -537,56 +535,56 @@ function MemberActions({
   return (
     <>
       {member.status === "awaiting_confirmation" && (
-        <button
+        <WorldButton
           type="button"
           data-testid="confirm-access-button"
           disabled={busy !== null}
           onClick={() => onConfirmAccess(member.id)}
         >
           Доступ получен
-        </button>
+        </WorldButton>
       )}
       {member.access_confirmed_at && (
-        <button
+        <WorldButton
           type="button"
-          className="secondary"
+          variant="secondary"
           data-testid="show-requisite-button"
           disabled={busy !== null}
           onClick={() => onGetRequisite(member.id)}
         >
           Показать реквизиты
-        </button>
+        </WorldButton>
       )}
       {member.status === "active" && ["active", "full"].includes(familyStatus) && (
-        <button
+        <WorldButton
           type="button"
-          className="secondary"
+          variant="secondary"
           data-testid="create-prepayment-button"
           disabled={busy !== null}
           onClick={() => onCreatePrepayment(member.id)}
         >
           Оплатить следующий период заранее
-        </button>
+        </WorldButton>
       )}
       {familyStatus === "closing" && (
-        <button
+        <WorldButton
           type="button"
           data-testid="acknowledge-closing-button"
           disabled={busy !== null}
           onClick={() => onAcknowledgeClosing(familyId)}
         >
           Понятно, семья закрывается
-        </button>
+        </WorldButton>
       )}
-      <button
+      <WorldButton
         type="button"
-        className="danger"
+        variant="secondary"
         data-testid="leave-family-button"
         disabled={busy !== null}
         onClick={() => onLeaveFamily(member.id)}
       >
         Выйти
-      </button>
+      </WorldButton>
     </>
   );
 }

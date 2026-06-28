@@ -1,3 +1,8 @@
+import {
+  Button as WorldButton,
+  Typography
+} from "@worldcoin/mini-apps-ui-kit-react";
+
 import { Badge, EmptyState, Panel } from "../components/layout";
 import { PanelSkeleton } from "../components/skeleton";
 import { formatDateTime, statusText } from "../format";
@@ -46,32 +51,33 @@ export function RequestsScreen({
                     >
                       {familyKindLabels[request.family_type]}
                     </span>
-                    <strong>
+                    <Typography as="strong" variant="subtitle" level={3}>
                       {request.service_name}
                       {request.service_variant
                         ? ` ${request.service_variant}`
                         : ""}
-                    </strong>
+                    </Typography>
                   </div>
                   <Badge>{statusText(request.status)}</Badge>
                 </div>
-                <p>
+                <Typography as="p" variant="body" level={3}>
                   Создана {formatDateTime(request.created_at)} · истекает{" "}
                   {formatDateTime(request.expires_at)}
-                </p>
+                </Typography>
                 {request.cancel_reason && (
-                  <small>
+                  <Typography as="small" variant="body" level={4}>
                     {requestCancelReasonLabels[request.cancel_reason] ??
                       request.cancel_reason}
-                  </small>
+                  </Typography>
                 )}
               </div>
               {request.status === "pending" && (
                 <div className="row-actions">
                   {request.owner_username && (
-                    <button
+                    <WorldButton
                       type="button"
-                      className="secondary"
+                      variant="secondary"
+                      size="sm"
                       data-testid="request-owner-chat-button"
                       onClick={() =>
                         openTelegramUser(
@@ -81,16 +87,17 @@ export function RequestsScreen({
                       }
                     >
                       Написать владельцу
-                    </button>
+                    </WorldButton>
                   )}
-                  <button
+                  <WorldButton
                     type="button"
-                    className="secondary"
+                    variant="secondary"
+                    size="sm"
                     disabled={busy !== null}
                     onClick={() => onCancelRequest(request.id)}
                   >
                     Отменить
-                  </button>
+                  </WorldButton>
                 </div>
               )}
             </article>

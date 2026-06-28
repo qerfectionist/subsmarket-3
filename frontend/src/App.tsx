@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Snackbar } from "@telegram-apps/telegram-ui";
+import { Button as WorldButton, useToast } from "@worldcoin/mini-apps-ui-kit-react";
 
 import {
   type DevTelegramUser,
@@ -101,6 +101,7 @@ const emptyCreateForm: FamilyCreate = {
 
 export function App() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const meQuery = useMe();
   const servicesQuery = useFamilyServices();
   const familiesQuery = useFamilies();
@@ -123,7 +124,6 @@ export function App() {
   const [familyFilter, setFamilyFilter] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const startParamHandled = useRef(false);
 
   const familyViewQuery = useFamilyView(selectedFamilyId);
@@ -195,10 +195,9 @@ export function App() {
       triggerTelegramSelection();
       setBusy(label);
       setError(null);
-      setToast(null);
       await mutation();
       triggerTelegramNotification("success");
-      setToast(toastMessage(label));
+      toast.success({ title: toastMessage(label) });
     } catch (err) {
       triggerTelegramNotification("error");
       setError(formatError(err));
@@ -422,12 +421,13 @@ export function App() {
             <li>Создайте username.</li>
             <li>Вернитесь в SubsMarket и обновите профиль.</li>
           </ol>
-          <button
+          <WorldButton
             type="button"
+            fullWidth
             onClick={() => void runMutation("refresh-profile", () => refreshProfileMutation.mutateAsync())}
           >
             Я создал username
-          </button>
+          </WorldButton>
         </div>
       </Shell>
     );
@@ -438,9 +438,9 @@ export function App() {
       <Shell title="Backend недоступен">
         <div className="notice notice-error">
           <p>{formatError(meQuery.error)}</p>
-          <button type="button" onClick={() => meQuery.refetch()}>
+          <WorldButton type="button" fullWidth onClick={() => meQuery.refetch()}>
             Повторить
-          </button>
+          </WorldButton>
         </div>
       </Shell>
     );
@@ -760,16 +760,6 @@ export function App() {
           ).length
         }}
       />
-
-      {toast && (
-        <Snackbar
-          duration={3000}
-          onClose={() => setToast(null)}
-          before={<span style={{ fontSize: 20 }}>✓</span>}
-        >
-          {toast}
-        </Snackbar>
-      )}
 
     </Shell>
   );

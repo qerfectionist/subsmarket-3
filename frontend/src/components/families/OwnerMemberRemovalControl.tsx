@@ -1,4 +1,8 @@
 import { useState } from "react";
+import {
+  Button as WorldButton,
+  Select
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import type { FamilyMember, FamilyMemberRemovalReason } from "../../types";
 import { memberRemovalReasonLabels } from "../../labels";
@@ -17,28 +21,25 @@ export function OwnerMemberRemovalControl({
 
   return (
     <div className="owner-removal-control">
-      <select
-        aria-label="Причина удаления"
-        data-testid="remove-member-reason"
-        value={reason}
-        onChange={(event) =>
-          setReason(event.target.value as FamilyMemberRemovalReason)
-        }
-      >
-        {Object.entries(memberRemovalReasonLabels).map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </select>
-      <button
+      <div data-testid="remove-member-reason" data-value={reason}>
+        <Select
+          aria-label="Причина удаления"
+          value={reason}
+          onChange={(value) => setReason(value as FamilyMemberRemovalReason)}
+          options={Object.entries(memberRemovalReasonLabels).map(([value, label]) => ({
+            value,
+            label
+          }))}
+        />
+      </div>
+      <WorldButton
         type="button"
-        className="danger"
+        variant="secondary"
         data-testid="remove-member-button"
         onClick={() => void onRemove(member, reason)}
       >
         Удалить
-      </button>
+      </WorldButton>
     </div>
   );
 }

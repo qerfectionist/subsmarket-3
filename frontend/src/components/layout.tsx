@@ -1,7 +1,14 @@
 import type { ReactNode } from "react";
 
-import { List } from "@telegram-apps/telegram-ui";
-import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
+import {
+  Button as WorldButton,
+  ListItem,
+  Select,
+  Tabs,
+  TabItem,
+  TopBar,
+  Typography
+} from "@worldcoin/mini-apps-ui-kit-react";
 
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
@@ -19,22 +26,22 @@ export function AppHeader({
   const acronym = (firstName ?? userName).slice(0, 2).toUpperCase();
 
   return (
-    <header className="app-topbar">
-      <div className="app-user-card">
+    <TopBar
+      className="app-topbar"
+      title="SubsMarket"
+      startAdornment={
         <span className="app-user-avatar" aria-hidden>
           {acronym}
           <span className="app-user-status" />
         </span>
-        <span className="app-user-copy">
-          <strong>SubsMarket</strong>
-          <small>@{userName}</small>
-        </span>
-      </div>
-      <button type="button" className="app-icon-button" aria-label="Уведомления">
-        <BellIcon />
-        <span className="app-icon-dot" aria-hidden />
-      </button>
-    </header>
+      }
+      endAdornment={
+        <WorldButton type="button" size="icon" variant="tertiary" aria-label="Уведомления">
+          <BellIcon />
+          <span className="app-icon-dot" aria-hidden />
+        </WorldButton>
+      }
+    />
   );
 }
 
@@ -47,18 +54,19 @@ export function DevUserSwitch({
 }) {
   return (
     <div className="dev-user-compact" aria-label="Dev user switch" data-testid="dev-user-switch">
-      <span>Dev: @{value.username}</span>
-      <select
-        data-testid="dev-user-select"
-        value={String(value.id)}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {DEV_TELEGRAM_USERS.map((user) => (
-          <option key={user.id} value={user.id}>
-            {user.label} · @{user.username}
-          </option>
-        ))}
-      </select>
+      <Typography as="span" variant="label" level={2}>
+        Dev: @{value.username}
+      </Typography>
+      <div data-testid="dev-user-select" data-value={String(value.id)}>
+        <Select
+          value={String(value.id)}
+          onChange={onChange}
+          options={DEV_TELEGRAM_USERS.map((user) => ({
+            value: String(user.id),
+            label: `${user.label} · @${user.username}`
+          }))}
+        />
+      </div>
     </div>
   );
 }
@@ -78,8 +86,12 @@ export function Panel({
     <section className="app-panel">
       <div className="app-panel-head">
         <div>
-          <h1>{title}</h1>
-          <p>{description}</p>
+          <Typography as="h1" variant="heading" level={4}>
+            {title}
+          </Typography>
+          <Typography as="p" variant="body" level={3}>
+            {description}
+          </Typography>
         </div>
         {action ? <div className="app-panel-action">{action}</div> : null}
       </div>
@@ -91,7 +103,9 @@ export function Panel({
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="empty-state">
-      <strong>{title}</strong>
+      <Typography as="strong" variant="subtitle" level={2}>
+        {title}
+      </Typography>
       <div className="empty-state-body">{children}</div>
     </div>
   );
@@ -117,7 +131,7 @@ export function FamilyTypeSwitch({
   onChange: (value: FamilyType) => void;
 }) {
   return (
-    <List className="family-type-switch">
+    <div className="family-type-switch">
       {(["subscription", "tariff"] as FamilyType[]).map((type) => (
         <WorldButton
           key={type}
@@ -131,7 +145,7 @@ export function FamilyTypeSwitch({
           {familyTypeLabels[type]}
         </WorldButton>
       ))}
-    </List>
+    </div>
   );
 }
 
@@ -144,59 +158,66 @@ export function BottomNav({
   onChange: (tab: Tab) => void;
   badges?: Partial<Record<Tab, number>>;
 }) {
+  const activeValue = active === "family" ? "mine" : active;
+
   return (
     <nav className="bottom-nav" aria-label="Главная навигация">
-      <NavItem active={active === "home"} icon="home" label="Главная" onClick={() => onChange("home")} />
-      <NavItem active={active === "search"} icon="search" label="Поиск" onClick={() => onChange("search")} />
+      <Tabs
+        value={activeValue}
+        onValueChange={(value) => {
+          if (value) onChange(value as Tab);
+        }}
+      >
+      <NavItem value="home" icon="home" label="Главная" />
+      <NavItem value="search" icon="search" label="Поиск" />
       <NavItem
-        active={active === "mine" || active === "family"}
+        value="mine"
         icon="families"
         label="Семьи"
         badge={badges?.mine}
-        onClick={() => onChange("mine")}
       />
       <NavItem
-        active={active === "requests"}
+        value="requests"
         icon="requests"
         label="Заявки"
         badge={badges?.requests}
-        onClick={() => onChange("requests")}
       />
+      </Tabs>
     </nav>
   );
 }
 
 function NavItem({
-  active,
+  value,
   icon,
   label,
-  onClick,
   badge
 }: {
-  active: boolean;
+  value: Tab;
   icon: "home" | "search" | "families" | "requests";
   label: string;
-  onClick: () => void;
   badge?: number;
 }) {
-  function handleClick() {
+  function handlePointerDown() {
     triggerTelegramSelection();
-    onClick();
   }
 
   return (
-    <button
-      type="button"
+    <TabItem
+      value={value}
       data-testid="nav-item"
-      className={active ? "nav-item nav-item-active" : "nav-item"}
-      onClick={handleClick}
-    >
-      <NavIcon icon={icon} />
-      <small>{label}</small>
-      {badge !== undefined && badge > 0 && (
-        <span className="nav-badge">{badge > 9 ? "9+" : badge}</span>
-      )}
-    </button>
+      className="nav-item"
+      icon={
+        <span className="nav-icon-wrap">
+          <NavIcon icon={icon} />
+          {badge !== undefined && badge > 0 && (
+            <span className="nav-badge">{badge > 9 ? "9+" : badge}</span>
+          )}
+        </span>
+      }
+      label={label}
+      onPointerDown={handlePointerDown}
+    />
   );
 }
 

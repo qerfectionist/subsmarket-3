@@ -1352,9 +1352,8 @@ textarea {
   border-radius: 24px;
   bottom: calc(12px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom));
   box-shadow: 0 16px 42px rgba(23, 33, 43, 0.12);
-  display: grid;
+  display: block;
   gap: 2px;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   left: 50%;
   max-width: 394px;
   padding: 7px 8px 8px;
@@ -1365,16 +1364,27 @@ textarea {
   z-index: 1000;
 }
 
+.bottom-nav [role="group"] {
+  padding: 0;
+}
+
 .nav-item {
   align-items: center;
   background: transparent;
   border-radius: 14px;
   color: var(--app-muted);
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 2px;
-  justify-items: center;
   min-height: 48px;
   padding: 5px 3px;
+  position: relative;
+}
+
+.nav-icon-wrap {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
   position: relative;
 }
 
@@ -1394,12 +1404,14 @@ textarea {
   line-height: 1.15;
 }
 
-.nav-item-active {
+.nav-item-active,
+.nav-item[data-state="on"] {
   background: transparent;
   color: var(--app-link);
 }
 
-.nav-item-active .nav-icon {
+.nav-item-active .nav-icon,
+.nav-item[data-state="on"] .nav-icon {
   stroke-width: 2.15;
 }
 
