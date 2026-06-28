@@ -1421,15 +1421,26 @@ button:active {
   border: 0;
   border-radius: 0;
   box-shadow: none;
-  margin-bottom: 16px;
-  padding: 0 4px;
+  margin-bottom: 14px;
+  padding: 0 2px;
 }
 
 .app-user-avatar {
-  background: #eaf1ff;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   color: var(--app-accent);
-  height: 40px;
-  width: 40px;
+  font-size: 13px;
+  height: 48px;
+  width: 48px;
+}
+
+.app-topbar button[aria-label="Настройки"] {
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  color: #334155;
+  height: 48px;
+  min-height: 48px;
+  width: 48px;
 }
 
 .app-icon-button {
