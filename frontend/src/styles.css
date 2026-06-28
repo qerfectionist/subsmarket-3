@@ -1417,12 +1417,12 @@ button:active {
 }
 
 .app-topbar {
-  background: var(--app-surface);
-  border: 1px solid var(--app-border);
-  border-radius: 22px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
-  margin-bottom: 14px;
-  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin-bottom: 16px;
+  padding: 0 4px;
 }
 
 .app-user-avatar {
