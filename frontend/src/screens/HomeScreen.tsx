@@ -1,12 +1,7 @@
-import {
-  Button as WorldButton,
-  Chip,
-  CircularIcon,
-  ListItem,
-  Typography
-} from "@worldcoin/mini-apps-ui-kit-react";
+import { Chip, CircularIcon, ListItem, Typography } from "@worldcoin/mini-apps-ui-kit-react";
+import type { LucideIcon } from "lucide-react";
+import { BadgePlus, KeyRound, Search, UsersRound, Wifi } from "lucide-react";
 
-import { ServiceLogo } from "../components/branding";
 import type { Family, FamilyRequest, FamilyType, MyFamily } from "../types";
 
 type Direction = {
@@ -14,8 +9,9 @@ type Direction = {
   title: string;
   subtitle: string;
   status: string;
-  tone: "blue" | "violet" | "amber";
+  tone: "blue" | "neutral";
   enabled: boolean;
+  Icon: LucideIcon;
   onClick?: () => void;
 };
 
@@ -24,30 +20,10 @@ type PrimaryAction = {
   title: string;
   subtitle: string;
   badge: string;
-  tone: "blue" | "dark";
+  tone: "blue" | "neutral";
+  Icon: LucideIcon;
   onClick: () => void;
 };
-
-const popularServices = [
-  {
-    name: "YouTube Premium",
-    slug: "youtube-premium",
-    price: "от 650 ₸",
-    slots: "1-6 мест"
-  },
-  {
-    name: "Spotify Premium",
-    slug: "spotify-family",
-    price: "от 590 ₸",
-    slots: "1-6 мест"
-  },
-  {
-    name: "Apple One",
-    slug: "apple-one",
-    price: "от 1 290 ₸",
-    slots: "1-6 мест"
-  }
-];
 
 export function HomeScreen({
   families,
@@ -94,18 +70,20 @@ export function HomeScreen({
       title: "Найти семью",
       subtitle:
         openFamilies.length > 0
-          ? `${openFamilies.length} свободных семей в поиске`
+          ? `${openFamilies.length} семья открыта для заявок`
           : "Посмотреть доступные подписки",
       badge: "Поиск",
       tone: "blue",
+      Icon: Search,
       onClick: () => onSearch("subscription")
     },
     {
       id: "create",
       title: "Создать семью",
-      subtitle: "Открыть места и принимать заявки",
-      badge: activeFamilies.length >= 2 ? "Лимит" : "Владелец",
-      tone: "dark",
+      subtitle: "Открыть места для участников",
+      badge: activeFamilies.length >= 2 ? "Лимит" : "Старт",
+      tone: "neutral",
+      Icon: BadgePlus,
       onClick: () => onCreate("subscription")
     }
   ];
@@ -115,26 +93,29 @@ export function HomeScreen({
       id: "family",
       title: "Подписки и тарифы",
       subtitle: "YouTube, Spotify, операторы",
-      status: "Работает",
+      status: "Доступно",
       tone: "blue",
       enabled: true,
+      Icon: UsersRound,
       onClick: () => onSearch("subscription")
     },
     {
       id: "accounts",
       title: "Аккаунты и доступы",
-      subtitle: "AI-сервисы, обучение, цифровые продукты",
+      subtitle: "AI-сервисы, обучение",
       status: "Скоро",
-      tone: "violet",
-      enabled: false
+      tone: "neutral",
+      enabled: false,
+      Icon: KeyRound
     },
     {
       id: "gigabytes",
-      title: "Гигабайты / интернет",
-      subtitle: "Витрина мобильного интернета",
+      title: "Гигабайты",
+      subtitle: "Мобильный интернет",
       status: "Позже",
-      tone: "amber",
-      enabled: false
+      tone: "neutral",
+      enabled: false,
+      Icon: Wifi
     }
   ];
 
@@ -145,11 +126,10 @@ export function HomeScreen({
           SubsMarket
         </Typography>
         <Typography as="h1" variant="heading" level={4} className="home-heading">
-          Что хотите сделать?
+          Что делаем?
         </Typography>
         <Typography as="p" variant="body" level={3} className="home-lead">
-          Найдите место в семье или откройте свою. Остальное приложение ведёт по
-          заявкам, доступу и оплатам.
+          Найдите место в семейной подписке или создайте свою семью.
         </Typography>
       </section>
 
@@ -178,6 +158,7 @@ export function HomeScreen({
                 : "Пока пусто"
             }
             count={activeFamilies.length}
+            quietCount
             onClick={onMine}
           />
           <QuickAction
@@ -211,43 +192,6 @@ export function HomeScreen({
           ))}
         </div>
       </section>
-
-      <section className="home-section">
-        <div className="home-section-heading">
-          <Typography as="h2" variant="subtitle" level={2} className="home-title">
-            Популярное
-          </Typography>
-          <WorldButton
-            type="button"
-            variant="tertiary"
-            size="sm"
-            className="text-button"
-            onClick={() => onSearch("subscription")}
-          >
-            Все семьи
-          </WorldButton>
-        </div>
-        <div className="popular-service-list" data-testid="home-popular-services">
-          {popularServices.map((service) => (
-            <ListItem
-              key={service.slug}
-              type="button"
-              label={service.name}
-              description={`${service.price} за место`}
-              startAdornment={
-                <ServiceLogo
-                  serviceSlug={service.slug}
-                  serviceName={service.name}
-                  familyType="subscription"
-                  size={42}
-                />
-              }
-              endAdornment={<Chip label={service.slots} variant="success" />}
-              onClick={() => onSearch("subscription")}
-            />
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
@@ -264,13 +208,13 @@ function PrimaryActionCard({ action }: { action: PrimaryAction }) {
         description={action.subtitle}
         startAdornment={
           <CircularIcon className={`home-action-icon home-action-icon-${action.tone}`} size="md">
-            <ActionGlyph id={action.id} />
+            <action.Icon size={24} strokeWidth={2.2} />
           </CircularIcon>
         }
         endAdornment={
           <Chip
             label={action.badge}
-            variant={action.tone === "blue" ? "success" : "default"}
+            variant="default"
           />
         }
         data-testid={testId}
@@ -283,13 +227,13 @@ function PrimaryActionCard({ action }: { action: PrimaryAction }) {
 function DirectionCard({ direction }: { direction: Direction }) {
   const startAdornment = (
     <CircularIcon className={`direction-icon direction-icon-${direction.tone}`} size="md">
-      <DirectionGlyph id={direction.id} />
+      <direction.Icon size={23} strokeWidth={2.1} />
     </CircularIcon>
   );
   const endAdornment = (
     <Chip
       label={direction.status}
-      variant={direction.enabled ? "success" : "default"}
+      variant="default"
     />
   );
 
@@ -323,11 +267,13 @@ function QuickAction({
   title,
   subtitle,
   count,
+  quietCount = false,
   onClick
 }: {
   title: string;
   subtitle: string;
   count: number;
+  quietCount?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -335,58 +281,13 @@ function QuickAction({
       type="button"
       label={title}
       description={subtitle}
-      endAdornment={count > 0 ? <Chip label={String(count)} variant="error" /> : undefined}
+      endAdornment={
+        count > 0 ? (
+          <Chip label={String(count)} variant={quietCount ? "default" : "error"} />
+        ) : undefined
+      }
       data-testid="home-quick-action"
       onClick={onClick}
     />
-  );
-}
-
-function ActionGlyph({ id }: { id: PrimaryAction["id"] }) {
-  if (id === "find") {
-    return (
-      <svg viewBox="0 0 24 24" className="home-glyph">
-        <circle cx="10.5" cy="10.5" r="6" />
-        <path d="m15.2 15.2 4.3 4.3" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox="0 0 24 24" className="home-glyph">
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
-function DirectionGlyph({ id }: { id: Direction["id"] }) {
-  if (id === "family") {
-    return (
-      <svg viewBox="0 0 24 24" className="home-glyph">
-        <circle cx="9" cy="9" r="3" />
-        <circle cx="16.4" cy="9.8" r="2.5" />
-        <path d="M4 19c.7-3.2 2.4-5 5-5s4.3 1.8 5 5" />
-        <path d="M13.6 15c2.4.1 3.9 1.5 4.5 4" />
-      </svg>
-    );
-  }
-  if (id === "accounts") {
-    return (
-      <svg viewBox="0 0 24 24" className="home-glyph">
-        <circle cx="8" cy="16" r="3" />
-        <path d="M10.4 13.6 18 6" />
-        <path d="m15.8 8.2 2 2" />
-        <path d="m17.6 6.4 1.8 1.8" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" className="home-glyph">
-      <circle cx="12" cy="12" r="8" />
-      <path d="M4.5 12h15" />
-      <path d="M12 4.3c2 2.2 3 4.8 3 7.7s-1 5.5-3 7.7" />
-      <path d="M12 4.3c-2 2.2-3 4.8-3 7.7s1 5.5 3 7.7" />
-    </svg>
   );
 }

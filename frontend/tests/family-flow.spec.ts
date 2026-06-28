@@ -52,9 +52,10 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("home-screen")).toBeVisible();
+  await expect(page.getByTestId("home-search-family-button")).toBeVisible();
+  await expect(page.getByTestId("home-create-family-button")).toBeVisible();
   await expect(page.getByTestId("home-direction-row")).toHaveCount(3);
   await expect(page.getByTestId("home-quick-action")).toHaveCount(2);
-  await expect(page.getByTestId("home-popular-services")).toContainText("YouTube Premium");
   await expect(page.getByTestId("dev-user-select")).toHaveAttribute(
     "data-value",
     "200001"
@@ -111,7 +112,7 @@ test("owner and member complete the first payment family flow", async ({ page })
   await page.getByTestId("open-invite-button").click({ force: true });
   await expect(page.getByTestId("detail-send-request-button")).toBeVisible();
   await page.getByTestId("detail-send-request-button").click({ force: true });
-  await expect(page.getByText("Заявка отправлена")).toBeVisible();
+  await expect(page.getByText("Заявка отправлена", { exact: true }).first()).toBeVisible();
   await expect(page.getByTestId("owner-chat-button")).toBeVisible();
   await openNav(page, 3);
   await expect(page.getByTestId("request-card")).toContainText("Apple One");

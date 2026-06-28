@@ -9,6 +9,7 @@ import {
   TopBar,
   Typography
 } from "@worldcoin/mini-apps-ui-kit-react";
+import { Bell, ClipboardList, Home, Search, UsersRound } from "lucide-react";
 
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
@@ -222,12 +223,7 @@ function NavItem({
 }
 
 function BellIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="topbar-icon">
-      <path d="M18 10.3c0-3.4-2.2-6.1-6-6.1s-6 2.7-6 6.1v2.9l-1.5 2.4c-.4.7.1 1.6.9 1.6h13.2c.8 0 1.3-.9.9-1.6L18 13.2v-2.9Z" />
-      <path d="M9.7 19.1c.4.8 1.2 1.3 2.3 1.3s1.9-.5 2.3-1.3" />
-    </svg>
-  );
+  return <Bell aria-hidden className="topbar-icon" size={22} strokeWidth={2} />;
 }
 
 function NavIcon({ icon }: { icon: "home" | "search" | "families" | "requests" }) {
@@ -238,41 +234,16 @@ function NavIcon({ icon }: { icon: "home" | "search" | "families" | "requests" }
   } as const;
 
   if (icon === "home") {
-    return (
-      <svg {...common}>
-        <path d="M4 11.4 12 4l8 7.4" />
-        <path d="M6.5 10.2v8.2h11v-8.2" />
-        <path d="M9.5 18.4v-5h5v5" />
-      </svg>
-    );
+    return <Home {...common} size={22} strokeWidth={2} />;
   }
 
   if (icon === "search") {
-    return (
-      <svg {...common}>
-        <circle cx="10.8" cy="10.8" r="5.9" />
-        <path d="m15.2 15.2 4.2 4.2" />
-      </svg>
-    );
+    return <Search {...common} size={22} strokeWidth={2} />;
   }
 
   if (icon === "families") {
-    return (
-      <svg {...common}>
-        <circle cx="9" cy="8.7" r="3" />
-        <circle cx="16.5" cy="9.5" r="2.4" />
-        <path d="M3.8 19c.7-3.2 2.4-5 5.2-5s4.5 1.8 5.2 5" />
-        <path d="M13.9 15c2.4.1 3.9 1.5 4.5 4" />
-      </svg>
-    );
+    return <UsersRound {...common} size={22} strokeWidth={2} />;
   }
 
-  return (
-    <svg {...common}>
-      <path d="M7 4.8h8.2l2.8 2.8v11.6H7z" />
-      <path d="M15 5v3h3" />
-      <path d="M9.8 12h5.2" />
-      <path d="M9.8 15h3.5" />
-    </svg>
-  );
+  return <ClipboardList {...common} size={22} strokeWidth={2} />;
 }
