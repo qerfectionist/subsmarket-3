@@ -9,7 +9,7 @@ import {
   TopBar,
   Typography
 } from "@worldcoin/mini-apps-ui-kit-react";
-import { Bell, ClipboardList, Home, Search, UsersRound } from "lucide-react";
+import { ClipboardList, Home, Search, Settings, UsersRound } from "lucide-react";
 
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
@@ -37,9 +37,8 @@ export function AppHeader({
         </span>
       }
       endAdornment={
-        <WorldButton type="button" size="icon" variant="tertiary" aria-label="Уведомления">
-          <BellIcon />
-          <span className="app-icon-dot" aria-hidden />
+        <WorldButton type="button" size="icon" variant="tertiary" aria-label="Настройки">
+          <SettingsIcon />
         </WorldButton>
       }
     />
@@ -222,8 +221,8 @@ function NavItem({
   );
 }
 
-function BellIcon() {
-  return <Bell aria-hidden className="topbar-icon" size={22} strokeWidth={2} />;
+function SettingsIcon() {
+  return <Settings aria-hidden className="topbar-icon" size={22} strokeWidth={2} />;
 }
 
 function NavIcon({ icon }: { icon: "home" | "search" | "families" | "requests" }) {
