@@ -449,6 +449,10 @@ This Home direction is inspired by a compact mobile dashboard:
 This works better than a text-heavy action page because it feels like a real
 app dashboard and gives returning users immediate orientation.
 
+The groups do not need loud visible section headings on the first screen. If
+the cards explain themselves, keep labels semantic (`aria-label`) and visually
+quiet.
+
 Secondary:
 
 - bottom navigation remains stable;
@@ -464,6 +468,7 @@ Rules:
 
 - no marketing hero block;
 - no top stats strip with `места / заявки / оплаты`;
+- no loud visible section titles if the group cards are self-explanatory;
 - no long explanatory subtitles;
 - no marketing slogan;
 - no `club` copy in user-facing text;
@@ -479,16 +484,13 @@ Recommended copy:
 Главная
 SubsMarket
 
-Сегодня
 Мои места
 Заявки
 Оплаты
 
-Быстро
 Найти место
 Создать семью
 
-Для вас
 ```
 
 Do not over-explain on Home. Detail belongs on the destination screen.

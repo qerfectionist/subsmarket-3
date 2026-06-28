@@ -1,4 +1,4 @@
-import { Chip, CircularIcon, ListItem, Typography } from "@worldcoin/mini-apps-ui-kit-react";
+import { CircularIcon, ListItem } from "@worldcoin/mini-apps-ui-kit-react";
 import type { LucideIcon } from "lucide-react";
 import {
   Bell,
@@ -70,8 +70,6 @@ export function HomeScreen({
       ).length,
     0
   );
-  const attentionCount =
-    activeRequests.length + ownerPendingRequests + paymentsNeedingAttention;
   const requestCount = activeRequests.length + ownerPendingRequests;
   const recommendations = openFamilies.slice(0, 3);
 
@@ -153,13 +151,7 @@ export function HomeScreen({
 
   return (
     <div className="home-app" data-testid="home-screen">
-      <section className="home-section">
-        <div className="home-section-heading">
-          <Typography as="h2" variant="subtitle" level={2} className="home-title">
-            Сегодня
-          </Typography>
-          {attentionCount > 0 ? <Chip label={String(attentionCount)} variant="warning" /> : null}
-        </div>
+      <section className="home-section" aria-label="Сегодня">
         <div className="home-today-list" data-testid="home-today-list">
           {todayTasks.map((task) => (
             <TodayTaskRow key={task.id} task={task} />
@@ -167,12 +159,7 @@ export function HomeScreen({
         </div>
       </section>
 
-      <section className="home-section">
-        <div className="home-section-heading">
-          <Typography as="h2" variant="subtitle" level={2} className="home-title">
-            Быстро
-          </Typography>
-        </div>
+      <section className="home-section" aria-label="Быстрые действия">
         <div className="home-fast-grid" aria-label="Быстрые действия">
           {quickActions.map((action) => (
             <QuickActionCard key={action.id} action={action} />
@@ -180,19 +167,7 @@ export function HomeScreen({
         </div>
       </section>
 
-      <section className="home-section">
-        <div className="home-section-heading">
-          <Typography as="h2" variant="subtitle" level={2} className="home-title">
-            Для вас
-          </Typography>
-          <button
-            type="button"
-            className="home-link-button"
-            onClick={() => onSearch("subscription")}
-          >
-            Все
-          </button>
-        </div>
+      <section className="home-section" aria-label="Рекомендации">
         <div className="home-recommendations" data-testid="home-recommendations">
           {recommendations.length > 0 ? (
             recommendations.map((family) => (

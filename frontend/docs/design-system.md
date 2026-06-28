@@ -69,6 +69,8 @@ Do not add another visual component library for MVP UI.
   design system.
 - Home uses dashboard structure: `Сегодня`, `Быстро`, `Для вас`.
 - Do not add a top stats strip with `места / заявки / оплаты`.
+- Home groups can be visually unlabeled when cards explain the meaning; keep
+  semantic `aria-label` for accessibility.
 - User-facing copy says `Создать семью`, not `Собрать клуб`.
 
 ## Review Checklist
