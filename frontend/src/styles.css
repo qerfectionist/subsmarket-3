@@ -1629,6 +1629,61 @@ button:active {
   gap: 12px;
 }
 
+.home-intro {
+  padding: 2px 2px 0;
+}
+
+.home-primary-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.home-primary-action {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  min-height: 78px;
+  overflow: hidden;
+}
+
+.home-primary-action-blue {
+  background: #ffffff;
+}
+
+.home-primary-action-dark {
+  background: #111827;
+  border-color: rgba(17, 24, 39, 0.12);
+}
+
+.home-primary-action-dark,
+.home-primary-action-dark * {
+  color: #ffffff !important;
+}
+
+.home-primary-action-dark [data-slot="description"],
+.home-primary-action-dark small {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+.home-primary-action > * {
+  background: transparent;
+  min-height: 78px;
+}
+
+.home-action-icon {
+  border-radius: 17px;
+}
+
+.home-action-icon-blue {
+  background: #eaf1ff;
+  color: #2563eb;
+}
+
+.home-action-icon-dark {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
 .hero-card {
   display: grid;
   gap: 8px;

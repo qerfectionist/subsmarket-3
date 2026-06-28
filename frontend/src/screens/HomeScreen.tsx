@@ -19,6 +19,15 @@ type Direction = {
   onClick?: () => void;
 };
 
+type PrimaryAction = {
+  id: "find" | "create";
+  title: string;
+  subtitle: string;
+  badge: string;
+  tone: "blue" | "dark";
+  onClick: () => void;
+};
+
 const popularServices = [
   {
     name: "YouTube Premium",
@@ -64,6 +73,42 @@ export function HomeScreen({
     )
   );
   const openFamilies = families.filter((family) => family.free_slots > 0);
+  const ownerPendingRequests = myFamilies.reduce(
+    (total, item) => total + item.pending_requests_count,
+    0
+  );
+  const paymentsNeedingAttention = myFamilies.reduce(
+    (total, item) =>
+      total +
+      item.payments.filter((payment) =>
+        ["due", "overdue", "payment_reported"].includes(payment.status)
+      ).length,
+    0
+  );
+  const attentionCount =
+    activeRequests.length + ownerPendingRequests + paymentsNeedingAttention;
+
+  const primaryActions: PrimaryAction[] = [
+    {
+      id: "find",
+      title: "Найти семью",
+      subtitle:
+        openFamilies.length > 0
+          ? `${openFamilies.length} свободных семей в поиске`
+          : "Посмотреть доступные подписки",
+      badge: "Поиск",
+      tone: "blue",
+      onClick: () => onSearch("subscription")
+    },
+    {
+      id: "create",
+      title: "Создать семью",
+      subtitle: "Открыть места и принимать заявки",
+      badge: activeFamilies.length >= 2 ? "Лимит" : "Владелец",
+      tone: "dark",
+      onClick: () => onCreate("subscription")
+    }
+  ];
 
   const directions: Direction[] = [
     {
@@ -95,43 +140,65 @@ export function HomeScreen({
 
   return (
     <div className="home-app" data-testid="home-screen">
-      <section className="hero-card">
-        <div className="hero-copy">
-          <Typography as="span" variant="label" level={2} className="home-kicker">
-            SubsMarket
+      <section className="home-section home-intro">
+        <Typography as="span" variant="label" level={2} className="home-kicker">
+          SubsMarket
+        </Typography>
+        <Typography as="h1" variant="heading" level={4} className="home-heading">
+          Что хотите сделать?
+        </Typography>
+        <Typography as="p" variant="body" level={3} className="home-lead">
+          Найдите место в семье или откройте свою. Остальное приложение ведёт по
+          заявкам, доступу и оплатам.
+        </Typography>
+      </section>
+
+      <section className="home-primary-actions" aria-label="Главные действия">
+        {primaryActions.map((action) => (
+          <PrimaryActionCard key={action.id} action={action} />
+        ))}
+      </section>
+
+      <section className="home-section">
+        <div className="home-section-heading">
+          <Typography as="h2" variant="subtitle" level={2} className="home-title">
+            Нужно внимание
           </Typography>
-          <Typography as="h1" variant="heading" level={4} className="home-heading">
-            Семьи для подписок и тарифов
-          </Typography>
-          <Typography as="p" variant="body" level={3} className="home-lead">
-            Создавайте семью, принимайте заявки и контролируйте оплаты в одном
-            Mini App.
-          </Typography>
+          <Chip
+            label={attentionCount > 0 ? String(attentionCount) : "спокойно"}
+            variant={attentionCount > 0 ? "warning" : "default"}
+          />
         </div>
-        <div className="hero-stats" aria-label="Сводка">
-          <div>
-            <Typography as="strong" variant="number" level={4}>
-              {openFamilies.length}
-            </Typography>
-            <Typography as="span" variant="body" level={4}>
-              семей в поиске
-            </Typography>
-          </div>
-          <div>
-            <Typography as="strong" variant="number" level={4}>
-              {activeFamilies.length}
-            </Typography>
-            <Typography as="span" variant="body" level={4}>
-              моих семей
-            </Typography>
-          </div>
+        <div className="home-quick-actions" data-testid="home-quick-actions">
+          <QuickAction
+            title="Мои семьи"
+            subtitle={
+              activeFamilies.length > 0
+                ? `${activeFamilies.length} активных`
+                : "Пока пусто"
+            }
+            count={activeFamilies.length}
+            onClick={onMine}
+          />
+          <QuickAction
+            title="Заявки"
+            subtitle={
+              activeRequests.length > 0
+                ? "Ждут ответа владельца"
+                : ownerPendingRequests > 0
+                  ? "Есть заявки к вам"
+                  : "Нет активных"
+            }
+            count={activeRequests.length + ownerPendingRequests}
+            onClick={onRequests}
+          />
         </div>
       </section>
 
       <section className="home-section">
         <div className="home-section-heading">
           <Typography as="h2" variant="subtitle" level={2} className="home-title">
-            Что нужно?
+            Разделы
           </Typography>
         </div>
         <div
@@ -142,37 +209,6 @@ export function HomeScreen({
           {directions.map((direction) => (
             <DirectionCard key={direction.id} direction={direction} />
           ))}
-        </div>
-      </section>
-
-      <section className="home-actions-strip" aria-label="Быстрые действия">
-        <WorldButton
-          type="button"
-          className="primary-action-card"
-          data-testid="home-create-family-button"
-          fullWidth
-          onClick={() => onCreate("subscription")}
-        >
-          <Typography as="span" variant="label" level={2}>
-            Создать семью
-          </Typography>
-          <Typography as="strong" variant="subtitle" level={2}>
-            Открыть места и собрать участников
-          </Typography>
-        </WorldButton>
-        <div className="home-quick-actions" data-testid="home-quick-actions">
-          <QuickAction
-            title="Мои семьи"
-            subtitle={activeFamilies.length > 0 ? "Активные" : "Пока пусто"}
-            count={activeFamilies.length}
-            onClick={onMine}
-          />
-          <QuickAction
-            title="Заявки"
-            subtitle={activeRequests.length > 0 ? "Ждут ответа" : "Нет активных"}
-            count={activeRequests.length}
-            onClick={onRequests}
-          />
         </div>
       </section>
 
@@ -216,10 +252,38 @@ export function HomeScreen({
   );
 }
 
+function PrimaryActionCard({ action }: { action: PrimaryAction }) {
+  const testId =
+    action.id === "create" ? "home-create-family-button" : "home-search-family-button";
+
+  return (
+    <div className={`home-primary-action home-primary-action-${action.tone}`}>
+      <ListItem
+        type="button"
+        label={action.title}
+        description={action.subtitle}
+        startAdornment={
+          <CircularIcon className={`home-action-icon home-action-icon-${action.tone}`} size="md">
+            <ActionGlyph id={action.id} />
+          </CircularIcon>
+        }
+        endAdornment={
+          <Chip
+            label={action.badge}
+            variant={action.tone === "blue" ? "success" : "default"}
+          />
+        }
+        data-testid={testId}
+        onClick={action.onClick}
+      />
+    </div>
+  );
+}
+
 function DirectionCard({ direction }: { direction: Direction }) {
   const startAdornment = (
     <CircularIcon className={`direction-icon direction-icon-${direction.tone}`} size="md">
-        <DirectionGlyph id={direction.id} />
+      <DirectionGlyph id={direction.id} />
     </CircularIcon>
   );
   const endAdornment = (
@@ -275,6 +339,24 @@ function QuickAction({
       data-testid="home-quick-action"
       onClick={onClick}
     />
+  );
+}
+
+function ActionGlyph({ id }: { id: PrimaryAction["id"] }) {
+  if (id === "find") {
+    return (
+      <svg viewBox="0 0 24 24" className="home-glyph">
+        <circle cx="10.5" cy="10.5" r="6" />
+        <path d="m15.2 15.2 4.3 4.3" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" className="home-glyph">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
   );
 }
 
