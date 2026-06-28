@@ -365,9 +365,14 @@ Current production project:
 Project name: subsmarket-3
 Project ref: oulwqlysozrdhlhheflk
 Region: eu-central-1
-Alembic version: 20260619_0011
+Alembic version: verify before deploy with `alembic current`
 Catalog: 26 subscription services, 5 tariff services
 ```
+
+Older setup notes referenced Alembic `20260619_0011`. Treat that as a
+historical snapshot, not the current required revision. Before a production
+deploy, run migrations to the repository head and then run the production
+smoke checks.
 
 Supabase is not the application backend for MVP:
 

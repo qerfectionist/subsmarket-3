@@ -411,7 +411,7 @@ async function clickAndWait(page: Page, testId: string) {
   const target = page.getByTestId(testId);
   await expect(target).toBeEnabled();
   await target.scrollIntoViewIfNeeded();
-  // DOM click: telegram-ui Section/Cell overlays intercept Playwright pointer events.
+  // DOM click: World UI overlays can intercept Playwright pointer events.
   await target.evaluate((element) => (element as HTMLElement).click());
   await waitForNetworkQuiet(page);
 }

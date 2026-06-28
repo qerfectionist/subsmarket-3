@@ -124,7 +124,8 @@ cd backend
 
 Production database state:
 
-- Alembic version: `20260619_0011`.
+- Alembic version: verify before deploy with `alembic current`; older setup
+  notes referenced `20260619_0011`, but the repository head is newer.
 - Catalog: 26 subscription services and 5 tariff services.
 - Supabase public tables have RLS enabled with explicit deny policies for
   `anon` and `authenticated`; the Mini App never connects to Supabase directly.
