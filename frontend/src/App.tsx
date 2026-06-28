@@ -13,6 +13,7 @@ import {
   getOwnerFamilyRequests,
   initTelegramShell,
   isDevAuthEnabled,
+  isDevUserSwitchVisible,
   setActiveDevTelegramUser
 } from "./api";
 import type { LoadState, Tab } from "./appTypes";
@@ -452,7 +453,7 @@ export function App() {
   return (
     <Shell title="SubsMarket">
       <AppHeader userName={user?.username ?? "unknown"} firstName={user?.first_name} />
-      {isDevAuthEnabled() && devUser && (
+      {isDevUserSwitchVisible() && devUser && (
         <DevUserSwitch value={devUser} onChange={(id) => void switchDevUser(id)} />
       )}
 
