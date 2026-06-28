@@ -67,7 +67,8 @@ Do not add another visual component library for MVP UI.
 - Service logos are only for actual services.
 - Do not create duplicate button/card styles without adding them to the
   design system.
-- Home uses dashboard structure: stats, `Сегодня`, `Быстро`, `Для вас`.
+- Home uses dashboard structure: `Сегодня`, `Быстро`, `Для вас`.
+- Do not add a top stats strip with `места / заявки / оплаты`.
 - User-facing copy says `Создать семью`, not `Собрать клуб`.
 
 ## Review Checklist

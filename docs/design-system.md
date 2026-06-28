@@ -434,20 +434,16 @@ Chosen direction: **Operational Dashboard Home**.
 This Home direction is inspired by a compact mobile dashboard:
 
 1. Header with screen title and product name.
-2. Three compact stats:
-   - active places/families;
-   - requests;
-   - payments.
-3. `Сегодня` task group:
+2. `Сегодня` task group:
    - `Мои места`;
    - `Заявки`;
    - `Оплаты`.
-4. `Быстро` action grid:
+3. `Быстро` action grid:
    - `Найти место`;
    - `Создать семью`;
    - future `Продать ГБ`;
    - future `Аккаунт`.
-5. `Для вас` recommendations/list:
+4. `Для вас` recommendations/list:
    - useful available families or services.
 
 This works better than a text-heavy action page because it feels like a real
@@ -467,6 +463,7 @@ Future modules:
 Rules:
 
 - no marketing hero block;
+- no top stats strip with `места / заявки / оплаты`;
 - no long explanatory subtitles;
 - no marketing slogan;
 - no `club` copy in user-facing text;
