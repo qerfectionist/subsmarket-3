@@ -1,30 +1,30 @@
 :root {
-  --app-bg: #eef1f6;
+  --app-bg: #f2f3f5;
   --app-surface: #ffffff;
-  --app-secondary-bg: #e4e9f2;
-  --app-text: #0f1419;
-  --app-muted: #5c6678;
-  --app-link: #2481cc;
-  --app-accent: #2481cc;
-  --app-accent-soft: #dbeafe;
+  --app-secondary-bg: #ebedf0;
+  --app-text: #323335;
+  --app-muted: #767a80;
+  --app-link: #007aff;
+  --app-accent: #007aff;
+  --app-accent-soft: #e8f2ff;
   --app-accent-text: #ffffff;
   --app-danger: #e53935;
   --app-success: #16a34a;
   --app-warning: #ea8c00;
   --app-info: #2481cc;
-  --app-bottom-bar-bg: rgba(255, 255, 255, 0.94);
-  --app-header-bg: #eef1f6;
-  --app-subtitle: #5c6678;
-  --app-section-header: #3d4654;
-  --app-border: rgba(15, 20, 25, 0.07);
-  --app-border-strong: rgba(15, 20, 25, 0.12);
+  --app-bottom-bar-bg: rgba(255, 255, 255, 0.96);
+  --app-header-bg: #f2f3f5;
+  --app-subtitle: #707579;
+  --app-section-header: #707579;
+  --app-border: rgba(28, 28, 30, 0.08);
+  --app-border-strong: rgba(28, 28, 30, 0.14);
   --app-radius-sm: 10px;
   --app-radius-md: 12px;
   --app-radius-lg: 16px;
-  --app-radius-xl: 20px;
-  --app-shadow-sm: 0 1px 3px rgba(15, 20, 25, 0.06);
-  --app-shadow: 0 6px 20px rgba(15, 20, 25, 0.08);
-  --app-shadow-nav: 0 -4px 24px rgba(15, 20, 25, 0.08);
+  --app-radius-xl: 18px;
+  --app-shadow-sm: 0 1px 2px rgba(28, 28, 30, 0.04);
+  --app-shadow: 0 8px 22px rgba(28, 28, 30, 0.06);
+  --app-shadow-nav: 0 -6px 24px rgba(28, 28, 30, 0.08);
   --app-font-weight-medium: 500;
   --app-font-weight-semibold: 600;
   --app-font-weight-bold: 700;
@@ -43,7 +43,7 @@
   color: var(--app-text);
   background: var(--app-bg);
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI",
+    "Manrope", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI",
     Roboto, ui-sans-serif, system-ui, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;

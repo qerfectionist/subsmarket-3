@@ -2,14 +2,13 @@ import type { ReactNode } from "react";
 
 import {
   Button as WorldButton,
-  ListItem,
   Select,
   Tabs,
   TabItem,
   TopBar,
   Typography
 } from "@worldcoin/mini-apps-ui-kit-react";
-import { ClipboardList, Home, Search, Settings, UsersRound } from "lucide-react";
+import { ClipboardList, Home, Plus, Settings, UsersRound } from "lucide-react";
 
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
@@ -77,24 +76,30 @@ export function Panel({
   action,
   children
 }: {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="app-panel">
-      <div className="app-panel-head">
-        <div>
-          <Typography as="h1" variant="heading" level={4}>
-            {title}
-          </Typography>
-          <Typography as="p" variant="body" level={3}>
-            {description}
-          </Typography>
+      {title || description || action ? (
+        <div className="app-panel-head">
+          <div>
+            {title ? (
+              <Typography as="h1" variant="heading" level={4}>
+                {title}
+              </Typography>
+            ) : null}
+            {description ? (
+              <Typography as="p" variant="body" level={3}>
+                {description}
+              </Typography>
+            ) : null}
+          </div>
+          {action ? <div className="app-panel-action">{action}</div> : null}
         </div>
-        {action ? <div className="app-panel-action">{action}</div> : null}
-      </div>
+      ) : null}
       <div className="app-panel-body">{children}</div>
     </section>
   );
@@ -149,16 +154,34 @@ export function FamilyTypeSwitch({
   );
 }
 
+export function ProductScopeSwitch() {
+  return (
+    <div className="product-scope-switch" aria-label="Разделы SubsMarket">
+      <WorldButton type="button" size="sm" variant="primary">
+        Семьи
+      </WorldButton>
+      <WorldButton type="button" size="sm" variant="tertiary" disabled>
+        Аккаунты
+      </WorldButton>
+      <WorldButton type="button" size="sm" variant="tertiary" disabled>
+        ГБ
+      </WorldButton>
+    </div>
+  );
+}
+
 export function BottomNav({
   active,
   onChange,
+  onReselect,
   badges
 }: {
   active: Tab;
   onChange: (tab: Tab) => void;
+  onReselect?: (tab: Tab) => void;
   badges?: Partial<Record<Tab, number>>;
 }) {
-  const activeValue = active === "family" ? "mine" : active;
+  const activeValue = active === "family" ? "" : active;
 
   return (
     <nav className="bottom-nav" aria-label="Главная навигация">
@@ -168,19 +191,35 @@ export function BottomNav({
           if (value) onChange(value as Tab);
         }}
       >
-      <NavItem value="home" icon="home" label="Главная" />
-      <NavItem value="search" icon="search" label="Поиск" />
+      <NavItem
+        value="home"
+        icon="home"
+        label="Маркет"
+        active={active === "home"}
+        onReselect={onReselect}
+      />
       <NavItem
         value="mine"
-        icon="families"
-        label="Семьи"
+        icon="mine"
+        label="Мои"
         badge={badges?.mine}
+        active={active === "mine"}
+        onReselect={onReselect}
+      />
+      <NavItem
+        value="create"
+        icon="create"
+        label="Создать"
+        active={active === "create"}
+        onReselect={onReselect}
       />
       <NavItem
         value="requests"
         icon="requests"
-        label="Заявки"
+        label="Действия"
         badge={badges?.requests}
+        active={active === "requests"}
+        onReselect={onReselect}
       />
       </Tabs>
     </nav>
@@ -191,22 +230,29 @@ function NavItem({
   value,
   icon,
   label,
-  badge
+  badge,
+  active,
+  onReselect
 }: {
   value: Tab;
-  icon: "home" | "search" | "families" | "requests";
+  icon: "home" | "create" | "mine" | "requests";
   label: string;
   badge?: number;
+  active?: boolean;
+  onReselect?: (tab: Tab) => void;
 }) {
   function handlePointerDown() {
     triggerTelegramSelection();
+    if (active) {
+      onReselect?.(value);
+    }
   }
 
   return (
     <TabItem
       value={value}
       data-testid="nav-item"
-      className="nav-item"
+      className={`nav-item nav-item-${value}`}
       icon={
         <span className="nav-icon-wrap">
           <NavIcon icon={icon} />
@@ -225,7 +271,7 @@ function SettingsIcon() {
   return <Settings aria-hidden className="topbar-icon" size={22} strokeWidth={2} />;
 }
 
-function NavIcon({ icon }: { icon: "home" | "search" | "families" | "requests" }) {
+function NavIcon({ icon }: { icon: "home" | "create" | "mine" | "requests" }) {
   const common = {
     viewBox: "0 0 24 24",
     "aria-hidden": true,
@@ -236,13 +282,13 @@ function NavIcon({ icon }: { icon: "home" | "search" | "families" | "requests" }
     return <Home {...common} size={22} strokeWidth={2} />;
   }
 
-  if (icon === "search") {
-    return <Search {...common} size={22} strokeWidth={2} />;
+  if (icon === "create") {
+    return <Plus {...common} size={23} strokeWidth={2.2} />;
   }
 
-  if (icon === "families") {
-    return <UsersRound {...common} size={22} strokeWidth={2} />;
+  if (icon === "requests") {
+    return <ClipboardList {...common} size={22} strokeWidth={2} />;
   }
 
-  return <ClipboardList {...common} size={22} strokeWidth={2} />;
+  return <UsersRound {...common} size={22} strokeWidth={2} />;
 }

@@ -1,32 +1,51 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 
 import {
-  getFamilies,
+  getFamiliesPage,
   getFamilyAuditLog,
   getFamilyByInviteCode,
   getFamilyInvite,
   getFamilyMemberPayments,
-  getFamilyMembers,
+  getFamilyMembersPage,
   getFamilyView,
-  getMyFamilies,
-  getMyFamilyRequests,
-  getOwnerFamilyRequests
+  getMyFamiliesPage,
+  getMyFamilyRequestsPage,
+  getOwnerFamilyRequestsPage
 } from "../../api";
+import type { FamilyType } from "../../types";
 import { queryKeys } from "./queryKeys";
 
-export function useFamilies(familyType?: string) {
-  return useQuery({
+export function useFamilies(familyType?: FamilyType) {
+  return useInfiniteQuery({
     queryKey: queryKeys.families(familyType),
-    queryFn: () => getFamilies(familyType as undefined)
+    queryFn: ({ pageParam }) =>
+      getFamiliesPage({ familyType, cursor: pageParam }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 10_000,
+    select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
 
 export function useMyFamilies() {
-  return useQuery({ queryKey: queryKeys.myFamilies, queryFn: getMyFamilies });
+  return useInfiniteQuery({
+    queryKey: queryKeys.myFamilies,
+    queryFn: ({ pageParam }) => getMyFamiliesPage(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    select: (data) => data.pages.flatMap((page) => page.items)
+  });
 }
 
 export function useMyFamilyRequests() {
-  return useQuery({ queryKey: queryKeys.myRequests, queryFn: getMyFamilyRequests });
+  return useInfiniteQuery({
+    queryKey: queryKeys.myRequests,
+    queryFn: ({ pageParam }) => getMyFamilyRequestsPage(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    select: (data) => data.pages.flatMap((page) => page.items)
+  });
 }
 
 export function useFamilyView(familyId: string | null) {
@@ -54,18 +73,24 @@ export function useFamilyInvite(familyId: string | null) {
 }
 
 export function useOwnerFamilyRequests(familyId: string | null) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: queryKeys.ownerRequests(familyId ?? ""),
-    queryFn: () => getOwnerFamilyRequests(familyId!),
-    enabled: familyId !== null
+    queryFn: ({ pageParam }) => getOwnerFamilyRequestsPage(familyId!, pageParam),
+    enabled: familyId !== null,
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
 
 export function useFamilyMembers(familyId: string | null) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: queryKeys.familyMembers(familyId ?? ""),
-    queryFn: () => getFamilyMembers(familyId!),
-    enabled: familyId !== null
+    queryFn: ({ pageParam }) => getFamilyMembersPage(familyId!, pageParam),
+    enabled: familyId !== null,
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
 

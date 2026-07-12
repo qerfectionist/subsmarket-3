@@ -94,15 +94,17 @@ npm run test:ui
 npm run backend:lint
 npm run backend:compile
 npm run backend:test
+npm run backend:test:postgres
 npm run check:diff
 npm run check
 ```
 
-PostgreSQL lock test for the last family place:
+PostgreSQL-only lock and schema-security tests. Start local Postgres first with
+`docker compose up -d postgres`; the command below uses the local Docker URL by
+default. Set `POSTGRES_TEST_DATABASE_URL` only when testing another database.
 
 ```powershell
-$env:POSTGRES_TEST_DATABASE_URL='postgresql+psycopg://subsmarket:subsmarket@localhost:5432/subsmarket'
-backend\.venv\Scripts\python.exe -m pytest backend\tests\test_postgres_concurrency.py -q
+npm run backend:test:postgres
 ```
 
 Production backend smoke after deployment:

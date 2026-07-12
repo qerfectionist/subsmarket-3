@@ -35,7 +35,7 @@ const BRAND_BY_SLUG: Record<string, ServiceBrand> = {
   "mybook-premium": { color: "#7C3AED", iconSlug: null, category: "education_books", monogram: "MB" },
   "microsoft-365-family": {
     color: "#00A4EF",
-    iconSlug: "microsoft",
+    iconSlug: null,
     category: "cloud_productivity",
     monogram: "365"
   },

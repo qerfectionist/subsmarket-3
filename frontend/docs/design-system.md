@@ -36,7 +36,7 @@ Do not add another visual component library for MVP UI.
 
 ## Immediate Implementation Order
 
-1. Implement the selected Home direction: **Operational Dashboard Home**.
+1. Implement the selected first-screen direction: **Telegram Wallet-style Market**.
 2. Clean token duplication between `tokens.css` and `styles.css`.
 3. Convert hardcoded colors in `styles.css` to semantic tokens.
 4. Standardize shared components:
@@ -48,12 +48,10 @@ Do not add another visual component library for MVP UI.
    - error state;
    - form field.
 5. Redesign screens in this order:
-   - Home;
-   - Search;
+   - Market;
+   - My;
    - Create Family;
    - Family Details;
-   - My Families;
-   - Requests.
 6. Run visual QA and E2E.
 
 ## Frontend Rules
@@ -67,9 +65,10 @@ Do not add another visual component library for MVP UI.
 - Service logos are only for actual services.
 - Do not create duplicate button/card styles without adding them to the
   design system.
-- Home uses dashboard structure: `Сегодня`, `Быстро`, `Для вас`.
+- First screen is `Маркет`, not a separate dashboard Home.
+- Market uses Wallet-style structure: summary card, quick actions, compact grouped list.
 - Do not add a top stats strip with `места / заявки / оплаты`.
-- Home groups can be visually unlabeled when cards explain the meaning; keep
+- Market groups can be visually unlabeled when cards explain the meaning; keep
   semantic `aria-label` for accessibility.
 - User-facing copy says `Создать семью`, not `Собрать клуб`.
 
@@ -84,4 +83,4 @@ Before merging a UI change:
 - visible loading, empty, and error states;
 - destructive actions use Telegram/native confirmation;
 - copy is short and clear;
-- Home does not become a landing page.
+- Market does not become a landing page.

@@ -65,9 +65,7 @@ import {
 } from "./hooks/useApi";
 import { CreateFamilyScreen } from "./screens/CreateFamilyScreen";
 import { FamilyDetailsScreen } from "./screens/FamilyDetailsScreen";
-import { HomeScreen } from "./screens/HomeScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
-import { RequestsScreen } from "./screens/RequestsScreen";
 import { SearchScreen } from "./screens/SearchScreen";
 import type {
   Family,
@@ -103,24 +101,25 @@ const emptyCreateForm: FamilyCreate = {
 export function App() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [familyType, setFamilyType] = useState<FamilyType>("subscription");
   const meQuery = useMe();
   const servicesQuery = useFamilyServices();
-  const familiesQuery = useFamilies();
+  const familiesQuery = useFamilies(familyType);
   const myFamiliesQuery = useMyFamilies();
   const myRequestsQuery = useMyFamilyRequests();
 
   const [tab, setTab] = useState<Tab>("home");
+  const [marketResetToken, setMarketResetToken] = useState(0);
   const [ownerDetails, setOwnerDetails] = useState<
     Record<string, OwnerFamilyDetails>
   >({});
   const [requisites, setRequisites] = useState<Record<string, PaymentRequisite>>({});
   const [selectedFamilyId, setSelectedFamilyId] = useState<string | null>(null);
-  const [familyBackTab, setFamilyBackTab] = useState<Tab>("search");
+  const [familyBackTab, setFamilyBackTab] = useState<Tab>("home");
   const [devUser, setDevUser] = useState<DevTelegramUser | null>(
     getActiveDevTelegramUser()
   );
   const [createForm, setCreateForm] = useState<FamilyCreate>(emptyCreateForm);
-  const [familyType, setFamilyType] = useState<FamilyType>("subscription");
   const [myFamilyType, setMyFamilyType] = useState<FamilyType>("subscription");
   const [familyFilter, setFamilyFilter] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
@@ -236,7 +235,7 @@ export function App() {
   function openFamily(familyId: string, backTab: Tab = tab) {
     triggerTelegramImpact("light");
     setSelectedFamilyId(familyId);
-    setFamilyBackTab(backTab === "family" ? "search" : backTab);
+    setFamilyBackTab(backTab === "family" ? "home" : backTab);
     setTab("family");
   }
 
@@ -246,7 +245,7 @@ export function App() {
       setError(null);
       const view = await getFamilyByInviteCode(code);
       setSelectedFamilyId(view.family.id);
-      setFamilyBackTab("search");
+      setFamilyBackTab("home");
       setTab("family");
     } catch (err) {
       setError(formatError(err));
@@ -408,6 +407,37 @@ export function App() {
     return typedFamilies.filter((family) => family.service_id === familyFilter);
   }, [typedFamilies, familyFilter]);
 
+  const marketBannerMetrics = useMemo(() => {
+    const ownerFamilies = myFamilies.filter((item) => item.membership.role === "owner");
+    const joinedFamilies = myFamilies.filter((item) => item.membership.role === "member");
+    return {
+      pendingJoinRequests: ownerFamilies.reduce(
+        (total, item) => total + item.pending_requests_count,
+        0
+      ),
+      paymentConfirmations: ownerFamilies.reduce(
+        (total, item) =>
+          total + item.payments.filter((payment) => payment.status === "payment_reported").length,
+        0
+      ),
+      memberDuePayments: joinedFamilies.filter((item) =>
+        item.payments.some((payment) => payment.status === "due" || payment.status === "overdue")
+      ).length,
+      accessConfirmations: joinedFamilies.filter(
+        (item) => item.membership.status === "awaiting_confirmation"
+      ).length,
+      activeFamilies: myFamilies.filter((item) =>
+        ["active", "payment_due", "awaiting_access", "awaiting_confirmation"].includes(
+          item.membership.status
+        )
+      ).length,
+      ownedFamilies: ownerFamilies.length,
+      joinedFamilies: joinedFamilies.length,
+      freeFamilies: typedFamilies.length,
+      freeSlots: typedFamilies.reduce((total, family) => total + family.free_slots, 0)
+    };
+  }, [myFamilies, typedFamilies]);
+
   if (loadState === "loading") {
     return <Shell title="SubsMarket">Загружаем Mini App...</Shell>;
   }
@@ -463,49 +493,40 @@ export function App() {
         </div>
       )}
 
-      {tab === "home" && (
-        <HomeScreen
-          families={families}
-          myFamilies={myFamilies}
-          myRequests={myRequests}
-          onSearch={(nextType) => {
-            changeFamilyType(nextType);
-            setTab("search");
-          }}
-          onCreate={(nextType) => {
-            changeFamilyType(nextType);
-            setTab("create");
-          }}
-          onMine={() => setTab("mine")}
-          onRequests={() => setTab("requests")}
-        />
-      )}
-
-      {tab === "search" && (
+      {(tab === "home" || tab === "search") && (
         <SearchScreen
           familyType={familyType}
           services={services}
           typedServices={typedServices}
-          familyFilter={familyFilter}
-          filteredFamilies={filteredFamilies}
+          filteredFamilies={typedFamilies}
+          bannerMetrics={marketBannerMetrics}
           busy={busy}
           isLoading={familiesQuery.isLoading}
+          hasMoreFamilies={Boolean(familiesQuery.hasNextPage)}
+          isLoadingMoreFamilies={familiesQuery.isFetchingNextPage}
           onChangeFamilyType={changeFamilyType}
           onChangeFamilyFilter={setFamilyFilter}
           onRefresh={() => familiesQuery.refetch()}
-          onImportCatalog={() =>
-            void runMutation("import-catalog", () => importCatalogMutation.mutateAsync())
+          onLoadMoreFamilies={() => void familiesQuery.fetchNextPage()}
+          pendingActionsCount={
+            myRequests.filter((r) => r.status === "pending").length +
+            myFamilies.filter((item) =>
+              item.pending_requests_count > 0 ||
+              item.payments.some((p) => p.status === "payment_reported")
+            ).length
           }
-          onOpenFamily={(familyId) => openFamily(familyId, "search")}
+          onOpenMine={() => setTab("mine")}
+          onOpenFamily={(familyId) => openFamily(familyId, "home")}
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
             changeFamilyType(nextType);
             setTab("create");
           }}
+          resetToken={marketResetToken}
           onCreateRequest={(familyId) =>
             void runMutation("create-request", () =>
               createRequestMutation.mutateAsync(familyId)
-            ).then(() => openFamily(familyId, "search"))
+            ).then(() => openFamily(familyId, "home"))
           }
         />
       )}
@@ -524,16 +545,27 @@ export function App() {
         />
       )}
 
-      {tab === "mine" && (
+      {(tab === "mine" || tab === "requests") && (
         <MyFamiliesScreen
+          mode={tab === "requests" ? "actions" : "mine"}
           myFamilyType={myFamilyType}
-          families={typedMyFamilies}
+          families={tab === "requests" ? myFamilies : typedMyFamilies}
           ownerDetails={ownerDetails}
           requisites={requisites}
+          requests={myRequests}
           busy={busy}
           isLoading={myFamiliesQuery.isLoading}
+          requestsLoading={myRequestsQuery.isLoading}
+          hasMoreFamilies={Boolean(myFamiliesQuery.hasNextPage)}
+          isLoadingMoreFamilies={myFamiliesQuery.isFetchingNextPage}
+          hasMoreRequests={Boolean(myRequestsQuery.hasNextPage)}
+          isLoadingMoreRequests={myRequestsQuery.isFetchingNextPage}
           onChangeFamilyType={setMyFamilyType}
-          onOpenFamily={(familyId) => openFamily(familyId, "mine")}
+          onLoadMoreFamilies={() => void myFamiliesQuery.fetchNextPage()}
+          onLoadMoreRequests={() => void myRequestsQuery.fetchNextPage()}
+          onOpenFamily={(familyId) =>
+            openFamily(familyId, tab === "requests" ? "requests" : "mine")
+          }
           onLoadOwnerDetails={(familyId) => void loadOwnerDetails(familyId)}
           onUpdateDescription={(familyId, description) =>
             void runMutation("update-description", () =>
@@ -658,14 +690,6 @@ export function App() {
               recordPrepaymentMutation.mutateAsync({ familyId, memberId: member.id, periods })
             ).then(() => loadOwnerDetails(familyId))
           }
-        />
-      )}
-
-      {tab === "requests" && (
-        <RequestsScreen
-          requests={myRequests}
-          busy={busy}
-          isLoading={myRequestsQuery.isLoading}
           onCancelRequest={(requestId) =>
             void runMutation("cancel-request", () => cancelRequestMutation.mutateAsync(requestId))
           }
@@ -753,6 +777,11 @@ export function App() {
       <BottomNav
         active={tab}
         onChange={setTab}
+        onReselect={(selectedTab) => {
+          if (selectedTab === "home") {
+            setMarketResetToken((current) => current + 1);
+          }
+        }}
         badges={{
           requests: myRequests.filter((r) => r.status === "pending").length,
           mine: myFamilies.filter((item) =>

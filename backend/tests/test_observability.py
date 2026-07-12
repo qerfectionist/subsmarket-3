@@ -18,12 +18,21 @@ class FakeSqlalchemyIntegration:
 
 def test_sentry_is_disabled_without_dsn(monkeypatch) -> None:
     monkeypatch.setattr(observability, "_configured", False)
+    monkeypatch.setattr(settings, "app_env", "production")
     monkeypatch.setattr(settings, "sentry_dsn", None)
 
     assert observability.configure_sentry() is False
 
 
-def test_sentry_initializes_when_dsn_is_present(monkeypatch) -> None:
+def test_sentry_is_disabled_outside_production_even_with_dsn(monkeypatch) -> None:
+    monkeypatch.setattr(observability, "_configured", False)
+    monkeypatch.setattr(settings, "app_env", "development")
+    monkeypatch.setattr(settings, "sentry_dsn", "https://public@example.sentry.io/1")
+
+    assert observability.configure_sentry() is False
+
+
+def test_sentry_initializes_when_production_dsn_is_present(monkeypatch) -> None:
     calls: list[dict[str, object]] = []
     fake_sentry = types.ModuleType("sentry_sdk")
     fake_sentry.init = lambda **kwargs: calls.append(kwargs)
@@ -83,6 +92,7 @@ def test_sentry_initialization_is_idempotent(monkeypatch) -> None:
     )
     monkeypatch.setattr(observability, "_configured", False)
     monkeypatch.setattr(settings, "sentry_dsn", "https://public@example.sentry.io/1")
+    monkeypatch.setattr(settings, "app_env", "production")
     monkeypatch.setattr(settings, "sentry_release", None)
 
     assert observability.configure_sentry() is True

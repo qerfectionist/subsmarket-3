@@ -10,6 +10,7 @@
     "dev:backend": "node scripts/run-python.mjs -m uvicorn subsmarket.main:app --host 127.0.0.1 --port 8000 --reload",
     "backend:compile": "node scripts/run-python.mjs -m compileall -q backend/src backend/tests",
     "backend:test": "node scripts/run-python.mjs -m pytest backend/tests",
+    "backend:test:postgres": "node scripts/run-postgres-tests.mjs",
     "backend:lint": "node scripts/run-python.mjs -m ruff check backend/src backend/alembic backend/tests",
     "sentry:smoke": "node scripts/run-python.mjs -m subsmarket.ops.sentry_smoke",
     "telegram:smoke": "node scripts/run-python.mjs -m subsmarket.ops.telegram_production_smoke",

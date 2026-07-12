@@ -7,10 +7,21 @@ import {
 } from "@worldcoin/mini-apps-ui-kit-react";
 
 import { FamilyCard, OwnerDetails, PaymentList } from "../components/families";
-import { Badge, EmptyState, FamilyTypeSwitch, Panel } from "../components/layout";
+import {
+  Badge,
+  EmptyState,
+  FamilyTypeSwitch,
+  Panel,
+  ProductScopeSwitch
+} from "../components/layout";
 import { RequisiteBox } from "../components/RequisiteBox";
 import { FamilyListSkeleton } from "../components/skeleton";
-import { statusText } from "../format";
+import { formatDateTime, statusText } from "../format";
+import {
+  familyKindLabels,
+  requestCancelReasonLabels
+} from "../labels";
+import { openTelegramUser } from "../telegram";
 import type {
   Family,
   FamilyMember,
@@ -24,13 +35,22 @@ import type {
 } from "../types";
 
 export function MyFamiliesScreen({
+  mode = "mine",
   myFamilyType,
   families,
   ownerDetails,
   requisites,
+  requests,
   busy,
   isLoading,
+  requestsLoading,
+  hasMoreFamilies,
+  isLoadingMoreFamilies,
+  hasMoreRequests,
+  isLoadingMoreRequests,
   onChangeFamilyType,
+  onLoadMoreFamilies,
+  onLoadMoreRequests,
   onOpenFamily,
   onLoadOwnerDetails,
   onUpdateDescription,
@@ -53,15 +73,25 @@ export function MyFamiliesScreen({
   onRemoveMember,
   onConfirmPayment,
   onNotReceived,
-  onRecordPrepayment
+  onRecordPrepayment,
+  onCancelRequest
 }: {
+  mode?: "mine" | "actions";
   myFamilyType: FamilyType;
   families: MyFamily[];
   ownerDetails: Record<string, OwnerFamilyDetails>;
   requisites: Record<string, PaymentRequisite>;
+  requests: FamilyRequest[];
   busy: string | null;
   isLoading?: boolean;
+  requestsLoading?: boolean;
+  hasMoreFamilies?: boolean;
+  isLoadingMoreFamilies?: boolean;
+  hasMoreRequests?: boolean;
+  isLoadingMoreRequests?: boolean;
   onChangeFamilyType: (familyType: FamilyType) => void;
+  onLoadMoreFamilies?: () => void;
+  onLoadMoreRequests?: () => void;
   onOpenFamily: (familyId: string) => void;
   onLoadOwnerDetails: (familyId: string) => void;
   onUpdateDescription: (familyId: string, description: string | null) => void;
@@ -97,122 +127,346 @@ export function MyFamiliesScreen({
     member: FamilyMember,
     periods: number
   ) => Promise<unknown>;
+  onCancelRequest: (requestId: string) => void;
+}) {
+  const actionFamilies = families.filter(hasPendingFamilyAction);
+  const visibleFamilies = mode === "actions" ? actionFamilies : families;
+  const pendingRequestCount = requests.filter((request) => request.status === "pending").length;
+  const ownerRequestCount = families.reduce(
+    (total, item) => total + item.pending_requests_count,
+    0
+  );
+  const paymentActionCount = families.reduce(
+    (total, item) =>
+      total +
+      item.payments.filter((payment) =>
+        ["due", "overdue", "payment_reported"].includes(payment.status)
+      ).length,
+    0
+  );
+  const accessActionCount = families.filter((item) =>
+    ["awaiting_access", "awaiting_confirmation"].includes(item.membership.status)
+  ).length;
+
+  return (
+    <div data-testid={mode === "actions" ? "actions-screen" : "my-screen"}>
+      <Panel
+        title={mode === "actions" ? "Действия" : "Мои"}
+        description={
+          mode === "actions"
+            ? "Заявки, доступы и оплаты, где нужен ответ."
+            : "Ваши места, семьи и управление подписками."
+        }
+      >
+        {mode === "mine" ? <ProductScopeSwitch /> : null}
+        {mode === "actions" ? (
+          <ActionSummary
+            pendingRequestCount={pendingRequestCount}
+            ownerRequestCount={ownerRequestCount}
+            paymentActionCount={paymentActionCount}
+            accessActionCount={accessActionCount}
+          />
+        ) : null}
+        <MyRequestsSection
+          requests={requests}
+          busy={busy}
+          isLoading={requestsLoading}
+          showEmpty={mode === "actions"}
+          onCancelRequest={onCancelRequest}
+        />
+        {hasMoreRequests && onLoadMoreRequests ? (
+          <WorldButton
+            type="button"
+            variant="secondary"
+            fullWidth
+            disabled={isLoadingMoreRequests}
+            onClick={onLoadMoreRequests}
+          >
+            {isLoadingMoreRequests ? "Загружаем заявки..." : "Показать ещё заявки"}
+          </WorldButton>
+        ) : null}
+        {mode === "mine" ? (
+          <FamilyTypeSwitch value={myFamilyType} onChange={onChangeFamilyType} />
+        ) : null}
+        {mode === "actions" ? (
+          <div className="section-inline-title">
+            <span>Семьи с действиями</span>
+            <Badge>{actionFamilies.length}</Badge>
+          </div>
+        ) : null}
+        {isLoading && visibleFamilies.length === 0 ? (
+          <FamilyListSkeleton count={3} />
+        ) : visibleFamilies.length === 0 ? (
+          <EmptyState
+            title={mode === "actions" ? "Сейчас нет действий" : "У вас пока нет семей"}
+          >
+            {mode === "actions"
+              ? "Когда появится заявка, доступ или оплата, она будет здесь."
+              : "Создайте семью или отправьте заявку в поиске."}
+          </EmptyState>
+        ) : (
+          <div className="stack">
+            {visibleFamilies.map((item) => {
+              const details = ownerDetails[item.family.id];
+              return (
+                <article
+                  className="family-workspace"
+                  data-family-id={item.family.id}
+                  data-testid="family-workspace"
+                  key={item.membership.id}
+                >
+                  <FamilyCard family={item.family}>
+                    <Badge>{statusText(item.membership.status)}</Badge>
+                    <WorldButton
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      data-testid="workspace-open-family-button"
+                      onClick={() => onOpenFamily(item.family.id)}
+                    >
+                      Подробнее
+                    </WorldButton>
+                  </FamilyCard>
+                  {item.membership.role === "owner" && (
+                    <OwnerWorkSummary
+                      pendingRequestsCount={item.pending_requests_count}
+                      activeMembersCount={item.family.active_members_count}
+                      maxMembers={item.family.max_members}
+                      freeSlots={item.family.free_slots}
+                    />
+                  )}
+                  {item.membership.role !== "owner" && (
+                    <MemberNextStep member={item.membership} payments={item.payments} />
+                  )}
+                  <div className="workspace-actions">
+                    {item.membership.role === "owner" ? (
+                      <OwnerActions
+                        family={item.family}
+                        busy={busy}
+                        onLoadOwnerDetails={onLoadOwnerDetails}
+                        onUpdateDescription={onUpdateDescription}
+                        onUpdatePrice={onUpdatePrice}
+                        onUpdatePaymentDay={onUpdatePaymentDay}
+                        onCloseFamily={onCloseFamily}
+                        onConfirmAvailability={onConfirmAvailability}
+                      />
+                    ) : (
+                      <MemberActions
+                        familyId={item.family.id}
+                        member={item.membership}
+                        familyStatus={item.family.status}
+                        busy={busy}
+                        onConfirmAccess={onConfirmAccess}
+                        onGetRequisite={onGetRequisite}
+                        onAcknowledgeClosing={onAcknowledgeClosing}
+                        onLeaveFamily={onLeaveFamily}
+                        onCreatePrepayment={onCreatePrepayment}
+                      />
+                    )}
+                  </div>
+                  {requisites[item.membership.id] && (
+                    <RequisiteBox requisite={requisites[item.membership.id]} />
+                  )}
+                  {item.payments.length > 0 && (
+                    <PaymentList
+                      payments={item.payments}
+                      onReport={onReportPayment}
+                      onCancel={onCancelPaymentReport}
+                    />
+                  )}
+                  {details && (
+                    <OwnerDetails
+                      family={item.family}
+                      details={details}
+                      onApprove={(request) => onApproveRequest(item.family.id, request)}
+                      onReject={(request) => onRejectRequest(item.family.id, request)}
+                      onAccessProvided={(member) =>
+                        onAccessProvided(item.family.id, member)
+                      }
+                      onRemindAccess={(member) =>
+                        onRemindAccess(item.family.id, member)
+                      }
+                      onCancelBeforeAccess={(member) =>
+                        onCancelBeforeAccess(item.family.id, member)
+                      }
+                      onRemove={(member, reason) =>
+                        onRemoveMember(item.family.id, member, reason)
+                      }
+                      onConfirmPayment={(payment) =>
+                        onConfirmPayment(item.family.id, payment)
+                      }
+                      onNotReceived={(payment) => onNotReceived(item.family.id, payment)}
+                      onRecordPrepayment={(member, periods) =>
+                        onRecordPrepayment(item.family.id, member, periods)
+                      }
+                    />
+                  )}
+                </article>
+              );
+            })}
+            {hasMoreFamilies && onLoadMoreFamilies ? (
+              <WorldButton
+                type="button"
+                variant="secondary"
+                fullWidth
+                disabled={isLoadingMoreFamilies}
+                onClick={onLoadMoreFamilies}
+              >
+                {isLoadingMoreFamilies ? "Загружаем семьи..." : "Показать ещё семьи"}
+              </WorldButton>
+            ) : null}
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
+
+function ActionSummary({
+  pendingRequestCount,
+  ownerRequestCount,
+  paymentActionCount,
+  accessActionCount
+}: {
+  pendingRequestCount: number;
+  ownerRequestCount: number;
+  paymentActionCount: number;
+  accessActionCount: number;
 }) {
   return (
-    <Panel
-      title="Мои семьи"
-      description="Здесь видны семьи, где вы владелец или участник."
-    >
-      <FamilyTypeSwitch value={myFamilyType} onChange={onChangeFamilyType} />
-      {isLoading && families.length === 0 ? (
-        <FamilyListSkeleton count={3} />
-      ) : families.length === 0 ? (
-        <EmptyState title="У вас пока нет семей">
-          Создайте семью или отправьте заявку в поиске.
+    <div className="action-summary" data-testid="actions-summary">
+      <div>
+        <span>Мои заявки</span>
+        <strong>{pendingRequestCount}</strong>
+      </div>
+      <div>
+        <span>Входящие</span>
+        <strong>{ownerRequestCount}</strong>
+      </div>
+      <div>
+        <span>Оплаты</span>
+        <strong>{paymentActionCount}</strong>
+      </div>
+      <div>
+        <span>Доступ</span>
+        <strong>{accessActionCount}</strong>
+      </div>
+    </div>
+  );
+}
+
+function MyRequestsSection({
+  requests,
+  busy,
+  isLoading,
+  showEmpty = false,
+  onCancelRequest
+}: {
+  requests: FamilyRequest[];
+  busy: string | null;
+  isLoading?: boolean;
+  showEmpty?: boolean;
+  onCancelRequest: (requestId: string) => void;
+}) {
+  if (isLoading && requests.length === 0) {
+    return <FamilyListSkeleton count={1} />;
+  }
+
+  if (requests.length === 0) {
+    if (!showEmpty) return null;
+    return (
+      <section className="my-requests-section" data-testid="my-requests-section">
+        <div className="section-inline-title">
+          <span>Мои заявки</span>
+          <Badge>0</Badge>
+        </div>
+        <EmptyState title="Активных заявок нет">
+          Когда вы отправите заявку в семью, её статус появится здесь.
         </EmptyState>
-      ) : (
-        <div className="stack">
-          {families.map((item) => {
-            const details = ownerDetails[item.family.id];
-            return (
-              <article
-                className="family-workspace"
-                data-family-id={item.family.id}
-                data-testid="family-workspace"
-                key={item.membership.id}
-              >
-                <FamilyCard family={item.family}>
-                  <Badge>{statusText(item.membership.status)}</Badge>
+      </section>
+    );
+  }
+
+  return (
+    <section className="my-requests-section" data-testid="my-requests-section">
+      <div className="section-inline-title">
+        <span>Активные заявки</span>
+        <Badge>{requests.filter((request) => request.status === "pending").length}</Badge>
+      </div>
+      <div className="stack">
+        {requests.map((request) => (
+          <article
+            className="list-row request-card"
+            data-testid="request-card"
+            key={request.id}
+          >
+            <div>
+              <div className="request-card-heading">
+                <div>
+                  <span className={`type-label type-label-${request.family_type}`}>
+                    {familyKindLabels[request.family_type]}
+                  </span>
+                  <Typography as="strong" variant="subtitle" level={3}>
+                    {request.service_name}
+                    {request.service_variant ? ` ${request.service_variant}` : ""}
+                  </Typography>
+                </div>
+                <Badge>{statusText(request.status)}</Badge>
+              </div>
+              <Typography as="p" variant="body" level={3}>
+                Создана {formatDateTime(request.created_at)} · истекает{" "}
+                {formatDateTime(request.expires_at)}
+              </Typography>
+              {request.cancel_reason && (
+                <Typography as="small" variant="body" level={4}>
+                  {requestCancelReasonLabels[request.cancel_reason] ??
+                    request.cancel_reason}
+                </Typography>
+              )}
+            </div>
+            {request.status === "pending" && (
+              <div className="row-actions">
+                {request.owner_username && (
                   <WorldButton
                     type="button"
                     variant="secondary"
                     size="sm"
-                    data-testid="workspace-open-family-button"
-                    onClick={() => onOpenFamily(item.family.id)}
+                    data-testid="request-owner-chat-button"
+                    onClick={() =>
+                      openTelegramUser(
+                        request.owner_username!,
+                        `Здравствуйте, я оставил заявку в вашу семью ${request.service_name} в SubsMarket.`
+                      )
+                    }
                   >
-                    Подробнее
+                    Написать владельцу
                   </WorldButton>
-                </FamilyCard>
-                {item.membership.role === "owner" && (
-                  <OwnerWorkSummary
-                    pendingRequestsCount={item.pending_requests_count}
-                    activeMembersCount={item.family.active_members_count}
-                    maxMembers={item.family.max_members}
-                    freeSlots={item.family.free_slots}
-                  />
                 )}
-                {item.membership.role !== "owner" && (
-                  <MemberNextStep member={item.membership} payments={item.payments} />
-                )}
-                <div className="workspace-actions">
-                  {item.membership.role === "owner" ? (
-                    <OwnerActions
-                      family={item.family}
-                      busy={busy}
-                      onLoadOwnerDetails={onLoadOwnerDetails}
-                      onUpdateDescription={onUpdateDescription}
-                      onUpdatePrice={onUpdatePrice}
-                      onUpdatePaymentDay={onUpdatePaymentDay}
-                      onCloseFamily={onCloseFamily}
-                      onConfirmAvailability={onConfirmAvailability}
-                    />
-                  ) : (
-                    <MemberActions
-                      familyId={item.family.id}
-                      member={item.membership}
-                      familyStatus={item.family.status}
-                      busy={busy}
-                      onConfirmAccess={onConfirmAccess}
-                      onGetRequisite={onGetRequisite}
-                      onAcknowledgeClosing={onAcknowledgeClosing}
-                      onLeaveFamily={onLeaveFamily}
-                      onCreatePrepayment={onCreatePrepayment}
-                    />
-                  )}
-                </div>
-                {requisites[item.membership.id] && (
-                  <RequisiteBox requisite={requisites[item.membership.id]} />
-                )}
-                {item.payments.length > 0 && (
-                  <PaymentList
-                    payments={item.payments}
-                    onReport={onReportPayment}
-                    onCancel={onCancelPaymentReport}
-                  />
-                )}
-                {details && (
-                  <OwnerDetails
-                    family={item.family}
-                    details={details}
-                    onApprove={(request) => onApproveRequest(item.family.id, request)}
-                    onReject={(request) => onRejectRequest(item.family.id, request)}
-                    onAccessProvided={(member) =>
-                      onAccessProvided(item.family.id, member)
-                    }
-                    onRemindAccess={(member) =>
-                      onRemindAccess(item.family.id, member)
-                    }
-                    onCancelBeforeAccess={(member) =>
-                      onCancelBeforeAccess(item.family.id, member)
-                    }
-                    onRemove={(member, reason) =>
-                      onRemoveMember(item.family.id, member, reason)
-                    }
-                    onConfirmPayment={(payment) =>
-                      onConfirmPayment(item.family.id, payment)
-                    }
-                    onNotReceived={(payment) => onNotReceived(item.family.id, payment)}
-                    onRecordPrepayment={(member, periods) =>
-                      onRecordPrepayment(item.family.id, member, periods)
-                    }
-                  />
-                )}
-              </article>
-            );
-          })}
-        </div>
-      )}
-    </Panel>
+                <WorldButton
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={busy !== null}
+                  onClick={() => onCancelRequest(request.id)}
+                >
+                  Отменить
+                </WorldButton>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function hasPendingFamilyAction(item: MyFamily) {
+  if (item.pending_requests_count > 0) return true;
+  if (["awaiting_access", "awaiting_confirmation"].includes(item.membership.status)) {
+    return true;
+  }
+  return item.payments.some((payment) =>
+    ["due", "overdue", "payment_reported"].includes(payment.status)
   );
 }
 

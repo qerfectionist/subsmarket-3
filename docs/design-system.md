@@ -58,8 +58,8 @@ visible without hunting through the app.
 
 ### 4. Marketplace Later
 
-Accounts and gigabytes may appear on Home as future modules, but they must not
-look equally active until those engines are ready.
+Accounts and gigabytes may appear in the product scope switch, but they must
+not look equally active until those engines are ready.
 
 ### 5. Mobile App, Not Website
 
@@ -69,7 +69,7 @@ The Mini App should use compact mobile flows:
 - short titles;
 - native-feeling lists;
 - no marketing hero sections;
-- no long scroll on Home;
+- no long scroll on the first Market screen;
 - no horizontal overflow;
 - no page bounce where it feels broken.
 
@@ -196,7 +196,7 @@ Recommended scale:
 
 Rules:
 
-- Home should use fewer, larger groups;
+- Market should use fewer, larger groups;
 - details screens may use denser lists;
 - forms need breathing room, but not landing-page spacing;
 - keep card padding consistent across screens.
@@ -241,7 +241,7 @@ Includes:
 Rules:
 
 - no horizontal scroll;
-- Home should fit the viewport as much as possible;
+- Market should fit the viewport as much as possible;
 - inner screens can scroll naturally;
 - content must not hide under bottom nav.
 
@@ -265,16 +265,18 @@ Rules:
 
 Tabs for MVP:
 
-1. `Главная`
-2. `Поиск`
-3. `Семьи`
-4. `Заявки`
+1. `Маркет`
+2. `Мои`
+3. `Создать`
 
 Rules:
 
-- no center plus button while `Создать семью` already exists as a primary action;
+- `Маркет` is the first screen and contains search/discovery;
+- `Мои` contains memberships, owner families, requests, and payment work;
+- `Создать` is a stable supply-side entry point;
+- do not add a separate `Заявки` tab; requests are a temporary state inside `Мои`;
 - badges show real pending work only;
-- active tab is blue;
+- active tab is quiet and native-feeling;
 - inactive tabs are muted;
 - no extra colors in nav.
 
@@ -425,29 +427,27 @@ Rules:
 
 ## Screen Contracts
 
-### Home
+### Market
 
-Job: show the user's current state and provide fast entry points.
+Job: show what the user can find or buy right now.
 
-Chosen direction: **Operational Dashboard Home**.
+Chosen direction: **Telegram Wallet-style Market**.
 
-This Home direction is inspired by a compact mobile dashboard:
+This Market direction is inspired by Telegram Wallet interaction patterns:
 
-1. Header with screen title and product name.
-2. `Сегодня` task group:
-   - `Мои места`;
-   - `Заявки`;
-   - `Оплаты`.
-3. `Быстро` action grid:
-   - `Найти место`;
-   - `Создать семью`;
-   - future `Продать ГБ`;
-   - future `Аккаунт`.
-4. `Для вас` recommendations/list:
-   - useful available families or services.
+1. Header with avatar and settings.
+2. Summary card:
+   - number of available families;
+   - current family type and service count.
+3. Four product directions:
+   - `Подписки`;
+   - `Тарифы`;
+   - future `Гигабайты`;
+   - future `Аккаунты`.
+4. Compact grouped list of available families.
 
-This works better than a text-heavy action page because it feels like a real
-app dashboard and gives returning users immediate orientation.
+This works better than a text-heavy dashboard because it removes the extra
+Home -> Search tap and makes the first screen useful immediately.
 
 The groups do not need loud visible section headings on the first screen. If
 the cards explain themselves, keep labels semantic (`aria-label`) and visually
@@ -467,6 +467,9 @@ Future modules:
 Rules:
 
 - no marketing hero block;
+- no visible title/description block above the summary card;
+- no duplicate `Подписки / Тарифы` segmented control under product directions;
+- no visible invite-code card on the first screen;
 - no top stats strip with `места / заявки / оплаты`;
 - no loud visible section titles if the group cards are self-explanatory;
 - no long explanatory subtitles;
@@ -475,25 +478,27 @@ Rules:
 - use `семья`, `место`, `заявка`, `оплата`;
 - `Создать семью`, not `Собрать клуб`;
 - future modules are visible but disabled/quiet unless implemented;
-- recommendations must be compact list rows, not marketplace cards;
-- Home should avoid vertical scroll on normal Telegram viewport.
+- family results must be compact wallet-style list rows, not large marketplace cards;
+- Market should avoid vertical scroll on normal Telegram viewport.
 
 Recommended copy:
 
 ```text
-Главная
-SubsMarket
+Маркет
 
-Мои места
-Заявки
-Оплаты
+Семьи
+Аккаунты
+ГБ
 
-Найти место
-Создать семью
+Свободно сейчас
+Подписки
+Тарифы
+Гигабайты
+Аккаунты
 
 ```
 
-Do not over-explain on Home. Detail belongs on the destination screen.
+Do not over-explain on Market. Detail belongs on the family details screen.
 
 ### Search
 
@@ -752,12 +757,10 @@ Before shipping a UI pass:
 
 Redesign these screens as one system:
 
-1. Home
-2. Search
+1. Market
+2. My
 3. Create Family
 4. Family Details
-5. My Families
-6. Requests
 
 ### Phase 5. QA
 
@@ -768,7 +771,7 @@ Redesign these screens as one system:
 
 ## Final Direction
 
-The recommended direction is **Operational Telegram Finance Utility**:
+The recommended direction is **Telegram Wallet-style Finance Utility**:
 
 - Telegram-native structure;
 - finance-app trust;
@@ -776,7 +779,6 @@ The recommended direction is **Operational Telegram Finance Utility**:
 - neutral base;
 - blue as the only brand/action color;
 - semantic colors only when state requires them.
-- dashboard-style Home with stats, today's tasks, quick actions, and compact
-  recommendations.
+- Wallet-style Market with summary, quick actions, and compact grouped lists.
 
 This direction should be used for the next full frontend UI pass.
