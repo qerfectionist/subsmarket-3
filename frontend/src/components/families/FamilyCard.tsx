@@ -6,15 +6,6 @@ import { familyKindLabels, periodLabels } from "../../labels";
 import type { Family } from "../../types";
 import { StatusBadge } from "../StatusBadge";
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="metric-cell">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
 export function FamilyCard({
   family,
   children,
@@ -39,39 +30,39 @@ export function FamilyCard({
           size={48}
         />
         <div className="family-card-head-copy">
-          <div className="card-topline">
-            <div className="card-topline-left">
-              <StatusBadge status={family.status} />
-              <span className={`type-label type-label-${family.family_type}`}>
-                {familyKindLabels[family.family_type]}
-              </span>
-            </div>
-            <span className="card-period">{periodLabels[family.period]}</span>
-          </div>
           <h3 className="family-card-title">
             {family.service_name}
             {family.service_variant ? ` ${family.service_variant}` : ""}
           </h3>
+          <div className="card-topline">
+            <StatusBadge status={family.status} />
+            <span className={`type-label type-label-${family.family_type}`}>
+              {familyKindLabels[family.family_type]}
+            </span>
+            <span className="card-period">{periodLabels[family.period]}</span>
+          </div>
         </div>
       </div>
+
+      <div className="family-card-offer">
+        <div>
+          <span>Доля участника</span>
+          <strong>{family.member_share_kzt.toLocaleString("ru-KZ")} ₸</strong>
+        </div>
+        <div>
+          <span>Свободно</span>
+          <strong>
+            {family.free_slots} из {family.max_members}
+          </strong>
+        </div>
+      </div>
+
       <p className="family-card-subtitle">
         {family.description || "Описание пока не добавлено."}
       </p>
       {family.owner_rules ? (
         <p className="family-card-rules">{family.owner_rules}</p>
       ) : null}
-
-      <div className="metrics">
-        <Metric
-          label="Доля"
-          value={`${family.member_share_kzt.toLocaleString("ru-KZ")} ₸`}
-        />
-        <Metric
-          label="Места"
-          value={`${family.active_members_count}/${family.max_members}`}
-        />
-        <Metric label="Свободно" value={String(family.free_slots)} />
-      </div>
 
       <div className="card-footer">
         <span>Оплата: {formatDate(family.next_payment_date)}</span>

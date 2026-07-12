@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
 
 import {
   acknowledgeFamilyClosing,
@@ -31,6 +32,7 @@ import {
   updateFamilyVisibility
 } from "../../api";
 import type {
+  CursorPage,
   FamilyCreate,
   FamilyMemberRemovalReason,
   FamilyPayment,
@@ -59,18 +61,29 @@ function patchFamilyViewPayment(qc: ReturnType<typeof useQueryClient>, payment: 
 }
 
 function patchMyFamilyPayment(qc: ReturnType<typeof useQueryClient>, payment: FamilyPayment) {
-  qc.setQueryData<MyFamily[]>(queryKeys.myFamilies, (current) => {
-    if (!current) return current;
-    return current.map((item) => {
-      if (item.family.id !== payment.family_id) return item;
-      const hasPayment = item.payments.some((entry) => entry.id === payment.id);
-      if (!hasPayment) return item;
+  qc.setQueryData<InfiniteData<CursorPage<MyFamily>, string | null>>(
+    queryKeys.myFamilies,
+    (current) => {
+      if (!current) return current;
       return {
-        ...item,
-        payments: item.payments.map((entry) => (entry.id === payment.id ? payment : entry))
+        ...current,
+        pages: current.pages.map((page) => ({
+          ...page,
+          items: page.items.map((item) => {
+            if (item.family.id !== payment.family_id) return item;
+            const hasPayment = item.payments.some((entry) => entry.id === payment.id);
+            if (!hasPayment) return item;
+            return {
+              ...item,
+              payments: item.payments.map((entry) =>
+                entry.id === payment.id ? payment : entry
+              )
+            };
+          })
+        }))
       };
-    });
-  });
+    }
+  );
 }
 
 export function useCreateFamily() {

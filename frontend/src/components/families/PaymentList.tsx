@@ -1,3 +1,8 @@
+import {
+  Button as WorldButton,
+  Typography
+} from "@worldcoin/mini-apps-ui-kit-react";
+
 import { formatDateTime, statusText } from "../../format";
 import { paymentCancelReasonLabels, paymentKindText, periodLabels } from "../../labels";
 import type { FamilyPayment } from "../../types";
@@ -20,10 +25,12 @@ export function PaymentList({
   if (payments.length === 0) {
     return (
       <div className="payment-list payment-list-empty">
-        <p className="muted">Платежей пока нет</p>
-        <small>
+        <Typography as="p" variant="body" level={3} className="muted">
+          Платежей пока нет
+        </Typography>
+        <Typography as="small" variant="body" level={4}>
           Они появятся после подтверждения доступа или перед следующей датой оплаты.
-        </small>
+        </Typography>
       </div>
     );
   }
@@ -33,24 +40,25 @@ export function PaymentList({
       {payments.map((payment) => (
         <article className="payment-row" key={payment.id}>
           <div>
-            <strong>
+            <Typography as="strong" variant="subtitle" level={3}>
               {payment.amount_kzt.toLocaleString("ru-KZ")} ₸ · {statusText(payment.status)}
-            </strong>
-            <p>
+            </Typography>
+            <Typography as="p" variant="body" level={3}>
               {paymentKindText(payment.kind)} · {periodLabels[payment.period]} · до{" "}
               {formatDateTime(payment.due_at)}
-            </p>
+            </Typography>
             {payment.cancel_reason ? (
-              <small>
+              <Typography as="small" variant="body" level={4}>
                 {paymentCancelReasonLabels[payment.cancel_reason] ?? payment.cancel_reason}
-              </small>
+              </Typography>
             ) : null}
           </div>
           {!ownerMode ? (
             <div className="row-actions">
               {(payment.status === "due" || payment.status === "overdue") && onReport ? (
-                <button
+                <WorldButton
                   type="button"
+                  size="sm"
                   data-payment-id={payment.id}
                   data-testid="report-payment-button"
                   disabled={false}
@@ -61,39 +69,42 @@ export function PaymentList({
                   }}
                 >
                   Оплатил
-                </button>
+                </WorldButton>
               ) : null}
               {payment.status === "payment_reported" && onCancel ? (
-                <button
+                <WorldButton
                   type="button"
-                  className="secondary"
+                  size="sm"
+                  variant="secondary"
                   data-testid="cancel-payment-report-button"
                   onClick={() => void onCancel(payment)}
                 >
                   Отменить
-                </button>
+                </WorldButton>
               ) : null}
             </div>
           ) : payment.status === "payment_reported" ? (
             <div className="row-actions">
               {onConfirm ? (
-                <button
+                <WorldButton
                   type="button"
+                  size="sm"
                   data-testid="confirm-payment-button"
                   onClick={() => void onConfirm(payment)}
                 >
                   Подтвердить
-                </button>
+                </WorldButton>
               ) : null}
               {onNotReceived ? (
-                <button
+                <WorldButton
                   type="button"
-                  className="secondary"
+                  size="sm"
+                  variant="secondary"
                   data-testid="payment-not-received-button"
                   onClick={() => void onNotReceived(payment)}
                 >
                   Не получил
-                </button>
+                </WorldButton>
               ) : null}
             </div>
           ) : null}

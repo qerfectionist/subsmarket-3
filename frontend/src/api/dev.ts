@@ -28,6 +28,10 @@ export function isDevAuthEnabled() {
   return import.meta.env.DEV && !getTelegramInitData();
 }
 
+export function isDevUserSwitchVisible() {
+  return isDevAuthEnabled() && import.meta.env.VITE_SHOW_DEV_USER_SWITCH === "true";
+}
+
 export function getActiveDevTelegramUser() {
   if (!isDevAuthEnabled()) {
     return null;

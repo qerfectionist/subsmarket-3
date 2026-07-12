@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from starlette.requests import Request
 
 from subsmarket.core.config import settings
 from subsmarket.core.database import Base
@@ -18,6 +19,20 @@ from subsmarket.identity.models import User
 from subsmarket.identity.schemas import TelegramUserData
 from subsmarket.identity.service import upsert_user
 from subsmarket.identity.telegram import _verify_init_data, parse_telegram_user
+
+
+def make_request(host: str = "testclient") -> Request:
+    return Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/api/me",
+            "headers": [],
+            "client": (host, 12345),
+            "server": ("testserver", 80),
+            "scheme": "http",
+        }
+    )
 
 
 def make_init_data(bot_token: str, *, auth_date: datetime | None = None) -> str:
@@ -75,12 +90,50 @@ def test_parse_telegram_user_uses_verified_init_data(
     bot_token = "123456:secret"
     monkeypatch.setattr(settings, "telegram_bot_token", bot_token)
 
-    telegram_user = parse_telegram_user(x_telegram_init_data=make_init_data(bot_token))
+    telegram_user = parse_telegram_user(
+        make_request(),
+        x_telegram_init_data=make_init_data(bot_token),
+    )
 
     assert telegram_user.telegram_user_id == 777001
     assert telegram_user.username == "telegram_user"
     assert telegram_user.first_name == "Telegram"
     assert telegram_user.photo_url == "https://t.me/i/userpic/320/demo.svg"
+
+
+def test_parse_telegram_user_allows_local_development_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "development")
+
+    telegram_user = parse_telegram_user(
+        make_request("127.0.0.1"),
+        x_telegram_init_data=None,
+        x_dev_telegram_user_id=123,
+        x_dev_telegram_username="local_dev",
+        x_dev_telegram_first_name="Local",
+    )
+
+    assert telegram_user.telegram_user_id == 123
+    assert telegram_user.username == "local_dev"
+    assert telegram_user.first_name == "Local"
+
+
+def test_parse_telegram_user_rejects_remote_development_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "development")
+
+    with pytest.raises(HTTPException) as exc:
+        parse_telegram_user(
+            make_request("203.0.113.10"),
+            x_telegram_init_data=None,
+            x_dev_telegram_user_id=123,
+            x_dev_telegram_username="remote_dev",
+        )
+
+    assert exc.value.status_code == 401
+    assert exc.value.detail == "TELEGRAM_INIT_DATA_REQUIRED"
 
 
 def test_upsert_user_updates_existing_profile_without_duplicate() -> None:

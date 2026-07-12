@@ -6,8 +6,8 @@
 
 | Принцип | Реализация |
 |---------|------------|
-| Нативный Telegram | `showTelegramConfirm`, `MainButton`, `Snackbar`, closing confirmation |
-| Компоненты | `@telegram-apps/telegram-ui` (Section, Cell, Button) + кастом только где нет аналога |
+| Нативный Telegram | `showTelegramConfirm`, `MainButton`, `Toast`, closing confirmation |
+| Компоненты | `@worldcoin/mini-apps-ui-kit-react` + `lucide-react`; кастом только где нет аналога |
 | Ошибки мутаций | `AppErrorBanner` в shell (`App.tsx`) |
 | Ошибки загрузки экрана/панели | `ScreenLoadError` / `OwnerPanelError` + retry, не глобальный баннер |
 | Loading списков | Skeleton (`FamilyListSkeleton` для карточек, `CellListSkeleton` для Cell-списков) |
@@ -17,7 +17,7 @@
 
 | Экран | Loading | Empty | Error | Примечание |
 |-------|---------|-------|-------|------------|
-| **Home** | — | quick tiles | `AppErrorBanner` | Дашборд: 2×2 tiles + attention strip |
+| **Home** | — | action rows | `AppErrorBanner` | Главные действия + attention strip + разделы |
 | **Search** | `FamilyListSkeleton` | «Нет семей» | `ScreenLoadError` | ✅ эталон |
 | **MyFamilies** | `CellListSkeleton` | «Нет семей» | `ScreenLoadError` | ✅ |
 | **Requests** | `CellListSkeleton` | «Нет заявок» | `ScreenLoadError` | ✅ |
@@ -60,6 +60,6 @@ OwnerPanelError + «Повторить»
 
 ## Вне scope рефакторинга
 
-- Визуальный редизайн / новая цветовая схема
+- Полный визуальный редизайн за пределами текущих экранов
 - Marketplace UI
 - Onboarding / туториалы

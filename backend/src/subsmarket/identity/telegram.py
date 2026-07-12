@@ -6,12 +6,13 @@ import json
 from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qsl
 
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Request
 
 from subsmarket.core.config import settings
 from subsmarket.identity.schemas import TelegramUserData
 
 MAX_INIT_DATA_AGE = timedelta(days=1)
+LOCAL_DEV_AUTH_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
 
 
 def _verify_init_data(init_data: str, bot_token: str) -> dict[str, str]:
@@ -50,6 +51,7 @@ def _verify_init_data(init_data: str, bot_token: str) -> dict[str, str]:
 
 
 def parse_telegram_user(
+    request: Request,
     x_telegram_init_data: str | None = Header(default=None),
     x_dev_telegram_user_id: int | None = Header(default=None),
     x_dev_telegram_username: str | None = Header(default=None),
@@ -83,7 +85,8 @@ def parse_telegram_user(
             photo_url=user.get("photo_url"),
         )
 
-    if settings.is_development:
+    client_host = request.client.host if request.client else ""
+    if settings.is_development and client_host in LOCAL_DEV_AUTH_HOSTS:
         return TelegramUserData(
             telegram_user_id=x_dev_telegram_user_id or settings.demo_telegram_user_id,
             username=x_dev_telegram_username or settings.demo_telegram_username,

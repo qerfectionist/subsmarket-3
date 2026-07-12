@@ -38,7 +38,8 @@ export default defineConfig({
     {
       command: "npm run dev -- --host 127.0.0.1 --port 5174",
       env: {
-        VITE_API_BASE_URL: "http://127.0.0.1:8001"
+        VITE_API_BASE_URL: "http://127.0.0.1:8001",
+        VITE_SHOW_DEV_USER_SWITCH: "true"
       },
       reuseExistingServer: true,
       timeout: 30_000,

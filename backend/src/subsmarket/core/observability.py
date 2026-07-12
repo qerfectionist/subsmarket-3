@@ -13,6 +13,8 @@ def configure_sentry() -> bool:
     global _configured
     if _configured:
         return True
+    if settings.app_env != "production":
+        return False
     if not settings.sentry_dsn:
         return False
 

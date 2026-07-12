@@ -27,7 +27,8 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
           if (id.includes("@tanstack/react-query")) return "query";
-          if (id.includes("@telegram-apps/telegram-ui")) return "telegram-ui";
+          if (id.includes("@worldcoin/mini-apps-ui-kit-react")) return "world-ui";
+          if (id.includes("lucide-react")) return "icons";
           if (id.includes("react-dom") || id.includes("react/")) return "react";
         }
       }

@@ -1,22 +1,54 @@
-import { Cell, Navigation } from "@telegram-apps/telegram-ui";
+import { ListItem } from "@worldcoin/mini-apps-ui-kit-react";
 
-import { ServiceLogo } from "../branding";
-import { formatDate } from "../../format";
-import { familyKindLabels, periodLabels } from "../../labels";
+import { periodLabels } from "../../labels";
 import type { Family } from "../../types";
-import { StatusBadge } from "../StatusBadge";
+import { ServiceLogo } from "../branding";
 
 export function FamilyListItem({
   family,
-  busy,
   onOpen,
-  onRequest
+  onRequest: _onRequest,
+  compact = false
 }: {
   family: Family;
   busy: string | null;
   onOpen: () => void;
   onRequest: () => void;
+  compact?: boolean;
 }) {
+  const title = `${family.service_name}${family.service_variant ? ` ${family.service_variant}` : ""}`;
+  const description = `${family.free_slots} ${slotLabel(family.free_slots)} свободно`;
+  const period = family.period === "monthly" ? "/мес" : `/${periodLabels[family.period]}`;
+  const price = `${family.member_share_kzt.toLocaleString("ru-KZ")}₸`;
+
+  if (compact) {
+    return (
+      <article
+        className="family-list-item family-list-item-compact"
+        data-family-id={family.id}
+        data-family-type={family.family_type}
+        data-testid="family-card"
+      >
+        <button type="button" data-testid="open-family-button" onClick={onOpen}>
+          <ServiceLogo
+            serviceSlug={family.service_slug}
+            serviceName={family.service_name}
+            familyType={family.family_type}
+            size={36}
+          />
+          <span className="family-compact-copy">
+            <strong>{title}</strong>
+            <small>{description}</small>
+          </span>
+          <span className="family-row-price">
+            <strong>{price}</strong>
+            <small>{period}</small>
+          </span>
+        </button>
+      </article>
+    );
+  }
+
   return (
     <article
       className="family-list-item"
@@ -24,39 +56,26 @@ export function FamilyListItem({
       data-family-type={family.family_type}
       data-testid="family-card"
     >
-      <Cell
-        before={
+      <ListItem
+        label={title}
+        description={description}
+        startAdornment={
           <ServiceLogo
             serviceSlug={family.service_slug}
             serviceName={family.service_name}
             familyType={family.family_type}
-            size={40}
+            size={44}
           />
         }
-        subtitle={`${family.member_share_kzt.toLocaleString("ru-KZ")} ₸ · ${family.free_slots} ${slotLabel(family.free_slots)} · ${periodLabels[family.period]}`}
-        description={`Оплата ${formatDate(family.next_payment_date)} · ${family.owner.first_name}`}
-        after={<Navigation />}
-        multiline
+        endAdornment={
+          <span className="family-row-price">
+            <strong>{price}</strong>
+            <small>{period}</small>
+          </span>
+        }
         data-testid="open-family-button"
         onClick={onOpen}
-      >
-        {family.service_name}
-        {family.service_variant ? ` ${family.service_variant}` : ""}
-        <span className={`type-label type-label-${family.family_type}`}>
-          {familyKindLabels[family.family_type]}
-        </span>
-      </Cell>
-      <div className="family-list-item-action-row">
-        <StatusBadge status={family.status} />
-        <button
-          type="button"
-          data-testid="send-request-button"
-          disabled={busy !== null}
-          onClick={onRequest}
-        >
-          Заявка
-        </button>
-      </div>
+      />
     </article>
   );
 }

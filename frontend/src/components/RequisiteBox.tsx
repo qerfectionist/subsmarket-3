@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@telegram-apps/telegram-ui";
+import { Button as WorldButton, Typography } from "@worldcoin/mini-apps-ui-kit-react";
 
 import { bankLabels } from "../labels";
 import { triggerTelegramImpact, triggerTelegramNotification } from "../telegram";
@@ -36,31 +36,35 @@ export function RequisiteBox({ requisite }: { requisite: PaymentRequisite }) {
 
   return (
     <div className="requisite-box">
-      <p>
-        <strong>{bankLabel}</strong>
+      <Typography as="p" variant="body" level={3}>
+        <Typography as="strong" variant="subtitle" level={3}>
+          {bankLabel}
+        </Typography>
         <br />
         {phoneDisplay}
-      </p>
+      </Typography>
       <div className="row-actions">
-        <Button
-          size="s"
-          mode="bezeled"
-          stretched
+        <WorldButton
+          type="button"
+          size="sm"
+          variant="secondary"
+          fullWidth
           data-testid="requisite-toggle-button"
           onClick={handleReveal}
         >
           {revealed ? "Скрыть" : "Показать"}
-        </Button>
+        </WorldButton>
         {revealed ? (
-          <Button
-            size="s"
-            mode="plain"
-            stretched
+          <WorldButton
+            type="button"
+            size="sm"
+            variant="tertiary"
+            fullWidth
             data-testid="requisite-copy-button"
             onClick={handleCopy}
           >
             {copied ? "Скопировано" : "Копировать"}
-          </Button>
+          </WorldButton>
         ) : null}
       </div>
     </div>
