@@ -81,6 +81,60 @@ DEFAULT_RATE_LIMIT_RULES = (
         key_by_telegram_user=True,
     ),
     RateLimitRule(
+        "marketplace_listing_create",
+        "POST",
+        re.compile(r"/api/marketplace/listings"),
+        10,
+        3600,
+        key_by_telegram_user=True,
+    ),
+    RateLimitRule(
+        "marketplace_listing_update",
+        "PATCH",
+        re.compile(r"/api/marketplace/listings/[0-9a-fA-F-]{36}"),
+        30,
+        60,
+        key_by_telegram_user=True,
+    ),
+    RateLimitRule(
+        "marketplace_listing_action",
+        "POST",
+        re.compile(
+            r"/api/marketplace/listings/[0-9a-fA-F-]{36}/"
+            r"(?:pause|resume|renew|archive)"
+        ),
+        30,
+        60,
+        key_by_telegram_user=True,
+    ),
+    RateLimitRule(
+        "marketplace_request_create",
+        "POST",
+        re.compile(r"/api/marketplace/listings/[0-9a-fA-F-]{36}/requests"),
+        20,
+        3600,
+        key_by_telegram_user=True,
+    ),
+    RateLimitRule(
+        "marketplace_request_remind",
+        "POST",
+        re.compile(r"/api/marketplace/requests/[0-9a-fA-F-]{36}/remind"),
+        10,
+        3600,
+        key_by_telegram_user=True,
+    ),
+    RateLimitRule(
+        "marketplace_request_action",
+        "POST",
+        re.compile(
+            r"/api/marketplace/requests/[0-9a-fA-F-]{36}/"
+            r"(?:accept|reject|cancel|close)"
+        ),
+        60,
+        60,
+        key_by_telegram_user=True,
+    ),
+    RateLimitRule(
         "family_invite_lookup",
         "GET",
         re.compile(r"/api/families/invites/[^/]{1,64}"),

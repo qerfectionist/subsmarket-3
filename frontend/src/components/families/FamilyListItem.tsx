@@ -1,5 +1,6 @@
 import { ListItem } from "@worldcoin/mini-apps-ui-kit-react";
 
+import { familyTitle } from "../../format";
 import { periodLabels } from "../../labels";
 import type { Family } from "../../types";
 import { ServiceLogo } from "../branding";
@@ -16,7 +17,7 @@ export function FamilyListItem({
   onRequest: () => void;
   compact?: boolean;
 }) {
-  const title = `${family.service_name}${family.service_variant ? ` ${family.service_variant}` : ""}`;
+  const title = familyTitle(family);
   const description = `${family.free_slots} ${slotLabel(family.free_slots)} свободно`;
   const period = family.period === "monthly" ? "/мес" : `/${periodLabels[family.period]}`;
   const price = `${family.member_share_kzt.toLocaleString("ru-KZ")}₸`;

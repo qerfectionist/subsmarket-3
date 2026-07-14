@@ -430,6 +430,13 @@ Keep the module boundaries:
 This lets SubsMarket add account and GB sales without rewriting hosting or
 splitting into microservices too early.
 
+## Mobile-data marketplace rollout
+
+The GB marketplace is disabled in production by default. Apply Alembic
+migration `20260713_0023`, verify the Tele2 operator row and Telegram
+notifications, then set `MARKETPLACE_GB_ENABLED=true` on Render. Keep the flag
+off to roll back API exposure without deleting listings or request history.
+
 ## Production environment variables
 
 Backend:

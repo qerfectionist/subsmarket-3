@@ -50,6 +50,7 @@ def to_family_out(family: Family) -> FamilyOut:
         service_slug=family.service.slug,
         service_name=family.service.name,
         service_variant=family.service.variant,
+        plan_name=family.plan_name,
         owner=PublicOwner(
             first_name=family.owner.first_name,
             photo_url=family.owner.photo_url,
@@ -82,6 +83,7 @@ def to_family_request_out(request: FamilyRequest) -> FamilyRequestOut:
         family_type=request.family.family_type,
         service_name=request.family.service.name,
         service_variant=request.family.service.variant,
+        plan_name=request.family.plan_name,
         owner_username=(
             request.family.owner.username
             if request.status in {"pending", "approved"}

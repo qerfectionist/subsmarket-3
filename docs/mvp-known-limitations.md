@@ -11,7 +11,9 @@ These are intentional limitations for the first Family Engine release.
 - Receipts and disputes are not included in this release.
 - Public rating and reviews are not included.
 - Admin panel is not included.
-- Account sales and mobile-data sales are not included yet.
+- Account sales are not included yet.
+- Mobile-data sales are a bulletin board: SubsMarket does not verify stock,
+  payment, or transfer of GB.
 
 ## Families
 
@@ -55,7 +57,6 @@ These are intentional limitations for the first Family Engine release.
 ## Later Modules
 
 - Marketplace Engine for accounts.
-- Marketplace Engine for mobile data.
 - Receipts.
 - Disputes.
 - Public reputation.

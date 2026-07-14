@@ -152,37 +152,81 @@ function setCssVar(name: string, value: string | number | undefined) {
 function applyTelegramTheme() {
   const app = webApp();
   const theme = app?.themeParams ?? {};
+  const isDark =
+    app?.colorScheme === "dark" ||
+    (!app && window.matchMedia?.("(prefers-color-scheme: dark)").matches === true);
+  const fallback = isDark
+    ? {
+        bg: "#0f1620",
+        surface: "#182230",
+        secondaryBg: "#1f2a3a",
+        headerBg: "#0f1620",
+        text: "#f1f4f9",
+        muted: "#8a96a8",
+        link: "#4f8dff",
+        accent: "#4f8dff",
+        accentText: "#ffffff",
+        danger: "#ff6b6b",
+        bottomBarBg: "#182230",
+        border: "rgba(148, 163, 184, 0.22)"
+      }
+    : {
+        bg: "#eef1f6",
+        surface: "#ffffff",
+        secondaryBg: "#e4e9f2",
+        headerBg: "#f7f9fd",
+        text: "#111827",
+        muted: "#667085",
+        link: "#2481cc",
+        accent: "#2481cc",
+        accentText: "#ffffff",
+        danger: "#b42318",
+        bottomBarBg: "#ffffff",
+        border: "rgba(17, 24, 39, 0.08)"
+      };
 
-  setCssVar("--app-bg", theme.bg_color ?? "#eef1f6");
-  setCssVar("--app-surface", theme.section_bg_color ?? "#ffffff");
-  setCssVar("--app-secondary-bg", theme.secondary_bg_color ?? "#e4e9f2");
-  setCssVar("--app-header-bg", theme.header_bg_color ?? theme.secondary_bg_color ?? "#f7f9fd");
-  setCssVar("--app-text", theme.text_color ?? "#111827");
-  setCssVar("--app-muted", theme.hint_color ?? "#667085");
-  setCssVar("--app-subtitle", theme.subtitle_text_color ?? theme.hint_color ?? "#667085");
-  setCssVar("--app-section-header", theme.section_header_text_color ?? theme.text_color ?? "#111827");
-  setCssVar("--app-link", theme.link_color ?? "#2481cc");
-  setCssVar("--app-accent", theme.button_color ?? "#2481cc");
-  setCssVar("--app-accent-text", theme.accent_text_color ?? theme.button_text_color ?? "#ffffff");
-  setCssVar("--app-danger", theme.destructive_text_color ?? "#b42318");
-  setCssVar("--app-bottom-bar-bg", theme.bottom_bar_bg_color ?? "#ffffff");
+  setCssVar("--app-bg", theme.bg_color ?? fallback.bg);
+  setCssVar("--app-surface", theme.section_bg_color ?? fallback.surface);
+  setCssVar("--app-secondary-bg", theme.secondary_bg_color ?? fallback.secondaryBg);
+  setCssVar(
+    "--app-header-bg",
+    theme.header_bg_color ?? theme.secondary_bg_color ?? fallback.headerBg
+  );
+  setCssVar("--app-text", theme.text_color ?? fallback.text);
+  setCssVar("--app-muted", theme.hint_color ?? fallback.muted);
+  setCssVar(
+    "--app-subtitle",
+    theme.subtitle_text_color ?? theme.hint_color ?? fallback.muted
+  );
+  setCssVar(
+    "--app-section-header",
+    theme.section_header_text_color ?? theme.text_color ?? fallback.text
+  );
+  setCssVar("--app-link", theme.link_color ?? fallback.link);
+  setCssVar("--app-accent", theme.button_color ?? fallback.accent);
+  setCssVar(
+    "--app-accent-text",
+    theme.accent_text_color ?? theme.button_text_color ?? fallback.accentText
+  );
+  setCssVar("--app-danger", theme.destructive_text_color ?? fallback.danger);
+  setCssVar("--app-bottom-bar-bg", theme.bottom_bar_bg_color ?? fallback.bottomBarBg);
   setCssVar(
     "--app-border",
-    theme.section_separator_color ?? "rgba(17, 24, 39, 0.08)"
+    theme.section_separator_color ?? fallback.border
   );
 
   const root = document.documentElement;
   root.classList.remove("tma-light", "tma-dark");
-  root.classList.add(app?.colorScheme === "dark" ? "tma-dark" : "tma-light");
+  root.classList.add(isDark ? "tma-dark" : "tma-light");
 
   if (supportsWebAppVersion("6.1")) {
     app?.setHeaderColor?.(
-      theme.header_bg_color ?? theme.secondary_bg_color ?? theme.bg_color ?? "#eef3fb"
+      theme.header_bg_color ?? theme.secondary_bg_color ?? theme.bg_color ?? fallback.headerBg
     );
-    app?.setBackgroundColor?.(theme.bg_color ?? "#eef3fb");
+    app?.setBackgroundColor?.(theme.bg_color ?? fallback.bg);
   }
   if (supportsWebAppVersion("7.10")) {
-    app?.setBottomBarColor?.(theme.bottom_bar_bg_color ?? "#ffffff");
+    app?.setBottomBarColor?.(theme.bottom_bar_bg_color ?? fallback.bottomBarBg);
   }
 }
 

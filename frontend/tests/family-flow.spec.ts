@@ -201,6 +201,7 @@ test("subscription and tariff families stay in separate storefronts", async ({
   await openCreate(page);
   await page.getByTestId("family-type-tariff").click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
+  await fillCreateField(page, "create-plan-name-input", "Семейный 4");
   await fillCreateField(page, "create-total-price-input", "12000");
   await fillCreateField(page, "create-max-members-input", "4");
   await fillCreateField(page, "create-payment-phone-input", "+77001234567");
@@ -318,6 +319,7 @@ test("owner removes a member immediately with a reason", async ({ page }) => {
 const CREATE_FIELD_STEP: Record<string, number> = {
   "create-service-select": 0,
   "create-period-select": 0,
+  "create-plan-name-input": 0,
   "create-max-members-input": 1,
   "create-total-price-input": 1,
   "create-payment-day-input": 1,

@@ -174,6 +174,7 @@ Body:
 ```json
 {
   "service_id": "uuid",
+  "plan_name": null,
   "period": "monthly",
   "max_members": 6,
   "total_price_kzt": 3800,
@@ -186,9 +187,14 @@ Body:
 }
 ```
 
+Для `family_type=tariff` поле `plan_name` обязательно и содержит конкретное
+название плана оператора, например `Семейный 5+`. Для подписки оно должно быть
+`null` или отсутствовать.
+
 Backend:
 
 - проверяет сервис и период;
+- требует название плана для тарифа и запрещает его для подписки;
 - проверяет лимит двух активных семей владельца;
 - рассчитывает `member_share_kzt` и `rounding_delta_kzt`;
 - создает `Family`;
@@ -389,7 +395,8 @@ Query:
 
 - `family_type`;
 - `service_name`;
-- `service_variant`.
+- `service_variant`;
+- `plan_name` для семьи тарифа.
 - `owner_username` только для `pending`/`approved` заявки.
 
 Статусы UI:
@@ -687,6 +694,8 @@ Backend:
 - `execute_member_removals`;
 - `close_due_families`;
 - `send_closing_acknowledgement_reminders`.
+- `send_marketplace_listing_expiry_reminders`;
+- `expire_marketplace_listings`.
 
 ### POST /api/internal/jobs/run-due
 
@@ -711,6 +720,7 @@ Returns background health counters:
 - stale due notifications;
 - notification failures from the last 24 hours;
 - due Family Engine backlog counts;
+- due Marketplace backlog: истекшие объявления;
 - recent notification failure samples without user profiles, message text, or
   payment requisites.
 
@@ -731,3 +741,32 @@ HTTP status:
 
 Use this endpoint for heartbeat checks. Use `/status` for dashboards and manual
 inspection.
+
+## Marketplace: мобильные гигабайты
+
+Все изменяющие операции принимают `Idempotency-Key`. В production API доступен
+только при `MARKETPLACE_GB_ENABLED=true`.
+
+Изменяющие Marketplace endpoints защищены rate limiter: создание объявлений
+и заявок ограничено часовым окном, напоминания имеют отдельный строгий лимит,
+а действия продавца защищены от коротких повторных всплесков.
+
+- `GET /api/marketplace/operators` - активные проверенные операторы;
+- `GET /api/marketplace/price-insight?operator={slug}` - медиана и типичный
+  диапазон цены по другим активным объявлениям; значения скрыты при выборке
+  меньше пяти;
+- `GET /api/marketplace/listings` - ограниченный cursor-каталог с фильтром и сортировкой;
+- `GET /api/marketplace/listings/me` - объявления текущего продавца;
+- `GET /api/marketplace/listings/{id}` - карточка объявления;
+- `POST /api/marketplace/listings` - создать объявление с оператором и ценой;
+- `PATCH /api/marketplace/listings/{id}` - изменить цену или описание;
+- `POST /api/marketplace/listings/{id}/pause|resume|renew|archive` - управление публикацией;
+- `POST /api/marketplace/listings/{id}/requests` - заявка с выбранным `amount_gb`;
+- `GET /api/marketplace/requests/me?role=buyer|seller` - ограниченный cursor-список заявок;
+- `POST /api/marketplace/requests/{id}/accept|reject|cancel|close|remind` - переходы заявки.
+
+Username второй стороны и Telegram-ссылка отсутствуют до `accepted`. API не
+принимает телефон, банковские реквизиты, чек или подтверждение передачи ГБ.
+Принятие означает только согласие начать диалог и не резервирует виртуальный
+остаток. Закрыть принятую заявку может только продавец; `sold|not_sold` остается
+записью для истории, а не подтверждением сделки платформой.

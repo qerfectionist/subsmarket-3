@@ -69,7 +69,8 @@ export function SearchScreen({
   onCreateRequest,
   resetToken,
   pendingActionsCount,
-  onOpenMine
+  onOpenMine,
+  onOpenGigabytes
 }: {
   familyType: FamilyType;
   services: FamilyService[];
@@ -91,6 +92,7 @@ export function SearchScreen({
   resetToken?: number;
   pendingActionsCount?: number;
   onOpenMine?: () => void;
+  onOpenGigabytes: () => void;
 }) {
   const [inviteCode, setInviteCode] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,6 +116,7 @@ export function SearchScreen({
         [
           family.service_name,
           family.service_variant ?? "",
+          family.plan_name ?? "",
           family.owner.first_name
         ]
           .join(" ")
@@ -531,10 +534,7 @@ export function SearchScreen({
           type="button"
           className="market-fast-card"
           data-testid="market-buy-gigabytes"
-          onClick={() => {
-            setSearchTerm("");
-            setActiveSection("gigabytes");
-          }}
+          onClick={onOpenGigabytes}
         >
           <span className="market-fast-icon market-fast-icon-orange">
             <CardSim size={23} />

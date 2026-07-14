@@ -5,6 +5,7 @@ import threading
 import uuid
 from dataclasses import dataclass
 from datetime import date, timedelta
+from decimal import Decimal
 
 import pytest
 from fastapi import HTTPException
@@ -13,6 +14,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from subsmarket.catalog.models import FamilyService
+from subsmarket.core.database import utcnow
 from subsmarket.families.models import (
     Family,
     FamilyInvite,
@@ -33,6 +35,22 @@ from subsmarket.families.service import (
 from subsmarket.identity.models import User
 from subsmarket.identity.schemas import TelegramUserData
 from subsmarket.identity.service import upsert_user
+from subsmarket.marketplace.models import (
+    MarketplaceListing,
+    MarketplaceListingRequest,
+    MarketplaceOperator,
+)
+from subsmarket.marketplace.schemas import (
+    MarketplaceListingCreate,
+    MarketplaceRequestCreate,
+)
+from subsmarket.marketplace.service import (
+    accept_marketplace_request,
+    create_marketplace_listing,
+    create_marketplace_request,
+    get_marketplace_price_insight,
+    reject_marketplace_request,
+)
 from subsmarket.notifications.models import NotificationJob
 
 POSTGRES_TEST_DATABASE_URL = os.getenv("POSTGRES_TEST_DATABASE_URL")
@@ -41,6 +59,85 @@ pytestmark = pytest.mark.skipif(
     not POSTGRES_TEST_DATABASE_URL,
     reason="POSTGRES_TEST_DATABASE_URL is required for lock tests",
 )
+
+
+def test_marketplace_price_insight_uses_postgres_percentiles() -> None:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=2, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+    user_ids: list[uuid.UUID] = []
+    operator_id: uuid.UUID | None = None
+
+    try:
+        with session_factory() as db:
+            operator = MarketplaceOperator(
+                slug=f"price-insight-{suffix}",
+                name="Price Insight",
+                is_active=True,
+                min_lot_gb=Decimal("1.00"),
+                max_lot_gb=Decimal("50.00"),
+                amount_step_gb=Decimal("1.00"),
+                validity_days=7,
+            )
+            users = [
+                User(
+                    telegram_user_id=970000000 + int(suffix[:6], 16) + index,
+                    username=f"price_user_{index}_{suffix}",
+                    first_name=f"User {index}",
+                )
+                for index in range(6)
+            ]
+            db.add_all([operator, *users])
+            db.flush()
+            db.add_all(
+                [
+                    MarketplaceListing(
+                        seller_user_id=seller.id,
+                        listing_type="mobile_data",
+                        operator_id=operator.id,
+                        price_per_gb_kzt=price,
+                        status="active",
+                        expires_at=utcnow() + timedelta(days=7),
+                        published_at=utcnow(),
+                    )
+                    for seller, price in zip(
+                        users[1:],
+                        (100, 120, 140, 160, 180),
+                        strict=True,
+                    )
+                ]
+            )
+            db.commit()
+            operator_id = operator.id
+            user_ids = [user.id for user in users]
+
+            insight = get_marketplace_price_insight(
+                db,
+                users[0],
+                operator_slug=operator.slug,
+            )
+            assert insight.sample_size == 5
+            assert insight.median_price_per_gb_kzt == 140
+            assert insight.typical_min_price_per_gb_kzt == 120
+            assert insight.typical_max_price_per_gb_kzt == 160
+    finally:
+        with session_factory() as db:
+            if operator_id is not None:
+                db.execute(
+                    delete(MarketplaceListing).where(
+                        MarketplaceListing.operator_id == operator_id
+                    )
+                )
+                db.execute(
+                    delete(MarketplaceOperator).where(
+                        MarketplaceOperator.id == operator_id
+                    )
+                )
+            if user_ids:
+                db.execute(delete(User).where(User.id.in_(user_ids)))
+            db.commit()
+        engine.dispose()
 
 
 def test_two_approvals_cannot_take_the_same_last_place() -> None:
@@ -235,9 +332,7 @@ def test_parallel_family_creation_cannot_exceed_owner_limit() -> None:
         assert results.count("OWNER_ACTIVE_FAMILY_LIMIT_REACHED") == 1
         with session_factory() as db:
             families = list(
-                db.scalars(
-                    select(Family).where(Family.owner_user_id == owner_id)
-                ).all()
+                db.scalars(select(Family).where(Family.owner_user_id == owner_id)).all()
             )
             assert len(families) == 2
     finally:
@@ -714,6 +809,368 @@ def _create_joined_members_case(*, member_count: int) -> _JoinedMembersCase:
             family_id=family.id,
             member_ids=member_ids,
         )
+
+
+def test_parallel_marketplace_requests_create_only_one_active_request() -> None:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=4, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+    user_ids: list[uuid.UUID] = []
+    operator_id: uuid.UUID | None = None
+    listing_id: uuid.UUID | None = None
+
+    with session_factory() as db:
+        operator = MarketplaceOperator(
+            slug=f"tele2-race-{suffix}",
+            name="Tele2",
+            is_active=True,
+            min_lot_gb=Decimal("1.00"),
+            max_lot_gb=Decimal("50.00"),
+            amount_step_gb=Decimal("1.00"),
+            validity_days=7,
+        )
+        seller = User(
+            telegram_user_id=910000000 + int(suffix[:6], 16),
+            username=f"market_seller_{suffix}",
+            first_name="Seller",
+        )
+        buyer = User(
+            telegram_user_id=920000000 + int(suffix[:6], 16),
+            username=f"market_buyer_{suffix}",
+            first_name="Buyer",
+        )
+        db.add_all([operator, seller, buyer])
+        db.commit()
+        listing = create_marketplace_listing(
+            db,
+            seller,
+            MarketplaceListingCreate(
+                operator_slug=operator.slug,
+                price_per_gb_kzt=100,
+            ),
+        )
+        db.commit()
+        listing_id = listing.id
+        operator_id = operator.id
+        seller_id = seller.id
+        buyer_id = buyer.id
+        user_ids = [seller_id, buyer_id]
+
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def create_request() -> None:
+        with session_factory() as db:
+            buyer = db.get(User, buyer_id)
+            assert buyer is not None
+            barrier.wait(timeout=10)
+            try:
+                created = create_marketplace_request(
+                    db,
+                    buyer,
+                    listing_id,
+                    MarketplaceRequestCreate(amount_gb=Decimal("5.00")),
+                )
+                db.commit()
+                results.append(f"created:{created.id}")
+            except HTTPException as exc:
+                db.rollback()
+                results.append(str(exc.detail))
+            except Exception as exc:  # pragma: no cover - exact database failure
+                db.rollback()
+                results.append(f"database-error:{type(exc).__name__}:{exc}")
+
+    threads = [threading.Thread(target=create_request, daemon=True) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert sum(result.startswith("created:") for result in results) == 1
+        assert results.count("MARKETPLACE_ACTIVE_REQUEST_EXISTS") == 1
+        assert not any(result.startswith("database-error") for result in results)
+        with session_factory() as db:
+            active_count = len(
+                db.scalars(
+                    select(MarketplaceListingRequest.id)
+                    .where(MarketplaceListingRequest.listing_id == listing_id)
+                    .where(
+                        MarketplaceListingRequest.status.in_({"pending", "accepted"})
+                    )
+                ).all()
+            )
+            assert active_count == 1
+    finally:
+        with session_factory() as db:
+            db.execute(
+                delete(NotificationJob).where(
+                    NotificationJob.recipient_user_id.in_(user_ids)
+                )
+            )
+            db.execute(
+                delete(MarketplaceListingRequest).where(
+                    MarketplaceListingRequest.listing_id == listing_id
+                )
+            )
+            db.execute(
+                delete(MarketplaceListing).where(MarketplaceListing.id == listing_id)
+            )
+            db.execute(
+                delete(MarketplaceOperator).where(MarketplaceOperator.id == operator_id)
+            )
+            db.execute(delete(User).where(User.id.in_(user_ids)))
+            db.commit()
+        engine.dispose()
+
+
+def test_parallel_marketplace_accept_and_reject_have_one_winner() -> None:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=4, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+
+    with session_factory() as db:
+        operator = MarketplaceOperator(
+            slug=f"decision-race-{suffix}",
+            name="Tele2",
+            is_active=True,
+            min_lot_gb=Decimal("1.00"),
+            max_lot_gb=Decimal("50.00"),
+            amount_step_gb=Decimal("1.00"),
+            validity_days=7,
+        )
+        seller = User(
+            telegram_user_id=930000000 + int(suffix[:6], 16),
+            username=f"decision_seller_{suffix}",
+            first_name="Seller",
+        )
+        buyer = User(
+            telegram_user_id=940000000 + int(suffix[:6], 16),
+            username=f"decision_buyer_{suffix}",
+            first_name="Buyer",
+        )
+        db.add_all([operator, seller, buyer])
+        db.commit()
+        listing = create_marketplace_listing(
+            db,
+            seller,
+            MarketplaceListingCreate(
+                operator_slug=operator.slug,
+                price_per_gb_kzt=120,
+            ),
+        )
+        request = create_marketplace_request(
+            db,
+            buyer,
+            listing.id,
+            MarketplaceRequestCreate(amount_gb=Decimal("5.00")),
+        )
+        db.commit()
+        request_id = request.id
+        listing_id = listing.id
+        operator_id = operator.id
+        seller_id = seller.id
+        user_ids = [seller.id, buyer.id]
+
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def decide(target: str) -> None:
+        with session_factory() as db:
+            seller = db.get(User, seller_id)
+            assert seller is not None
+            barrier.wait(timeout=10)
+            try:
+                if target == "accepted":
+                    result = accept_marketplace_request(db, seller, request_id)
+                else:
+                    result = reject_marketplace_request(
+                        db,
+                        seller,
+                        request_id,
+                        reason=None,
+                    )
+                db.commit()
+                results.append(result.status)
+            except HTTPException as exc:
+                db.rollback()
+                results.append(str(exc.detail))
+            except Exception as exc:  # pragma: no cover - exact database failure
+                db.rollback()
+                results.append(f"database-error:{type(exc).__name__}:{exc}")
+
+    threads = [
+        threading.Thread(target=decide, args=(target,), daemon=True)
+        for target in ("accepted", "rejected")
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        winner_count = sum(
+            result in {"accepted", "rejected"} for result in results
+        )
+        assert winner_count == 1, results
+        assert results.count("MARKETPLACE_REQUEST_STATUS_CONFLICT") == 1
+        assert not any(result.startswith("database-error") for result in results)
+        with session_factory() as db:
+            stored = db.get(MarketplaceListingRequest, request_id)
+            assert stored is not None
+            assert stored.status in {"accepted", "rejected"}
+            decision_jobs = list(
+                db.scalars(
+                    select(NotificationJob).where(
+                        NotificationJob.recipient_user_id.in_(user_ids),
+                        NotificationJob.event_type.in_(
+                            {
+                                "marketplace_request_accepted",
+                                "marketplace_request_rejected",
+                            }
+                        ),
+                    )
+                ).all()
+            )
+            assert len(decision_jobs) == 1
+    finally:
+        with session_factory() as db:
+            db.execute(
+                delete(NotificationJob).where(
+                    NotificationJob.recipient_user_id.in_(user_ids)
+                )
+            )
+            db.execute(
+                delete(MarketplaceListingRequest).where(
+                    MarketplaceListingRequest.listing_id == listing_id
+                )
+            )
+            db.execute(
+                delete(MarketplaceListing).where(MarketplaceListing.id == listing_id)
+            )
+            db.execute(
+                delete(MarketplaceOperator).where(MarketplaceOperator.id == operator_id)
+            )
+            db.execute(delete(User).where(User.id.in_(user_ids)))
+            db.commit()
+        engine.dispose()
+
+
+def test_parallel_marketplace_accepts_are_independent_without_inventory() -> None:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=4, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+
+    with session_factory() as db:
+        operator = MarketplaceOperator(
+            slug=f"inventory-race-{suffix}",
+            name="Tele2",
+            is_active=True,
+            min_lot_gb=Decimal("1.00"),
+            max_lot_gb=Decimal("50.00"),
+            amount_step_gb=Decimal("1.00"),
+            validity_days=7,
+        )
+        seller = User(
+            telegram_user_id=950000000 + int(suffix[:6], 16),
+            username=f"inventory_seller_{suffix}",
+            first_name="Seller",
+        )
+        buyers = [
+            User(
+                telegram_user_id=960000000 + int(suffix[:6], 16) + index,
+                username=f"inventory_buyer_{index}_{suffix}",
+                first_name=f"Buyer {index}",
+            )
+            for index in range(2)
+        ]
+        db.add_all([operator, seller, *buyers])
+        db.commit()
+        listing = create_marketplace_listing(
+            db,
+            seller,
+            MarketplaceListingCreate(
+                operator_slug=operator.slug,
+                price_per_gb_kzt=120,
+            ),
+        )
+        requests = [
+            create_marketplace_request(
+                db,
+                buyer,
+                listing.id,
+                MarketplaceRequestCreate(amount_gb=Decimal("5.00")),
+            )
+            for buyer in buyers
+        ]
+        db.commit()
+        request_ids = [request.id for request in requests]
+        listing_id = listing.id
+        operator_id = operator.id
+        seller_id = seller.id
+        user_ids = [seller.id, *(buyer.id for buyer in buyers)]
+
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def accept(request_id: uuid.UUID) -> None:
+        with session_factory() as db:
+            seller = db.get(User, seller_id)
+            assert seller is not None
+            barrier.wait(timeout=10)
+            try:
+                result = accept_marketplace_request(db, seller, request_id)
+                db.commit()
+                results.append(result.status)
+            except HTTPException as exc:
+                db.rollback()
+                results.append(str(exc.detail))
+            except Exception as exc:  # pragma: no cover - exact database failure
+                db.rollback()
+                results.append(f"database-error:{type(exc).__name__}:{exc}")
+
+    threads = [
+        threading.Thread(target=accept, args=(request_id,), daemon=True)
+        for request_id in request_ids
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert results.count("accepted") == 2, results
+        assert not any(result.startswith("database-error") for result in results)
+        with session_factory() as db:
+            stored = db.get(MarketplaceListing, listing_id)
+            assert stored is not None
+    finally:
+        with session_factory() as db:
+            db.execute(
+                delete(NotificationJob).where(
+                    NotificationJob.recipient_user_id.in_(user_ids)
+                )
+            )
+            db.execute(
+                delete(MarketplaceListingRequest).where(
+                    MarketplaceListingRequest.listing_id == listing_id
+                )
+            )
+            db.execute(
+                delete(MarketplaceListing).where(MarketplaceListing.id == listing_id)
+            )
+            db.execute(
+                delete(MarketplaceOperator).where(MarketplaceOperator.id == operator_id)
+            )
+            db.execute(delete(User).where(User.id.in_(user_ids)))
+            db.commit()
+        engine.dispose()
 
 
 def _family_create_payload(

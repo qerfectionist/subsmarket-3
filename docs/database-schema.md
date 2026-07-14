@@ -86,6 +86,7 @@ families (
   service_id uuid not null references family_services(id),
   owner_user_id uuid not null references users(id),
   family_type text not null,
+  plan_name text,
   status family_status not null,
   period family_period not null,
   max_members int not null,
@@ -142,6 +143,9 @@ create index families_search_availability_idx
 - `active_members_count <= max_members`;
 - `max_members <= 8`;
 - `payment_day between 1 and 31`;
+- `plan_name is null or length(trim(plan_name)) between 1 and 120`;
+- для новых семей тарифов приложение требует `plan_name`, а для подписок
+  запрещает его; `null` в БД сохранён для совместимости со старыми строками;
 - `member_share_kzt % 50 = 0`;
 - `rounding_delta_kzt = member_share_kzt * max_members - total_price_kzt`;
 - сервис, период и вместимость не меняются после создания;
@@ -507,6 +511,35 @@ idempotency_records (
 The backend writes the idempotency record and domain resource in the same
 transaction. The table is denied to Supabase client roles and can later be
 reused by Marketplace operations.
+
+## Marketplace Engine: мобильные гигабайты
+
+Миграция `20260713_0023` добавляет модуль. Миграции `0024-0026` содержат
+раннюю модель учета остатка, `20260714_0027` окончательно переводит модуль
+в честную доску объявлений без неподтверждаемого склада, а `0028` гарантирует
+целое количество ГБ и на ранее созданных базах:
+
+- `marketplace_operators` - активность оператора, официальная справка, источник и дата проверки;
+- `marketplace_listings` - продавец, оператор, цена за 1 ГБ, описание, статус,
+  срок, `published_at` для честного порядка публикации и отметка отправленного
+  предупреждения об окончании текущего периода;
+- `marketplace_listing_requests` - покупатель, статус, выбранный объем,
+  снимок цены и итог `sold|not_sold`.
+
+Статусы объявления: `active`, `paused`, `expired`, `archived`. Статусы заявки:
+`pending`, `accepted`, `rejected`, `cancelled`, `closed`, `expired`.
+
+Ключевые гарантии БД:
+
+- положительная цена за 1 ГБ и ограниченная длина описания;
+- одно управляемое объявление продавца на одного оператора;
+- один активный запрос покупателя на одно объявление через частичный unique index;
+- индексы каталога, объявлений продавца, заявок покупателя и входящих заявок;
+- внешние ключи используют `RESTRICT`, чтобы не удалять историю каскадом;
+- RLS включен, роли Supabase `anon` и `authenticated` не имеют прямого доступа.
+
+Marketplace доступен только через backend API и не имеет внешних ключей на
+`families`, `family_members`, `family_requests` или `family_payments`.
 
 ## Транзакционные сценарии
 

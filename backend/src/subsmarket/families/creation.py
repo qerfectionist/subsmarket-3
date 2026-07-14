@@ -69,6 +69,12 @@ def create_family(
     if data.max_members > service.max_members:
         raise HTTPException(status_code=400, detail="MAX_MEMBERS_EXCEEDS_SERVICE_LIMIT")
 
+    plan_name = " ".join(data.plan_name.split()) if data.plan_name else None
+    if service.family_type == "tariff" and not plan_name:
+        raise HTTPException(status_code=400, detail="TARIFF_PLAN_NAME_REQUIRED")
+    if service.family_type != "tariff" and plan_name:
+        raise HTTPException(status_code=400, detail="PLAN_NAME_ONLY_FOR_TARIFF")
+
     payment_phone = normalize_payment_phone(data.payment_phone)
     member_share, rounding_delta = calculate_member_share(
         data.total_price_kzt, data.max_members
@@ -93,6 +99,7 @@ def create_family(
         service_id=service.id,
         owner_user_id=user_id,
         family_type=service.family_type,
+        plan_name=plan_name,
         status="active",
         period=data.period,
         max_members=data.max_members,
@@ -136,6 +143,7 @@ def create_family(
         details={
             "family_type": family.family_type,
             "service_id": str(family.service_id),
+            "plan_name": family.plan_name,
             "period": family.period,
             "max_members": family.max_members,
             "total_price_kzt": family.total_price_kzt,

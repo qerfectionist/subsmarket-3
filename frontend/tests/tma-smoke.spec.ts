@@ -38,10 +38,11 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await expect(page.locator(".market-search-box")).toBeVisible();
   await page.locator(".market-section-back").click({ force: true });
 
-  await openMarketSection(page, "market-buy-gigabytes", "market-section-gigabytes");
-  await expect(page.getByTestId("market-section-soon-gigabytes")).toBeVisible();
-  await expect(page.getByTestId("market-section-action-gigabytes-0")).toBeVisible();
-  await page.locator(".market-section-back").click({ force: true });
+  await page.getByTestId("market-buy-gigabytes").click({ force: true });
+  await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
+  await expect(page.getByText("Купить гигабайты", { exact: true }).first()).toBeVisible();
+  await page.locator(".gb-back").click({ force: true });
+  await expect(page.getByTestId("market-screen")).toBeVisible();
 
   await openMarketSection(page, "market-buy-accounts", "market-section-accounts");
   await expect(page.getByTestId("market-section-soon-accounts")).toBeVisible();
@@ -79,6 +80,70 @@ test("Mini App renders market, create, my, and family details", async ({ page })
       !message.includes("React DevTools")
   );
   expect(relevantMessages).toEqual([]);
+});
+
+test("Mini App keeps readable surfaces with legacy Telegram dark theme params", async ({
+  page
+}) => {
+  await page.route("https://telegram.org/js/telegram-web-app.js*", (route) => route.abort());
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "Telegram", {
+      configurable: true,
+      value: {
+        WebApp: {
+          colorScheme: "dark",
+          themeParams: {
+            bg_color: "#212121",
+            text_color: "#ffffff",
+            hint_color: "#aaaaaa",
+            button_color: "#8774e1",
+            button_text_color: "#ffffff"
+          },
+          version: "8.0",
+          ready: () => undefined,
+          expand: () => undefined,
+          isVersionAtLeast: () => true,
+          setHeaderColor: () => undefined,
+          setBackgroundColor: () => undefined,
+          setBottomBarColor: () => undefined,
+          disableVerticalSwipes: () => undefined,
+          enableVerticalSwipes: () => undefined,
+          onEvent: () => undefined,
+          offEvent: () => undefined
+        }
+      }
+    });
+  });
+
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("market-screen")).toBeVisible();
+  await expect(page.locator("html")).toHaveClass(/tma-dark/);
+
+  const colors = await page.evaluate(() => {
+    const read = (selector: string) => {
+      const element = document.querySelector<HTMLElement>(selector);
+      if (!element) throw new Error(`Missing element: ${selector}`);
+      const style = getComputedStyle(element);
+      return { background: style.backgroundColor, color: style.color };
+    };
+
+    return {
+      rootSurface: getComputedStyle(document.documentElement)
+        .getPropertyValue("--app-surface")
+        .trim(),
+      avatar: read(".app-user-avatar"),
+      fastCard: read(".market-fast-card"),
+      fastCardTitle: read(".market-fast-card strong"),
+      bottomNav: read(".bottom-nav")
+    };
+  });
+
+  expect(colors.rootSurface.toLowerCase()).toBe("#182230");
+  expect(colors.avatar.background).toBe("rgb(24, 34, 48)");
+  expect(colors.avatar.color).not.toBe(colors.avatar.background);
+  expect(colors.fastCard.background).toBe("rgb(24, 34, 48)");
+  expect(colors.fastCardTitle.color).not.toBe(colors.fastCard.background);
+  expect(colors.bottomNav.background).not.toBe("rgb(255, 255, 255)");
 });
 
 async function openMarketSection(page: Page, tileTestId: string, sectionTestId: string) {

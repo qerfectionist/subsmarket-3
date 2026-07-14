@@ -387,6 +387,7 @@ def test_family_search_keeps_subscriptions_and_tariffs_separate(
         headers=auth_headers(610031, "tariff_owner", "Tariff Owner"),
         json={
             "service_id": str(tariff_service.id),
+            "plan_name": "  Premium   Family 4  ",
             "period": "monthly",
             "max_members": 4,
             "total_price_kzt": 6000,
@@ -417,6 +418,45 @@ def test_family_search_keeps_subscriptions_and_tariffs_separate(
     ]
     assert subscriptions.json()[0]["family_type"] == "subscription"
     assert tariffs.json()[0]["family_type"] == "tariff"
+    assert tariffs.json()[0]["plan_name"] == "Premium Family 4"
+
+
+def test_family_create_validates_tariff_plan_name(
+    client: TestClient,
+    db: Session,
+    service: FamilyService,
+) -> None:
+    tariff_service = FamilyService(
+        slug="api-tariff-plan-validation",
+        name="Plan Operator",
+        variant="Family Tariff",
+        family_type="tariff",
+        category="mobile_tariffs",
+        subcategory=None,
+        max_members=5,
+        supported_periods=["monthly"],
+        status="active",
+        service_metadata={},
+    )
+    db.add(tariff_service)
+    db.commit()
+    db.refresh(tariff_service)
+
+    missing_plan = client.post(
+        "/api/families",
+        headers=auth_headers(610033, "tariff_missing_plan", "Tariff Owner"),
+        json=family_payload(tariff_service),
+    )
+    subscription_with_plan = client.post(
+        "/api/families",
+        headers=auth_headers(610034, "subscription_with_plan", "Subscription Owner"),
+        json={**family_payload(service), "plan_name": "Not a subscription field"},
+    )
+
+    assert missing_plan.status_code == 400
+    assert missing_plan.json()["detail"] == "TARIFF_PLAN_NAME_REQUIRED"
+    assert subscription_with_plan.status_code == 400
+    assert subscription_with_plan.json()["detail"] == "PLAN_NAME_ONLY_FOR_TARIFF"
 
 
 def test_family_invite_lifecycle_and_hidden_discovery(

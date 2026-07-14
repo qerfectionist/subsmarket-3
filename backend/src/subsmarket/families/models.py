@@ -26,6 +26,12 @@ from subsmarket.identity.models import User
 
 class Family(Base):
     __tablename__ = "families"
+    __table_args__ = (
+        CheckConstraint(
+            "plan_name is null or (length(trim(plan_name)) between 1 and 120)",
+            name="families_plan_name_length_ck",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     service_id: Mapped[uuid.UUID] = mapped_column(
@@ -33,6 +39,7 @@ class Family(Base):
     )
     owner_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     family_type: Mapped[str] = mapped_column(Text, default="subscription", index=True)
+    plan_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(Text, default="active", index=True)
     is_search_visible: Mapped[bool] = mapped_column(Boolean, default=True)
     period: Mapped[str] = mapped_column(Text)

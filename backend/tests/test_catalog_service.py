@@ -37,11 +37,14 @@ def test_family_catalog_keeps_subscriptions_and_tariffs_separate(db: Session) ->
     assert tariffs
     assert all(service.family_type == "subscription" for service in subscriptions)
     assert all(service.family_type == "tariff" for service in tariffs)
-    assert {service.slug for service in tariffs} >= {
+    tariff_slugs = {service.slug for service in tariffs}
+    assert tariff_slugs >= {
         "beeline-family-tariff",
         "tele2-family-tariff",
-        "kcell-family-tariff",
+        "altel-family-tariff",
+        "activ-family-tariff",
     }
+    assert "kcell-family-tariff" not in tariff_slugs
     assert all(service.category == "mobile_tariffs" for service in tariffs)
     assert all(service.supported_periods == ["monthly"] for service in tariffs)
 

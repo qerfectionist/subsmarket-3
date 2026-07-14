@@ -72,3 +72,24 @@ export function patch<T>(path: string, body?: unknown): Promise<T> {
     body: body === undefined ? undefined : JSON.stringify(body)
   });
 }
+
+export async function patchIdempotent<T>(
+  scope: string,
+  path: string,
+  body: unknown
+): Promise<T> {
+  const fingerprint = JSON.stringify(body ?? null);
+  const pending = pendingIdempotency.get(scope);
+  const key =
+    pending?.fingerprint === fingerprint ? pending.key : createIdempotencyKey();
+  pendingIdempotency.set(scope, { fingerprint, key });
+  const result = await request<T>(path, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+    headers: { "Idempotency-Key": key }
+  });
+  if (pendingIdempotency.get(scope)?.key === key) {
+    pendingIdempotency.delete(scope);
+  }
+  return result;
+}

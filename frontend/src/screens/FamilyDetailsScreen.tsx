@@ -7,7 +7,7 @@ import { FamilyCard } from "../components/families";
 import { Badge, EmptyState, Panel } from "../components/layout";
 import { PanelSkeleton } from "../components/skeleton";
 import { RequisiteBox } from "../components/RequisiteBox";
-import { formatDate, formatDateTime, statusText } from "../format";
+import { familyTitle, formatDate, formatDateTime, statusText } from "../format";
 import { familyKindLabels, periodLabels } from "../labels";
 import type {
   FamilyAuditLog,
@@ -88,7 +88,7 @@ export function FamilyDetailsScreen({
 
   return (
     <Panel
-      title={family.service_name}
+      title={familyTitle(family)}
       description={familyKindLabels[family.family_type]}
       action={
         <div className="row-actions">
@@ -219,7 +219,7 @@ export function FamilyDetailsScreen({
               onClick={() =>
                 openTelegramUser(
                   view.owner_username!,
-                  `Здравствуйте, я оставил заявку в вашу семью ${family.service_name} в SubsMarket.`
+                  `Здравствуйте, я оставил заявку в вашу семью ${familyTitle(family)} в SubsMarket.`
                 )
               }
             >

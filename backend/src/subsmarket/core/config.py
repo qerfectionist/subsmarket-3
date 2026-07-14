@@ -50,9 +50,7 @@ class Settings(BaseSettings):
     telegram_mini_app_url: str | None = Field(
         default=None, alias="TELEGRAM_MINI_APP_URL"
     )
-    telegram_webhook_url: str | None = Field(
-        default=None, alias="TELEGRAM_WEBHOOK_URL"
-    )
+    telegram_webhook_url: str | None = Field(default=None, alias="TELEGRAM_WEBHOOK_URL")
     telegram_webhook_secret: str | None = Field(
         default=None, alias="TELEGRAM_WEBHOOK_SECRET"
     )
@@ -110,6 +108,32 @@ class Settings(BaseSettings):
         ge=1,
         le=20,
         alias="JOB_MAX_BATCHES_PER_STEP",
+    )
+    marketplace_gb_enabled: bool = Field(
+        default=False,
+        alias="MARKETPLACE_GB_ENABLED",
+    )
+    marketplace_listing_days: int = Field(
+        default=7,
+        ge=1,
+        le=365,
+        alias="MARKETPLACE_LISTING_DAYS",
+    )
+    marketplace_listing_expiry_reminder_days: int = Field(
+        default=1,
+        ge=1,
+        le=30,
+        alias="MARKETPLACE_LISTING_EXPIRY_REMINDER_DAYS",
+    )
+    marketplace_request_reminder_delay_seconds: int = Field(
+        default=7200,
+        ge=60,
+        alias="MARKETPLACE_REQUEST_REMINDER_DELAY_SECONDS",
+    )
+    marketplace_request_reminder_cooldown_seconds: int = Field(
+        default=7200,
+        ge=60,
+        alias="MARKETPLACE_REQUEST_REMINDER_COOLDOWN_SECONDS",
     )
 
     demo_telegram_user_id: int = Field(default=100001, alias="DEMO_TELEGRAM_USER_ID")

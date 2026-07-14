@@ -19,6 +19,7 @@ FamilyMemberRemovalReason = Literal[
 
 class FamilyCreate(BaseModel):
     service_id: uuid.UUID
+    plan_name: str | None = Field(default=None, max_length=120)
     period: FamilyPeriod = "monthly"
     max_members: int = Field(ge=2, le=8)
     total_price_kzt: int = Field(gt=0)
@@ -73,6 +74,7 @@ class FamilyOut(BaseModel):
     service_slug: str
     service_name: str
     service_variant: str | None
+    plan_name: str | None
     owner: PublicOwner
     status: str
     period: str
@@ -126,6 +128,7 @@ class FamilyRequestOut(BaseModel):
     family_type: str
     service_name: str
     service_variant: str | None
+    plan_name: str | None
     owner_username: str | None
     user_id: uuid.UUID
     status: str

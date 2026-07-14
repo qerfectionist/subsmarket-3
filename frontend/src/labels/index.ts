@@ -38,6 +38,8 @@ export const errorLabels: Record<string, string> = {
   FAMILY_SERVICE_NOT_FOUND: "Сервис не найден или пока недоступен.",
   UNSUPPORTED_FAMILY_PERIOD: "Этот период оплаты недоступен для выбранного сервиса.",
   MAX_MEMBERS_EXCEEDS_SERVICE_LIMIT: "Количество мест больше лимита выбранного сервиса.",
+  TARIFF_PLAN_NAME_REQUIRED: "Укажите название тарифа оператора.",
+  PLAN_NAME_ONLY_FOR_TARIFF: "Название тарифа можно указывать только для семьи тарифа.",
   OWNER_ACTIVE_FAMILY_LIMIT_REACHED: "Бесплатно можно быть владельцем только двух активных семей.",
   FAMILY_NOT_FOUND: "Семья не найдена.",
   FAMILY_MEMBER_NOT_FOUND: "Участник семьи не найден.",
@@ -112,6 +114,19 @@ export const errorLabels: Record<string, string> = {
   FAMILY_INVITE_NOT_ACTIVE: "У семьи сейчас нет активного кода приглашения.",
   ONLY_OWNER_CAN_VIEW_INVITE: "Код приглашения доступен только владельцу семьи.",
   FAMILY_VISIBILITY_NOT_EDITABLE: "Видимость закрывающейся семьи изменить нельзя.",
+  MARKETPLACE_OPERATOR_LISTING_EXISTS:
+    "У вас уже есть объявление для этого оператора. Измените его цену или описание.",
+  MARKETPLACE_LISTING_OPERATOR_IMMUTABLE:
+    "Оператор опубликованного объявления изменить нельзя. Создайте новое объявление.",
+  MARKETPLACE_AMOUNT_BELOW_MINIMUM: "Укажите не менее 1 ГБ.",
+  MARKETPLACE_AMOUNT_ABOVE_MAXIMUM:
+    "Количество превышает лимит одного перевода у оператора.",
+  MARKETPLACE_AMOUNT_INVALID_STEP:
+    "Количество не соответствует допустимому шагу оператора.",
+  MARKETPLACE_ACTIVE_REQUEST_EXISTS:
+    "У вас уже есть активная заявка к этому объявлению.",
+  MARKETPLACE_REQUEST_STATUS_CONFLICT: "Статус заявки уже изменился.",
+  MARKETPLACE_LISTING_UNAVAILABLE: "Это объявление сейчас недоступно.",
   RATE_LIMIT_EXCEEDED: "Слишком много попыток. Повторите позже.",
   INTERNAL_JOB_TOKEN_REQUIRED: "Внутренний токен задания не настроен."
 };

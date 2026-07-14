@@ -79,6 +79,7 @@ python -m subsmarket.bot.set_webhook
 ## Product boundaries
 
 - Family subscriptions and family tariffs use the Family Engine.
-- Account sales and mobile-data sales must use a future Marketplace Engine.
+- Mobile-data sales use the implemented Marketplace Engine; account sales will
+  use the same domain boundary when added.
 - Marketplace listings must not reuse family membership, recurring payment, or
   family audit state machines.

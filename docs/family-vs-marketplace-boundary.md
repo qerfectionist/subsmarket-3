@@ -28,12 +28,12 @@ The UI must show these as separate sections:
 
 ## Marketplace Engine
 
-Marketplace Engine is for future one-off listings:
+Marketplace Engine is for one-off listings:
 
-- account/access sales;
-- mobile data/GB sales.
+- mobile data/GB sales - implemented;
+- account/access sales - planned.
 
 Marketplace listings must not be implemented as `Family` records and must not reuse
 family membership or recurring payment logic.
 
-This keeps future account and GB sales possible without polluting the Family domain.
+This keeps Marketplace growth possible without polluting the Family domain.

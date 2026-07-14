@@ -24,6 +24,10 @@ from subsmarket.families.service import (
     record_owner_request_expired,
 )
 from subsmarket.jobs.schemas import RunDueJobError, RunDueJobsResult
+from subsmarket.marketplace.jobs import (
+    expire_marketplace_listings,
+    send_marketplace_listing_expiry_reminders,
+)
 from subsmarket.notifications.models import NotificationJob
 from subsmarket.notifications.service import enqueue_notification
 
@@ -61,6 +65,8 @@ def run_due_jobs(db: Session) -> RunDueJobsResult:
         closing_acknowledgement_reminders_sent=0,
         executed_member_removals=0,
         closed_families=0,
+        marketplace_listing_expiry_reminders_sent=0,
+        expired_marketplace_listings=0,
         notification_jobs_created=0,
     )
     for step in _due_job_steps():
@@ -228,6 +234,26 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 result,
                 step_result,
                 count_field="closed_families",
+            ),
+            drain_batches=True,
+        ),
+        DueJobStep(
+            name="send_marketplace_listing_expiry_reminders",
+            run=send_marketplace_listing_expiry_reminders,
+            apply=lambda result, step_result: _apply_notification_count(
+                result,
+                step_result,
+                count_field="marketplace_listing_expiry_reminders_sent",
+            ),
+            drain_batches=True,
+        ),
+        DueJobStep(
+            name="expire_marketplace_listings",
+            run=expire_marketplace_listings,
+            apply=lambda result, step_result: _apply_count_and_notifications(
+                result,
+                step_result,
+                count_field="expired_marketplace_listings",
             ),
             drain_batches=True,
         ),
@@ -434,7 +460,7 @@ def mark_overdue_first_payments(db: Session) -> tuple[int, int]:
                 "payment_id": str(payment.id),
                 "message": (
                     "Время на первый платеж истекло. Если вы уже оплатили, "
-                    "нажмите \"Оплатил\". Если нет - оплатите или напишите владельцу."
+                    'нажмите "Оплатил". Если нет - оплатите или напишите владельцу.'
                 ),
             },
         )
@@ -596,8 +622,7 @@ def activate_regular_payments(db: Session) -> tuple[int, int]:
                 "member_id": str(payment.member_id),
                 "payment_id": str(payment.id),
                 "message": (
-                    "Сегодня день оплаты семьи. "
-                    "Оплатите владельцу и нажмите «Оплатил»."
+                    "Сегодня день оплаты семьи. Оплатите владельцу и нажмите «Оплатил»."
                 ),
             },
         )
@@ -709,8 +734,7 @@ def send_regular_payment_reminders(db: Session) -> int:
                 recipient_user_id=payment.member.user_id,
                 event_type="regular_payment_reminder_30d_member",
                 message=(
-                    "Через месяц годовая оплата семьи. "
-                    "Подготовьте сумму заранее."
+                    "Через месяц годовая оплата семьи. Подготовьте сумму заранее."
                 ),
             )
         if 0 < days_until_due <= 3:
@@ -738,9 +762,7 @@ def send_regular_payment_reminders(db: Session) -> int:
             .where(FamilyPayment.status.in_({"due", "overdue"}))
             .where(Family.status.in_({"active", "full", "closing"}))
             .where(
-                FamilyMember.status.in_(
-                    {"payment_due", "active", "removal_pending"}
-                )
+                FamilyMember.status.in_({"payment_due", "active", "removal_pending"})
             )
             .order_by(FamilyPayment.due_at.asc())
             .limit(_job_scan_limit())

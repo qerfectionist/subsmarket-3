@@ -1,10 +1,10 @@
 # Backend Readiness Plan
 
-Last updated: 2026-06-27.
+Last updated: 2026-07-14.
 
-This plan is focused on finishing the Family Engine backend for subscriptions
-and family tariffs. Marketplace accounts and mobile-data listings stay out of
-scope until the family flow is stable.
+The Family Engine backend covers subscriptions and family tariffs. The first
+Marketplace vertical, mobile-data listings, is now implemented separately.
+Account listings remain out of scope until the GB flow is stable.
 
 ## Current State
 
@@ -24,6 +24,8 @@ Backend checks completed:
   - Mini App: `https://subsmarket.xyz`
   - API: `https://api.subsmarket.xyz`
 - Read-only production check passes with `npm run production:check`.
+- Mobile-data Marketplace has seven-day listings, bounded catalogs, request
+  snapshots, idempotent mutations, rate limits, notifications, and expiry jobs.
 
 ## Hardening Pass: 2026-06-27
 
@@ -135,12 +137,12 @@ Verify Render production env values:
 - `TELEGRAM_MINI_APP_URL=https://subsmarket.xyz`;
 - `TELEGRAM_WEBHOOK_URL=https://api.subsmarket.xyz/api/telegram/webhook`.
 
-## Later, Not Blocking MVP
+## Later, Not Blocking Current Release
 
 - Public rating.
 - Internal disputes.
 - Payment receipt upload and manual moderation.
-- Marketplace Engine for accounts and mobile data.
+- Marketplace Engine for accounts.
 - Complex operator tariff slot types.
 - Queue system beyond GitHub Actions and notification outbox.
 - Project-local Codex skills derived from the ECC analysis, if they become more

@@ -1,8 +1,20 @@
 import { errorLabels, statusLabels } from "./labels";
-import type { FamilyService } from "./types";
+import type { Family, FamilyRequest, FamilyService } from "./types";
 
 export function serviceTitle(service: FamilyService) {
   return `${service.name}${service.variant ? ` ${service.variant}` : ""}`;
+}
+
+export function familyTitle(
+  family: Pick<
+    Family | FamilyRequest,
+    "family_type" | "service_name" | "service_variant" | "plan_name"
+  >
+) {
+  if (family.family_type === "tariff" && family.plan_name) {
+    return `${family.service_name} ${family.plan_name}`;
+  }
+  return `${family.service_name}${family.service_variant ? ` ${family.service_variant}` : ""}`;
 }
 
 export function statusText(status: string) {

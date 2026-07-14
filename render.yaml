@@ -60,6 +60,16 @@ services:
         value: 5
       - key: ACCESS_REMINDER_COOLDOWN_SECONDS
         value: 600
+      - key: MARKETPLACE_GB_ENABLED
+        value: false
+      - key: MARKETPLACE_LISTING_DAYS
+        value: 7
+      - key: MARKETPLACE_LISTING_EXPIRY_REMINDER_DAYS
+        value: 1
+      - key: MARKETPLACE_REQUEST_REMINDER_DELAY_SECONDS
+        value: 7200
+      - key: MARKETPLACE_REQUEST_REMINDER_COOLDOWN_SECONDS
+        value: 7200
       - key: JOB_BATCH_SIZE
         value: 200
       - key: JOB_MAX_BATCHES_PER_STEP

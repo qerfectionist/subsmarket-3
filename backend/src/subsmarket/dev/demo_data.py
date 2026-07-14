@@ -13,6 +13,10 @@ from subsmarket.families.models import (
     FamilyRequestRestriction,
 )
 from subsmarket.identity.models import User
+from subsmarket.marketplace.models import (
+    MarketplaceListing,
+    MarketplaceListingRequest,
+)
 from subsmarket.notifications.models import NotificationJob
 
 DEMO_TELEGRAM_USER_IDS = [200001, 200002]
@@ -31,6 +35,27 @@ def cleanup_demo_data(db: Session) -> dict[str, int]:
     family_ids = list(
         db.scalars(select(Family.id).where(Family.owner_user_id.in_(demo_user_ids)))
     )
+    marketplace_listing_ids = list(
+        db.scalars(
+            select(MarketplaceListing.id).where(
+                MarketplaceListing.seller_user_id.in_(demo_user_ids)
+            )
+        )
+    )
+    marketplace_request_filter = MarketplaceListingRequest.buyer_user_id.in_(
+        demo_user_ids
+    )
+    if marketplace_listing_ids:
+        marketplace_request_filter = marketplace_request_filter | (
+            MarketplaceListingRequest.listing_id.in_(marketplace_listing_ids)
+        )
+    db.execute(delete(MarketplaceListingRequest).where(marketplace_request_filter))
+    if marketplace_listing_ids:
+        db.execute(
+            delete(MarketplaceListing).where(
+                MarketplaceListing.id.in_(marketplace_listing_ids)
+            )
+        )
     if family_ids:
         db.execute(delete(FamilyPayment).where(FamilyPayment.family_id.in_(family_ids)))
         db.execute(delete(FamilyMember).where(FamilyMember.family_id.in_(family_ids)))
@@ -45,7 +70,9 @@ def cleanup_demo_data(db: Session) -> dict[str, int]:
                 FamilyPaymentRequisite.family_id.in_(family_ids)
             )
         )
-        db.execute(delete(FamilyAuditLog).where(FamilyAuditLog.family_id.in_(family_ids)))
+        db.execute(
+            delete(FamilyAuditLog).where(FamilyAuditLog.family_id.in_(family_ids))
+        )
         db.execute(delete(Family).where(Family.id.in_(family_ids)))
 
     db.execute(
@@ -55,4 +82,8 @@ def cleanup_demo_data(db: Session) -> dict[str, int]:
     )
     db.execute(delete(User).where(User.id.in_(demo_user_ids)))
     db.commit()
-    return {"users": len(demo_user_ids), "families": len(family_ids)}
+    return {
+        "users": len(demo_user_ids),
+        "families": len(family_ids),
+        "marketplace_listings": len(marketplace_listing_ids),
+    }

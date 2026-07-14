@@ -19,6 +19,7 @@ from subsmarket.jobs.schemas import (
     NotificationFailureSample,
     NotificationQueueStatus,
 )
+from subsmarket.marketplace.models import MarketplaceListing
 from subsmarket.notifications.models import NotificationJob
 
 STALE_NOTIFICATION_AFTER = timedelta(minutes=15)
@@ -201,6 +202,12 @@ def _due_backlog_status(
             .where(Family.status == "closing")
             .where(Family.closes_at <= now),
         ),
+        marketplace_listings_due=_count(
+            db,
+            select(MarketplaceListing.id)
+            .where(MarketplaceListing.status.in_({"active", "paused"}))
+            .where(MarketplaceListing.expires_at <= now),
+        ),
         per_step_capacity=per_step_capacity,
     )
 
@@ -238,10 +245,7 @@ def _status_warnings(
         warnings.append("notification_failures_last_24h")
     if notification_queue.stale_due:
         warnings.append("stale_due_notifications")
-    if (
-        notification_queue.pending_due
-        > notification_queue.dispatch_capacity_per_run
-    ):
+    if notification_queue.pending_due > notification_queue.dispatch_capacity_per_run:
         warnings.append("notification_due_backlog_exceeds_dispatch_capacity")
     for field_name in (
         "expired_family_requests",
@@ -254,6 +258,7 @@ def _status_warnings(
         "closing_acknowledgements_due",
         "member_removals_due",
         "family_closures_due",
+        "marketplace_listings_due",
     ):
         if getattr(due_backlog, field_name) > due_backlog.per_step_capacity:
             warnings.append(f"{field_name}_exceeds_due_job_capacity")

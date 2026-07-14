@@ -177,6 +177,80 @@ def test_family_create_rate_limit_blocks_burst_by_client() -> None:
     assert other_client.status_code == 200
 
 
+def test_marketplace_request_create_rate_limit_blocks_cross_listing_spam(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "development")
+    app = FastAPI()
+    limiter = InMemoryRateLimiter()
+    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+
+    @app.post("/api/marketplace/listings/{listing_id}/requests")
+    def create_request(listing_id: str) -> dict[str, str]:
+        return {"listing_id": listing_id}
+
+    client = TestClient(app)
+    first_user = {"x-dev-telegram-user-id": "5001"}
+    second_user = {"x-dev-telegram-user-id": "5002"}
+
+    for index in range(20):
+        listing_id = f"00000000-0000-0000-0000-{index:012d}"
+        response = client.post(
+            f"/api/marketplace/listings/{listing_id}/requests",
+            headers=first_user,
+        )
+        assert response.status_code == 200
+
+    blocked = client.post(
+        "/api/marketplace/listings/00000000-0000-0000-0000-999999999999/requests",
+        headers=first_user,
+    )
+    other_user = client.post(
+        "/api/marketplace/listings/00000000-0000-0000-0000-999999999999/requests",
+        headers=second_user,
+    )
+
+    assert blocked.status_code == 429
+    assert blocked.headers["Retry-After"] == "3600"
+    assert other_user.status_code == 200
+
+
+def test_marketplace_reminder_rate_limit_is_stricter_than_other_actions(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "development")
+    app = FastAPI()
+    limiter = InMemoryRateLimiter()
+    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+
+    @app.post("/api/marketplace/requests/{request_id}/{action}")
+    def request_action(request_id: str, action: str) -> dict[str, str]:
+        return {"request_id": request_id, "action": action}
+
+    client = TestClient(app)
+    headers = {"x-dev-telegram-user-id": "5101"}
+    request_id = "00000000-0000-0000-0000-000000000001"
+
+    for _ in range(10):
+        assert client.post(
+            f"/api/marketplace/requests/{request_id}/remind",
+            headers=headers,
+        ).status_code == 200
+
+    blocked = client.post(
+        f"/api/marketplace/requests/{request_id}/remind",
+        headers=headers,
+    )
+    accepted = client.post(
+        f"/api/marketplace/requests/{request_id}/accept",
+        headers=headers,
+    )
+
+    assert blocked.status_code == 429
+    assert blocked.headers["Retry-After"] == "3600"
+    assert accepted.status_code == 200
+
+
 def test_rate_limiter_prunes_expired_client_buckets() -> None:
     now = [1000.0]
     limiter = InMemoryRateLimiter(

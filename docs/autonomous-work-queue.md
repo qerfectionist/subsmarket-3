@@ -17,7 +17,8 @@ the approved SubsMarket product rules.
 - Do not reintroduce `Club`, `slot_config`, or `slot_type`.
 - Keep `Family` as the domain name.
 - Keep family subscriptions and family tariffs separate through `family_type`.
-- Keep future accounts and GB sales in the future Marketplace Engine.
+- Keep account sales and the implemented GB vertical in the separate
+  Marketplace Engine.
 - Do not store Telegram phone numbers.
 - Do not expose payment requisites before member access is confirmed.
 - Prefer small, verifiable increments with tests.

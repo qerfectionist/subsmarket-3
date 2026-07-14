@@ -285,7 +285,7 @@
       "family_type": "tariff",
       "category": "mobile_tariffs",
       "subcategory": "mobile_operator",
-      "status": "pending_verification",
+      "status": "disabled",
       "max_members": 6,
       "supported_periods": [
         "monthly"

@@ -6,4 +6,5 @@ def import_models() -> None:
     import subsmarket.core.models  # noqa: F401
     import subsmarket.families.models  # noqa: F401
     import subsmarket.identity.models  # noqa: F401
+    import subsmarket.marketplace.models  # noqa: F401
     import subsmarket.notifications.models  # noqa: F401

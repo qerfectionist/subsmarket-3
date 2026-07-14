@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { ServiceLogo } from "../branding";
-import { formatDate, formatDateTime } from "../../format";
+import { familyTitle, formatDate, formatDateTime } from "../../format";
 import { familyKindLabels, periodLabels } from "../../labels";
 import type { Family } from "../../types";
 import { StatusBadge } from "../StatusBadge";
@@ -31,8 +31,7 @@ export function FamilyCard({
         />
         <div className="family-card-head-copy">
           <h3 className="family-card-title">
-            {family.service_name}
-            {family.service_variant ? ` ${family.service_variant}` : ""}
+            {familyTitle(family)}
           </h3>
           <div className="card-topline">
             <StatusBadge status={family.status} />

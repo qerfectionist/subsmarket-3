@@ -36,7 +36,13 @@ export function AppHeader({
         </span>
       }
       endAdornment={
-        <WorldButton type="button" size="icon" variant="tertiary" aria-label="Настройки">
+        <WorldButton
+          type="button"
+          size="icon"
+          variant="tertiary"
+          className="app-settings-button"
+          aria-label="Настройки"
+        >
           <SettingsIcon />
         </WorldButton>
       }
@@ -181,7 +187,7 @@ export function BottomNav({
   onReselect?: (tab: Tab) => void;
   badges?: Partial<Record<Tab, number>>;
 }) {
-  const activeValue = active === "family" ? "" : active;
+  const activeValue = active === "family" || active === "gigabytes" ? "" : active;
 
   return (
     <nav className="bottom-nav" aria-label="Главная навигация">

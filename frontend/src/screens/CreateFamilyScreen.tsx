@@ -28,6 +28,7 @@ const WIZARD_STEPS = [
 type WizardStep = (typeof WIZARD_STEPS)[number]["id"];
 
 interface FieldErrors {
+  plan_name?: string;
   payment_phone?: string;
   total_price_kzt?: string;
   payment_day?: string;
@@ -37,6 +38,9 @@ interface FieldErrors {
 
 function validateForm(form: FamilyCreate, service: FamilyService | null): FieldErrors {
   const errors: FieldErrors = {};
+  if (service?.family_type === "tariff" && !form.plan_name?.trim()) {
+    errors.plan_name = "Укажите название тарифа";
+  }
   if (!form.payment_phone.trim()) {
     errors.payment_phone = "Укажите номер телефона для оплаты";
   } else if (!PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
@@ -58,6 +62,9 @@ function validateForm(form: FamilyCreate, service: FamilyService | null): FieldE
 }
 
 function stepErrors(step: WizardStep, errors: FieldErrors) {
+  if (step === "service") {
+    return "plan_name" in errors;
+  }
   if (step === "terms") {
     return ["total_price_kzt", "payment_day", "next_payment_date", "max_members"].some(
       (key) => key in errors
@@ -249,6 +256,30 @@ export function CreateFamilyScreen({
                 }
               />
             </div>
+            {familyType === "tariff" ? (
+              <div>
+                <Input
+                  required
+                  label="Название тарифа"
+                  data-testid="create-plan-name-input"
+                  error={Boolean(errors.plan_name)}
+                  value={createForm.plan_name ?? ""}
+                  onChange={(event) =>
+                    onChangeForm((current) => ({
+                      ...current,
+                      plan_name: event.target.value
+                    }))
+                  }
+                />
+                {errors.plan_name ? (
+                  <small className="field-error" role="alert" aria-live="polite">
+                    {errors.plan_name}
+                  </small>
+                ) : (
+                  <small className="field-helper">Например, Семейный 5+</small>
+                )}
+              </div>
+            ) : null}
         </div>
 
         <div className={step === "terms" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>

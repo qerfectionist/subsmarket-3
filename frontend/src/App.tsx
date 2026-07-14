@@ -65,6 +65,7 @@ import {
 } from "./hooks/useApi";
 import { CreateFamilyScreen } from "./screens/CreateFamilyScreen";
 import { FamilyDetailsScreen } from "./screens/FamilyDetailsScreen";
+import { GigabytesScreen } from "./screens/GigabytesScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
 import { SearchScreen } from "./screens/SearchScreen";
 import type {
@@ -87,6 +88,7 @@ import {
 
 const emptyCreateForm: FamilyCreate = {
   service_id: "",
+  plan_name: null,
   period: "monthly",
   max_members: 6,
   total_price_kzt: 3800,
@@ -309,6 +311,7 @@ export function App() {
     setCreateForm((current) => ({
       ...current,
       service_id: nextServices[0]?.id || "",
+      plan_name: nextType === "tariff" ? current.plan_name : null,
       period: nextServices[0]?.supported_periods[0] ?? "monthly",
       max_members: Math.min(current.max_members, nextServices[0]?.max_members ?? 8)
     }));
@@ -319,6 +322,7 @@ export function App() {
     await runMutation("create-family", async () => {
       const payload: FamilyCreate = {
         ...createForm,
+        plan_name: normalizeText(createForm.plan_name),
         description: normalizeText(createForm.description),
         owner_rules: normalizeText(createForm.owner_rules)
       };
@@ -363,6 +367,7 @@ export function App() {
   const createFormDirty = Boolean(
     tab === "create" &&
       (createForm.payment_phone.trim().length > 0 ||
+        Boolean(createForm.plan_name?.trim()) ||
         Boolean(createForm.description?.trim()) ||
         Boolean(createForm.owner_rules?.trim()) ||
         createForm.total_price_kzt !== emptyCreateForm.total_price_kzt)
@@ -516,6 +521,7 @@ export function App() {
             ).length
           }
           onOpenMine={() => setTab("mine")}
+          onOpenGigabytes={() => setTab("gigabytes")}
           onOpenFamily={(familyId) => openFamily(familyId, "home")}
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
@@ -772,6 +778,10 @@ export function App() {
             )
           }
         />
+      )}
+
+      {tab === "gigabytes" && (
+        <GigabytesScreen onBack={() => setTab("home")} />
       )}
 
       <BottomNav

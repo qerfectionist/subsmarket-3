@@ -16,7 +16,7 @@ import {
 } from "../components/layout";
 import { RequisiteBox } from "../components/RequisiteBox";
 import { FamilyListSkeleton } from "../components/skeleton";
-import { formatDateTime, statusText } from "../format";
+import { familyTitle, formatDateTime, statusText } from "../format";
 import {
   familyKindLabels,
   requestCancelReasonLabels
@@ -407,8 +407,7 @@ function MyRequestsSection({
                     {familyKindLabels[request.family_type]}
                   </span>
                   <Typography as="strong" variant="subtitle" level={3}>
-                    {request.service_name}
-                    {request.service_variant ? ` ${request.service_variant}` : ""}
+                    {familyTitle(request)}
                   </Typography>
                 </div>
                 <Badge>{statusText(request.status)}</Badge>
@@ -435,7 +434,7 @@ function MyRequestsSection({
                     onClick={() =>
                       openTelegramUser(
                         request.owner_username!,
-                        `Здравствуйте, я оставил заявку в вашу семью ${request.service_name} в SubsMarket.`
+                        `Здравствуйте, я оставил заявку в вашу семью ${familyTitle(request)} в SubsMarket.`
                       )
                     }
                   >

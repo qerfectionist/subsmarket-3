@@ -23,6 +23,8 @@ class RunDueJobsResult(BaseModel):
     closing_acknowledgement_reminders_sent: int
     executed_member_removals: int
     closed_families: int
+    marketplace_listing_expiry_reminders_sent: int
+    expired_marketplace_listings: int
     notification_jobs_created: int
     job_errors: list[RunDueJobError] = Field(default_factory=list)
 
@@ -60,6 +62,7 @@ class DueBacklogStatus(BaseModel):
     closing_acknowledgements_due: int
     member_removals_due: int
     family_closures_due: int
+    marketplace_listings_due: int
     per_step_capacity: int
 
 

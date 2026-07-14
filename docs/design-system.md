@@ -14,8 +14,8 @@ The design system is not decoration. It protects three things:
 
 - users understand what to do in the first 10 seconds;
 - family subscriptions and family tariffs stay clear and trustworthy;
-- future modules, accounts and gigabytes, can be added later without breaking
-  the main product.
+- Marketplace modules can evolve without breaking the Family Engine; GB is
+  active, while accounts remain a future module.
 
 ## Product Personality
 
@@ -56,10 +56,11 @@ plain, predictable, and calm. Fancy UI is less important than clear hierarchy.
 Pending requests, access waiting, payment due, and owner confirmation must be
 visible without hunting through the app.
 
-### 4. Marketplace Later
+### 4. Marketplace Is Separate
 
-Accounts and gigabytes may appear in the product scope switch, but they must
-not look equally active until those engines are ready.
+Gigabytes are an active Marketplace section. Accounts may remain visible but
+must look disabled until that vertical is implemented. Neither section may
+reuse Family payment or membership states.
 
 ### 5. Mobile App, Not Website
 
@@ -442,7 +443,7 @@ This Market direction is inspired by Telegram Wallet interaction patterns:
 3. Four product directions:
    - `Подписки`;
    - `Тарифы`;
-   - future `Гигабайты`;
+   - active `Гигабайты`;
    - future `Аккаунты`.
 4. Compact grouped list of available families.
 
@@ -456,10 +457,10 @@ quiet.
 Secondary:
 
 - bottom navigation remains stable;
-- future modules are visible but quiet;
+- future modules are visible but quiet; active GB is not visually disabled;
 - public recommendations do not expose private participants.
 
-Future modules:
+Marketplace modules:
 
 - `Аккаунты и доступы`
 - `Гигабайты`
@@ -477,7 +478,7 @@ Rules:
 - no `club` copy in user-facing text;
 - use `семья`, `место`, `заявка`, `оплата`;
 - `Создать семью`, not `Собрать клуб`;
-- future modules are visible but disabled/quiet unless implemented;
+- only unimplemented modules are disabled/quiet; GB is active;
 - family results must be compact wallet-style list rows, not large marketplace cards;
 - Market should avoid vertical scroll on normal Telegram viewport.
 

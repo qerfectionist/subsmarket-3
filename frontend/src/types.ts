@@ -109,3 +109,15 @@ export type OwnerFamilyDetails = {
   members: FamilyMember[];
   paymentsByMemberId: Record<string, FamilyPayment[]>;
 };
+
+export type MarketplaceOperator = Schema["MarketplaceOperatorOut"];
+export type MarketplaceListing = Schema["MarketplaceListingOut"];
+export type MarketplaceListingCreate = Schema["MarketplaceListingCreate"];
+export type MarketplaceListingUpdate = Schema["MarketplaceListingUpdate"];
+export type MarketplaceListingRequest = Schema["MarketplaceListingRequestOut"];
+export type MarketplacePriceInsight = Schema["MarketplacePriceInsightOut"];
+export type MarketplaceRequestRole = "buyer" | "seller";
+export type MarketplaceSort =
+  | "recent"
+  | "price_asc"
+  | "price_desc";
