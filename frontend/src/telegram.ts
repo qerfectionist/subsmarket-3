@@ -369,7 +369,7 @@ export function openTelegramUser(username: string, text?: string) {
 export function openTelegramMiniApp() {
   const url =
     import.meta.env.VITE_TELEGRAM_MINI_APP_LINK ??
-    "https://t.me/subscription_market_bot?startapp";
+    "https://t.me/subscription_market_bot";
   if (webApp()?.openTelegramLink) {
     webApp()?.openTelegramLink?.(url);
     return;
