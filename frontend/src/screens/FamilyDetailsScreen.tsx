@@ -2,8 +2,9 @@ import {
   Button as WorldButton,
   Typography
 } from "@worldcoin/mini-apps-ui-kit-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 
-import { FamilyCard } from "../components/families";
+import { ServiceLogo } from "../components/branding";
 import { Badge, EmptyState, Panel } from "../components/layout";
 import { PanelSkeleton } from "../components/skeleton";
 import { RequisiteBox } from "../components/RequisiteBox";
@@ -85,101 +86,90 @@ export function FamilyDetailsScreen({
   }
 
   const { family, my_membership: membership, my_request: request } = view;
+  const viewerState = membership ? "member" : request ? "request" : "public";
 
   return (
-    <Panel
-      title={familyTitle(family)}
-      description={familyKindLabels[family.family_type]}
-      action={
-        <div className="row-actions">
-          <WorldButton type="button" size="sm" variant="secondary" onClick={onBack}>
-            Назад
-          </WorldButton>
+    <div className={`family-details-page family-details-page-${viewerState}`}>
+      <Panel>
+        <header className="family-detail-topbar">
           <WorldButton
             type="button"
-            size="sm"
-            variant="secondary"
+            size="icon"
+            variant="tertiary"
+            className="family-detail-icon-button"
+            aria-label="Назад"
+            onClick={onBack}
+          >
+            <ArrowLeft aria-hidden size={21} strokeWidth={2.2} />
+          </WorldButton>
+          <div className="family-detail-heading">
+            <Typography as="span" variant="label" level={2}>
+              {familyKindLabels[family.family_type]}
+            </Typography>
+            <Typography as="h1" variant="heading" level={4}>
+              {familyTitle(family)}
+            </Typography>
+          </div>
+          <WorldButton
+            type="button"
+            size="icon"
+            variant="tertiary"
+            className="family-detail-icon-button"
+            aria-label="Обновить"
             data-testid="family-detail-refresh-button"
             onClick={onRefresh}
           >
-            Обновить
+            <RefreshCw aria-hidden size={20} strokeWidth={2.1} />
           </WorldButton>
-        </div>
-      }
-    >
-      <FamilyCard family={family} />
+        </header>
 
-      {membership?.role === "owner" && (
-        <OwnerInvitePanel
-          family={family}
-          invite={invite}
-          busy={busy}
-          onCreate={onCreateInvite}
-          onRotate={onRotateInvite}
-          onDisable={onDisableInvite}
-          onUpdateVisibility={onUpdateVisibility}
-          onConfirmAvailability={onConfirmAvailability}
-        />
-      )}
+        <FamilyOverview family={family} />
 
-      <section className="detail-grid">
-        <DetailItem label="Общая цена" value={`${family.total_price_kzt.toLocaleString("ru-KZ")} ₸`} />
-        <DetailItem label="Доля участника" value={`${family.member_share_kzt.toLocaleString("ru-KZ")} ₸`} />
-        <DetailItem label="День оплаты" value={`${family.payment_day} число`} />
-        <DetailItem label="Следующая оплата" value={formatDate(family.next_payment_date)} />
-        <DetailItem label="Свободно мест" value={String(family.free_slots)} />
-        <DetailItem label="Создана" value={formatDateTime(family.created_at)} />
-      </section>
-
-      <section className="detail-section">
-        <Typography as="h3" variant="subtitle" level={2}>Описание</Typography>
-        <Typography as="p" variant="body" level={3}>
-          {family.description || "Описание пока не добавлено."}
-        </Typography>
-      </section>
-
-      <section className="detail-section">
-        <Typography as="h3" variant="subtitle" level={2}>Правила владельца</Typography>
-        <Typography as="p" variant="body" level={3}>
-          {family.owner_rules ||
-            "Владелец пока не добавил отдельные правила. Договоритесь в Telegram перед вступлением."}
-        </Typography>
-      </section>
-
-      <section className="detail-section">
-        <Typography as="h3" variant="subtitle" level={2}>Ваш статус</Typography>
-        {membership ? (
-          <StatusBlock
-            title={statusText(membership.status)}
-            text={
-              membership.role === "owner"
-                ? "Вы владелец этой семьи."
-                : "Вы участник этой семьи."
-            }
-          />
-        ) : request ? (
-          <StatusBlock
-            title={statusText(request.status)}
-            text={`Заявка создана ${formatDateTime(request.created_at)}.`}
-          />
-        ) : (
-          <StatusBlock
-            title="Вы еще не в семье"
-            text="Отправьте заявку, владелец напишет вам и примет решение."
+        {membership?.role === "owner" && (
+          <OwnerInvitePanel
+            family={family}
+            invite={invite}
+            busy={busy}
+            onCreate={onCreateInvite}
+            onRotate={onRotateInvite}
+            onDisable={onDisableInvite}
+            onUpdateVisibility={onUpdateVisibility}
+            onConfirmAvailability={onConfirmAvailability}
           />
         )}
-      </section>
 
-      <FamilyFlowSteps
-        membership={membership}
-        request={request}
-        payments={view.my_payments}
-        canRequest={view.can_request}
-      />
+        <section className="family-detail-status-section">
+          {membership ? (
+            <StatusBlock
+              title={statusText(membership.status)}
+              text={
+                membership.role === "owner"
+                  ? "Вы владелец этой семьи."
+                  : "Вы участник этой семьи."
+              }
+            />
+          ) : request ? (
+            <StatusBlock
+              title={statusText(request.status)}
+              text={`Заявка создана ${formatDateTime(request.created_at)}.`}
+            />
+          ) : (
+            <StatusBlock
+              title="Можно вступить"
+              text="Сначала получите доступ, затем оплатите владельцу."
+            />
+          )}
+        </section>
 
-      <section className="detail-section">
-        <Typography as="h3" variant="subtitle" level={2}>Действия</Typography>
-        <div className="workspace-actions">
+        <FamilyFlowSteps
+          membership={membership}
+          request={request}
+          payments={view.my_payments}
+          canRequest={view.can_request}
+        />
+
+        <section className="family-detail-actions">
+          <div className="workspace-actions">
           {!membership && !request && view.can_request && (
             <WorldButton
               type="button"
@@ -229,21 +219,87 @@ export function FamilyDetailsScreen({
           {!view.can_request && !membership && request && (
             <Badge>{statusText(request.status)}</Badge>
           )}
+          </div>
+        </section>
+
+        {requisite && <RequisiteBox requisite={requisite} />}
+
+        {membership && (
+          <FamilyPaymentActions
+            payments={view.my_payments}
+            onReportPayment={onReportPayment}
+            onCancelPaymentReport={onCancelPaymentReport}
+          />
+        )}
+
+        {membership && <FamilyAuditTimeline logs={auditLogs} />}
+      </Panel>
+    </div>
+  );
+}
+
+function FamilyOverview({ family }: { family: FamilyView["family"] }) {
+  return (
+    <article className="family-overview-card" data-testid="family-card">
+      <div className="family-overview-head">
+        <ServiceLogo
+          serviceSlug={family.service_slug}
+          serviceName={family.service_name}
+          familyType={family.family_type}
+          size={46}
+        />
+        <div className="family-overview-title">
+          <Typography as="h2" variant="subtitle" level={1}>
+            {familyTitle(family)}
+          </Typography>
+          <div className="family-overview-badges">
+            <Badge>{statusText(family.status)}</Badge>
+            <span>{periodLabels[family.period]}</span>
+          </div>
         </div>
+      </div>
+
+      <section className="detail-grid family-overview-metrics" aria-label="Основные условия">
+        <DetailItem
+          label="Доля"
+          value={`${family.member_share_kzt.toLocaleString("ru-KZ")} ₸`}
+        />
+        <DetailItem
+          label="Свободно"
+          value={`${family.free_slots} из ${family.max_members}`}
+        />
+        <DetailItem
+          label="Общая цена"
+          value={`${family.total_price_kzt.toLocaleString("ru-KZ")} ₸`}
+        />
       </section>
 
-      {requisite && <RequisiteBox requisite={requisite} />}
+      <dl className="family-overview-facts">
+        <div>
+          <dt>Оплата</dt>
+          <dd>{family.payment_day} числа</dd>
+        </div>
+        <div>
+          <dt>Следующая</dt>
+          <dd>{formatDate(family.next_payment_date)}</dd>
+        </div>
+        <div>
+          <dt>Владелец</dt>
+          <dd>{family.owner.first_name}</dd>
+        </div>
+      </dl>
 
-      {membership && (
-        <FamilyPaymentActions
-          payments={view.my_payments}
-          onReportPayment={onReportPayment}
-          onCancelPaymentReport={onCancelPaymentReport}
-        />
-      )}
-
-      {membership && <FamilyAuditTimeline logs={auditLogs} />}
-    </Panel>
+      <div className="family-overview-copy">
+        <Typography as="p" variant="body" level={3}>
+          {family.description || "Описание пока не добавлено."}
+        </Typography>
+        {family.owner_rules ? (
+          <Typography as="p" variant="body" level={3}>
+            {family.owner_rules}
+          </Typography>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
@@ -411,24 +467,24 @@ function FamilyFlowSteps({
 
   const steps = [
     {
-      title: "1. Отправить заявку",
+      title: "Заявка",
       text: canRequest
         ? "Нажмите кнопку заявки, владелец увидит ваш профиль."
         : "Заявка уже не требуется или недоступна.",
       state: hasRequest ? "done" : "active"
     },
     {
-      title: "2. Договориться с владельцем",
+      title: "Решение",
       text: "После заявки владелец пишет вам в Telegram и принимает решение.",
       state: hasApproval ? "done" : hasRequest ? "active" : "pending"
     },
     {
-      title: "3. Получить доступ",
+      title: "Доступ",
       text: "Деньги переводятся только после фактического доступа к сервису.",
       state: hasAccessConfirmation ? "done" : hasAccess ? "active" : "pending"
     },
     {
-      title: "4. Оплатить владельцу",
+      title: "Оплата",
       text: paymentReported
         ? "Вы отметили оплату. Теперь владелец должен подтвердить получение."
         : "После подтверждения доступа откроются реквизиты владельца.",
@@ -441,13 +497,18 @@ function FamilyFlowSteps({
   ];
 
   return (
-    <section className="detail-section">
-      <Typography as="h3" variant="subtitle" level={2}>Порядок сделки</Typography>
+    <section className="family-flow-compact" aria-label="Порядок вступления">
       <div className="flow-steps">
-        {steps.map((step) => (
-          <div className={`flow-step flow-step-${step.state}`} key={step.title}>
-            <Typography as="strong" variant="subtitle" level={3}>{step.title}</Typography>
-            <Typography as="p" variant="body" level={3}>{step.text}</Typography>
+        {steps.map((step, index) => (
+          <div
+            className={`flow-step flow-step-${step.state}`}
+            key={step.title}
+            title={step.text}
+          >
+            <span aria-hidden>{index + 1}</span>
+            <Typography as="strong" variant="subtitle" level={3}>
+              {step.title}
+            </Typography>
           </div>
         ))}
       </div>

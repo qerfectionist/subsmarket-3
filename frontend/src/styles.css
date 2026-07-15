@@ -4026,6 +4026,322 @@ button {
   }
 }
 
+/* Family details: one compact overview surface instead of repeated cards. */
+.app-shell:has(.family-details-page) .app-topbar,
+.app-shell:has(.family-details-page) .dev-user-compact {
+  display: none;
+}
+
+.app-shell:has(.family-details-page-public) {
+  overflow-y: hidden;
+  padding-bottom: calc(104px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom));
+}
+
+.family-details-page .app-panel,
+.family-details-page .app-panel-body {
+  gap: 10px;
+}
+
+.family-detail-topbar {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  min-height: 46px;
+}
+
+.family-detail-icon-button {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 50%;
+  color: var(--app-text);
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  width: 42px;
+}
+
+.family-detail-heading {
+  min-width: 0;
+  text-align: center;
+}
+
+.family-detail-heading span {
+  color: var(--app-muted);
+  display: block;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.family-detail-heading h1 {
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-xl);
+  box-shadow: var(--app-shadow);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.family-overview-head {
+  align-items: center;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.family-overview-title {
+  min-width: 0;
+}
+
+.family-overview-title h2 {
+  font-size: 18px;
+  font-weight: 720;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-badges {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  margin-top: 5px;
+}
+
+.family-overview-badges .badge {
+  font-size: 10px;
+  padding: 4px 8px;
+}
+
+.family-overview-badges > span:not(.badge) {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.family-overview-metrics.detail-grid {
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.family-overview-metrics .detail-item {
+  background: var(--app-secondary-bg);
+  border: 0;
+  border-radius: var(--app-radius-md);
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.family-overview-metrics .detail-item span {
+  font-size: 10px;
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.family-overview-metrics .detail-item strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-facts {
+  border-bottom: 1px solid var(--app-border);
+  border-top: 1px solid var(--app-border);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 8px 0;
+}
+
+.family-overview-facts div {
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.family-overview-facts div + div {
+  border-left: 1px solid var(--app-border);
+}
+
+.family-overview-facts dt,
+.family-overview-facts dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-facts dt {
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.family-overview-facts dd {
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.family-overview-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.family-overview-copy p {
+  color: var(--app-muted);
+  display: -webkit-box;
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.family-overview-copy p + p {
+  background: var(--app-secondary-bg);
+  border-radius: var(--app-radius-sm);
+  color: var(--app-text);
+  padding: 7px 9px;
+  -webkit-line-clamp: 1;
+}
+
+.family-detail-status-section .status-block {
+  align-items: center;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  box-shadow: none;
+  display: grid;
+  gap: 2px;
+  padding: 10px 13px;
+}
+
+.family-detail-status-section .status-block strong {
+  font-size: 14px;
+}
+
+.family-detail-status-section .status-block p {
+  color: var(--app-muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.family-flow-compact {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  padding: 8px;
+}
+
+.family-flow-compact .flow-steps {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.family-flow-compact .flow-step {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 0;
+  padding: 2px;
+}
+
+.family-flow-compact .flow-step > span {
+  align-items: center;
+  background: var(--app-secondary-bg);
+  border-radius: 50%;
+  color: var(--app-muted);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 750;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.family-flow-compact .flow-step strong {
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: 650;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-flow-compact .flow-step-done > span {
+  background: color-mix(in srgb, var(--app-success) 14%, var(--app-surface));
+  color: var(--app-success);
+}
+
+.family-flow-compact .flow-step-active > span {
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+}
+
+.family-flow-compact .flow-step-active strong,
+.family-flow-compact .flow-step-done strong {
+  color: var(--app-text);
+}
+
+.family-detail-actions:has(.workspace-actions:empty) {
+  display: none;
+}
+
+.family-detail-actions .workspace-actions {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.family-detail-actions .workspace-actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+.family-detail-actions button {
+  min-height: 44px;
+  width: 100%;
+}
+
+@media (max-height: 760px) {
+  .family-details-page-public .family-overview-copy {
+    display: none;
+  }
+
+  .family-details-page-public .family-overview-card {
+    gap: 8px;
+    padding: 12px;
+  }
+}
+
 /* App-like home pass: compact status cards instead of promo-banner carousel. */
 .market-home {
   --home-horizontal-inset: 4px;
