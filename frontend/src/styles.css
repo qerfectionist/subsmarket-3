@@ -989,6 +989,12 @@ textarea {
   max-width: 680px;
 }
 
+.notice-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 .notice-error,
 .inline-error {
   border-color: rgba(220, 38, 38, 0.28);

@@ -366,6 +366,17 @@ export function openTelegramUser(username: string, text?: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+export function openTelegramMiniApp() {
+  const url =
+    import.meta.env.VITE_TELEGRAM_MINI_APP_LINK ??
+    "https://t.me/subscription_market_bot?startapp";
+  if (webApp()?.openTelegramLink) {
+    webApp()?.openTelegramLink?.(url);
+    return;
+  }
+  window.location.assign(url);
+}
+
 export function showTelegramAlert(message: string): Promise<void> {
   return new Promise((resolve) => {
     const app = webApp();

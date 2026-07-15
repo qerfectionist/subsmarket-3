@@ -81,6 +81,7 @@ import {
   setTelegramClosingConfirmation,
   showTelegramConfirm,
   getTelegramStartParam,
+  openTelegramMiniApp,
   triggerTelegramImpact,
   triggerTelegramNotification,
   triggerTelegramSelection
@@ -470,13 +471,27 @@ export function App() {
   }
 
   if (loadState === "error") {
+    const loadErrorMessage = formatError(meQuery.error);
+    const requiresTelegram = loadErrorMessage.includes("Telegram Mini App");
     return (
       <Shell title="Backend недоступен">
         <div className="notice notice-error">
-          <p>{formatError(meQuery.error)}</p>
-          <WorldButton type="button" fullWidth onClick={() => meQuery.refetch()}>
-            Повторить
-          </WorldButton>
+          <p>{loadErrorMessage}</p>
+          <div className="notice-actions">
+            {requiresTelegram && (
+              <WorldButton type="button" fullWidth onClick={openTelegramMiniApp}>
+                Открыть в Telegram
+              </WorldButton>
+            )}
+            <WorldButton
+              type="button"
+              fullWidth
+              variant={requiresTelegram ? "secondary" : "primary"}
+              onClick={() => meQuery.refetch()}
+            >
+              Повторить
+            </WorldButton>
+          </div>
         </div>
       </Shell>
     );
