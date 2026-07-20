@@ -753,6 +753,36 @@ def test_payment_requisite_is_hidden_before_access_confirmation(
     assert result.payment_requisite.phone == "+77001234567"
 
 
+def test_first_payment_uses_calendar_month_at_month_end(
+    db: Session,
+    subscription_service: FamilyService,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    owner = make_user(db, 72)
+    candidate = make_user(db, 73)
+    family = make_family(db, owner, subscription_service)
+    request = create_join_request(db, candidate, family.id)
+    approve_join_request(db, owner, request.id)
+    member = db.scalar(
+        select(FamilyMember).where(
+            FamilyMember.family_id == family.id,
+            FamilyMember.user_id == candidate.id,
+        )
+    )
+    assert member is not None
+    mark_access_provided(db, owner, member.id)
+    family.next_payment_date = date(2025, 1, 1)
+    monkeypatch.setattr(
+        "subsmarket.families.payments.kz_today",
+        lambda: date(2025, 1, 31),
+    )
+
+    result = confirm_access_received(db, candidate, member.id)
+
+    assert result.payment.period_start == date(2025, 1, 31)
+    assert result.payment.period_end == date(2025, 2, 28)
+
+
 def test_closing_family_blocks_new_access_and_first_payment(
     db: Session,
     subscription_service: FamilyService,

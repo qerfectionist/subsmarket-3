@@ -146,6 +146,7 @@ five batches of 100 jobs per cron call. These values can be tuned with:
 ```text
 JOB_BATCH_SIZE=200
 JOB_MAX_BATCHES_PER_STEP=5
+IDEMPOTENCY_RETENTION_DAYS=30
 NOTIFICATION_DISPATCH_BATCH_SIZE=100
 NOTIFICATION_DISPATCH_MAX_BATCHES=5
 ```
@@ -166,12 +167,16 @@ seed at the end of its build command because Pre-Deploy Command is unavailable
 on Free. It fails fast when critical production values are missing, still using
 development defaults, or using non-HTTPS Telegram URLs.
 
-Runtime startup also fails outside development when `CORS_ALLOWED_ORIGINS`
-contains `*` or `TELEGRAM_WEBHOOK_SECRET` is missing.
+Runtime startup also fails outside development when `DEV_AUTH_ENABLED=true`,
+`CORS_ALLOWED_ORIGINS` contains `*`, or `TELEGRAM_WEBHOOK_SECRET` is missing.
+The development auth headers and `/api/dev/*` routes require both
+`APP_ENV=development` and `DEV_AUTH_ENABLED=true`.
 
-Payment phone requisites are encrypted before storage. New requisites use a
-versioned PBKDF2-derived Fernet key. Legacy SHA-256-derived Fernet tokens remain
-readable so existing data does not require a forced migration.
+Payment phone requisites are encrypted before storage. New `v3` requisites use
+a process-cached PBKDF2-derived Fernet key, so the expensive derivation runs
+once instead of on every request. Per-record-salt `v2` and legacy
+SHA-256-derived Fernet tokens remain readable, so existing data does not require
+a forced migration.
 
 ## Error monitoring
 
@@ -450,6 +455,7 @@ Backend:
 
 ```text
 APP_ENV=production
+DEV_AUTH_ENABLED=false
 DATABASE_URL=postgresql://...
 DB_POOL_SIZE=5
 DB_MAX_OVERFLOW=5
@@ -474,6 +480,8 @@ NOTIFICATION_RETRY_BASE_SECONDS=60
 NOTIFICATION_RETRY_MAX_SECONDS=3600
 ACCESS_REMINDER_COOLDOWN_SECONDS=600
 JOB_BATCH_SIZE=200
+JOB_MAX_BATCHES_PER_STEP=5
+IDEMPOTENCY_RETENTION_DAYS=30
 DEMO_ACTIVATE_CATALOG=true
 ```
 

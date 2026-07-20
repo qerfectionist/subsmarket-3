@@ -4,14 +4,17 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from subsmarket.core.config import settings
+from subsmarket.core.database import utcnow
 from subsmarket.core.models import IdempotencyRecord
 
 IDEMPOTENCY_KEY_RE = re.compile(r"^[A-Za-z0-9._:-]{8,128}$")
@@ -84,6 +87,27 @@ def complete_idempotency(
         return
     claim.record.resource_type = resource_type
     claim.record.resource_id = resource_id
+
+
+def cleanup_expired_idempotency_records(db: Session) -> int:
+    cutoff = utcnow() - timedelta(days=settings.idempotency_retention_days)
+    record_ids = list(
+        db.scalars(
+            select(IdempotencyRecord.id)
+            .where(IdempotencyRecord.created_at < cutoff)
+            .order_by(IdempotencyRecord.created_at.asc())
+            .limit(settings.job_batch_size)
+            .with_for_update(skip_locked=True)
+        )
+    )
+    if not record_ids:
+        return 0
+    db.execute(
+        delete(IdempotencyRecord).where(IdempotencyRecord.id.in_(record_ids)),
+        execution_options={"synchronize_session": False},
+    )
+    db.flush()
+    return len(record_ids)
 
 
 def _get_record(

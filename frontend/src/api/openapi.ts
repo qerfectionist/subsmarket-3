@@ -2644,6 +2644,8 @@ export interface components {
             marketplace_listing_expiry_reminders_sent: number;
             /** Expired Marketplace Listings */
             expired_marketplace_listings: number;
+            /** Idempotency Records Deleted */
+            idempotency_records_deleted: number;
             /** Notification Jobs Created */
             notification_jobs_created: number;
             /** Job Errors */

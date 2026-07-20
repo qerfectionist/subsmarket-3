@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     )
 
     app_env: str = Field(default="development", alias="APP_ENV")
+    dev_auth_enabled: bool = Field(default=False, alias="DEV_AUTH_ENABLED")
     database_url: str = Field(
         default="postgresql+psycopg://subsmarket:subsmarket@localhost:5432/subsmarket",
         alias="DATABASE_URL",
@@ -108,6 +109,12 @@ class Settings(BaseSettings):
         ge=1,
         le=20,
         alias="JOB_MAX_BATCHES_PER_STEP",
+    )
+    idempotency_retention_days: int = Field(
+        default=30,
+        ge=1,
+        le=3650,
+        alias="IDEMPOTENCY_RETENTION_DAYS",
     )
     marketplace_gb_enabled: bool = Field(
         default=False,

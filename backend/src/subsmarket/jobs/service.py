@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from subsmarket.core.config import settings
 from subsmarket.core.database import kz_today, utcnow
+from subsmarket.core.idempotency import cleanup_expired_idempotency_records
 from subsmarket.families.audit import record_family_audit_event
 from subsmarket.families.calendar import add_payment_period, payment_due_at
 from subsmarket.families.models import (
@@ -67,6 +68,7 @@ def run_due_jobs(db: Session) -> RunDueJobsResult:
         closed_families=0,
         marketplace_listing_expiry_reminders_sent=0,
         expired_marketplace_listings=0,
+        idempotency_records_deleted=0,
         notification_jobs_created=0,
     )
     for step in _due_job_steps():
@@ -254,6 +256,16 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 result,
                 step_result,
                 count_field="expired_marketplace_listings",
+            ),
+            drain_batches=True,
+        ),
+        DueJobStep(
+            name="cleanup_expired_idempotency_records",
+            run=cleanup_expired_idempotency_records,
+            apply=lambda result, step_result: _apply_count(
+                result,
+                step_result,
+                count_field="idempotency_records_deleted",
             ),
             drain_batches=True,
         ),

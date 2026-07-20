@@ -1,7 +1,6 @@
 import { authHeaders } from "./dev";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "" : "http://localhost:8000");
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const pendingIdempotency = new Map<string, { fingerprint: string; key: string }>();
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {

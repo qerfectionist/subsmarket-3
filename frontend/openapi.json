@@ -14192,6 +14192,10 @@
             "type": "integer",
             "title": "Expired Marketplace Listings"
           },
+          "idempotency_records_deleted": {
+            "type": "integer",
+            "title": "Idempotency Records Deleted"
+          },
           "notification_jobs_created": {
             "type": "integer",
             "title": "Notification Jobs Created"
@@ -14219,6 +14223,7 @@
           "closed_families",
           "marketplace_listing_expiry_reminders_sent",
           "expired_marketplace_listings",
+          "idempotency_records_deleted",
           "notification_jobs_created"
         ],
         "title": "RunDueJobsResult"

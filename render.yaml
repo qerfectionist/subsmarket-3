@@ -10,6 +10,8 @@ services:
     envVars:
       - key: APP_ENV
         value: production
+      - key: DEV_AUTH_ENABLED
+        value: false
       - key: DATABASE_URL
         sync: false
       - key: DB_POOL_SIZE
@@ -78,5 +80,7 @@ services:
         value: 200
       - key: JOB_MAX_BATCHES_PER_STEP
         value: 5
+      - key: IDEMPOTENCY_RETENTION_DAYS
+        value: 30
       - key: DEMO_ACTIVATE_CATALOG
         value: true

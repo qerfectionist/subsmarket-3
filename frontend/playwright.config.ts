@@ -14,6 +14,7 @@ const e2eDb = path.join(tmpDir, "playwright-e2e.db");
 
 const backendEnv = {
   APP_ENV: "development",
+  DEV_AUTH_ENABLED: "true",
   DATABASE_URL: `sqlite:///${isWin ? e2eDb.replace(/\\/g, "/") : e2eDb}`,
   DEMO_ACTIVATE_CATALOG: "true",
   PAYMENT_REQUISITE_SECRET: "playwright-payment-requisite-secret"

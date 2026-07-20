@@ -19,6 +19,11 @@ def check_production_config() -> list[ConfigCheck]:
     checks = [
         _present("APP_ENV", settings.app_env),
         _equals("APP_ENV", settings.app_env, "production"),
+        _production_false(
+            "DEV_AUTH_ENABLED",
+            settings.app_env,
+            settings.dev_auth_enabled,
+        ),
         _present("DATABASE_URL", settings.database_url),
         _positive_int("DB_POOL_SIZE", settings.db_pool_size),
         _non_negative_int("DB_MAX_OVERFLOW", settings.db_max_overflow),
@@ -99,6 +104,12 @@ def check_production_config() -> list[ConfigCheck]:
             settings.job_max_batches_per_step,
             minimum=1,
             maximum=20,
+        ),
+        _bounded_int(
+            "IDEMPOTENCY_RETENTION_DAYS",
+            settings.idempotency_retention_days,
+            minimum=1,
+            maximum=3650,
         ),
     ]
     if (

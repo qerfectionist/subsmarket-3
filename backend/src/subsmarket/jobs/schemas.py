@@ -25,6 +25,7 @@ class RunDueJobsResult(BaseModel):
     closed_families: int
     marketplace_listing_expiry_reminders_sent: int
     expired_marketplace_listings: int
+    idempotency_records_deleted: int
     notification_jobs_created: int
     job_errors: list[RunDueJobError] = Field(default_factory=list)
 

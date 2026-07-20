@@ -86,7 +86,11 @@ def parse_telegram_user(
         )
 
     client_host = request.client.host if request.client else ""
-    if settings.is_development and client_host in LOCAL_DEV_AUTH_HOSTS:
+    if (
+        settings.is_development
+        and settings.dev_auth_enabled
+        and client_host in LOCAL_DEV_AUTH_HOSTS
+    ):
         return TelegramUserData(
             telegram_user_id=x_dev_telegram_user_id or settings.demo_telegram_user_id,
             username=x_dev_telegram_username or settings.demo_telegram_username,

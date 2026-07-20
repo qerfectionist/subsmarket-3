@@ -87,7 +87,7 @@ def confirm_access_received(
     today = kz_today()
     period_end = family.next_payment_date
     if period_end <= today:
-        period_end = today + timedelta(days=30 if family.period == "monthly" else 365)
+        period_end = add_payment_period(today, family.period)
 
     old_member_status = member.status
     member.status = "payment_due"

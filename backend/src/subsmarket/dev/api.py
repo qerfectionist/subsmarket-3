@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/dev", tags=["dev"])
 
 
 def require_development() -> None:
-    if not settings.is_development:
+    if not settings.is_development or not settings.dev_auth_enabled:
         raise HTTPException(status_code=404, detail="NOT_FOUND")
 
 

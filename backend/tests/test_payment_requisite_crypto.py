@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import os
 
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from subsmarket.core.config import settings
 from subsmarket.families.crypto import (
@@ -18,15 +21,37 @@ def _legacy_encrypt(secret: str, value: str) -> str:
     return Fernet(key).encrypt(value.encode("utf-8")).decode("ascii")
 
 
-def test_payment_requisite_crypto_uses_versioned_pbkdf2_format(
+def _v2_encrypt(secret: str, value: str) -> str:
+    salt = os.urandom(16)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=390_000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(secret.encode("utf-8")))
+    encrypted = Fernet(key).encrypt(value.encode("utf-8")).decode("ascii")
+    encoded_salt = base64.urlsafe_b64encode(salt).decode("ascii")
+    return f"v2:{encoded_salt}:{encrypted}"
+
+
+def test_payment_requisite_crypto_uses_cached_versioned_format(
     monkeypatch,
 ) -> None:
     monkeypatch.setattr(settings, "payment_requisite_secret", "test-secret")
 
     encrypted = encrypt_payment_requisite("+77001234567")
 
-    assert encrypted.startswith("v2:")
+    assert encrypted.startswith("v3:")
     assert "+77001234567" not in encrypted
+    assert decrypt_payment_requisite(encrypted) == "+77001234567"
+
+
+def test_payment_requisite_crypto_keeps_v2_tokens_readable(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "payment_requisite_secret", "test-secret")
+    encrypted = _v2_encrypt("test-secret", "+77001234567")
+
+    assert encrypted.startswith("v2:")
     assert decrypt_payment_requisite(encrypted) == "+77001234567"
 
 
@@ -34,5 +59,5 @@ def test_payment_requisite_crypto_keeps_legacy_tokens_readable(monkeypatch) -> N
     monkeypatch.setattr(settings, "payment_requisite_secret", "test-secret")
     encrypted = _legacy_encrypt("test-secret", "+77001234567")
 
-    assert not encrypted.startswith("v2:")
+    assert not encrypted.startswith(("v2:", "v3:"))
     assert decrypt_payment_requisite(encrypted) == "+77001234567"

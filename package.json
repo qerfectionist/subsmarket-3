@@ -7,7 +7,7 @@
     "test:ui": "npm --prefix frontend run test:ui",
     "dev": "node scripts/dev.mjs",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "node scripts/run-python.mjs -m uvicorn subsmarket.main:app --host 127.0.0.1 --port 8000 --reload",
+    "dev:backend": "node scripts/dev-backend.mjs",
     "backend:compile": "node scripts/run-python.mjs -m compileall -q backend/src backend/tests",
     "backend:test": "node scripts/run-python.mjs -m pytest backend/tests",
     "backend:test:postgres": "node scripts/run-postgres-tests.mjs",

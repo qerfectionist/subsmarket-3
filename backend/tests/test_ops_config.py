@@ -10,6 +10,7 @@ def test_production_config_checker_accepts_required_env(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "dev_auth_enabled", False)
     monkeypatch.setattr(settings, "database_url", "postgresql://db.example/subsmarket")
     monkeypatch.setattr(settings, "db_pool_size", 5)
     monkeypatch.setattr(settings, "db_max_overflow", 5)
@@ -131,6 +132,7 @@ def test_runtime_settings_reject_wildcard_cors_in_production(
     from subsmarket.main import create_app
 
     monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "dev_auth_enabled", False)
     monkeypatch.setattr(settings, "cors_allowed_origins", "*")
     monkeypatch.setattr(settings, "telegram_webhook_secret", "secret")
 
@@ -144,10 +146,23 @@ def test_runtime_settings_reject_missing_webhook_secret_in_production(
     from subsmarket.main import create_app
 
     monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "dev_auth_enabled", False)
     monkeypatch.setattr(settings, "cors_allowed_origins", "https://mini.example.com")
     monkeypatch.setattr(settings, "telegram_webhook_secret", None)
 
     with pytest.raises(RuntimeError, match="TELEGRAM_WEBHOOK_SECRET"):
+        create_app()
+
+
+def test_runtime_settings_reject_dev_auth_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from subsmarket.main import create_app
+
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "dev_auth_enabled", True)
+
+    with pytest.raises(RuntimeError, match="DEV_AUTH_ENABLED"):
         create_app()
 
 

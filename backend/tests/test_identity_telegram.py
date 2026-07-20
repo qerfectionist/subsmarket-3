@@ -105,6 +105,7 @@ def test_parse_telegram_user_allows_local_development_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "app_env", "development")
+    monkeypatch.setattr(settings, "dev_auth_enabled", True)
 
     telegram_user = parse_telegram_user(
         make_request("127.0.0.1"),
@@ -123,6 +124,7 @@ def test_parse_telegram_user_rejects_remote_development_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "app_env", "development")
+    monkeypatch.setattr(settings, "dev_auth_enabled", True)
 
     with pytest.raises(HTTPException) as exc:
         parse_telegram_user(
@@ -130,6 +132,23 @@ def test_parse_telegram_user_rejects_remote_development_fallback(
             x_telegram_init_data=None,
             x_dev_telegram_user_id=123,
             x_dev_telegram_username="remote_dev",
+        )
+
+    assert exc.value.status_code == 401
+    assert exc.value.detail == "TELEGRAM_INIT_DATA_REQUIRED"
+
+
+def test_parse_telegram_user_rejects_disabled_development_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "development")
+    monkeypatch.setattr(settings, "dev_auth_enabled", False)
+
+    with pytest.raises(HTTPException) as exc:
+        parse_telegram_user(
+            make_request("127.0.0.1"),
+            x_telegram_init_data=None,
+            x_dev_telegram_user_id=123,
         )
 
     assert exc.value.status_code == 401

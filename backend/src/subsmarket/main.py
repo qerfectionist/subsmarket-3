@@ -18,6 +18,8 @@ from subsmarket.marketplace.api import router as marketplace_router
 
 
 def validate_runtime_settings() -> None:
+    if settings.dev_auth_enabled and not settings.is_development:
+        raise RuntimeError("DEV_AUTH_ENABLED must be false outside development")
     if settings.is_development:
         return
     if "*" in settings.cors_origins:
@@ -49,7 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(account_marketplace_router)
     app.include_router(jobs_router)
     app.include_router(bot_router)
-    if settings.is_development:
+    if settings.is_development and settings.dev_auth_enabled:
         app.include_router(dev_router)
     return app
 

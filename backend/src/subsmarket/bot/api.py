@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hmac
 import logging
 from typing import Any
 
@@ -22,7 +23,10 @@ def verify_webhook_secret(secret_header: str | None) -> None:
             )
             return
         raise HTTPException(status_code=403, detail="TELEGRAM_WEBHOOK_SECRET_REQUIRED")
-    if secret_header != expected_secret:
+    if secret_header is None or not hmac.compare_digest(
+        secret_header,
+        expected_secret,
+    ):
         raise HTTPException(status_code=403, detail="TELEGRAM_WEBHOOK_SECRET_INVALID")
 
 

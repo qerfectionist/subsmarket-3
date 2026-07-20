@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hmac
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -20,7 +22,10 @@ def require_internal_job_token(
     x_internal_job_token: str | None = Header(default=None),
 ) -> None:
     if settings.internal_job_token:
-        if x_internal_job_token != settings.internal_job_token:
+        if x_internal_job_token is None or not hmac.compare_digest(
+            x_internal_job_token,
+            settings.internal_job_token,
+        ):
             raise HTTPException(status_code=403, detail="INVALID_INTERNAL_JOB_TOKEN")
         return
 
