@@ -58,13 +58,15 @@ and must never be committed.
 
 The GitHub workflow is only a fallback. Repository history has shown multi-hour
 gaps between scheduled runs, so it must not be the only production scheduler.
-Before public launch configure an independent scheduler (for example QStash or
-a Cloudflare Worker Cron Trigger) with this order every 5 minutes:
+The production implementation is in
+`ops/cloudflare-jobs-scheduler`. Before public launch deploy it as a Cloudflare
+Worker Cron Trigger with this order every 5 minutes:
 
 1. `POST /api/internal/jobs/run-due`;
 2. `POST /api/internal/jobs/dispatch-notifications`;
 3. `GET /api/internal/jobs/health`;
-4. send the success heartbeat only when all three responses are 2xx.
+4. require `run-due.job_errors` and dispatch failures to both equal zero;
+5. send the success heartbeat only when all checks pass.
 
 All protected calls require the `X-Internal-Job-Token` header. The scheduler
 must use the same secret as Render and must never put it in a query string.
@@ -75,6 +77,11 @@ Recommended production monitor settings:
 - grace period: 10 minutes;
 - alert when no successful heartbeat is received for 15 minutes;
 - alert channel: Telegram and email.
+
+The Worker also supports an authenticated `simulate_failure=true` manual run.
+The scheduler is not accepted as production-ready until this path produces a
+real Telegram/email alert. Setup and verification commands are documented in
+`ops/cloudflare-jobs-scheduler/README.md`.
 
 The repository secret `JOBS_HEARTBEAT_URL` is mandatory before launch. If it is
 absent, the fallback workflow logs that fact but cannot alert on a silent

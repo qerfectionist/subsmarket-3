@@ -33,7 +33,7 @@ export default defineConfig({
       cwd: path.join(repoRoot, "backend"),
       env: backendEnv,
       reuseExistingServer: true,
-      timeout: 30_000,
+      timeout: 60_000,
       url: "http://127.0.0.1:8001/ready"
     },
     {
@@ -43,7 +43,7 @@ export default defineConfig({
         VITE_SHOW_DEV_USER_SWITCH: "true"
       },
       reuseExistingServer: true,
-      timeout: 30_000,
+      timeout: 60_000,
       url: "http://127.0.0.1:5174/"
     }
   ],

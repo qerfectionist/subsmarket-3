@@ -17,6 +17,9 @@
     "production:smoke": "node scripts/run-python.mjs -m subsmarket.ops.production_smoke",
     "production:load-smoke": "node scripts/run-python.mjs -m subsmarket.ops.load_smoke",
     "production:check": "node scripts/production-check.mjs",
+    "restore:drill": "node scripts/restore-drill.mjs",
+    "scheduler:check": "npm --prefix ops/cloudflare-jobs-scheduler run check",
+    "scheduler:deploy": "npm --prefix ops/cloudflare-jobs-scheduler run deploy",
     "market:build-db": "node scripts/run-python.mjs tools/build_market_research_db.py",
     "market:stats": "node scripts/run-python.mjs tools/query_market_research_db.py stats",
     "market:services": "node scripts/run-python.mjs tools/query_market_research_db.py services",
@@ -26,6 +29,6 @@
     "openapi:sync": "npm run openapi:export && npm run openapi:types",
     "check:error-labels": "node scripts/check-error-labels.mjs",
     "check:diff": "git diff --check",
-    "check": "npm run backend:lint && npm run backend:compile && npm run backend:test && npm run check:error-labels && npm run build && npm run test:ui && npm run check:diff"
+    "check": "npm run backend:lint && npm run backend:compile && npm run backend:test && npm run check:error-labels && npm run build && npm run test:ui && npm run scheduler:check && npm run check:diff"
   }
 }

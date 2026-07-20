@@ -1,6 +1,6 @@
 # Production Cutover Status
 
-Last checked: 2026-06-27.
+Last checked: 2026-07-21.
 
 ## Public URLs
 
@@ -121,7 +121,7 @@ visibility.
 
 ## Latest Full Local Check
 
-Checked on 2026-06-27:
+Checked on 2026-07-21:
 
 ```powershell
 npm run check
@@ -131,12 +131,13 @@ Result:
 
 - backend lint: OK;
 - backend compile: OK;
-- backend tests: OK, 159 passed, 9 skipped;
-- PostgreSQL concurrency/security tests: OK, 9 passed against local Docker
+- backend tests: OK, 198 passed, 25 skipped because they require PostgreSQL;
+- PostgreSQL concurrency/security tests: OK, 25 passed against local Docker
   Postgres;
 - frontend build: OK;
-- Playwright E2E: OK, 7 passed;
-- diff check: OK, only Windows LF/CRLF warnings.
+- Playwright E2E: OK, 10 passed;
+- Cloudflare scheduler tests: OK, 5 passed;
+- diff check: OK, no whitespace errors.
 
 The latest backend hardening run added regression coverage for search/payment
 cursor pagination and Telegram token-safe error handling.
@@ -196,3 +197,32 @@ Verified in code on 2026-07-20:
   by `npm run check:error-labels`.
 
 Detailed backend launch plan: [backend-readiness-plan.md](backend-readiness-plan.md).
+
+## Infrastructure checklist status (2026-07-21)
+
+1. **Render token rotation: blocked on account login.** Local Gitleaks 8.30.1
+   scanned all 92 commits with `--log-opts=--all` and found no leaks; the latest
+   full-history GitHub Security workflow also passed. The previously shared
+   Render token still needs to be revoked and replaced after signing in. The
+   older statement above that a temporary key was revoked is not accepted as
+   evidence for this specific token.
+2. **Independent scheduler: implementation verified, deployment pending.**
+   `ops/cloudflare-jobs-scheduler` contains a Cloudflare Worker Cron Trigger for
+   `*/5 * * * *`. Its five tests pass and `wrangler deploy --dry-run` succeeds.
+   Deployment and Cloudflare Secrets are pending one-time Cloudflare login.
+3. **Heartbeat and failure alert: implementation verified, provider setup
+   pending.** The Worker sends success only after HTTP success, an empty
+   `run-due.job_errors`, zero notification failures, and strict healthy status.
+   Its authenticated simulated failure path is tested. A real heartbeat
+   provider, Telegram/email delivery, and observed test alert are still
+   required.
+4. **Restore drill: local rehearsal passed, production drill pending.** The
+   automated drill restored a logical dump into disposable PostgreSQL 17 and
+   verified migration `20260720_0030`, key table readability, zero orphaned
+   references, and successful decryption of all 13 local v2 requisites. Local
+   rehearsal RTO was 53 seconds. This does not satisfy the launch criterion
+   until the same command restores a production backup using production
+   encryption secrets.
+
+The checklist is not complete and public launch remains blocked on the four
+pending external confirmations above.

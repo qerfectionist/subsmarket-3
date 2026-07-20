@@ -63,6 +63,33 @@ encrypted payment requisites can be decrypted by the staging backend
 Run backend read-only smoke checks against the restored database. Delete the
 temporary database only after recording the result.
 
+The repository provides an automated drill that takes both connection strings
+only from environment variables, creates a random disposable target database,
+and never places passwords in command arguments:
+
+```powershell
+$env:RESTORE_SOURCE_DATABASE_URL='<production read/write database URL>'
+$env:RESTORE_PAYMENT_REQUISITE_SECRET='<current production encryption secret>'
+$env:RESTORE_PAYMENT_REQUISITE_PREVIOUS_SECRETS='<optional previous secrets>'
+$env:RESTORE_DRILL_TYPE='production-backup'
+npm run restore:drill
+Remove-Item Env:RESTORE_SOURCE_DATABASE_URL
+Remove-Item Env:RESTORE_PAYMENT_REQUISITE_SECRET
+Remove-Item Env:RESTORE_PAYMENT_REQUISITE_PREVIOUS_SECRETS
+Remove-Item Env:RESTORE_DRILL_TYPE
+```
+
+By default the command creates and later removes its own disposable PostgreSQL
+17 Docker container. `RESTORE_TARGET_ADMIN_URL` may instead point to an
+explicit isolated staging server; it must never point to production.
+
+The command dumps only the application-owned `public` schema, restores it with
+PostgreSQL 17 tooling, verifies the Alembic head, key table counts, orphaned
+references, and decryption of every payment requisite, then records RTO and the
+smoke result under the ignored `backups/` directory. A run against the local
+development database is only a rehearsal; it does not satisfy the production
+restore criterion.
+
 ## Schedule
 
 - Free test environment: manual logical backup before every migration or large
