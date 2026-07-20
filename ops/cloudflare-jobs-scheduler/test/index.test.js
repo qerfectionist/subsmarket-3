@@ -112,7 +112,7 @@ test("manual failure test is protected and calls the failure heartbeat", async (
       method: "POST",
       headers: { Authorization: "Bearer trigger-secret" },
     }),
-    environment(),
+    environment({ TRIGGER_TOKEN: "trigger-secret\r\n" }),
   );
   assert.equal(response.status, 503);
   assert.deepEqual(calls, ["https://heartbeat.example/failure"]);

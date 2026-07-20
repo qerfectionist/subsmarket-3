@@ -10,6 +10,7 @@ Last checked: 2026-07-21.
 | `https://www.subsmarket.xyz` | OK | Vercel, HTTP 200 |
 | `https://api.subsmarket.xyz/health` | OK | FastAPI health returns `{"status":"ok"}` |
 | `https://api.subsmarket.xyz/ready` | OK | Database readiness returns `database: ok`, rate limit returns `redis` |
+| `https://jobs.subsmarket.xyz/health` | OK | Cloudflare jobs scheduler health returns `{"status":"ok"}` |
 
 ## DNS
 
@@ -21,6 +22,7 @@ Cloudflare zone: `subsmarket.xyz`.
 | `A @` | `64.29.17.1` | DNS only |
 | `CNAME www` | `eb64be71de75cd46.vercel-dns-017.com` | DNS only |
 | `CNAME api` | `subsmarket-api.onrender.com` | Proxied |
+| `Worker jobs` | `subsmarket-jobs-scheduler` custom domain | Proxied |
 
 `api` is proxied because DNS-only mode produced Cloudflare Error 1000 with the
 Render target.
@@ -176,13 +178,9 @@ key used to set it has been revoked after setup.
 - Create a small test family and complete one test join/payment flow.
 - GitHub fallback uptime workflow is available at
   `.github/workflows/uptime-check.yml`.
-- Configure an independent five-minute scheduler. GitHub run history checked on
-  2026-07-20 contained multi-hour gaps and is not sufficient as the primary
-  production scheduler.
-- Create a heartbeat monitor and add its ping URL as the required GitHub secret
-  `JOBS_HEARTBEAT_URL`.
 - Upgrade the production Supabase project to a plan with automatic daily
-  backups and complete one restore drill using
+  backups. A production logical-backup restore drill has completed; the paid
+  backup policy is still required before traffic-sensitive public launch. See
   [database-backup-and-restore.md](database-backup-and-restore.md).
 
 Verified in code on 2026-07-20:
@@ -200,29 +198,37 @@ Detailed backend launch plan: [backend-readiness-plan.md](backend-readiness-plan
 
 ## Infrastructure checklist status (2026-07-21)
 
-1. **Render token rotation: blocked on account login.** Local Gitleaks 8.30.1
+1. **Render token rotation: complete.** Local Gitleaks 8.30.1
    scanned all 92 commits with `--log-opts=--all` and found no leaks; the latest
-   full-history GitHub Security workflow also passed. The previously shared
-   Render token still needs to be revoked and replaced after signing in. The
-   older statement above that a temporary key was revoked is not accepted as
-   evidence for this specific token.
-2. **Independent scheduler: implementation verified, deployment pending.**
-   `ops/cloudflare-jobs-scheduler` contains a Cloudflare Worker Cron Trigger for
-   `*/5 * * * *`. Its five tests pass and `wrangler deploy --dry-run` succeeds.
-   Deployment and Cloudflare Secrets are pending one-time Cloudflare login.
-3. **Heartbeat and failure alert: implementation verified, provider setup
-   pending.** The Worker sends success only after HTTP success, an empty
+   full-history GitHub Security workflow also passed. The exposed temporary
+   Render token was used only to read the production `INTERNAL_JOB_TOKEN` for
+   scheduler setup and was then revoked. Render Account Settings showed no
+   provisioned API keys on 2026-07-21.
+2. **Independent scheduler: deployed and verified.**
+   `ops/cloudflare-jobs-scheduler` is deployed at `jobs.subsmarket.xyz` with a
+   Cloudflare Cron Trigger for `*/5 * * * *`. Its five tests pass, all required
+   Cloudflare secrets are present, and a manual production run completed the
+   strict `run-due -> dispatch-notifications -> health` sequence successfully.
+3. **Heartbeat and failure alert: configured and verified.** The Worker
+   sends success only after HTTP success, an empty
    `run-due.job_errors`, zero notification failures, and strict healthy status.
-   Its authenticated simulated failure path is tested. A real heartbeat
-   provider, Telegram/email delivery, and observed test alert are still
-   required.
-4. **Restore drill: local rehearsal passed, production drill pending.** The
-   automated drill restored a logical dump into disposable PostgreSQL 17 and
-   verified migration `20260720_0030`, key table readability, zero orphaned
-   references, and successful decryption of all 13 local v2 requisites. Local
-   rehearsal RTO was 53 seconds. This does not satisfy the launch criterion
-   until the same command restores a production backup using production
-   encryption secrets.
+   Healthchecks.io success and `/fail` URLs are configured as Worker secrets.
+   The authenticated simulated failure path returned HTTP 503 and emitted a
+   real failure ping on 2026-07-21. Healthchecks is configured with a five-minute
+   period, ten-minute grace, and an enabled email notification method. Its event
+   history recorded success, explicit failure, the `up -> down` transition, a
+   subsequent success, and the `down -> up` recovery transition.
+4. **Restore drill: production logical backup verified.** On 2026-07-21 the
+   automated drill dumped the production Supabase `public` schema, restored it
+   into disposable PostgreSQL 17, and completed the read-only smoke in 33
+   seconds. Migration `20260720_0030` matched the repository head, 31 catalog
+   services and two users were readable, all orphan counters were zero, and no
+   smoke problems were reported. Production currently has no encrypted payment
+   requisites, so there were no ciphertext rows to decrypt in this drill. The
+   restore script now creates missing Supabase client roles (`anon` and
+   `authenticated`) as `NOLOGIN` roles before restoring RLS policies into clean
+   PostgreSQL. Automatic daily managed backups remain a separate launch-policy
+   requirement until the Supabase plan is upgraded.
 
 The checklist is not complete and public launch remains blocked on the four
 pending external confirmations above.

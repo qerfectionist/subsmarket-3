@@ -58,7 +58,7 @@ normal call. The token does not become part of the URL.
 $env:SCHEDULER_TRIGGER_TOKEN='<temporary local value>'
 curl.exe --fail-with-body --request POST `
   --header "Authorization: Bearer $env:SCHEDULER_TRIGGER_TOKEN" `
-  https://subsmarket-jobs-scheduler.<account>.workers.dev/run
+  https://jobs.subsmarket.xyz/run
 ```
 
 Verify an actual alert by running the protected failure path:
@@ -66,7 +66,7 @@ Verify an actual alert by running the protected failure path:
 ```powershell
 curl.exe --request POST `
   --header "Authorization: Bearer $env:SCHEDULER_TRIGGER_TOKEN" `
-  "https://subsmarket-jobs-scheduler.<account>.workers.dev/run?simulate_failure=true"
+  "https://jobs.subsmarket.xyz/run?simulate_failure=true"
 Remove-Item Env:SCHEDULER_TRIGGER_TOKEN
 ```
 

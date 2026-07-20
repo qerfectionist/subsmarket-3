@@ -138,9 +138,24 @@ export async function executeJobs(env, { simulateFailure = false } = {}) {
   }
 }
 
+function timingSafeEqual(left, right) {
+  const encoder = new TextEncoder();
+  const leftBytes = encoder.encode(left);
+  const rightBytes = encoder.encode(right);
+  if (leftBytes.length !== rightBytes.length) return false;
+  let difference = 0;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    difference |= leftBytes[index] ^ rightBytes[index];
+  }
+  return difference === 0;
+}
+
 function isAuthorized(request, env) {
-  if (!env.TRIGGER_TOKEN) return false;
-  return request.headers.get("Authorization") === `Bearer ${env.TRIGGER_TOKEN}`;
+  const expected = String(env.TRIGGER_TOKEN ?? "").trim();
+  const authorization = request.headers.get("Authorization") ?? "";
+  if (!expected || !authorization.startsWith("Bearer ")) return false;
+  const provided = authorization.slice("Bearer ".length).trim();
+  return timingSafeEqual(provided, expected);
 }
 
 export default {

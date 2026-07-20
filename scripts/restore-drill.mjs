@@ -135,6 +135,29 @@ function postgresCommand(url, executable, extraArgs = [], options = {}) {
   );
 }
 
+function ensureSupabaseClientRoles(adminUrl, databaseName) {
+  const sql = `
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    CREATE ROLE anon NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    CREATE ROLE authenticated NOLOGIN;
+  END IF;
+END
+$$;
+`;
+  postgresCommand(adminUrl, "psql", [
+    "--dbname",
+    databaseName,
+    "--set",
+    "ON_ERROR_STOP=1",
+    "--command",
+    sql,
+  ]);
+}
+
 mkdirSync(backupDir, { recursive: true });
 const startedAt = new Date();
 const timestamp = startedAt.toISOString().replaceAll(/[:.]/g, "-");
@@ -182,6 +205,7 @@ try {
   console.log(`Creating disposable database ${targetDatabase}...`);
   postgresCommand(admin, "dropdb", ["--if-exists", "--force", targetDatabase]);
   postgresCommand(admin, "createdb", [targetDatabase]);
+  ensureSupabaseClientRoles(admin, targetDatabase);
   run(
     ["--volume", `${backupDir}:/backups`, postgresImage, "pg_restore"],
     [

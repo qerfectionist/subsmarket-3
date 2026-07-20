@@ -2,7 +2,14 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "subsmarket-jobs-scheduler",
   "main": "src/index.js",
-  "compatibility_date": "2026-07-21",
+  "compatibility_date": "2026-07-20",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "jobs.subsmarket.xyz",
+      "custom_domain": true
+    }
+  ],
   "triggers": {
     "crons": ["*/5 * * * *"]
   },
