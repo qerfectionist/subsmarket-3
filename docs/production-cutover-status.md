@@ -230,5 +230,20 @@ Detailed backend launch plan: [backend-readiness-plan.md](backend-readiness-plan
    PostgreSQL. Automatic daily managed backups remain a separate launch-policy
    requirement until the Supabase plan is upgraded.
 
-The checklist is not complete and public launch remains blocked on the four
-pending external confirmations above.
+The four infrastructure readiness checks above are complete. Infrastructure
+is ready for the first production families and no longer blocks the controlled
+launch.
+
+The following operational follow-ups are not launch blockers, but remain
+required as production data and traffic grow:
+
+- Repeat the restore drill after the first encrypted payment requisite is
+  stored so recovery is verified with the production
+  `PAYMENT_REQUISITE_SECRET`, not only with an empty ciphertext set.
+- Run restore drills periodically and record each measured RTO; the current
+  33-second result reflects a nearly empty production database and is not a
+  long-term capacity estimate.
+- Enable managed automatic Supabase backups before the service holds dozens of
+  active families.
+- Add Telegram delivery to the existing Healthchecks.io email notification
+  method and verify it with the authenticated simulated-failure path.
