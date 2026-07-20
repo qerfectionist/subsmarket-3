@@ -46,6 +46,7 @@ const result = spawnSync(
     "-m",
     "pytest",
     "backend/tests/test_postgres_concurrency.py",
+    "backend/tests/test_postgres_jobs.py",
     "backend/tests/test_postgres_schema_security.py",
     "-q"
   ],

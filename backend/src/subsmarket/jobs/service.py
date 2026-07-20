@@ -7,7 +7,7 @@ from datetime import UTC, date, timedelta
 from uuid import UUID
 
 from sqlalchemy import and_, or_, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, contains_eager
 
 from subsmarket.core.config import settings
 from subsmarket.core.database import kz_today, utcnow
@@ -313,12 +313,13 @@ def expire_family_requests(db: Session) -> tuple[int, int]:
     requests = list(
         db.scalars(
             select(FamilyRequest)
-            .options(joinedload(FamilyRequest.family))
+            .join(FamilyRequest.family)
+            .options(contains_eager(FamilyRequest.family))
             .where(FamilyRequest.status == "pending")
             .where(FamilyRequest.expires_at <= now)
             .order_by(FamilyRequest.expires_at.asc())
             .limit(settings.job_batch_size)
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyRequest, skip_locked=True)
         ).all()
     )
 
@@ -374,12 +375,13 @@ def send_access_confirmation_reminders(db: Session) -> int:
     members = list(
         db.scalars(
             select(FamilyMember)
-            .options(joinedload(FamilyMember.family))
+            .join(FamilyMember.family)
+            .options(contains_eager(FamilyMember.family))
             .where(FamilyMember.status == "awaiting_confirmation")
             .where(FamilyMember.access_provided_at <= now - timedelta(hours=24))
             .order_by(FamilyMember.access_provided_at.asc())
             .limit(_job_scan_limit())
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyMember, skip_locked=True)
         ).all()
     )
 
@@ -431,16 +433,18 @@ def mark_overdue_first_payments(db: Session) -> tuple[int, int]:
     payments = list(
         db.scalars(
             select(FamilyPayment)
+            .join(FamilyPayment.family)
+            .join(FamilyPayment.member)
             .options(
-                joinedload(FamilyPayment.family),
-                joinedload(FamilyPayment.member),
+                contains_eager(FamilyPayment.family),
+                contains_eager(FamilyPayment.member),
             )
             .where(FamilyPayment.kind == "first")
             .where(FamilyPayment.status == "due")
             .where(FamilyPayment.due_at <= now)
             .order_by(FamilyPayment.due_at.asc())
             .limit(settings.job_batch_size)
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyPayment, skip_locked=True)
         ).all()
     )
 
@@ -590,14 +594,15 @@ def activate_regular_payments(db: Session) -> tuple[int, int]:
     payments = list(
         db.scalars(
             select(FamilyPayment)
-            .options(joinedload(FamilyPayment.member))
+            .join(FamilyPayment.member)
+            .options(contains_eager(FamilyPayment.member))
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status == "scheduled")
             .where(FamilyPayment.due_at <= now)
             .where(FamilyPayment.due_at > now - timedelta(hours=24))
             .order_by(FamilyPayment.due_at.asc())
             .limit(settings.job_batch_size)
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=(FamilyPayment, FamilyMember), skip_locked=True)
         ).all()
     )
 
@@ -648,16 +653,18 @@ def mark_overdue_regular_payments(db: Session) -> tuple[int, int]:
     payments = list(
         db.scalars(
             select(FamilyPayment)
+            .join(FamilyPayment.family)
+            .join(FamilyPayment.member)
             .options(
-                joinedload(FamilyPayment.family),
-                joinedload(FamilyPayment.member),
+                contains_eager(FamilyPayment.family),
+                contains_eager(FamilyPayment.member),
             )
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status.in_({"scheduled", "due"}))
             .where(FamilyPayment.due_at <= now - timedelta(hours=24))
             .order_by(FamilyPayment.due_at.asc())
             .limit(settings.job_batch_size)
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=(FamilyPayment, FamilyMember), skip_locked=True)
         ).all()
     )
 
@@ -723,8 +730,8 @@ def send_regular_payment_reminders(db: Session) -> int:
             .join(Family, Family.id == FamilyPayment.family_id)
             .join(FamilyMember, FamilyMember.id == FamilyPayment.member_id)
             .options(
-                joinedload(FamilyPayment.family),
-                joinedload(FamilyPayment.member),
+                contains_eager(FamilyPayment.family),
+                contains_eager(FamilyPayment.member),
             )
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status == "scheduled")
@@ -732,7 +739,7 @@ def send_regular_payment_reminders(db: Session) -> int:
             .where(FamilyMember.status.in_(REGULAR_PAYMENT_MEMBER_STATUSES))
             .order_by(FamilyPayment.due_at.asc())
             .limit(_job_scan_limit())
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyPayment, skip_locked=True)
         ).all()
     )
 
@@ -767,8 +774,8 @@ def send_regular_payment_reminders(db: Session) -> int:
             .join(Family, Family.id == FamilyPayment.family_id)
             .join(FamilyMember, FamilyMember.id == FamilyPayment.member_id)
             .options(
-                joinedload(FamilyPayment.family),
-                joinedload(FamilyPayment.member),
+                contains_eager(FamilyPayment.family),
+                contains_eager(FamilyPayment.member),
             )
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status.in_({"due", "overdue"}))
@@ -778,7 +785,7 @@ def send_regular_payment_reminders(db: Session) -> int:
             )
             .order_by(FamilyPayment.due_at.asc())
             .limit(_job_scan_limit())
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyPayment, skip_locked=True)
         ).all()
     )
     for payment in open_payments:
@@ -802,12 +809,13 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
     payments = list(
         db.scalars(
             select(FamilyPayment)
-            .options(joinedload(FamilyPayment.family))
+            .join(FamilyPayment.family)
+            .options(contains_eager(FamilyPayment.family))
             .where(FamilyPayment.status == "payment_reported")
             .where(FamilyPayment.reported_paid_at.is_not(None))
             .order_by(FamilyPayment.reported_paid_at.asc())
             .limit(_job_scan_limit())
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyPayment, skip_locked=True)
         ).all()
     )
 
@@ -862,7 +870,7 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
         db.scalars(
             select(FamilyMember)
             .join(Family, Family.id == FamilyMember.family_id)
-            .options(joinedload(FamilyMember.family))
+            .options(contains_eager(FamilyMember.family))
             .where(Family.status == "closing")
             .where(Family.closes_at > now)
             .where(Family.closing_started_at <= now - timedelta(days=1))
@@ -871,7 +879,7 @@ def send_closing_acknowledgement_reminders(db: Session) -> int:
             .where(FamilyMember.closing_acknowledged_at.is_(None))
             .order_by(Family.closes_at.asc(), FamilyMember.created_at.asc())
             .limit(_job_scan_limit())
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyMember, skip_locked=True)
         ).all()
     )
 
@@ -1031,12 +1039,13 @@ def execute_member_removals(db: Session) -> tuple[int, int]:
     members = list(
         db.scalars(
             select(FamilyMember)
-            .options(joinedload(FamilyMember.user))
+            .join(FamilyMember.user)
+            .options(contains_eager(FamilyMember.user))
             .where(FamilyMember.status == "removal_pending")
             .where(FamilyMember.removal_scheduled_at <= now)
             .order_by(FamilyMember.removal_scheduled_at.asc())
             .limit(settings.job_batch_size)
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=FamilyMember, skip_locked=True)
         ).all()
     )
 
