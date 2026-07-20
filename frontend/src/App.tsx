@@ -65,6 +65,7 @@ import {
   useUpdateFamilyVisibility
 } from "./hooks/useApi";
 import { CreateFamilyScreen } from "./screens/CreateFamilyScreen";
+import { AccountsScreen } from "./screens/AccountsScreen";
 import { FamilyDetailsScreen } from "./screens/FamilyDetailsScreen";
 import { GigabytesScreen } from "./screens/GigabytesScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
@@ -121,6 +122,10 @@ export function App() {
   );
   const [gigabytesEntryRequestRole, setGigabytesEntryRequestRole] =
     useState<"buyer" | "seller">("buyer");
+  const [accountsEntryMode, setAccountsEntryMode] =
+    useState<"catalog" | "requests">("catalog");
+  const [accountsEntryRequestRole, setAccountsEntryRequestRole] =
+    useState<"buyer" | "seller">("buyer");
   const [marketResetToken, setMarketResetToken] = useState(0);
   const [ownerDetails, setOwnerDetails] = useState<
     Record<string, OwnerFamilyDetails>
@@ -166,8 +171,14 @@ export function App() {
     (marketplaceActionSummary?.accepted_sales_requests ?? 0);
   const marketplacePurchaseActionCount =
     marketplaceActionSummary?.accepted_purchase_requests ?? 0;
+  const accountSalesActionCount =
+    (marketplaceActionSummary?.pending_account_sales_requests ?? 0) +
+    (marketplaceActionSummary?.accepted_account_sales_requests ?? 0);
+  const accountPurchaseActionCount =
+    marketplaceActionSummary?.accepted_account_purchase_requests ?? 0;
   const marketplacePendingActionsCount =
-    marketplaceSalesActionCount + marketplacePurchaseActionCount;
+    marketplaceSalesActionCount + marketplacePurchaseActionCount +
+    accountSalesActionCount + accountPurchaseActionCount;
   const selectedFamilyView = familyViewQuery.data ?? null;
   const selectedFamilyAudit = familyAuditQuery.data ?? [];
   const selectedFamilyInvite = familyInviteQuery.data ?? null;
@@ -560,6 +571,11 @@ export function App() {
             setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
           }}
+          onOpenAccounts={() => {
+            setAccountsEntryMode("catalog");
+            setAccountsEntryRequestRole("buyer");
+            setTab("accounts");
+          }}
           onOpenFamily={(familyId) => openFamily(familyId, "home")}
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
@@ -599,6 +615,8 @@ export function App() {
           requests={myRequests}
           marketplaceSalesActionCount={marketplaceSalesActionCount}
           marketplacePurchaseActionCount={marketplacePurchaseActionCount}
+          accountSalesActionCount={accountSalesActionCount}
+          accountPurchaseActionCount={accountPurchaseActionCount}
           onOpenMarketplaceSalesActions={() => {
             setGigabytesEntryMode("requests");
             setGigabytesEntryRequestRole("seller");
@@ -608,6 +626,16 @@ export function App() {
             setGigabytesEntryMode("requests");
             setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
+          }}
+          onOpenAccountSalesActions={() => {
+            setAccountsEntryMode("requests");
+            setAccountsEntryRequestRole("seller");
+            setTab("accounts");
+          }}
+          onOpenAccountPurchaseActions={() => {
+            setAccountsEntryMode("requests");
+            setAccountsEntryRequestRole("buyer");
+            setTab("accounts");
           }}
           busy={busy}
           isLoading={myFamiliesQuery.isLoading}
@@ -834,6 +862,14 @@ export function App() {
         <GigabytesScreen
           initialMode={gigabytesEntryMode}
           initialRequestRole={gigabytesEntryRequestRole}
+          onBack={() => setTab("home")}
+        />
+      )}
+
+      {tab === "accounts" && (
+        <AccountsScreen
+          initialMode={accountsEntryMode}
+          initialRequestRole={accountsEntryRequestRole}
           onBack={() => setTab("home")}
         />
       )}

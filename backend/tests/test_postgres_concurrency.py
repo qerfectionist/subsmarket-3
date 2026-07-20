@@ -35,6 +35,17 @@ from subsmarket.families.service import (
 from subsmarket.identity.models import User
 from subsmarket.identity.schemas import TelegramUserData
 from subsmarket.identity.service import upsert_user
+from subsmarket.marketplace.account_models import (
+    MarketplaceAccountListing,
+    MarketplaceAccountRequest,
+    MarketplaceAccountService,
+)
+from subsmarket.marketplace.account_schemas import AccountListingCreate
+from subsmarket.marketplace.account_service import (
+    accept_account_request,
+    create_account_listing,
+    create_account_request,
+)
 from subsmarket.marketplace.models import (
     MarketplaceListing,
     MarketplaceListingRequest,
@@ -1297,6 +1308,115 @@ def test_parallel_marketplace_accepts_are_independent_without_inventory() -> Non
             )
             db.execute(
                 delete(MarketplaceOperator).where(MarketplaceOperator.id == operator_id)
+            )
+            db.execute(delete(User).where(User.id.in_(user_ids)))
+            db.commit()
+        engine.dispose()
+
+
+def test_parallel_account_accepts_keep_listing_active() -> None:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=4, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+
+    with session_factory() as db:
+        service = MarketplaceAccountService(
+            slug=f"account-race-{suffix}",
+            name="Account Race",
+            is_active=True,
+        )
+        seller = User(
+            telegram_user_id=980000000 + int(suffix[:6], 16),
+            username=f"account_seller_{suffix}",
+            first_name="Seller",
+        )
+        buyers = [
+            User(
+                telegram_user_id=990000000 + int(suffix[:6], 16) + index,
+                username=f"account_buyer_{index}_{suffix}",
+                first_name=f"Buyer {index}",
+            )
+            for index in range(2)
+        ]
+        db.add_all([service, seller, *buyers])
+        db.commit()
+        listing = create_account_listing(
+            db,
+            seller,
+            AccountListingCreate(
+                service_slug=service.slug,
+                title="Shared account access",
+                price_kzt=2500,
+            ),
+        )
+        requests = [
+            create_account_request(db, buyer, listing.id) for buyer in buyers
+        ]
+        db.commit()
+        request_ids = [request.id for request in requests]
+        listing_id = listing.id
+        service_id = service.id
+        seller_id = seller.id
+        user_ids = [seller.id, *(buyer.id for buyer in buyers)]
+
+    barrier = threading.Barrier(2)
+    results: list[str] = []
+
+    def accept(request_id: uuid.UUID) -> None:
+        with session_factory() as db:
+            seller = db.get(User, seller_id)
+            assert seller is not None
+            barrier.wait(timeout=10)
+            try:
+                result = accept_account_request(db, seller, request_id)
+                db.commit()
+                results.append(result.status)
+            except HTTPException as exc:
+                db.rollback()
+                results.append(str(exc.detail))
+            except Exception as exc:  # pragma: no cover - exact database failure
+                db.rollback()
+                results.append(f"database-error:{type(exc).__name__}:{exc}")
+
+    threads = [
+        threading.Thread(target=accept, args=(request_id,), daemon=True)
+        for request_id in request_ids
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert results.count("accepted") == 2, results
+        assert not any(result.startswith("database-error") for result in results)
+        with session_factory() as db:
+            stored = db.get(MarketplaceAccountListing, listing_id)
+            assert stored is not None
+            assert stored.status == "active"
+    finally:
+        with session_factory() as db:
+            db.execute(
+                delete(NotificationJob).where(
+                    NotificationJob.recipient_user_id.in_(user_ids)
+                )
+            )
+            db.execute(
+                delete(MarketplaceAccountRequest).where(
+                    MarketplaceAccountRequest.listing_id == listing_id
+                )
+            )
+            db.execute(
+                delete(MarketplaceAccountListing).where(
+                    MarketplaceAccountListing.id == listing_id
+                )
+            )
+            db.execute(
+                delete(MarketplaceAccountService).where(
+                    MarketplaceAccountService.id == service_id
+                )
             )
             db.execute(delete(User).where(User.id.in_(user_ids)))
             db.commit()

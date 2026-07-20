@@ -13,6 +13,10 @@ from sqlalchemy.orm import Session, joinedload
 from subsmarket.core.config import settings
 from subsmarket.core.database import utcnow
 from subsmarket.identity.models import User
+from subsmarket.marketplace.account_models import (
+    MarketplaceAccountListing,
+    MarketplaceAccountRequest,
+)
 from subsmarket.marketplace.models import (
     MarketplaceListing,
     MarketplaceListingRequest,
@@ -283,10 +287,41 @@ def get_marketplace_action_summary(
         .select_from(MarketplaceListingRequest)
         .join(MarketplaceListing)
     ).one()
+    (
+        pending_account_sales_count,
+        accepted_account_sales_count,
+        accepted_account_purchase_count,
+    ) = db.execute(
+        select(
+            func.count(MarketplaceAccountRequest.id).filter(
+                and_(
+                    MarketplaceAccountListing.seller_user_id == user.id,
+                    MarketplaceAccountRequest.status == "pending",
+                )
+            ),
+            func.count(MarketplaceAccountRequest.id).filter(
+                and_(
+                    MarketplaceAccountListing.seller_user_id == user.id,
+                    MarketplaceAccountRequest.status == "accepted",
+                )
+            ),
+            func.count(MarketplaceAccountRequest.id).filter(
+                and_(
+                    MarketplaceAccountRequest.buyer_user_id == user.id,
+                    MarketplaceAccountRequest.status == "accepted",
+                )
+            ),
+        )
+        .select_from(MarketplaceAccountRequest)
+        .join(MarketplaceAccountListing)
+    ).one()
     return MarketplaceActionSummaryOut(
         pending_sales_requests=pending_sales_count,
         accepted_sales_requests=accepted_sales_count,
         accepted_purchase_requests=accepted_purchase_count,
+        pending_account_sales_requests=pending_account_sales_count,
+        accepted_account_sales_requests=accepted_account_sales_count,
+        accepted_account_purchase_requests=accepted_account_purchase_count,
     )
 
 

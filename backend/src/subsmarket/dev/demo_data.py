@@ -13,6 +13,10 @@ from subsmarket.families.models import (
     FamilyRequestRestriction,
 )
 from subsmarket.identity.models import User
+from subsmarket.marketplace.account_models import (
+    MarketplaceAccountListing,
+    MarketplaceAccountRequest,
+)
 from subsmarket.marketplace.models import (
     MarketplaceListing,
     MarketplaceListingRequest,
@@ -56,6 +60,29 @@ def cleanup_demo_data(db: Session) -> dict[str, int]:
                 MarketplaceListing.id.in_(marketplace_listing_ids)
             )
         )
+    account_listing_ids = list(
+        db.scalars(
+            select(MarketplaceAccountListing.id).where(
+                MarketplaceAccountListing.seller_user_id.in_(demo_user_ids)
+            )
+        )
+    )
+    account_request_filter = MarketplaceAccountRequest.buyer_user_id.in_(
+        demo_user_ids
+    )
+    if account_listing_ids:
+        account_request_filter = account_request_filter | (
+            MarketplaceAccountRequest.listing_id.in_(account_listing_ids)
+        )
+    db.execute(
+        delete(MarketplaceAccountRequest).where(account_request_filter)
+    )
+    if account_listing_ids:
+        db.execute(
+            delete(MarketplaceAccountListing).where(
+                MarketplaceAccountListing.id.in_(account_listing_ids)
+            )
+        )
     if family_ids:
         db.execute(delete(FamilyPayment).where(FamilyPayment.family_id.in_(family_ids)))
         db.execute(delete(FamilyMember).where(FamilyMember.family_id.in_(family_ids)))
@@ -86,4 +113,5 @@ def cleanup_demo_data(db: Session) -> dict[str, int]:
         "users": len(demo_user_ids),
         "families": len(family_ids),
         "marketplace_listings": len(marketplace_listing_ids),
+        "account_listings": len(account_listing_ids),
     }

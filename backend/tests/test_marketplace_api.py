@@ -147,11 +147,17 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
         "pending_sales_requests": 1,
         "accepted_sales_requests": 0,
         "accepted_purchase_requests": 0,
+        "pending_account_sales_requests": 0,
+        "accepted_account_sales_requests": 0,
+        "accepted_account_purchase_requests": 0,
     }
     assert client.get("/api/marketplace/actions/me", headers=buyer).json() == {
         "pending_sales_requests": 0,
         "accepted_sales_requests": 0,
         "accepted_purchase_requests": 0,
+        "pending_account_sales_requests": 0,
+        "accepted_account_sales_requests": 0,
+        "accepted_account_purchase_requests": 0,
     }
 
     accepted = client.post(
@@ -165,11 +171,17 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
         "pending_sales_requests": 0,
         "accepted_sales_requests": 1,
         "accepted_purchase_requests": 0,
+        "pending_account_sales_requests": 0,
+        "accepted_account_sales_requests": 0,
+        "accepted_account_purchase_requests": 0,
     }
     assert client.get("/api/marketplace/actions/me", headers=buyer).json() == {
         "pending_sales_requests": 0,
         "accepted_sales_requests": 0,
         "accepted_purchase_requests": 1,
+        "pending_account_sales_requests": 0,
+        "accepted_account_sales_requests": 0,
+        "accepted_account_purchase_requests": 0,
     }
 
     assert client.post(
@@ -188,11 +200,17 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
         "pending_sales_requests": 0,
         "accepted_sales_requests": 0,
         "accepted_purchase_requests": 0,
+        "pending_account_sales_requests": 0,
+        "accepted_account_sales_requests": 0,
+        "accepted_account_purchase_requests": 0,
     }
     assert client.get("/api/marketplace/actions/me", headers=buyer).json() == {
         "pending_sales_requests": 0,
         "accepted_sales_requests": 0,
         "accepted_purchase_requests": 0,
+        "pending_account_sales_requests": 0,
+        "accepted_account_sales_requests": 0,
+        "accepted_account_purchase_requests": 0,
     }
     assert client.get(
         f"/api/marketplace/listings/{listing['id']}", headers=buyer

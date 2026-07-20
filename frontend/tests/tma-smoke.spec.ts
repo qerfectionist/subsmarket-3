@@ -44,10 +44,11 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await page.locator(".gb-back").click({ force: true });
   await expect(page.getByTestId("market-screen")).toBeVisible();
 
-  await openMarketSection(page, "market-buy-accounts", "market-section-accounts");
-  await expect(page.getByTestId("market-section-soon-accounts")).toBeVisible();
-  await expect(page.getByTestId("market-section-action-accounts-0")).toBeVisible();
-  await page.locator(".market-section-back").click({ force: true });
+  await page.getByTestId("market-buy-accounts").click({ force: true });
+  await expect(page.getByTestId("accounts-screen")).toBeVisible();
+  await expect(page.getByText("Купить аккаунт", { exact: true })).toBeVisible();
+  await page.locator(".gb-back").click({ force: true });
+  await expect(page.getByTestId("market-screen")).toBeVisible();
 
   await page.locator(".bottom-nav button").nth(0).click({ force: true });
   await expect(page.getByTestId("invite-code-input")).toBeVisible();

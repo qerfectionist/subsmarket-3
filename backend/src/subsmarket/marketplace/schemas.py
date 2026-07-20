@@ -127,3 +127,6 @@ class MarketplaceActionSummaryOut(BaseModel):
     pending_sales_requests: int = Field(ge=0)
     accepted_sales_requests: int = Field(ge=0)
     accepted_purchase_requests: int = Field(ge=0)
+    pending_account_sales_requests: int = Field(default=0, ge=0)
+    accepted_account_sales_requests: int = Field(default=0, ge=0)
+    accepted_account_purchase_requests: int = Field(default=0, ge=0)

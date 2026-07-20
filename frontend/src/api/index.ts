@@ -1,4 +1,5 @@
 export * from "./catalog";
+export * from "./accounts";
 export * from "./client";
 export * from "./dev";
 export * from "./families";

@@ -13,6 +13,7 @@ from subsmarket.dev.api import router as dev_router
 from subsmarket.families.api import router as families_router
 from subsmarket.identity.api import router as identity_router
 from subsmarket.jobs.api import router as jobs_router
+from subsmarket.marketplace.account_api import router as account_marketplace_router
 from subsmarket.marketplace.api import router as marketplace_router
 
 
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(catalog_router)
     app.include_router(families_router)
     app.include_router(marketplace_router)
+    app.include_router(account_marketplace_router)
     app.include_router(jobs_router)
     app.include_router(bot_router)
     if settings.is_development:

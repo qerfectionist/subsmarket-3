@@ -187,7 +187,10 @@ export function BottomNav({
   onReselect?: (tab: Tab) => void;
   badges?: Partial<Record<Tab, number>>;
 }) {
-  const activeValue = active === "family" || active === "gigabytes" ? "" : active;
+  const activeValue =
+    active === "family" || active === "gigabytes" || active === "accounts"
+      ? ""
+      : active;
 
   return (
     <nav className="bottom-nav" aria-label="Главная навигация">

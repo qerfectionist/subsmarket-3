@@ -1182,6 +1182,263 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/marketplace/accounts/services": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Account Services */
+        get: operations["get_account_services_api_marketplace_accounts_services_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Account Listings */
+        get: operations["get_account_listings_api_marketplace_accounts_listings_get"];
+        put?: never;
+        /** Post Account Listing */
+        post: operations["post_account_listing_api_marketplace_accounts_listings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Account Listings */
+        get: operations["get_my_account_listings_api_marketplace_accounts_listings_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings/{listing_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Account Listing */
+        get: operations["get_account_listing_api_marketplace_accounts_listings__listing_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Account Listing */
+        patch: operations["patch_account_listing_api_marketplace_accounts_listings__listing_id__patch"];
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings/{listing_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Pause Account Listing */
+        post: operations["post_pause_account_listing_api_marketplace_accounts_listings__listing_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings/{listing_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Resume Account Listing */
+        post: operations["post_resume_account_listing_api_marketplace_accounts_listings__listing_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings/{listing_id}/renew": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Renew Account Listing */
+        post: operations["post_renew_account_listing_api_marketplace_accounts_listings__listing_id__renew_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings/{listing_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Archive Account Listing */
+        post: operations["post_archive_account_listing_api_marketplace_accounts_listings__listing_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/listings/{listing_id}/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Account Request */
+        post: operations["post_account_request_api_marketplace_accounts_listings__listing_id__requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/requests/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Account Requests */
+        get: operations["get_my_account_requests_api_marketplace_accounts_requests_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/requests/{request_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Account Request Accept */
+        post: operations["post_account_request_accept_api_marketplace_accounts_requests__request_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Account Request Reject */
+        post: operations["post_account_request_reject_api_marketplace_accounts_requests__request_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/requests/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Account Request Cancel */
+        post: operations["post_account_request_cancel_api_marketplace_accounts_requests__request_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/requests/{request_id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Account Request Close */
+        post: operations["post_account_request_close_api_marketplace_accounts_requests__request_id__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace/accounts/requests/{request_id}/remind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Account Request Remind */
+        post: operations["post_account_request_remind_api_marketplace_accounts_requests__request_id__remind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/internal/jobs/run-due": {
         parameters: {
             query?: never;
@@ -1293,6 +1550,172 @@ export interface components {
             member: components["schemas"]["FamilyMemberOut"];
             payment: components["schemas"]["FamilyPaymentOut"];
             payment_requisite: components["schemas"]["PaymentRequisiteOut"];
+        };
+        /** AccountListingCreate */
+        AccountListingCreate: {
+            /** Service Slug */
+            service_slug: string;
+            /** Title */
+            title: string;
+            /** Price Kzt */
+            price_kzt: number;
+            /** Description */
+            description?: string | null;
+        };
+        /** AccountListingOut */
+        AccountListingOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            service: components["schemas"]["AccountServiceOut"];
+            /** Title */
+            title: string;
+            /** Price Kzt */
+            price_kzt: number;
+            /** Description */
+            description?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "expired" | "archived";
+            /** Is Owner */
+            is_owner: boolean;
+            /** Can Renew */
+            can_renew: boolean;
+            /** Renew Available At */
+            renew_available_at?: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AccountListingPageOut */
+        AccountListingPageOut: {
+            /** Items */
+            items: components["schemas"]["AccountListingOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** AccountListingUpdate */
+        AccountListingUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Price Kzt */
+            price_kzt?: number | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** AccountRequestAction */
+        AccountRequestAction: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** AccountRequestClose */
+        AccountRequestClose: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "sold" | "not_sold";
+            /** Reason */
+            reason?: string | null;
+        };
+        /** AccountRequestOut */
+        AccountRequestOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Listing Id
+             * Format: uuid
+             */
+            listing_id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "buyer" | "seller";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "rejected" | "cancelled" | "closed" | "expired";
+            /** Service Slug */
+            service_slug: string;
+            /** Service Name */
+            service_name: string;
+            /** Title */
+            title: string;
+            /** Price Kzt */
+            price_kzt: number;
+            /** Outcome */
+            outcome?: ("sold" | "not_sold") | null;
+            /** Reason */
+            reason?: string | null;
+            /** Counterparty Username */
+            counterparty_username?: string | null;
+            /** Telegram Url */
+            telegram_url?: string | null;
+            /** Telegram Draft */
+            telegram_draft?: string | null;
+            /**
+             * Can Remind
+             * @default false
+             */
+            can_remind: boolean;
+            /** Reminder Available At */
+            reminder_available_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decided At */
+            decided_at?: string | null;
+            /** Cancelled At */
+            cancelled_at?: string | null;
+            /** Closed At */
+            closed_at?: string | null;
+        };
+        /** AccountRequestPageOut */
+        AccountRequestPageOut: {
+            /** Items */
+            items: components["schemas"]["AccountRequestOut"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** AccountServiceOut */
+        AccountServiceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
         };
         /** CatalogImportResult */
         CatalogImportResult: {
@@ -1801,6 +2224,21 @@ export interface components {
             accepted_sales_requests: number;
             /** Accepted Purchase Requests */
             accepted_purchase_requests: number;
+            /**
+             * Pending Account Sales Requests
+             * @default 0
+             */
+            pending_account_sales_requests: number;
+            /**
+             * Accepted Account Sales Requests
+             * @default 0
+             */
+            accepted_account_sales_requests: number;
+            /**
+             * Accepted Account Purchase Requests
+             * @default 0
+             */
+            accepted_account_purchase_requests: number;
         };
         /** MarketplaceListingCreate */
         MarketplaceListingCreate: {
@@ -4960,6 +5398,638 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MarketplaceListingRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_account_services_api_marketplace_accounts_services_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountServiceOut"][];
+                };
+            };
+        };
+    };
+    get_account_listings_api_marketplace_accounts_listings_get: {
+        parameters: {
+            query?: {
+                service?: string | null;
+                sort?: "recent" | "price_asc" | "price_desc";
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: {
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_account_listing_api_marketplace_accounts_listings_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountListingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_account_listings_api_marketplace_accounts_listings_me_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: {
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_account_listing_api_marketplace_accounts_listings__listing_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_account_listing_api_marketplace_accounts_listings__listing_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountListingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_pause_account_listing_api_marketplace_accounts_listings__listing_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_resume_account_listing_api_marketplace_accounts_listings__listing_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_renew_account_listing_api_marketplace_accounts_listings__listing_id__renew_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_archive_account_listing_api_marketplace_accounts_listings__listing_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountListingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_account_request_api_marketplace_accounts_listings__listing_id__requests_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_my_account_requests_api_marketplace_accounts_requests_me_get: {
+        parameters: {
+            query?: {
+                role?: "buyer" | "seller";
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: {
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRequestPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_account_request_accept_api_marketplace_accounts_requests__request_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_account_request_reject_api_marketplace_accounts_requests__request_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountRequestAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_account_request_cancel_api_marketplace_accounts_requests__request_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountRequestAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_account_request_close_api_marketplace_accounts_requests__request_id__close_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountRequestClose"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_account_request_remind_api_marketplace_accounts_requests__request_id__remind_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountRequestOut"];
                 };
             };
             /** @description Validation Error */

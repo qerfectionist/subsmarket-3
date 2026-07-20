@@ -71,7 +71,8 @@ export function SearchScreen({
   pendingActionsCount,
   onOpenMine,
   onOpenActions,
-  onOpenGigabytes
+  onOpenGigabytes,
+  onOpenAccounts
 }: {
   familyType: FamilyType;
   services: FamilyService[];
@@ -95,6 +96,7 @@ export function SearchScreen({
   onOpenMine?: () => void;
   onOpenActions?: () => void;
   onOpenGigabytes: () => void;
+  onOpenAccounts: () => void;
 }) {
   const [inviteCode, setInviteCode] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -581,10 +583,7 @@ export function SearchScreen({
           type="button"
           className="market-fast-card"
           data-testid="market-buy-accounts"
-          onClick={() => {
-            setSearchTerm("");
-            setActiveSection("accounts");
-          }}
+          onClick={onOpenAccounts}
         >
           <span className="market-fast-icon market-fast-icon-violet">
             <KeyRound size={23} />

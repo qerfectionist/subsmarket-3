@@ -62,6 +62,10 @@ services:
         value: 600
       - key: MARKETPLACE_GB_ENABLED
         value: false
+      - key: MARKETPLACE_ACCOUNTS_ENABLED
+        value: false
+      - key: MARKETPLACE_ACCOUNT_LISTING_DAYS
+        value: 30
       - key: MARKETPLACE_LISTING_DAYS
         value: 7
       - key: MARKETPLACE_LISTING_EXPIRY_REMINDER_DAYS

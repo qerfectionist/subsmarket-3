@@ -7,4 +7,5 @@ export type Tab =
   | "mine"
   | "requests"
   | "family"
-  | "gigabytes";
+  | "gigabytes"
+  | "accounts";

@@ -794,3 +794,14 @@ Last checkpoint:
   after a DSN is configured.
 - External setup still requires Sentry DSN, Better Stack heartbeat URL, and
   optionally Grafana Cloud k6 credentials.
+
+2026-07-20 account Marketplace vertical:
+
+- Added a separate 30-day account listing catalog and lifecycle without
+  reusing Family or mobile-data entities.
+- Added buyer requests, seller acceptance/rejection, Telegram contact drafts,
+  reminders, cancellation, closing, pause, renewal, archive, and expiry jobs.
+- Kept credentials, payment details, delivery, and money confirmation outside
+  SubsMarket; contact data opens only after seller acceptance.
+- Added Telegram-user-scoped rate limits, API tests, PostgreSQL migration
+  checks, and a complete Playwright buyer/seller flow.

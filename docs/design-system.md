@@ -14,8 +14,8 @@ The design system is not decoration. It protects three things:
 
 - users understand what to do in the first 10 seconds;
 - family subscriptions and family tariffs stay clear and trustworthy;
-- Marketplace modules can evolve without breaking the Family Engine; GB is
-  active, while accounts remain a future module.
+- Marketplace modules evolve without breaking the Family Engine; GB and
+  accounts are active, separate verticals.
 
 ## Product Personality
 
@@ -58,9 +58,8 @@ visible without hunting through the app.
 
 ### 4. Marketplace Is Separate
 
-Gigabytes are an active Marketplace section. Accounts may remain visible but
-must look disabled until that vertical is implemented. Neither section may
-reuse Family payment or membership states.
+Gigabytes and accounts are active Marketplace sections. They must remain
+visually and logically separate from Family payment and membership states.
 
 ### 5. Mobile App, Not Website
 
@@ -444,7 +443,7 @@ This Market direction is inspired by Telegram Wallet interaction patterns:
    - `Подписки`;
    - `Тарифы`;
    - active `Гигабайты`;
-   - future `Аккаунты`.
+   - active `Аккаунты`.
 4. Compact grouped list of available families.
 
 This works better than a text-heavy dashboard because it removes the extra
@@ -478,7 +477,7 @@ Rules:
 - no `club` copy in user-facing text;
 - use `семья`, `место`, `заявка`, `оплата`;
 - `Создать семью`, not `Собрать клуб`;
-- only unimplemented modules are disabled/quiet; GB is active;
+- only unimplemented modules are disabled/quiet; GB and accounts are active;
 - family results must be compact wallet-style list rows, not large marketplace cards;
 - Market should avoid vertical scroll on normal Telegram viewport.
 

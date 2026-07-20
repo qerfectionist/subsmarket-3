@@ -11,7 +11,8 @@ These are intentional limitations for the first Family Engine release.
 - Receipts and disputes are not included in this release.
 - Public rating and reviews are not included.
 - Admin panel is not included.
-- Account sales are not included yet.
+- Account sales are a bulletin board: SubsMarket does not verify payment,
+  credentials, delivery, or ownership of an account.
 - Mobile-data sales are a bulletin board: SubsMarket does not verify stock,
   payment, or transfer of GB.
 

@@ -77,8 +77,12 @@ export function MyFamiliesScreen({
   onCancelRequest,
   marketplaceSalesActionCount = 0,
   marketplacePurchaseActionCount = 0,
+  accountSalesActionCount = 0,
+  accountPurchaseActionCount = 0,
   onOpenMarketplaceSalesActions,
-  onOpenMarketplacePurchaseActions
+  onOpenMarketplacePurchaseActions,
+  onOpenAccountSalesActions,
+  onOpenAccountPurchaseActions
 }: {
   mode?: "mine" | "actions";
   myFamilyType: FamilyType;
@@ -134,8 +138,12 @@ export function MyFamiliesScreen({
   onCancelRequest: (requestId: string) => void;
   marketplaceSalesActionCount?: number;
   marketplacePurchaseActionCount?: number;
+  accountSalesActionCount?: number;
+  accountPurchaseActionCount?: number;
   onOpenMarketplaceSalesActions?: () => void;
   onOpenMarketplacePurchaseActions?: () => void;
+  onOpenAccountSalesActions?: () => void;
+  onOpenAccountPurchaseActions?: () => void;
 }) {
   const actionFamilies = families.filter(hasPendingFamilyAction);
   const visibleFamilies = mode === "actions" ? actionFamilies : families;
@@ -163,7 +171,19 @@ export function MyFamiliesScreen({
     mode === "actions" &&
     marketplacePurchaseActionCount > 0 &&
     Boolean(onOpenMarketplacePurchaseActions);
-  const hasMarketplaceActions = hasMarketplaceSalesActions || hasMarketplacePurchaseActions;
+  const hasAccountSalesActions =
+    mode === "actions" &&
+    accountSalesActionCount > 0 &&
+    Boolean(onOpenAccountSalesActions);
+  const hasAccountPurchaseActions =
+    mode === "actions" &&
+    accountPurchaseActionCount > 0 &&
+    Boolean(onOpenAccountPurchaseActions);
+  const hasMarketplaceActions =
+    hasMarketplaceSalesActions ||
+    hasMarketplacePurchaseActions ||
+    hasAccountSalesActions ||
+    hasAccountPurchaseActions;
   const hasFamilyActions =
     pendingRequestCount + ownerRequestCount + paymentActionCount + accessActionCount > 0;
 
@@ -215,6 +235,38 @@ export function MyFamiliesScreen({
               size="sm"
               data-testid="open-marketplace-purchase-actions"
               onClick={onOpenMarketplacePurchaseActions}
+            >
+              Открыть
+            </WorldButton>
+          </article>
+        ) : null}
+        {hasAccountSalesActions ? (
+          <article className="list-row" data-testid="account-sales-actions-card">
+            <div className="list-row-main">
+              <strong>Продажа аккаунтов</strong>
+              <span>{accountSalesActionCount} заявок требуют ответа или завершения</span>
+            </div>
+            <WorldButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={onOpenAccountSalesActions}
+            >
+              Открыть
+            </WorldButton>
+          </article>
+        ) : null}
+        {hasAccountPurchaseActions ? (
+          <article className="list-row" data-testid="account-purchase-actions-card">
+            <div className="list-row-main">
+              <strong>Покупка аккаунтов</strong>
+              <span>{accountPurchaseActionCount} заявок приняты продавцами</span>
+            </div>
+            <WorldButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={onOpenAccountPurchaseActions}
             >
               Открыть
             </WorldButton>

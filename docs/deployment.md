@@ -411,10 +411,10 @@ change the MVP app path because the Mini App never talks to Supabase Data API
 directly. Keep it that way unless a future feature explicitly needs public Data
 API access, and then add grants and RLS together.
 
-## Why this fits future accounts and GB sales
+## Marketplace hosting boundary
 
-Future account and mobile-data sales use a separate `Marketplace Engine` in the
-same backend and database.
+Account and mobile-data sales use a separate `Marketplace Engine` in the same
+backend and database.
 
 Do not create a universal entity that mixes family subscriptions and listings.
 
@@ -427,8 +427,8 @@ Keep the module boundaries:
 - `Notifications` - Telegram notifications for all engines;
 - `Audit` - critical history, first for Families, later for Marketplace.
 
-This lets SubsMarket add account and GB sales without rewriting hosting or
-splitting into microservices too early.
+This keeps account and GB sales independent from Family Engine without
+splitting the deployment into microservices too early.
 
 ## Mobile-data marketplace rollout
 
@@ -436,6 +436,13 @@ The GB marketplace is disabled in production by default. Apply Alembic
 migration `20260713_0023`, verify the Tele2 operator row and Telegram
 notifications, then set `MARKETPLACE_GB_ENABLED=true` on Render. Keep the flag
 off to roll back API exposure without deleting listings or request history.
+
+## Account marketplace rollout
+
+The account marketplace is disabled in production by default. Apply Alembic
+migration `20260720_0030`, verify seeded account services and Telegram contact
+notifications, then set `MARKETPLACE_ACCOUNTS_ENABLED=true` on Render. Keep the
+flag off to roll back API exposure without deleting listings or request history.
 
 ## Production environment variables
 

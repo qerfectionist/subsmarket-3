@@ -6,16 +6,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import utcnow
+from subsmarket.marketplace.account_models import MarketplaceAccountService
 from subsmarket.marketplace.models import MarketplaceOperator
 from subsmarket.marketplace.rules import GB_ORDER_STEP, MINIMUM_GB_ORDER
 
 
 def ensure_development_marketplace_catalog(db: Session) -> int:
+    created = _ensure_account_services(db)
     existing = db.scalar(
         select(MarketplaceOperator.id).where(MarketplaceOperator.slug == "tele2")
     )
     if existing is not None:
-        return 0
+        return created
     now = utcnow()
     db.add(
         MarketplaceOperator(
@@ -39,7 +41,26 @@ def ensure_development_marketplace_catalog(db: Session) -> int:
         )
     )
     db.flush()
-    return 1
+    return created + 1
+
+
+def _ensure_account_services(db: Session) -> int:
+    existing = set(db.scalars(select(MarketplaceAccountService.slug)).all())
+    services = (
+        ("chatgpt", "ChatGPT"),
+        ("gemini", "Gemini"),
+        ("grok", "Grok"),
+        ("canva", "Canva"),
+    )
+    missing = [
+        MarketplaceAccountService(slug=slug, name=name, is_active=True)
+        for slug, name in services
+        if slug not in existing
+    ]
+    if missing:
+        db.add_all(missing)
+        db.flush()
+    return len(missing)
 
 
 __all__ = ["ensure_development_marketplace_catalog"]

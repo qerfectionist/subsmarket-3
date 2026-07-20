@@ -763,17 +763,32 @@ inspection.
 - `POST /api/marketplace/listings/{id}/pause|resume|renew|archive` - управление публикацией;
 - `POST /api/marketplace/listings/{id}/requests` - заявка с выбранным `amount_gb`;
 - `GET /api/marketplace/requests/me?role=buyer|seller` - ограниченный cursor-список заявок;
-- `GET /api/marketplace/actions/me` - счетчики ожидающих и принятых заявок
-  продавца, а также принятых заявок покупателя для общего экрана действий;
+- `GET /api/marketplace/actions/me` - общие счетчики действий по ГБ и аккаунтам;
 - `POST /api/marketplace/requests/{id}/accept|reject|cancel|close|remind` - переходы заявки.
 
 Username второй стороны и Telegram-ссылка отсутствуют до `accepted`. API не
 принимает телефон, банковские реквизиты, чек или подтверждение передачи ГБ.
 Принятие означает только согласие начать диалог и не резервирует виртуальный
-остаток. Закрыть принятую заявку может только продавец; `sold|not_sold` остается
-записью для истории, а не подтверждением сделки платформой.
+остаток. Продление разрешено в последний день срока или после истечения.
 
-Продление объявления разрешено только в последний день его срока или после
-истечения. Приостановка запрещает новые заявки, но не блокирует обработку уже
-полученных. Покупатель может отменить `pending` или `accepted` заявку до ее
-закрытия продавцом.
+## Marketplace: аккаунты и доступы
+
+API доступен в production при `MARKETPLACE_ACCOUNTS_ENABLED=true`. Объявление
+действует 30 дней. Платформа не хранит реквизиты аккаунта и не подтверждает
+оплату или передачу доступа.
+
+- `GET /api/marketplace/accounts/services` - активные сервисы;
+- `GET /api/marketplace/accounts/listings` - cursor-каталог с фильтром и сортировкой;
+- `GET /api/marketplace/accounts/listings/me` - объявления продавца;
+- `POST /api/marketplace/accounts/listings` - опубликовать объявление;
+- `PATCH /api/marketplace/accounts/listings/{id}` - изменить название, цену или описание;
+- `POST /api/marketplace/accounts/listings/{id}/pause|resume|renew|archive` - управление публикацией;
+- `POST /api/marketplace/accounts/listings/{id}/requests` - заявка покупателя;
+- `GET /api/marketplace/accounts/requests/me?role=buyer|seller` - заявки пользователя;
+- `POST /api/marketplace/accounts/requests/{id}/accept|reject|cancel|remind` - действия по заявке;
+- `POST /api/marketplace/accounts/requests/{id}/close` - убрать принятый контакт из активных.
+
+Username второй стороны и Telegram-ссылка отсутствуют до `accepted`. API не
+принимает логин, пароль, банковские реквизиты или подтверждение передачи
+аккаунта. Продавец может принять несколько заявок, а объявление после контакта
+остаётся активным. Покупатель может отменить `pending` или `accepted` заявку.

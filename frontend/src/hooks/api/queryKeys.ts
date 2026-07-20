@@ -21,5 +21,13 @@ export const queryKeys = {
     ["marketplace", "listing", listingId] as const,
   marketplaceRequests: (role: string) =>
     ["marketplace", "requests", role] as const,
-  marketplaceActionSummary: ["marketplace", "actions", "me"] as const
+  marketplaceActionSummary: ["marketplace", "actions", "me"] as const,
+  accountServices: ["marketplace", "accounts", "services"] as const,
+  accountListings: (service: string | null, sort: string) =>
+    ["marketplace", "accounts", "listings", service ?? "all", sort] as const,
+  myAccountListings: ["marketplace", "accounts", "listings", "me"] as const,
+  accountListing: (listingId: string) =>
+    ["marketplace", "accounts", "listing", listingId] as const,
+  accountRequests: (role: string) =>
+    ["marketplace", "accounts", "requests", role] as const
 };

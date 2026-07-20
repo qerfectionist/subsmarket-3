@@ -13,6 +13,10 @@ REQUIRED_PATHS = {
     "/api/families/page",
     "/api/families/{family_id}/view",
     "/api/families/invites/{code}",
+    "/api/marketplace/operators",
+    "/api/marketplace/listings",
+    "/api/marketplace/accounts/services",
+    "/api/marketplace/accounts/listings",
     "/api/telegram/webhook",
 }
 FORBIDDEN_PATHS = {"/api/dev/reset-demo-data"}

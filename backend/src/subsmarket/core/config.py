@@ -113,6 +113,16 @@ class Settings(BaseSettings):
         default=False,
         alias="MARKETPLACE_GB_ENABLED",
     )
+    marketplace_accounts_enabled: bool = Field(
+        default=False,
+        alias="MARKETPLACE_ACCOUNTS_ENABLED",
+    )
+    marketplace_account_listing_days: int = Field(
+        default=30,
+        ge=1,
+        le=365,
+        alias="MARKETPLACE_ACCOUNT_LISTING_DAYS",
+    )
     marketplace_listing_days: int = Field(
         default=7,
         ge=1,
