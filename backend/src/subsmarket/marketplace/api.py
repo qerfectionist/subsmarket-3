@@ -10,6 +10,7 @@ from subsmarket.core.config import settings
 from subsmarket.core.database import get_db
 from subsmarket.identity.dependencies import get_current_user
 from subsmarket.marketplace.schemas import (
+    MarketplaceActionSummaryOut,
     MarketplaceListingCreate,
     MarketplaceListingOut,
     MarketplaceListingPageOut,
@@ -30,6 +31,7 @@ from subsmarket.marketplace.service import (
     create_marketplace_listing,
     create_marketplace_request,
     get_listing_view,
+    get_marketplace_action_summary,
     get_marketplace_price_insight,
     list_active_operators,
     list_marketplace_listings_page,
@@ -246,6 +248,14 @@ def get_my_marketplace_requests(
         cursor=cursor,
     )
     return MarketplaceListingRequestPageOut(items=items, next_cursor=next_cursor)
+
+
+@router.get("/actions/me", response_model=MarketplaceActionSummaryOut)
+def get_my_marketplace_actions(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> MarketplaceActionSummaryOut:
+    return get_marketplace_action_summary(db, user)
 
 
 @router.post(

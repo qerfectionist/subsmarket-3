@@ -7820,6 +7820,103 @@
         }
       }
     },
+    "/api/marketplace/actions/me": {
+      "get": {
+        "tags": [
+          "marketplace"
+        ],
+        "summary": "Get My Marketplace Actions",
+        "operationId": "get_my_marketplace_actions_api_marketplace_actions_me_get",
+        "parameters": [
+          {
+            "name": "x-telegram-init-data",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Telegram-Init-Data"
+            }
+          },
+          {
+            "name": "x-dev-telegram-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-User-Id"
+            }
+          },
+          {
+            "name": "x-dev-telegram-username",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-Username"
+            }
+          },
+          {
+            "name": "x-dev-telegram-first-name",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-First-Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceActionSummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/marketplace/requests/{request_id}/accept": {
       "post": {
         "tags": [
@@ -10249,6 +10346,32 @@
         ],
         "title": "JobsStatusResult"
       },
+      "MarketplaceActionSummaryOut": {
+        "properties": {
+          "pending_sales_requests": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Pending Sales Requests"
+          },
+          "accepted_sales_requests": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Accepted Sales Requests"
+          },
+          "accepted_purchase_requests": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Accepted Purchase Requests"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pending_sales_requests",
+          "accepted_sales_requests",
+          "accepted_purchase_requests"
+        ],
+        "title": "MarketplaceActionSummaryOut"
+      },
       "MarketplaceListingCreate": {
         "properties": {
           "operator_slug": {
@@ -10329,6 +10452,22 @@
             "type": "boolean",
             "title": "Is Owner"
           },
+          "can_renew": {
+            "type": "boolean",
+            "title": "Can Renew"
+          },
+          "renew_available_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Renew Available At"
+          },
           "expires_at": {
             "type": "string",
             "format": "date-time",
@@ -10358,6 +10497,7 @@
           "price_per_gb_kzt",
           "status",
           "is_owner",
+          "can_renew",
           "expires_at",
           "published_at",
           "created_at",

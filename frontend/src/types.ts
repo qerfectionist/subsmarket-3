@@ -115,6 +115,7 @@ export type MarketplaceListing = Schema["MarketplaceListingOut"];
 export type MarketplaceListingCreate = Schema["MarketplaceListingCreate"];
 export type MarketplaceListingUpdate = Schema["MarketplaceListingUpdate"];
 export type MarketplaceListingRequest = Schema["MarketplaceListingRequestOut"];
+export type MarketplaceActionSummary = Schema["MarketplaceActionSummaryOut"];
 export type MarketplacePriceInsight = Schema["MarketplacePriceInsightOut"];
 export type MarketplaceRequestRole = "buyer" | "seller";
 export type MarketplaceSort =

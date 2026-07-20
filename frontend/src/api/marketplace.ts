@@ -1,6 +1,7 @@
 import { patchIdempotent, postIdempotent, request } from "./client";
 import type {
   CursorPage,
+  MarketplaceActionSummary,
   MarketplaceListing,
   MarketplaceListingCreate,
   MarketplaceListingRequest,
@@ -119,6 +120,10 @@ export function getMyMarketplaceRequestsPage(
       cursor
     })
   );
+}
+
+export function getMarketplaceActionSummary(): Promise<MarketplaceActionSummary> {
+  return request("/api/marketplace/actions/me");
 }
 
 function requestAction(

@@ -26,6 +26,7 @@ from subsmarket.marketplace.pagination import (
     encode_cursor,
 )
 from subsmarket.marketplace.schemas import (
+    MarketplaceActionSummaryOut,
     MarketplaceListingOut,
     MarketplaceListingRequestOut,
     MarketplaceOperatorOut,
@@ -254,7 +255,51 @@ def list_my_marketplace_requests_page(
     return [to_request_out(item, user) for item in rows], next_cursor
 
 
+def get_marketplace_action_summary(
+    db: Session,
+    user: User,
+) -> MarketplaceActionSummaryOut:
+    pending_sales_count, accepted_sales_count, accepted_purchase_count = db.execute(
+        select(
+            func.count(MarketplaceListingRequest.id).filter(
+                and_(
+                    MarketplaceListing.seller_user_id == user.id,
+                    MarketplaceListingRequest.status == "pending",
+                )
+            ),
+            func.count(MarketplaceListingRequest.id).filter(
+                and_(
+                    MarketplaceListing.seller_user_id == user.id,
+                    MarketplaceListingRequest.status == "accepted",
+                )
+            ),
+            func.count(MarketplaceListingRequest.id).filter(
+                and_(
+                    MarketplaceListingRequest.buyer_user_id == user.id,
+                    MarketplaceListingRequest.status == "accepted",
+                )
+            ),
+        )
+        .select_from(MarketplaceListingRequest)
+        .join(MarketplaceListing)
+    ).one()
+    return MarketplaceActionSummaryOut(
+        pending_sales_requests=pending_sales_count,
+        accepted_sales_requests=accepted_sales_count,
+        accepted_purchase_requests=accepted_purchase_count,
+    )
+
+
 def to_listing_out(listing: MarketplaceListing, user_id: UUID) -> MarketplaceListingOut:
+    renew_available_at = None
+    can_renew = False
+    if listing.status != "archived":
+        renew_available_at = as_utc(listing.expires_at) - timedelta(
+            days=settings.marketplace_listing_expiry_reminder_days
+        )
+        can_renew = listing.operator.is_active and (
+            listing.status == "expired" or utcnow() >= renew_available_at
+        )
     return MarketplaceListingOut(
         id=listing.id,
         listing_type="mobile_data",
@@ -263,6 +308,8 @@ def to_listing_out(listing: MarketplaceListing, user_id: UUID) -> MarketplaceLis
         description=listing.description,
         status=listing.status,
         is_owner=listing.seller_user_id == user_id,
+        can_renew=can_renew,
+        renew_available_at=renew_available_at,
         expires_at=listing.expires_at,
         published_at=listing.published_at,
         created_at=listing.created_at,

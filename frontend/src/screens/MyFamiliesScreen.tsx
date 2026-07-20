@@ -74,7 +74,11 @@ export function MyFamiliesScreen({
   onConfirmPayment,
   onNotReceived,
   onRecordPrepayment,
-  onCancelRequest
+  onCancelRequest,
+  marketplaceSalesActionCount = 0,
+  marketplacePurchaseActionCount = 0,
+  onOpenMarketplaceSalesActions,
+  onOpenMarketplacePurchaseActions
 }: {
   mode?: "mine" | "actions";
   myFamilyType: FamilyType;
@@ -128,6 +132,10 @@ export function MyFamiliesScreen({
     periods: number
   ) => Promise<unknown>;
   onCancelRequest: (requestId: string) => void;
+  marketplaceSalesActionCount?: number;
+  marketplacePurchaseActionCount?: number;
+  onOpenMarketplaceSalesActions?: () => void;
+  onOpenMarketplacePurchaseActions?: () => void;
 }) {
   const actionFamilies = families.filter(hasPendingFamilyAction);
   const visibleFamilies = mode === "actions" ? actionFamilies : families;
@@ -147,6 +155,17 @@ export function MyFamiliesScreen({
   const accessActionCount = families.filter((item) =>
     ["awaiting_access", "awaiting_confirmation"].includes(item.membership.status)
   ).length;
+  const hasMarketplaceSalesActions =
+    mode === "actions" &&
+    marketplaceSalesActionCount > 0 &&
+    Boolean(onOpenMarketplaceSalesActions);
+  const hasMarketplacePurchaseActions =
+    mode === "actions" &&
+    marketplacePurchaseActionCount > 0 &&
+    Boolean(onOpenMarketplacePurchaseActions);
+  const hasMarketplaceActions = hasMarketplaceSalesActions || hasMarketplacePurchaseActions;
+  const hasFamilyActions =
+    pendingRequestCount + ownerRequestCount + paymentActionCount + accessActionCount > 0;
 
   return (
     <div data-testid={mode === "actions" ? "actions-screen" : "my-screen"}>
@@ -159,7 +178,7 @@ export function MyFamiliesScreen({
         }
       >
         {mode === "mine" ? <ProductScopeSwitch /> : null}
-        {mode === "actions" ? (
+        {mode === "actions" && hasFamilyActions ? (
           <ActionSummary
             pendingRequestCount={pendingRequestCount}
             ownerRequestCount={ownerRequestCount}
@@ -167,11 +186,45 @@ export function MyFamiliesScreen({
             accessActionCount={accessActionCount}
           />
         ) : null}
+        {hasMarketplaceSalesActions ? (
+          <article className="list-row" data-testid="marketplace-actions-card">
+            <div className="list-row-main">
+              <strong>Продажа гигабайтов</strong>
+              <span>{marketplaceSalesActionCount} заявок требуют ответа или завершения</span>
+            </div>
+            <WorldButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              data-testid="open-marketplace-actions"
+              onClick={onOpenMarketplaceSalesActions}
+            >
+              Открыть
+            </WorldButton>
+          </article>
+        ) : null}
+        {hasMarketplacePurchaseActions ? (
+          <article className="list-row" data-testid="marketplace-purchase-actions-card">
+            <div className="list-row-main">
+              <strong>Покупка гигабайтов</strong>
+              <span>{marketplacePurchaseActionCount} заявок приняты продавцами</span>
+            </div>
+            <WorldButton
+              type="button"
+              variant="secondary"
+              size="sm"
+              data-testid="open-marketplace-purchase-actions"
+              onClick={onOpenMarketplacePurchaseActions}
+            >
+              Открыть
+            </WorldButton>
+          </article>
+        ) : null}
         <MyRequestsSection
           requests={requests}
           busy={busy}
           isLoading={requestsLoading}
-          showEmpty={mode === "actions"}
+          showEmpty={mode === "actions" && !hasMarketplaceActions && actionFamilies.length === 0}
           onCancelRequest={onCancelRequest}
         />
         {hasMoreRequests && onLoadMoreRequests ? (
@@ -188,7 +241,7 @@ export function MyFamiliesScreen({
         {mode === "mine" ? (
           <FamilyTypeSwitch value={myFamilyType} onChange={onChangeFamilyType} />
         ) : null}
-        {mode === "actions" ? (
+        {mode === "actions" && actionFamilies.length > 0 ? (
           <div className="section-inline-title">
             <span>Семьи с действиями</span>
             <Badge>{actionFamilies.length}</Badge>
@@ -196,7 +249,7 @@ export function MyFamiliesScreen({
         ) : null}
         {isLoading && visibleFamilies.length === 0 ? (
           <FamilyListSkeleton count={3} />
-        ) : visibleFamilies.length === 0 ? (
+        ) : visibleFamilies.length === 0 && !hasMarketplaceActions ? (
           <EmptyState
             title={mode === "actions" ? "Сейчас нет действий" : "У вас пока нет семей"}
           >

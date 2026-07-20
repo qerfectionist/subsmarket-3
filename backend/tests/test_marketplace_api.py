@@ -143,6 +143,16 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
     assert created.status_code == 201
     request_id = created.json()["id"]
     assert created.json()["counterparty_username"] is None
+    assert client.get("/api/marketplace/actions/me", headers=seller).json() == {
+        "pending_sales_requests": 1,
+        "accepted_sales_requests": 0,
+        "accepted_purchase_requests": 0,
+    }
+    assert client.get("/api/marketplace/actions/me", headers=buyer).json() == {
+        "pending_sales_requests": 0,
+        "accepted_sales_requests": 0,
+        "accepted_purchase_requests": 0,
+    }
 
     accepted = client.post(
         f"/api/marketplace/requests/{request_id}/accept",
@@ -151,6 +161,16 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
     assert accepted.status_code == 200
     assert accepted.json()["counterparty_username"] == "gb_buyer"
     assert "10 ГБ Tele2" in accepted.json()["telegram_draft"]
+    assert client.get("/api/marketplace/actions/me", headers=seller).json() == {
+        "pending_sales_requests": 0,
+        "accepted_sales_requests": 1,
+        "accepted_purchase_requests": 0,
+    }
+    assert client.get("/api/marketplace/actions/me", headers=buyer).json() == {
+        "pending_sales_requests": 0,
+        "accepted_sales_requests": 0,
+        "accepted_purchase_requests": 1,
+    }
 
     assert client.post(
         f"/api/marketplace/requests/{request_id}/close",
@@ -164,6 +184,16 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
     )
     assert closed.status_code == 200
     assert closed.json()["outcome"] == "sold"
+    assert client.get("/api/marketplace/actions/me", headers=seller).json() == {
+        "pending_sales_requests": 0,
+        "accepted_sales_requests": 0,
+        "accepted_purchase_requests": 0,
+    }
+    assert client.get("/api/marketplace/actions/me", headers=buyer).json() == {
+        "pending_sales_requests": 0,
+        "accepted_sales_requests": 0,
+        "accepted_purchase_requests": 0,
+    }
     assert client.get(
         f"/api/marketplace/listings/{listing['id']}", headers=buyer
     ).status_code == 200
@@ -444,6 +474,52 @@ def test_request_guards_reminder_and_listing_expiry(
     ).status == "accepted"
 
 
+def test_paused_listing_keeps_existing_request_actionable_and_buyer_can_cancel(
+    client: TestClient,
+    tele2: MarketplaceOperator,
+) -> None:
+    seller = auth_headers(710044, "paused_seller")
+    buyer = auth_headers(710045, "paused_buyer")
+    second_buyer = auth_headers(710046, "paused_buyer_two")
+    listing = create_listing(client, seller)
+    listing_id = str(listing["id"])
+    request = client.post(
+        f"/api/marketplace/listings/{listing_id}/requests",
+        headers=buyer,
+        json={"amount_gb": "5"},
+    )
+    assert request.status_code == 201
+    request_id = str(request.json()["id"])
+
+    assert client.post(
+        f"/api/marketplace/listings/{listing_id}/pause",
+        headers=seller,
+    ).status_code == 200
+    unavailable = client.post(
+        f"/api/marketplace/listings/{listing_id}/requests",
+        headers=second_buyer,
+        json={"amount_gb": "5"},
+    )
+    assert unavailable.status_code == 409
+    assert unavailable.json()["detail"] == "MARKETPLACE_LISTING_UNAVAILABLE"
+
+    accepted = client.post(
+        f"/api/marketplace/requests/{request_id}/accept",
+        headers=seller,
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["status"] == "accepted"
+
+    cancelled = client.post(
+        f"/api/marketplace/requests/{request_id}/cancel",
+        headers=buyer,
+        json={"reason": "Передумал"},
+    )
+    assert cancelled.status_code == 200
+    assert cancelled.json()["status"] == "cancelled"
+    assert cancelled.json()["reason"] == "Передумал"
+
+
 def test_due_jobs_include_marketplace_expiry(
     client: TestClient,
     db: Session,
@@ -563,6 +639,7 @@ def test_marketplace_catalog_is_bounded_and_has_no_n_plus_one_queries(
 
 def test_listing_lives_seven_days_edits_do_not_bump_and_renewal_republishes(
     client: TestClient,
+    db: Session,
     tele2: MarketplaceOperator,
 ) -> None:
     seller = auth_headers(710071, "publication_seller")
@@ -582,6 +659,23 @@ def test_listing_lives_seven_days_edits_do_not_bump_and_renewal_republishes(
     assert datetime.fromisoformat(edited.json()["published_at"]).replace(
         tzinfo=None
     ) == published_at.replace(tzinfo=None)
+    assert edited.json()["can_renew"] is False
+
+    too_early = client.post(
+        f"/api/marketplace/listings/{listing['id']}/renew", headers=seller
+    )
+    assert too_early.status_code == 409
+    assert too_early.json()["detail"] == "MARKETPLACE_LISTING_RENEW_TOO_EARLY"
+
+    stored = db.get(MarketplaceListing, UUID(str(listing["id"])))
+    assert stored is not None
+    stored.expires_at = utcnow() + timedelta(hours=12)
+    db.commit()
+    renewable = client.get(
+        f"/api/marketplace/listings/{listing['id']}", headers=seller
+    )
+    assert renewable.status_code == 200
+    assert renewable.json()["can_renew"] is True
 
     renewed = client.post(
         f"/api/marketplace/listings/{listing['id']}/renew", headers=seller

@@ -200,6 +200,16 @@ def renew_marketplace_listing(
     if listing.status == "archived":
         raise HTTPException(status_code=409, detail="MARKETPLACE_LISTING_ARCHIVED")
     now = utcnow()
+    if not listing.operator.is_active:
+        raise HTTPException(status_code=409, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
+    renew_available_at = as_utc(listing.expires_at) - timedelta(
+        days=settings.marketplace_listing_expiry_reminder_days
+    )
+    if listing.status != "expired" and now < renew_available_at:
+        raise HTTPException(
+            status_code=409,
+            detail="MARKETPLACE_LISTING_RENEW_TOO_EARLY",
+        )
     listing.expires_at = now + timedelta(days=settings.marketplace_listing_days)
     listing.published_at = now
     listing.expiry_reminder_sent_at = None
@@ -259,6 +269,8 @@ def _set_listing_status(
         return to_listing_out(_get_listing(db, claim.resource_id), user.id)
 
     listing = _get_owned_listing_for_update(db, user.id, listing_id)
+    if target == "active" and not listing.operator.is_active:
+        raise HTTPException(status_code=409, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
     if require_unexpired and as_utc(listing.expires_at) <= utcnow():
         listing.status = "expired"
         db.flush()

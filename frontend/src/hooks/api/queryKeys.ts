@@ -20,5 +20,6 @@ export const queryKeys = {
   marketplaceListing: (listingId: string) =>
     ["marketplace", "listing", listingId] as const,
   marketplaceRequests: (role: string) =>
-    ["marketplace", "requests", role] as const
+    ["marketplace", "requests", role] as const,
+  marketplaceActionSummary: ["marketplace", "actions", "me"] as const
 };

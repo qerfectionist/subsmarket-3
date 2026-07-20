@@ -129,7 +129,7 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(pendingActionsHero).toContainText("1 действие ждёт ответа");
   await expect(page.getByTestId("market-alert-banner")).toHaveCount(0);
   await pendingActionsHero
-    .getByRole("button", { name: "Открыть мои", exact: true })
+    .getByRole("button", { name: "Открыть действия", exact: true })
     .click({ force: true });
   await waitForNetworkQuiet(page);
   await page.getByTestId("owner-details-button").click({ force: true });

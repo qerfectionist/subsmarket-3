@@ -59,6 +59,8 @@ class MarketplaceListingOut(BaseModel):
     description: str | None = None
     status: Literal["active", "paused", "expired", "archived"]
     is_owner: bool
+    can_renew: bool
+    renew_available_at: datetime | None = None
     expires_at: datetime
     published_at: datetime
     created_at: datetime
@@ -119,3 +121,9 @@ class MarketplaceListingRequestOut(BaseModel):
 class MarketplaceListingRequestPageOut(BaseModel):
     items: list[MarketplaceListingRequestOut]
     next_cursor: str | None = None
+
+
+class MarketplaceActionSummaryOut(BaseModel):
+    pending_sales_requests: int = Field(ge=0)
+    accepted_sales_requests: int = Field(ge=0)
+    accepted_purchase_requests: int = Field(ge=0)

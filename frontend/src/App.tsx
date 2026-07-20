@@ -46,6 +46,7 @@ import {
   useLeaveFamily,
   useMarkAccessProvided,
   useMarkPaymentNotReceived,
+  useMarketplaceActionSummary,
   useMe,
   useMyFamilies,
   useMyFamilyRequests,
@@ -110,8 +111,16 @@ export function App() {
   const familiesQuery = useFamilies(familyType);
   const myFamiliesQuery = useMyFamilies();
   const myRequestsQuery = useMyFamilyRequests();
+  const marketplaceActionSummaryQuery = useMarketplaceActionSummary(
+    meQuery.isSuccess && Boolean(meQuery.data?.ok)
+  );
 
   const [tab, setTab] = useState<Tab>("home");
+  const [gigabytesEntryMode, setGigabytesEntryMode] = useState<"catalog" | "requests">(
+    "catalog"
+  );
+  const [gigabytesEntryRequestRole, setGigabytesEntryRequestRole] =
+    useState<"buyer" | "seller">("buyer");
   const [marketResetToken, setMarketResetToken] = useState(0);
   const [ownerDetails, setOwnerDetails] = useState<
     Record<string, OwnerFamilyDetails>
@@ -144,6 +153,21 @@ export function App() {
   const families = familiesQuery.data ?? [];
   const myFamilies = myFamiliesQuery.data ?? [];
   const myRequests = myRequestsQuery.data ?? [];
+  const marketplaceActionSummary = marketplaceActionSummaryQuery.data;
+  const familyPendingActionsCount =
+    myRequests.filter((request) => request.status === "pending").length +
+    myFamilies.filter(
+      (item) =>
+        item.pending_requests_count > 0 ||
+        item.payments.some((payment) => payment.status === "payment_reported")
+    ).length;
+  const marketplaceSalesActionCount =
+    (marketplaceActionSummary?.pending_sales_requests ?? 0) +
+    (marketplaceActionSummary?.accepted_sales_requests ?? 0);
+  const marketplacePurchaseActionCount =
+    marketplaceActionSummary?.accepted_purchase_requests ?? 0;
+  const marketplacePendingActionsCount =
+    marketplaceSalesActionCount + marketplacePurchaseActionCount;
   const selectedFamilyView = familyViewQuery.data ?? null;
   const selectedFamilyAudit = familyAuditQuery.data ?? [];
   const selectedFamilyInvite = familyInviteQuery.data ?? null;
@@ -528,15 +552,14 @@ export function App() {
           onChangeFamilyFilter={setFamilyFilter}
           onRefresh={() => familiesQuery.refetch()}
           onLoadMoreFamilies={() => void familiesQuery.fetchNextPage()}
-          pendingActionsCount={
-            myRequests.filter((r) => r.status === "pending").length +
-            myFamilies.filter((item) =>
-              item.pending_requests_count > 0 ||
-              item.payments.some((p) => p.status === "payment_reported")
-            ).length
-          }
+          pendingActionsCount={familyPendingActionsCount + marketplacePendingActionsCount}
           onOpenMine={() => setTab("mine")}
-          onOpenGigabytes={() => setTab("gigabytes")}
+          onOpenActions={() => setTab("requests")}
+          onOpenGigabytes={() => {
+            setGigabytesEntryMode("catalog");
+            setGigabytesEntryRequestRole("buyer");
+            setTab("gigabytes");
+          }}
           onOpenFamily={(familyId) => openFamily(familyId, "home")}
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
@@ -574,6 +597,18 @@ export function App() {
           ownerDetails={ownerDetails}
           requisites={requisites}
           requests={myRequests}
+          marketplaceSalesActionCount={marketplaceSalesActionCount}
+          marketplacePurchaseActionCount={marketplacePurchaseActionCount}
+          onOpenMarketplaceSalesActions={() => {
+            setGigabytesEntryMode("requests");
+            setGigabytesEntryRequestRole("seller");
+            setTab("gigabytes");
+          }}
+          onOpenMarketplacePurchaseActions={() => {
+            setGigabytesEntryMode("requests");
+            setGigabytesEntryRequestRole("buyer");
+            setTab("gigabytes");
+          }}
           busy={busy}
           isLoading={myFamiliesQuery.isLoading}
           requestsLoading={myRequestsQuery.isLoading}
@@ -796,7 +831,11 @@ export function App() {
       )}
 
       {tab === "gigabytes" && (
-        <GigabytesScreen onBack={() => setTab("home")} />
+        <GigabytesScreen
+          initialMode={gigabytesEntryMode}
+          initialRequestRole={gigabytesEntryRequestRole}
+          onBack={() => setTab("home")}
+        />
       )}
 
       <BottomNav
@@ -808,7 +847,7 @@ export function App() {
           }
         }}
         badges={{
-          requests: myRequests.filter((r) => r.status === "pending").length,
+          requests: familyPendingActionsCount + marketplacePendingActionsCount,
           mine: myFamilies.filter((item) =>
             item.pending_requests_count > 0 ||
             item.payments.some((p) => p.status === "payment_reported")

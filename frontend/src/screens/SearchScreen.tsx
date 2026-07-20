@@ -70,6 +70,7 @@ export function SearchScreen({
   resetToken,
   pendingActionsCount,
   onOpenMine,
+  onOpenActions,
   onOpenGigabytes
 }: {
   familyType: FamilyType;
@@ -92,6 +93,7 @@ export function SearchScreen({
   resetToken?: number;
   pendingActionsCount?: number;
   onOpenMine?: () => void;
+  onOpenActions?: () => void;
   onOpenGigabytes: () => void;
 }) {
   const [inviteCode, setInviteCode] = useState("");
@@ -128,7 +130,7 @@ export function SearchScreen({
   const hasHiddenMarketHomeFamilies =
     displayFamilies.length > marketHomeFamilies.length || Boolean(hasMoreFamilies);
   const hasPendingActions =
-    pendingActionsCount !== undefined && pendingActionsCount > 0 && Boolean(onOpenMine);
+    pendingActionsCount !== undefined && pendingActionsCount > 0 && Boolean(onOpenActions);
 
   useEffect(() => {
     if (!hasPendingActions) return;
@@ -139,6 +141,7 @@ export function SearchScreen({
   const heroBanners = useMemo<MarketHeroBanner[]>(() => {
     const banners: MarketHeroBanner[] = [];
     const openMine = onOpenMine;
+    const openActions = onOpenActions;
     const hideFirstRunBanner = () => {
       window.localStorage.setItem(FIRST_RUN_BANNER_KEY, "true");
       setShowFirstRunBanner(false);
@@ -146,7 +149,7 @@ export function SearchScreen({
       heroCarouselRef.current?.scrollTo({ left: 0, behavior: "smooth" });
     };
 
-    if (hasPendingActions && pendingActionsCount !== undefined && openMine) {
+    if (hasPendingActions && pendingActionsCount !== undefined && openActions) {
       banners.push({
         key: "pending-actions",
         tone: "blue",
@@ -157,9 +160,9 @@ export function SearchScreen({
           "действия ждут",
           "действий ждут"
         )} ответа`,
-        description: "Проверьте заявки, оплаты и подтверждения в разделе «Мои».",
-        actionLabel: "Открыть мои",
-        onAction: openMine
+        description: "Проверьте заявки, оплаты и подтверждения.",
+        actionLabel: "Открыть действия",
+        onAction: openActions
       });
     }
 
@@ -188,7 +191,7 @@ export function SearchScreen({
           "семей ждут"
         )} проверки доступа.`,
         actionLabel: "Открыть",
-        onAction: openMine
+        onAction: openActions
       });
     }
 
@@ -205,7 +208,7 @@ export function SearchScreen({
           "оплат ждут"
         )} подтверждения владельцем.`,
         actionLabel: "К оплатам",
-        onAction: openMine
+        onAction: openActions
       });
     }
 
@@ -222,7 +225,7 @@ export function SearchScreen({
           "заявок"
         )} на вступление в ваши семьи.`,
         actionLabel: "Посмотреть",
-        onAction: openMine
+        onAction: openActions
       });
     }
 
@@ -234,7 +237,7 @@ export function SearchScreen({
         title: "Есть платежи",
         description: "Отметьте оплату, чтобы владелец подтвердил получение.",
         actionLabel: "Мои места",
-        onAction: openMine
+        onAction: openActions
       });
     }
 
@@ -288,6 +291,7 @@ export function SearchScreen({
     hasPendingActions,
     onCreateFamily,
     onOpenMine,
+    onOpenActions,
     onRefresh,
     pendingActionsCount,
     showFirstRunBanner

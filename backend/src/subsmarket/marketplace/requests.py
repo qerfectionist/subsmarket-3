@@ -187,10 +187,11 @@ def cancel_marketplace_request(
         raise HTTPException(
             status_code=403, detail="MARKETPLACE_REQUEST_BUYER_REQUIRED"
         )
-    if request.status != "pending":
+    if request.status not in {"pending", "accepted"}:
         raise HTTPException(
             status_code=409, detail="MARKETPLACE_REQUEST_STATUS_CONFLICT"
         )
+    previous_status = request.status
     request.status = "cancelled"
     request.reason = _normalize_reason(reason)
     request.cancelled_at = utcnow()
@@ -201,7 +202,11 @@ def cancel_marketplace_request(
         payload={
             "listing_id": str(request.listing_id),
             "request_id": str(request.id),
-            "message": "Покупатель отменил заявку на гигабайты.",
+            "message": (
+                "Покупатель отменил принятую заявку на гигабайты."
+                if previous_status == "accepted"
+                else "Покупатель отменил заявку на гигабайты."
+            ),
         },
     )
     complete_idempotency(
@@ -367,7 +372,7 @@ def _decide_request(
         )
     now = utcnow()
     if target_status == "accepted" and (
-        listing.status != "active"
+        listing.status not in {"active", "paused"}
         or as_utc(listing.expires_at) <= now
     ):
         raise HTTPException(status_code=409, detail="MARKETPLACE_LISTING_UNAVAILABLE")

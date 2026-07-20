@@ -8,6 +8,7 @@ import {
   createMarketplaceListing,
   createMarketplaceRequest,
   getMarketplaceListing,
+  getMarketplaceActionSummary,
   getMarketplaceListingsPage,
   getMarketplaceOperators,
   getMarketplacePriceInsight,
@@ -98,6 +99,15 @@ export function useMarketplaceRequests(role: MarketplaceRequestRole) {
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     select: (data) => data.pages.flatMap((page) => page.items)
+  });
+}
+
+export function useMarketplaceActionSummary(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.marketplaceActionSummary,
+    queryFn: getMarketplaceActionSummary,
+    enabled,
+    staleTime: 15 * 1000
   });
 }
 

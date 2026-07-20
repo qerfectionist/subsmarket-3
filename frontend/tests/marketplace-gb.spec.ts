@@ -66,9 +66,16 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
 
   await page.locator(".bottom-nav button").nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
-  await page.getByTestId("market-buy-gigabytes").click({ force: true });
-  await page.getByRole("button", { name: "Заявки" }).click({ force: true });
-  await page.getByRole("button", { name: "Продажи" }).click({ force: true });
+  const pendingActionsHero = page.getByTestId("market-hero-pending-actions");
+  await expect(pendingActionsHero).toBeVisible();
+  await pendingActionsHero
+    .getByRole("button", { name: "Открыть действия", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("marketplace-actions-card")).toBeVisible();
+  await page.getByTestId("open-marketplace-actions").click({ force: true });
+  await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
+  await expect(page.getByTestId("marketplace-requests-tab")).toHaveClass(/active/);
+  await expect(page.getByTestId("marketplace-sales-role")).toHaveClass(/active/);
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Ждёт ответа", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Принять" }).click({ force: true });
@@ -76,6 +83,25 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(page.getByText("Можно написать", { exact: true })).toBeVisible();
   await expect(page.getByText("@demo_member", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Открыть Telegram" })).toBeVisible();
+
+  await page.locator(".bottom-nav button").nth(0).click({ force: true });
+  await switchDevUser(page, "200002", "Member · @demo_member");
+  const buyerActionsHero = page.getByTestId("market-hero-pending-actions");
+  await expect(buyerActionsHero).toBeVisible();
+  await buyerActionsHero
+    .getByRole("button", { name: "Открыть действия", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("marketplace-purchase-actions-card")).toBeVisible();
+  await page.getByTestId("open-marketplace-purchase-actions").click({ force: true });
+  await expect(page.getByTestId("marketplace-purchases-role")).toHaveClass(/active/);
+  await expect(page.getByText("@demo_owner", { exact: true })).toBeVisible();
+
+  await page.locator(".bottom-nav button").nth(0).click({ force: true });
+  await switchDevUser(page, "200001", "Owner · @demo_owner");
+  await page.getByTestId("market-hero-pending-actions")
+    .getByRole("button", { name: "Открыть действия", exact: true })
+    .click({ force: true });
+  await page.getByTestId("open-marketplace-actions").click({ force: true });
   await page.getByRole("button", { name: "Продано" }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Закрыта", { exact: true })).toBeVisible();

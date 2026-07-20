@@ -56,12 +56,20 @@ const emptyForm: MarketplaceListingCreate = {
   description: null
 };
 
-export function GigabytesScreen({ onBack }: { onBack: () => void }) {
-  const [mode, setMode] = useState<ScreenMode>("catalog");
+export function GigabytesScreen({
+  onBack,
+  initialMode = "catalog",
+  initialRequestRole = "buyer"
+}: {
+  onBack: () => void;
+  initialMode?: "catalog" | "requests";
+  initialRequestRole?: MarketplaceRequestRole;
+}) {
+  const [mode, setMode] = useState<ScreenMode>(initialMode);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
   const [sort, setSort] = useState<MarketplaceSort>("recent");
-  const [requestRole, setRequestRole] = useState<MarketplaceRequestRole>("buyer");
+  const [requestRole, setRequestRole] = useState<MarketplaceRequestRole>(initialRequestRole);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<MarketplaceListingCreate>(emptyForm);
   const [busy, setBusy] = useState<string | null>(null);
@@ -194,7 +202,11 @@ export function GigabytesScreen({ onBack }: { onBack: () => void }) {
         <GbNavButton active={mode === "mine"} onClick={() => setMode("mine")}>
           Мои объявления
         </GbNavButton>
-        <GbNavButton active={mode === "requests"} onClick={() => setMode("requests")}>
+        <GbNavButton
+          active={mode === "requests"}
+          data-testid="marketplace-requests-tab"
+          onClick={() => setMode("requests")}
+        >
           Заявки
         </GbNavButton>
       </nav>
@@ -509,7 +521,9 @@ function ListingDetails({
             ) : listing.status === "paused" ? (
               <WorldButton variant="tertiary" onClick={() => onResume(listing.id)}><Check size={18} />Показать</WorldButton>
             ) : null}
-            <WorldButton variant="tertiary" onClick={() => onRenew(listing.id)}><RefreshCw size={18} />Продлить</WorldButton>
+            {listing.can_renew ? (
+              <WorldButton variant="tertiary" onClick={() => onRenew(listing.id)}><RefreshCw size={18} />Продлить</WorldButton>
+            ) : null}
             <WorldButton variant="tertiary" onClick={() => onArchive(listing.id)}><X size={18} />Убрать</WorldButton>
           </div>
         </>
@@ -602,8 +616,18 @@ function RequestsView({ role, requests, loading, loadingMore, hasMore, busy, onR
   return (
     <section className="gb-stack">
       <div className="gb-role-switch">
-        <button className={role === "buyer" ? "active" : ""} onClick={() => onRole("buyer")} type="button">Покупки</button>
-        <button className={role === "seller" ? "active" : ""} onClick={() => onRole("seller")} type="button">Продажи</button>
+        <button
+          className={role === "buyer" ? "active" : ""}
+          data-testid="marketplace-purchases-role"
+          onClick={() => onRole("buyer")}
+          type="button"
+        >Покупки</button>
+        <button
+          className={role === "seller" ? "active" : ""}
+          data-testid="marketplace-sales-role"
+          onClick={() => onRole("seller")}
+          type="button"
+        >Продажи</button>
       </div>
       {loading ? <div className="gb-empty">Загружаем заявки...</div> : requests.length === 0 ? <div className="gb-empty"><strong>Заявок пока нет</strong></div> : (
         <div className="gb-request-list">
@@ -634,6 +658,7 @@ function RequestCard({ request, busy, onAccept, onReject, onCancel, onClose, onR
       <div className="gb-request-actions">
         {request.role === "seller" && request.status === "pending" ? <><button disabled={busy} onClick={() => onAccept(request.id)} type="button"><Check size={17} />Принять</button><button disabled={busy} onClick={() => onReject(request.id)} type="button"><X size={17} />Отклонить</button></> : null}
         {request.role === "buyer" && request.status === "pending" ? <><button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button><button disabled={busy || !request.can_remind} onClick={() => onRemind(request.id)} type="button"><RefreshCw size={17} />Напомнить</button></> : null}
+        {request.role === "buyer" && request.status === "accepted" ? <button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить заявку</button> : null}
         {request.status === "accepted" && request.counterparty_username ? <button type="button" onClick={() => openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined)}><MessageCircle size={17} />Открыть Telegram</button> : null}
         {request.role === "seller" && request.status === "accepted" ? <><button disabled={busy} type="button" onClick={() => onClose(request.id, "sold")}><Check size={17} />Продано</button><button disabled={busy} type="button" onClick={() => onClose(request.id, "not_sold")}><X size={17} />Не состоялось</button></> : null}
       </div>
@@ -656,8 +681,22 @@ function ListingRow({ listing, onClick, showStatus = false }: { listing: Marketp
   );
 }
 
-function GbNavButton({ active, children, onClick }: { active: boolean; children: React.ReactNode; onClick: () => void }) {
-  return <button type="button" className={active ? "active" : ""} onClick={onClick}>{children}</button>;
+function GbNavButton({
+  active,
+  children,
+  onClick,
+  ...buttonProps
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { active: boolean }) {
+  return (
+    <button
+      type="button"
+      className={active ? "active" : ""}
+      onClick={onClick}
+      {...buttonProps}
+    >
+      {children}
+    </button>
+  );
 }
 
 function screenTitle(mode: ScreenMode) {

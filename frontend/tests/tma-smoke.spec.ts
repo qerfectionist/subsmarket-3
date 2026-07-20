@@ -70,7 +70,7 @@ test("Mini App renders market, create, my, and family details", async ({ page })
 
   await page.locator(".bottom-nav button").nth(3).click({ force: true });
   await expect(page.getByTestId("actions-screen")).toBeVisible();
-  await expect(page.getByTestId("actions-summary")).toBeVisible();
+  await expect(page.getByTestId("actions-summary")).toHaveCount(0);
 
   const relevantMessages = messages.filter(
     (message) =>

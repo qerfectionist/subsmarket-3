@@ -127,6 +127,10 @@ export const errorLabels: Record<string, string> = {
     "У вас уже есть активная заявка к этому объявлению.",
   MARKETPLACE_REQUEST_STATUS_CONFLICT: "Статус заявки уже изменился.",
   MARKETPLACE_LISTING_UNAVAILABLE: "Это объявление сейчас недоступно.",
+  MARKETPLACE_LISTING_RENEW_TOO_EARLY:
+    "Продлить объявление можно в последние сутки его действия.",
+  MARKETPLACE_OPERATOR_UNAVAILABLE:
+    "Этот оператор сейчас недоступен для новых объявлений и продления.",
   RATE_LIMIT_EXCEEDED: "Слишком много попыток. Повторите позже.",
   INTERNAL_JOB_TOKEN_REQUIRED: "Внутренний токен задания не настроен."
 };
