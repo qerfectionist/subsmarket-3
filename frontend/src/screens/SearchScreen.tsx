@@ -127,6 +127,15 @@ export function SearchScreen({
   const marketHomeFamilies = displayFamilies.slice(0, MARKET_HOME_FAMILY_LIMIT);
   const hasHiddenMarketHomeFamilies =
     displayFamilies.length > marketHomeFamilies.length || Boolean(hasMoreFamilies);
+  const hasPendingActions =
+    pendingActionsCount !== undefined && pendingActionsCount > 0 && Boolean(onOpenMine);
+
+  useEffect(() => {
+    if (!hasPendingActions) return;
+    setHeroIndex(0);
+    heroCarouselRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }, [hasPendingActions, pendingActionsCount]);
+
   const heroBanners = useMemo<MarketHeroBanner[]>(() => {
     const banners: MarketHeroBanner[] = [];
     const openMine = onOpenMine;
@@ -136,6 +145,23 @@ export function SearchScreen({
       setHeroIndex(0);
       heroCarouselRef.current?.scrollTo({ left: 0, behavior: "smooth" });
     };
+
+    if (hasPendingActions && pendingActionsCount !== undefined && openMine) {
+      banners.push({
+        key: "pending-actions",
+        tone: "blue",
+        eyebrow: "требует внимания",
+        title: `${pendingActionsCount} ${pluralRu(
+          pendingActionsCount,
+          "действие ждёт",
+          "действия ждут",
+          "действий ждут"
+        )} ответа`,
+        description: "Проверьте заявки, оплаты и подтверждения в разделе «Мои».",
+        actionLabel: "Открыть мои",
+        onAction: openMine
+      });
+    }
 
     if (showFirstRunBanner) {
       banners.push({
@@ -259,9 +285,11 @@ export function SearchScreen({
   }, [
     bannerMetrics,
     familyType,
+    hasPendingActions,
     onCreateFamily,
     onOpenMine,
     onRefresh,
+    pendingActionsCount,
     showFirstRunBanner
   ]);
   const currentHeroIndex = Math.min(heroIndex, Math.max(0, heroBanners.length - 1));
@@ -452,6 +480,7 @@ export function SearchScreen({
             <article
               key={banner.key}
               className={`market-hero-card market-hero-card-${banner.tone}`}
+              data-testid={`market-hero-${banner.key}`}
             >
               <span>{banner.eyebrow}</span>
               <strong>{banner.title}</strong>
@@ -562,18 +591,6 @@ export function SearchScreen({
           </span>
         </button>
       </div>
-
-      {pendingActionsCount !== undefined && pendingActionsCount > 0 && onOpenMine ? (
-        <button
-          type="button"
-          className="market-alert-banner"
-          data-testid="market-alert-banner"
-          onClick={onOpenMine}
-        >
-          <span>{pendingActionsCount} действий ждут ответа</span>
-          <strong>Открыть мои</strong>
-        </button>
-      ) : null}
 
       <section className="market-recommendations" aria-label="Рекомендации">
         {isLoading && marketHomeFamilies.length === 0 ? (

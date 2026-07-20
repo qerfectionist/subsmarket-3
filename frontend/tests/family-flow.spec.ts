@@ -124,7 +124,14 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByTestId("request-owner-chat-button")).toBeVisible();
 
   await switchDevUser(page, "200001");
-  await openNav(page, 1);
+  const pendingActionsHero = page.getByTestId("market-hero-pending-actions");
+  await expect(pendingActionsHero).toBeVisible();
+  await expect(pendingActionsHero).toContainText("1 действие ждёт ответа");
+  await expect(page.getByTestId("market-alert-banner")).toHaveCount(0);
+  await pendingActionsHero
+    .getByRole("button", { name: "Открыть мои", exact: true })
+    .click({ force: true });
+  await waitForNetworkQuiet(page);
   await page.getByTestId("owner-details-button").click({ force: true });
   await expect(page.getByTestId("approve-request-button")).toBeVisible();
   await page.getByTestId("approve-request-button").click({ force: true });
@@ -363,6 +370,10 @@ async function submitCreateFamily(page: Page) {
 
 async function switchDevUser(page: Page, userId: string) {
   await waitForNetworkQuiet(page);
+  if (!(await page.getByTestId("dev-user-select").isVisible())) {
+    await openNav(page, 0);
+    await expect(page.getByTestId("market-screen")).toBeVisible();
+  }
   const label = userId === "200001" ? "Owner · @demo_owner" : "Member · @demo_member";
   await selectWorldOption(page, "dev-user-select", label);
   await expect(page.getByTestId("dev-user-select")).toHaveAttribute(
