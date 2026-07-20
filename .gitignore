@@ -9,6 +9,7 @@ __pycache__/
 .tmp/
 .vercel/
 data/research/
+backups/
 *.db
 
 node_modules/

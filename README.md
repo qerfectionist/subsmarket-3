@@ -35,6 +35,7 @@ Telegram Mini App и инфраструктура доверия для совм
 - [Gap-аудит Family Engine MVP](docs/mvp-gap-audit.md)
 - [Каталог семейных подписок](docs/catalog.md)
 - [Деплой и инфраструктура](docs/deployment.md)
+- [Резервное копирование и восстановление](docs/database-backup-and-restore.md)
 - [Аудит старого проекта](docs/legacy-audit.md)
 
 ## Первый этап

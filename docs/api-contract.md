@@ -708,7 +708,9 @@ rolled back, later steps continue, and the response includes:
 - `job_errors[].error_type`;
 - `job_errors[].message`.
 
-When there are no failures, `job_errors` is an empty list.
+When there are no failures, `job_errors` is an empty list and the response is
+HTTP 200. If any step fails, the completed result is returned with HTTP 503 so
+the scheduler cannot report a false successful heartbeat.
 
 ### GET /api/internal/jobs/status
 

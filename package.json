@@ -24,7 +24,8 @@
     "openapi:export": "node scripts/run-python.mjs tools/export_openapi.py",
     "openapi:types": "npm --prefix frontend run openapi:types",
     "openapi:sync": "npm run openapi:export && npm run openapi:types",
+    "check:error-labels": "node scripts/check-error-labels.mjs",
     "check:diff": "git diff --check",
-    "check": "npm run backend:lint && npm run backend:compile && npm run backend:test && npm run build && npm run test:ui && npm run check:diff"
+    "check": "npm run backend:lint && npm run backend:compile && npm run backend:test && npm run check:error-labels && npm run build && npm run test:ui && npm run check:diff"
   }
 }

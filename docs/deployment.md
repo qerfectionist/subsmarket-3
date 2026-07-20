@@ -237,10 +237,18 @@ POST /api/internal/jobs/run-due
 X-Internal-Job-Token: <INTERNAL_JOB_TOKEN>
 ```
 
-The endpoint is called by GitHub Actions every 5 minutes. Each due-job step is
-committed separately. If one step fails, the backend rolls back only that step,
-continues the remaining steps, logs the exception, and returns the failed step
-inside `job_errors`.
+The endpoint is called by the current GitHub Actions fallback schedule. Each
+due-job step is committed separately. If one step fails, the backend rolls back
+only that step, continues the remaining steps, logs the exception, returns the
+failed step inside `job_errors`, and responds with HTTP 503. A scheduler must
+therefore treat any non-2xx response as a failed run and must not report its
+heartbeat.
+
+GitHub Actions cron is not the primary production scheduler. Scheduled runs can
+be delayed or skipped and repository run history must be checked before launch.
+Use an independent scheduler that calls `run-due` first and
+`dispatch-notifications` second every 5 minutes. Keep the GitHub workflow as a
+fallback, not as the only scheduler.
 
 Due-job logs include step names, aggregate counts, and error metadata. They do
 not include payment requisites or Telegram message text.
@@ -279,6 +287,8 @@ Notification retry rules:
   Telegram rate limits stay `pending`;
 - `available_at` moves forward using exponential backoff;
 - Telegram `400` and `403` errors are treated as permanent delivery failures;
+- Telegram `429` responses use the exact `parameters.retry_after` delay returned
+  by Telegram before the notification is retried;
 - after `NOTIFICATION_MAX_ATTEMPTS`, the job becomes `failed`.
 
 Notification dispatcher logs include selected/sent/retried/failed counts,
@@ -468,6 +478,7 @@ TELEGRAM_WEBHOOK_URL=https://<backend-domain>/api/telegram/webhook
 TELEGRAM_WEBHOOK_SECRET=...
 TELEGRAM_WEBHOOK_DROP_PENDING_UPDATES=false
 PAYMENT_REQUISITE_SECRET=...
+PAYMENT_REQUISITE_PREVIOUS_SECRETS=
 INTERNAL_JOB_TOKEN=...
 RATE_LIMIT_REDIS_URL=rediss://...
 SENTRY_DSN=

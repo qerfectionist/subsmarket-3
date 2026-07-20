@@ -62,6 +62,10 @@ class Settings(BaseSettings):
         default="dev-payment-requisite-secret-change-me",
         alias="PAYMENT_REQUISITE_SECRET",
     )
+    payment_requisite_previous_secrets: str = Field(
+        default="",
+        alias="PAYMENT_REQUISITE_PREVIOUS_SECRETS",
+    )
     internal_job_token: str | None = Field(default=None, alias="INTERNAL_JOB_TOKEN")
     rate_limit_redis_url: str | None = Field(
         default=None,

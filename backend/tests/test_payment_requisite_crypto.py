@@ -47,6 +47,21 @@ def test_payment_requisite_crypto_uses_cached_versioned_format(
     assert decrypt_payment_requisite(encrypted) == "+77001234567"
 
 
+def test_payment_requisite_crypto_reads_v3_with_previous_secret(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "payment_requisite_secret", "old-secret")
+    monkeypatch.setattr(settings, "payment_requisite_previous_secrets", "")
+    encrypted = encrypt_payment_requisite("+77001234567")
+
+    monkeypatch.setattr(settings, "payment_requisite_secret", "new-secret")
+    monkeypatch.setattr(
+        settings,
+        "payment_requisite_previous_secrets",
+        "unused-secret, old-secret",
+    )
+
+    assert decrypt_payment_requisite(encrypted) == "+77001234567"
+
+
 def test_payment_requisite_crypto_keeps_v2_tokens_readable(monkeypatch) -> None:
     monkeypatch.setattr(settings, "payment_requisite_secret", "test-secret")
     encrypted = _v2_encrypt("test-secret", "+77001234567")
@@ -55,9 +70,35 @@ def test_payment_requisite_crypto_keeps_v2_tokens_readable(monkeypatch) -> None:
     assert decrypt_payment_requisite(encrypted) == "+77001234567"
 
 
+def test_payment_requisite_crypto_reads_v2_with_previous_secret(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "payment_requisite_secret", "new-secret")
+    monkeypatch.setattr(
+        settings,
+        "payment_requisite_previous_secrets",
+        "old-secret",
+    )
+    encrypted = _v2_encrypt("old-secret", "+77001234567")
+
+    assert decrypt_payment_requisite(encrypted) == "+77001234567"
+
+
 def test_payment_requisite_crypto_keeps_legacy_tokens_readable(monkeypatch) -> None:
     monkeypatch.setattr(settings, "payment_requisite_secret", "test-secret")
     encrypted = _legacy_encrypt("test-secret", "+77001234567")
 
     assert not encrypted.startswith(("v2:", "v3:"))
+    assert decrypt_payment_requisite(encrypted) == "+77001234567"
+
+
+def test_payment_requisite_crypto_reads_legacy_with_previous_secret(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "payment_requisite_secret", "new-secret")
+    monkeypatch.setattr(
+        settings,
+        "payment_requisite_previous_secrets",
+        "old-secret",
+    )
+    encrypted = _legacy_encrypt("old-secret", "+77001234567")
+
     assert decrypt_payment_requisite(encrypted) == "+77001234567"

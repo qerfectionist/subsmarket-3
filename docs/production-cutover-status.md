@@ -175,7 +175,24 @@ key used to set it has been revoked after setup.
 - Create a small test family and complete one test join/payment flow.
 - GitHub fallback uptime workflow is available at
   `.github/workflows/uptime-check.yml`.
-- Configure a heartbeat monitor for the background jobs endpoint after the
-  GitHub secret `JOBS_HEARTBEAT_URL` is available.
+- Configure an independent five-minute scheduler. GitHub run history checked on
+  2026-07-20 contained multi-hour gaps and is not sufficient as the primary
+  production scheduler.
+- Create a heartbeat monitor and add its ping URL as the required GitHub secret
+  `JOBS_HEARTBEAT_URL`.
+- Upgrade the production Supabase project to a plan with automatic daily
+  backups and complete one restore drill using
+  [database-backup-and-restore.md](database-backup-and-restore.md).
+
+Verified in code on 2026-07-20:
+
+- a failed `run-due` step returns HTTP 503, so a scheduler cannot emit a false
+  successful heartbeat;
+- Telegram `429` responses preserve the exact `retry_after` value and have a
+  regression test;
+- payment requisite decryption supports a bounded list of previous secrets for
+  safe key rotation;
+- every literal backend error code has a human-facing frontend label, enforced
+  by `npm run check:error-labels`.
 
 Detailed backend launch plan: [backend-readiness-plan.md](backend-readiness-plan.md).

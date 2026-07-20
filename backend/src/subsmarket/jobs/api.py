@@ -33,12 +33,19 @@ def require_internal_job_token(
         raise HTTPException(status_code=403, detail="INTERNAL_JOB_TOKEN_REQUIRED")
 
 
-@router.post("/run-due", response_model=RunDueJobsResult)
+@router.post(
+    "/run-due",
+    response_model=RunDueJobsResult,
+    responses={503: {"model": RunDueJobsResult}},
+)
 def post_run_due_jobs(
     _: None = Depends(require_internal_job_token),
     db: Session = Depends(get_db),
-) -> RunDueJobsResult:
-    return run_due_jobs(db)
+) -> RunDueJobsResult | JSONResponse:
+    result = run_due_jobs(db)
+    if result.job_errors:
+        return JSONResponse(status_code=503, content=jsonable_encoder(result))
+    return result
 
 
 @router.post("/dispatch-notifications", response_model=DispatchNotificationsResult)

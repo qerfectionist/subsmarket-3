@@ -37,7 +37,17 @@ export function formatError(error: unknown) {
   }
 
   const code = extractApiErrorCode(error.message);
-  return code ? errorLabels[code] ?? error.message : error.message;
+  if (code) {
+    return errorLabels[code] ?? "Не удалось выполнить действие. Попробуйте ещё раз.";
+  }
+
+  const apiDetail = error.message.match(/^API \d+:\s*(.+)$/s)?.[1]?.trim();
+  if (apiDetail && !apiDetail.startsWith("[") && !apiDetail.startsWith("{")) {
+    return apiDetail;
+  }
+  return error.message.startsWith("API ")
+    ? "Не удалось выполнить действие. Попробуйте ещё раз."
+    : error.message;
 }
 
 function extractApiValidationMessage(message: string) {

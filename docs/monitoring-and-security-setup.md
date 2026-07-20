@@ -40,7 +40,7 @@ The repository belongs to a personal GitHub account, so Gitleaks Action does
 not require a license key. Third-party actions are pinned to immutable commit
 SHAs.
 
-### Better Stack-compatible heartbeat
+### Independent scheduler and heartbeat
 
 Workflow: `.github/workflows/subsmarket-jobs.yml`.
 
@@ -56,14 +56,34 @@ If any earlier step fails, or if background jobs report `attention`, no
 heartbeat is sent and the monitor eventually alerts. The URL is optional locally
 and must never be committed.
 
-Recommended monitor settings:
+The GitHub workflow is only a fallback. Repository history has shown multi-hour
+gaps between scheduled runs, so it must not be the only production scheduler.
+Before public launch configure an independent scheduler (for example QStash or
+a Cloudflare Worker Cron Trigger) with this order every 5 minutes:
 
-- expected period: 10 minutes;
+1. `POST /api/internal/jobs/run-due`;
+2. `POST /api/internal/jobs/dispatch-notifications`;
+3. `GET /api/internal/jobs/health`;
+4. send the success heartbeat only when all three responses are 2xx.
+
+All protected calls require the `X-Internal-Job-Token` header. The scheduler
+must use the same secret as Render and must never put it in a query string.
+
+Recommended production monitor settings:
+
+- expected period: 5 minutes;
 - grace period: 10 minutes;
-- alert channel: Telegram or email.
+- alert when no successful heartbeat is received for 15 minutes;
+- alert channel: Telegram and email.
 
-The job runs every 5 minutes, but GitHub scheduled workflows can be delayed, so
-a strict five-minute heartbeat would produce false alarms.
+The repository secret `JOBS_HEARTBEAT_URL` is mandatory before launch. If it is
+absent, the fallback workflow logs that fact but cannot alert on a silent
+scheduler failure.
+
+Official scheduler references:
+
+- [QStash schedules](https://upstash.com/docs/qstash/features/schedules)
+- [Cloudflare Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
 
 ### GitHub uptime check
 
@@ -189,6 +209,9 @@ No Sentry auth token is required for the backend integration.
 
 Create one heartbeat monitor and provide its unique ping URL. It will be stored
 as the GitHub Actions secret `JOBS_HEARTBEAT_URL`.
+
+This account step is not optional for production. A successful API uptime check
+does not prove that reminders, expirations, and payment-state jobs are running.
 
 Create one uptime monitor for:
 

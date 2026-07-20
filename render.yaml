@@ -36,6 +36,8 @@ services:
         value: false
       - key: PAYMENT_REQUISITE_SECRET
         sync: false
+      - key: PAYMENT_REQUISITE_PREVIOUS_SECRETS
+        sync: false
       - key: INTERNAL_JOB_TOKEN
         sync: false
       - key: RATE_LIMIT_REDIS_URL

@@ -344,3 +344,35 @@ def test_telegram_sender_http_errors_do_not_expose_bot_token(
     message = str(exc.value)
     assert "TELEGRAM_SEND_HTTP_ERROR: ConnectError" == message
     assert bot_token not in message
+
+
+def test_telegram_sender_uses_retry_after_from_rate_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_post(
+        url: str,
+        *,
+        json: dict[str, object],
+        timeout: float,
+    ) -> httpx.Response:
+        return httpx.Response(
+            429,
+            json={
+                "ok": False,
+                "error_code": 429,
+                "description": "Too Many Requests",
+                "parameters": {"retry_after": 17},
+            },
+        )
+
+    monkeypatch.setattr(
+        "subsmarket.notifications.dispatcher.httpx.post",
+        fake_post,
+    )
+
+    with pytest.raises(NotificationSendError) as exc:
+        TelegramBotSender(bot_token="123456:test").send_message(700001, "Open app")
+
+    assert exc.value.permanent is False
+    assert exc.value.retry_after_seconds == 17
+    assert str(exc.value) == "TELEGRAM_SEND_FAILED 429: Too Many Requests"
