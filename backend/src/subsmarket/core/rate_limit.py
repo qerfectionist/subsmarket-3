@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import inspect
-import json
 import logging
 import re
 import time
@@ -10,7 +9,6 @@ from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from re import Pattern
-from urllib.parse import parse_qs
 
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
@@ -22,6 +20,8 @@ from starlette.types import ASGIApp
 from subsmarket.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+TelegramUserIdResolver = Callable[[str], str | None]
 
 REDIS_RATE_LIMIT_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
@@ -330,9 +330,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         *,
         limiter: InMemoryRateLimiter | RedisRateLimiter | None = None,
+        telegram_user_id_resolver: TelegramUserIdResolver | None = None,
+        trusted_proxy_hops: int | None = None,
     ) -> None:
         super().__init__(app)
         self.limiter = limiter or build_rate_limiter()
+        self.telegram_user_id_resolver = telegram_user_id_resolver
+        self.trusted_proxy_hops = (
+            settings.rate_limit_trusted_proxy_hops
+            if trusted_proxy_hops is None
+            else trusted_proxy_hops
+        )
 
     async def dispatch(
         self,
@@ -343,7 +351,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if rule is None:
             return await call_next(request)
 
-        client_key = _request_key(request, rule)
+        client_key = _request_key(
+            request,
+            rule,
+            telegram_user_id_resolver=self.telegram_user_id_resolver,
+            trusted_proxy_hops=self.trusted_proxy_hops,
+        )
         allow_result = self.limiter.allow(rule=rule, client_key=client_key)
         allowed = (
             await allow_result
@@ -359,33 +372,48 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-def _client_key(request: Request) -> str:
+def _client_key(request: Request, *, trusted_proxy_hops: int) -> str:
     forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip()
+    if forwarded_for and trusted_proxy_hops > 0:
+        addresses = [address.strip() for address in forwarded_for.split(",")]
+        addresses = [address for address in addresses if address]
+        if addresses:
+            # X-Forwarded-For is ordered from the original client to the
+            # nearest proxy. Walk left once for every trusted proxy layer.
+            client_index = max(0, len(addresses) - trusted_proxy_hops)
+            return addresses[client_index]
     if request.client is not None:
         return request.client.host
     return "unknown"
 
 
-def _request_key(request: Request, rule: RateLimitRule) -> str:
+def _request_key(
+    request: Request,
+    rule: RateLimitRule,
+    *,
+    telegram_user_id_resolver: TelegramUserIdResolver | None = None,
+    trusted_proxy_hops: int = 0,
+) -> str:
     if rule.key_by_telegram_user:
-        telegram_user_id = _telegram_user_id(request)
+        telegram_user_id = _telegram_user_id(
+            request,
+            telegram_user_id_resolver=telegram_user_id_resolver,
+        )
         if telegram_user_id is not None:
             return f"telegram:{telegram_user_id}"
-    return f"client:{_client_key(request)}"
+    return f"client:{_client_key(request, trusted_proxy_hops=trusted_proxy_hops)}"
 
 
-def _telegram_user_id(request: Request) -> str | None:
+def _telegram_user_id(
+    request: Request,
+    *,
+    telegram_user_id_resolver: TelegramUserIdResolver | None = None,
+) -> str | None:
     init_data = request.headers.get("x-telegram-init-data")
-    if init_data:
-        try:
-            user_json = parse_qs(init_data, keep_blank_values=True).get("user", [""])[0]
-            telegram_user_id = json.loads(user_json).get("id")
-        except (AttributeError, json.JSONDecodeError, TypeError, ValueError):
-            return None
-        if isinstance(telegram_user_id, int) and telegram_user_id > 0:
-            return str(telegram_user_id)
+    if init_data and telegram_user_id_resolver is not None:
+        telegram_user_id = telegram_user_id_resolver(init_data)
+        if telegram_user_id is not None:
+            return telegram_user_id
 
     # The development auth adapter uses this header instead of signed initData.
     # It is deliberately ignored outside development.

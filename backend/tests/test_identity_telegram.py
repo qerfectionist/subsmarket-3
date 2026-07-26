@@ -18,7 +18,11 @@ from subsmarket.core.database import Base
 from subsmarket.identity.models import User
 from subsmarket.identity.schemas import TelegramUserData
 from subsmarket.identity.service import upsert_user
-from subsmarket.identity.telegram import _verify_init_data, parse_telegram_user
+from subsmarket.identity.telegram import (
+    _verify_init_data,
+    parse_telegram_user,
+    verified_telegram_user_id,
+)
 
 
 def make_request(host: str = "testclient") -> Request:
@@ -82,6 +86,18 @@ def test_verify_init_data_rejects_expired_payload() -> None:
 
     assert exc.value.status_code == 401
     assert exc.value.detail == "TELEGRAM_INIT_DATA_EXPIRED"
+
+
+def test_verified_telegram_user_id_requires_valid_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bot_token = "123456:secret"
+    monkeypatch.setattr(settings, "telegram_bot_token", bot_token)
+
+    assert verified_telegram_user_id(make_init_data(bot_token)) == "777001"
+    assert verified_telegram_user_id(
+        "user=%7B%22id%22%3A999999%7D&auth_date=1&hash=invalid"
+    ) is None
 
 
 def test_parse_telegram_user_uses_verified_init_data(

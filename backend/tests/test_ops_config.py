@@ -154,6 +154,42 @@ def test_runtime_settings_reject_missing_webhook_secret_in_production(
         create_app()
 
 
+def test_runtime_settings_reject_default_payment_secret_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from subsmarket.main import create_app
+
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "dev_auth_enabled", False)
+    monkeypatch.setattr(settings, "cors_allowed_origins", "https://mini.example.com")
+    monkeypatch.setattr(settings, "telegram_webhook_secret", "webhook-secret")
+    monkeypatch.setattr(
+        settings,
+        "payment_requisite_secret",
+        "dev-payment-requisite-secret-change-me",
+    )
+    monkeypatch.setattr(settings, "internal_job_token", "job-secret")
+
+    with pytest.raises(RuntimeError, match="PAYMENT_REQUISITE_SECRET"):
+        create_app()
+
+
+def test_runtime_settings_reject_missing_job_token_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from subsmarket.main import create_app
+
+    monkeypatch.setattr(settings, "app_env", "production")
+    monkeypatch.setattr(settings, "dev_auth_enabled", False)
+    monkeypatch.setattr(settings, "cors_allowed_origins", "https://mini.example.com")
+    monkeypatch.setattr(settings, "telegram_webhook_secret", "webhook-secret")
+    monkeypatch.setattr(settings, "payment_requisite_secret", "prod-secret")
+    monkeypatch.setattr(settings, "internal_job_token", None)
+
+    with pytest.raises(RuntimeError, match="INTERNAL_JOB_TOKEN"):
+        create_app()
+
+
 def test_runtime_settings_reject_dev_auth_in_production(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

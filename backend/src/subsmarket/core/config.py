@@ -7,6 +7,8 @@ from typing import Any
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEFAULT_PAYMENT_REQUISITE_SECRET = "dev-payment-requisite-secret-change-me"
+
 
 def normalize_sqlalchemy_database_url(url: str) -> str:
     """Accept managed Postgres URLs from Render, Supabase, Neon, Railway, etc."""
@@ -59,7 +61,7 @@ class Settings(BaseSettings):
         default=False, alias="TELEGRAM_WEBHOOK_DROP_PENDING_UPDATES"
     )
     payment_requisite_secret: str = Field(
-        default="dev-payment-requisite-secret-change-me",
+        default=DEFAULT_PAYMENT_REQUISITE_SECRET,
         alias="PAYMENT_REQUISITE_SECRET",
     )
     payment_requisite_previous_secrets: str = Field(
@@ -70,6 +72,12 @@ class Settings(BaseSettings):
     rate_limit_redis_url: str | None = Field(
         default=None,
         alias="RATE_LIMIT_REDIS_URL",
+    )
+    rate_limit_trusted_proxy_hops: int = Field(
+        default=1,
+        ge=0,
+        le=10,
+        alias="RATE_LIMIT_TRUSTED_PROXY_HOPS",
     )
     sentry_dsn: str | None = Field(default=None, alias="SENTRY_DSN")
     sentry_traces_sample_rate: float = Field(
