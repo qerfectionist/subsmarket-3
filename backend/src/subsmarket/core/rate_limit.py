@@ -378,10 +378,22 @@ def _client_key(request: Request, *, trusted_proxy_hops: int) -> str:
         addresses = [address.strip() for address in forwarded_for.split(",")]
         addresses = [address for address in addresses if address]
         if addresses:
+            if len(addresses) < trusted_proxy_hops:
+                logger.warning(
+                    "RATE_LIMIT_TRUSTED_PROXY_HOPS=%s exceeds X-Forwarded-For "
+                    "chain length %s; using direct peer",
+                    trusted_proxy_hops,
+                    len(addresses),
+                )
+                return _direct_client_key(request)
             # X-Forwarded-For is ordered from the original client to the
             # nearest proxy. Walk left once for every trusted proxy layer.
-            client_index = max(0, len(addresses) - trusted_proxy_hops)
+            client_index = len(addresses) - trusted_proxy_hops
             return addresses[client_index]
+    return _direct_client_key(request)
+
+
+def _direct_client_key(request: Request) -> str:
     if request.client is not None:
         return request.client.host
     return "unknown"
@@ -391,8 +403,8 @@ def _request_key(
     request: Request,
     rule: RateLimitRule,
     *,
+    trusted_proxy_hops: int,
     telegram_user_id_resolver: TelegramUserIdResolver | None = None,
-    trusted_proxy_hops: int = 0,
 ) -> str:
     if rule.key_by_telegram_user:
         telegram_user_id = _telegram_user_id(

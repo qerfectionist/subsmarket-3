@@ -3,18 +3,21 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from starlette.requests import Request
 
 from subsmarket.core.config import settings
-from subsmarket.core.database import Base
+from subsmarket.core.database import Base, get_auth_db, get_db
+from subsmarket.core.rate_limit import InMemoryRateLimiter, RateLimitRule
 from subsmarket.identity.models import User
 from subsmarket.identity.schemas import TelegramUserData
 from subsmarket.identity.service import upsert_user
@@ -39,9 +42,14 @@ def make_request(host: str = "testclient") -> Request:
     )
 
 
-def make_init_data(bot_token: str, *, auth_date: datetime | None = None) -> str:
+def make_init_data(
+    bot_token: str,
+    *,
+    auth_date: datetime | None = None,
+    telegram_user_id: int = 777001,
+) -> str:
     user = {
-        "id": 777001,
+        "id": telegram_user_id,
         "first_name": "Telegram",
         "last_name": "User",
         "username": "telegram_user",
@@ -98,6 +106,62 @@ def test_verified_telegram_user_id_requires_valid_signature(
     assert verified_telegram_user_id(
         "user=%7B%22id%22%3A999999%7D&auth_date=1&hash=invalid"
     ) is None
+
+
+def test_create_app_rate_limit_uses_verified_telegram_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import subsmarket.core.rate_limit as rate_limit_module
+    from subsmarket.main import create_app
+
+    bot_token = "123456:secret"
+    limiter = InMemoryRateLimiter(
+        [
+            RateLimitRule(
+                "me_get",
+                "GET",
+                re.compile(r"/api/me"),
+                1,
+                60,
+                key_by_telegram_user=True,
+            )
+        ]
+    )
+    monkeypatch.setattr(settings, "telegram_bot_token", bot_token)
+    monkeypatch.setattr(rate_limit_module, "build_rate_limiter", lambda: limiter)
+
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+    with session_factory() as db:
+        app = create_app()
+        app.dependency_overrides[get_db] = lambda: db
+        app.dependency_overrides[get_auth_db] = lambda: db
+        with TestClient(app) as client:
+            first_user_headers = {
+                "x-telegram-init-data": make_init_data(
+                    bot_token,
+                    telegram_user_id=777001,
+                )
+            }
+            second_user_headers = {
+                "x-telegram-init-data": make_init_data(
+                    bot_token,
+                    telegram_user_id=777002,
+                )
+            }
+
+            assert client.get("/api/me", headers=first_user_headers).status_code == 200
+            assert client.get("/api/me", headers=second_user_headers).status_code == 200
+            assert client.get("/api/me", headers=first_user_headers).status_code == 429
+
+    Base.metadata.drop_all(engine)
+    engine.dispose()
 
 
 def test_parse_telegram_user_uses_verified_init_data(

@@ -170,6 +170,60 @@ def test_rate_limit_supports_multiple_trusted_proxy_hops() -> None:
     ).status_code == 429
 
 
+def test_rate_limit_falls_back_to_peer_when_proxy_chain_is_too_short() -> None:
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [RateLimitRule("test", "GET", re.compile(r"/limited"), 1, 60)]
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        trusted_proxy_hops=2,
+    )
+
+    @app.get("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "1.1.1.1"},
+    ).status_code == 200
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "2.2.2.2"},
+    ).status_code == 429
+
+
+def test_rate_limit_ignores_forwarded_chain_when_no_proxy_is_trusted() -> None:
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [RateLimitRule("test", "GET", re.compile(r"/limited"), 1, 60)]
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        trusted_proxy_hops=0,
+    )
+
+    @app.get("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "1.1.1.1"},
+    ).status_code == 200
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "2.2.2.2"},
+    ).status_code == 429
+
+
 def test_invite_lookup_rate_limit_covers_invalid_code_shapes() -> None:
     now = [1000.0]
     app = FastAPI()
@@ -494,7 +548,7 @@ def test_telegram_scoped_limit_uses_verified_user_id() -> None:
     assert client.post("/limited", headers=headers).status_code == 429
 
 
-def test_telegram_scoped_limit_falls_back_to_ip_for_missing_and_invalid_identity() -> None:
+def test_telegram_limit_uses_ip_for_missing_and_invalid_identity() -> None:
     app = FastAPI()
     limiter = InMemoryRateLimiter(
         [
