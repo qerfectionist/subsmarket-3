@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from subsmarket.core.config import settings
-
-DEFAULT_PAYMENT_SECRET = "dev-payment-requisite-secret-change-me"
+from subsmarket.core.config import DEFAULT_PAYMENT_REQUISITE_SECRET, settings
 
 
 @dataclass(frozen=True)
@@ -51,10 +49,16 @@ def check_production_config() -> list[ConfigCheck]:
         _not_default(
             "PAYMENT_REQUISITE_SECRET",
             settings.payment_requisite_secret,
-            DEFAULT_PAYMENT_SECRET,
+            DEFAULT_PAYMENT_REQUISITE_SECRET,
         ),
         _present("INTERNAL_JOB_TOKEN", settings.internal_job_token),
         _production_redis_url(settings.app_env, settings.rate_limit_redis_url),
+        _bounded_int(
+            "RATE_LIMIT_TRUSTED_PROXY_HOPS",
+            settings.rate_limit_trusted_proxy_hops,
+            minimum=0,
+            maximum=10,
+        ),
         _production_http_url("SENTRY_DSN", settings.app_env, settings.sentry_dsn),
         _bounded_float(
             "SENTRY_TRACES_SAMPLE_RATE",

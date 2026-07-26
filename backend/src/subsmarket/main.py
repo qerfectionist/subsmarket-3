@@ -6,12 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from subsmarket.bot.api import router as bot_router
 from subsmarket.catalog.api import router as catalog_router
 from subsmarket.core.api import router as core_router
-from subsmarket.core.config import settings
+from subsmarket.core.config import DEFAULT_PAYMENT_REQUISITE_SECRET, settings
 from subsmarket.core.observability import configure_sentry
 from subsmarket.core.rate_limit import RateLimitMiddleware
 from subsmarket.dev.api import router as dev_router
 from subsmarket.families.api import router as families_router
 from subsmarket.identity.api import router as identity_router
+from subsmarket.identity.telegram import verified_telegram_user_id
 from subsmarket.jobs.api import router as jobs_router
 from subsmarket.marketplace.account_api import router as account_marketplace_router
 from subsmarket.marketplace.api import router as marketplace_router
@@ -28,6 +29,13 @@ def validate_runtime_settings() -> None:
         )
     if not settings.telegram_webhook_secret:
         raise RuntimeError("TELEGRAM_WEBHOOK_SECRET is required outside development")
+    if settings.payment_requisite_secret == DEFAULT_PAYMENT_REQUISITE_SECRET:
+        raise RuntimeError(
+            "PAYMENT_REQUISITE_SECRET must not use the development default "
+            "outside development"
+        )
+    if not settings.internal_job_token:
+        raise RuntimeError("INTERNAL_JOB_TOKEN is required outside development")
 
 
 def create_app() -> FastAPI:
@@ -41,7 +49,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(
+        RateLimitMiddleware,
+        telegram_user_id_resolver=verified_telegram_user_id,
+    )
 
     app.include_router(core_router)
     app.include_router(identity_router)

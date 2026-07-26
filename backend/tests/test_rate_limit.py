@@ -17,6 +17,12 @@ from subsmarket.core.rate_limit import (
 )
 
 
+def resolve_test_telegram_user(init_data: str) -> str | None:
+    prefix = "signed-user:"
+    user_id = init_data.removeprefix(prefix)
+    return user_id if init_data.startswith(prefix) and user_id.isdecimal() else None
+
+
 class FakeRedis:
     def __init__(self) -> None:
         self.counts: dict[str, int] = {}
@@ -108,6 +114,114 @@ def test_rate_limit_middleware_keys_by_forwarded_client() -> None:
     assert first_client_response.status_code == 200
     assert first_client_blocked.status_code == 429
     assert second_client_response.status_code == 200
+
+
+def test_rate_limit_ignores_spoofed_leftmost_forwarded_address() -> None:
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [RateLimitRule("test", "GET", re.compile(r"/limited"), 1, 60)]
+    )
+    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+
+    @app.get("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "1.1.1.1, 203.0.113.7"},
+    ).status_code == 200
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "2.2.2.2, 203.0.113.7"},
+    ).status_code == 429
+
+
+def test_rate_limit_supports_multiple_trusted_proxy_hops() -> None:
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [RateLimitRule("test", "GET", re.compile(r"/limited"), 1, 60)]
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        trusted_proxy_hops=2,
+    )
+
+    @app.get("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    assert client.get(
+        "/limited",
+        headers={
+            "x-forwarded-for": "1.1.1.1, 203.0.113.7, 198.51.100.4"
+        },
+    ).status_code == 200
+    assert client.get(
+        "/limited",
+        headers={
+            "x-forwarded-for": "2.2.2.2, 203.0.113.7, 198.51.100.5"
+        },
+    ).status_code == 429
+
+
+def test_rate_limit_falls_back_to_peer_when_proxy_chain_is_too_short() -> None:
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [RateLimitRule("test", "GET", re.compile(r"/limited"), 1, 60)]
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        trusted_proxy_hops=2,
+    )
+
+    @app.get("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "1.1.1.1"},
+    ).status_code == 200
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "2.2.2.2"},
+    ).status_code == 429
+
+
+def test_rate_limit_ignores_forwarded_chain_when_no_proxy_is_trusted() -> None:
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [RateLimitRule("test", "GET", re.compile(r"/limited"), 1, 60)]
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        trusted_proxy_hops=0,
+    )
+
+    @app.get("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "1.1.1.1"},
+    ).status_code == 200
+    assert client.get(
+        "/limited",
+        headers={"x-forwarded-for": "2.2.2.2"},
+    ).status_code == 429
 
 
 def test_invite_lookup_rate_limit_covers_invalid_code_shapes() -> None:
@@ -360,7 +474,11 @@ def test_telegram_scoped_limit_separates_users_on_shared_ip() -> None:
             )
         ]
     )
-    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        telegram_user_id_resolver=resolve_test_telegram_user,
+    )
 
     @app.post("/limited")
     def limited() -> dict[str, bool]:
@@ -373,21 +491,21 @@ def test_telegram_scoped_limit_separates_users_on_shared_ip() -> None:
         "/limited",
         headers={
             **shared_ip,
-            "x-telegram-init-data": "user=%7B%22id%22%3A1001%7D&auth_date=1",
+            "x-telegram-init-data": "signed-user:1001",
         },
     )
     second_user = client.post(
         "/limited",
         headers={
             **shared_ip,
-            "x-telegram-init-data": "user=%7B%22id%22%3A1002%7D&auth_date=1",
+            "x-telegram-init-data": "signed-user:1002",
         },
     )
     first_user_again = client.post(
         "/limited",
         headers={
             "x-forwarded-for": "10.0.0.2",
-            "x-telegram-init-data": "user=%7B%22id%22%3A1001%7D&auth_date=1",
+            "x-telegram-init-data": "signed-user:1001",
         },
     )
 
@@ -396,7 +514,7 @@ def test_telegram_scoped_limit_separates_users_on_shared_ip() -> None:
     assert first_user_again.status_code == 429
 
 
-def test_telegram_scoped_limit_reads_user_id_from_init_data() -> None:
+def test_telegram_scoped_limit_uses_verified_user_id() -> None:
     app = FastAPI()
     limiter = InMemoryRateLimiter(
         [
@@ -410,7 +528,11 @@ def test_telegram_scoped_limit_reads_user_id_from_init_data() -> None:
             )
         ]
     )
-    app.add_middleware(RateLimitMiddleware, limiter=limiter)
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        telegram_user_id_resolver=resolve_test_telegram_user,
+    )
 
     @app.post("/limited")
     def limited() -> dict[str, bool]:
@@ -419,11 +541,51 @@ def test_telegram_scoped_limit_reads_user_id_from_init_data() -> None:
     client = TestClient(app)
     headers = {
         "x-forwarded-for": "10.0.0.1",
-        "x-telegram-init-data": "user=%7B%22id%22%3A2001%7D&auth_date=1",
+        "x-telegram-init-data": "signed-user:2001",
     }
 
     assert client.post("/limited", headers=headers).status_code == 200
     assert client.post("/limited", headers=headers).status_code == 429
+
+
+def test_telegram_limit_uses_ip_for_missing_and_invalid_identity() -> None:
+    app = FastAPI()
+    limiter = InMemoryRateLimiter(
+        [
+            RateLimitRule(
+                "test",
+                "POST",
+                re.compile(r"/limited"),
+                1,
+                60,
+                key_by_telegram_user=True,
+            )
+        ]
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        limiter=limiter,
+        telegram_user_id_resolver=resolve_test_telegram_user,
+    )
+
+    @app.post("/limited")
+    def limited() -> dict[str, bool]:
+        return {"ok": True}
+
+    client = TestClient(app)
+    shared_proxy_address = "203.0.113.9"
+
+    assert client.post(
+        "/limited",
+        headers={"x-forwarded-for": shared_proxy_address},
+    ).status_code == 200
+    assert client.post(
+        "/limited",
+        headers={
+            "x-forwarded-for": shared_proxy_address,
+            "x-telegram-init-data": "user=%7B%22id%22%3A2002%7D",
+        },
+    ).status_code == 429
 
 
 def test_telegram_scoped_limit_reads_development_user_header(monkeypatch) -> None:

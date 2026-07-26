@@ -50,6 +50,22 @@ def _verify_init_data(init_data: str, bot_token: str) -> dict[str, str]:
     return values
 
 
+def verified_telegram_user_id(init_data: str) -> str | None:
+    """Return a rate-limit identity only for authentic, current Telegram data."""
+    if not settings.telegram_bot_token:
+        return None
+    try:
+        values = _verify_init_data(init_data, settings.telegram_bot_token)
+        raw_user = values.get("user")
+        user = json.loads(raw_user) if raw_user else None
+        telegram_user_id = user.get("id") if isinstance(user, dict) else None
+    except (HTTPException, json.JSONDecodeError, TypeError, ValueError):
+        return None
+    if isinstance(telegram_user_id, int) and telegram_user_id > 0:
+        return str(telegram_user_id)
+    return None
+
+
 def parse_telegram_user(
     request: Request,
     x_telegram_init_data: str | None = Header(default=None),
