@@ -25,7 +25,8 @@ def test_health_endpoint_is_lightweight() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_ready_endpoint_checks_database() -> None:
+def test_ready_endpoint_checks_database(monkeypatch) -> None:
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "35b66b9a07c1fd59")
     app.dependency_overrides[get_db] = lambda: ReadyDb()
     try:
         with TestClient(app) as client:
@@ -38,6 +39,7 @@ def test_ready_endpoint_checks_database() -> None:
         "status": "ok",
         "database": "ok",
         "rate_limit": "local",
+        "revision": "35b66b9",
     }
 
 

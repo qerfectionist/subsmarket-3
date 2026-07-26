@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -26,4 +28,5 @@ async def ready(db: Session = Depends(get_db)) -> dict[str, str]:
         "status": "ok",
         "database": "ok",
         "rate_limit": await rate_limit_backend_status(),
+        "revision": os.getenv("RENDER_GIT_COMMIT", "unknown")[:7],
     }
