@@ -712,7 +712,7 @@ def test_redis_rate_limiter_logs_outage_and_recovery_once(caplog) -> None:
         redis.available = True
         await limiter.allow(rule=rule, client_key="telegram:1003")
 
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.WARNING):
         asyncio.run(run())
 
     messages = [record.getMessage() for record in caplog.records]

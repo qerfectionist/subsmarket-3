@@ -308,7 +308,7 @@ class RedisRateLimiter:
             self._redis_available = False
             return self.fallback.allow(rule=rule, client_key=client_key)
         if self._redis_available is False:
-            logger.info("Redis rate limiter recovered; shared limits restored")
+            logger.warning("Redis rate limiter recovered; shared limits restored")
         self._redis_available = True
         return int(count) <= rule.max_requests
 
