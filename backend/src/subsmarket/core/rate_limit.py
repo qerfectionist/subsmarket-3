@@ -22,6 +22,8 @@ from subsmarket.core.config import settings
 logger = logging.getLogger(__name__)
 
 TelegramUserIdResolver = Callable[[str], str | None]
+REDIS_CONNECT_TIMEOUT_SECONDS = 2
+REDIS_SOCKET_TIMEOUT_SECONDS = 2
 
 REDIS_RATE_LIMIT_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
@@ -272,8 +274,14 @@ class RedisRateLimiter:
         fallback: InMemoryRateLimiter | None = None,
     ) -> None:
         self.rules = tuple(rules)
-        self.client = client or Redis.from_url(redis_url, decode_responses=True)
+        self.client = client or Redis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_connect_timeout=REDIS_CONNECT_TIMEOUT_SECONDS,
+            socket_timeout=REDIS_SOCKET_TIMEOUT_SECONDS,
+        )
         self.fallback = fallback or InMemoryRateLimiter(self.rules)
+        self._redis_available: bool | None = None
 
     def matching_rule(self, request: Request) -> RateLimitRule | None:
         for rule in self.rules:
@@ -292,11 +300,16 @@ class RedisRateLimiter:
                 rule.window_seconds,
             )
         except RedisError:
-            logger.warning(
-                "Redis rate limiter unavailable; using process-local fallback",
-                exc_info=True,
-            )
+            if self._redis_available is not False:
+                logger.warning(
+                    "Redis rate limiter unavailable; using process-local fallback",
+                    exc_info=True,
+                )
+            self._redis_available = False
             return self.fallback.allow(rule=rule, client_key=client_key)
+        if self._redis_available is False:
+            logger.warning("Redis rate limiter recovered; shared limits restored")
+        self._redis_available = True
         return int(count) <= rule.max_requests
 
 
@@ -312,8 +325,8 @@ async def rate_limit_backend_status() -> str:
     client = Redis.from_url(
         settings.rate_limit_redis_url,
         decode_responses=True,
-        socket_connect_timeout=1,
-        socket_timeout=1,
+        socket_connect_timeout=REDIS_CONNECT_TIMEOUT_SECONDS,
+        socket_timeout=REDIS_SOCKET_TIMEOUT_SECONDS,
     )
     try:
         await client.ping()

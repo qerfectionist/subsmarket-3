@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 
 from fastapi import FastAPI
@@ -46,6 +47,16 @@ class FakeRedis:
 class FailingRedis:
     async def eval(self, *args: object) -> int:
         raise RedisError("redis unavailable")
+
+
+class RecoveringRedis:
+    def __init__(self) -> None:
+        self.available = False
+
+    async def eval(self, *args: object) -> int:
+        if not self.available:
+            raise RedisError("redis unavailable")
+        return 1
 
 
 class ReadyPingRedis:
@@ -688,6 +699,29 @@ def test_redis_rate_limiter_uses_local_fallback_on_connection_error() -> None:
         )
 
     assert asyncio.run(run()) == (True, False)
+
+
+def test_redis_rate_limiter_logs_outage_and_recovery_once(caplog) -> None:
+    rule = RateLimitRule("test", "POST", re.compile(r"/limited"), 5, 60)
+    redis = RecoveringRedis()
+    limiter = RedisRateLimiter("redis://unused", [rule], client=redis)
+
+    async def run() -> None:
+        await limiter.allow(rule=rule, client_key="telegram:1001")
+        await limiter.allow(rule=rule, client_key="telegram:1002")
+        redis.available = True
+        await limiter.allow(rule=rule, client_key="telegram:1003")
+
+    with caplog.at_level(logging.WARNING):
+        asyncio.run(run())
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert messages.count(
+        "Redis rate limiter unavailable; using process-local fallback"
+    ) == 1
+    assert messages.count(
+        "Redis rate limiter recovered; shared limits restored"
+    ) == 1
 
 
 def test_rate_limit_backend_status_reports_redis_and_fallback(

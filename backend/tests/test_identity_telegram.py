@@ -160,6 +160,21 @@ def test_create_app_rate_limit_uses_verified_telegram_identity(
             assert client.get("/api/me", headers=second_user_headers).status_code == 200
             assert client.get("/api/me", headers=first_user_headers).status_code == 429
 
+            # Invalid identities share the untouched client-IP bucket: the first
+            # reaches auth and the second is rejected by the one-request limit.
+            first_spoof = {
+                "x-telegram-init-data": (
+                    "user=%7B%22id%22%3A777003%7D&auth_date=1&hash=invalid"
+                )
+            }
+            second_spoof = {
+                "x-telegram-init-data": (
+                    "user=%7B%22id%22%3A777004%7D&auth_date=1&hash=invalid"
+                )
+            }
+            assert client.get("/api/me", headers=first_spoof).status_code == 401
+            assert client.get("/api/me", headers=second_spoof).status_code == 429
+
     Base.metadata.drop_all(engine)
     engine.dispose()
 
