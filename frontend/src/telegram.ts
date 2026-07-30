@@ -152,9 +152,14 @@ function setCssVar(name: string, value: string | number | undefined) {
 function applyTelegramTheme() {
   const app = webApp();
   const theme = app?.themeParams ?? {};
+  const previewTheme = import.meta.env.DEV
+    ? new URLSearchParams(window.location.search).get("theme")
+    : null;
   const isDark =
-    app?.colorScheme === "dark" ||
-    (!app && window.matchMedia?.("(prefers-color-scheme: dark)").matches === true);
+    previewTheme === "dark" ||
+    (previewTheme !== "light" &&
+      (app?.colorScheme === "dark" ||
+        (!app && window.matchMedia?.("(prefers-color-scheme: dark)").matches === true)));
   const fallback = isDark
     ? {
         bg: "#0f1620",
@@ -216,8 +221,9 @@ function applyTelegramTheme() {
   );
 
   const root = document.documentElement;
-  root.classList.remove("tma-light", "tma-dark");
-  root.classList.add(isDark ? "tma-dark" : "tma-light");
+  root.classList.remove("tma-light", "tma-dark", "light", "dark");
+  root.classList.add(isDark ? "tma-dark" : "tma-light", isDark ? "dark" : "light");
+  root.dataset.theme = isDark ? "dark" : "light";
 
   if (supportsWebAppVersion("6.1")) {
     app?.setHeaderColor?.(

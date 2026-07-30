@@ -44,9 +44,7 @@ test("seller publishes an account offer and accepts a buyer", async ({ page }) =
 
   await page.locator(".bottom-nav button").nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
-  await page.getByTestId("market-hero-pending-actions")
-    .getByRole("button", { name: "Открыть действия", exact: true })
-    .click({ force: true });
+  await page.getByTestId("market-notifications").click({ force: true });
   await expect(page.getByTestId("account-sales-actions-card")).toBeVisible();
   await page.getByTestId("account-sales-actions-card")
     .getByRole("button", { name: "Открыть" })

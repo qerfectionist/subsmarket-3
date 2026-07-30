@@ -1,503 +1,149 @@
-# AGENTS.md — контекст для AI-ассистентов (Codex, Claude, opencode)
+# AGENTS.md - актуальный контекст SubsMarket 3.0
 
-Этот файл описывает архитектурные конвенции и недавние изменения, чтобы
-AI-ассистент, начинающий работу над проектом, не опирался на устаревший
-контекст. Читать перед правками backend.
+Этот файл содержит только действующие инженерные правила. История изменений
+хранится в Git, а продуктовые решения - в `docs/`.
 
-## Команды проверки
+## Проверки
+
+Запускать из корня проекта:
 
 ```powershell
-npm run backend:lint      # ruff (через scripts/run-python.mjs — win + posix)
-npm run backend:compile   # compileall
-npm run backend:test      # pytest (нужна PostgreSQL для *_postgres_* тестов)
-npm run build             # frontend tsc + vite
-npm run test:ui           # Playwright E2E (7 тестов)
-npm run check             # всё подряд
+npm run backend:lint
+npm run backend:compile
+npm run backend:test
+npm run backend:test:postgres
+npm run build
+npm run test:ui
+npm run scheduler:check
+npm run check
 ```
 
-Backend-скрипты и Playwright `webServer` кроссплатформенные (`scripts/run-python.mjs`,
-`frontend/playwright.config.ts`). CI: `.github/workflows/frontend-check.yml` (build + E2E на
-`ubuntu-latest`). UX-контракт экранов: `frontend/docs/ux-states.md`.
-Дизайн-система Mini App: `docs/design-system.md`; frontend-краткая версия:
-`frontend/docs/design-system.md`.
+Текущую голову миграций проверять командой `alembic heads`; не фиксировать её
+номер в этом файле. Локальные кэши, логи и результаты сборки удаляются через
+`npm run clean:local`.
 
-Тесты, требующие PostgreSQL:
-`test_postgres_concurrency.py`, `test_postgres_schema_security.py`.
-Остальные тесты используют SQLite in-memory и запускаются без БД.
+## Локальный запуск
+
+- Полный стек запускается ярлыком `SubsMarket 3.0 - запуск` или `npm run dev`.
+- `scripts/ensure-local-infrastructure.mjs` запускает Docker Desktop при
+  необходимости, поднимает PostgreSQL, ждёт healthcheck и применяет миграции.
+- Backend готов только после успешного `GET /ready`. `GET /health` проверяет
+  процесс, но не доступность базы.
+- Frontend не должен открываться до готовности backend.
 
 ## Архитектура
 
-Модульный монолит, DDD-lite. Модули в `backend/src/subsmarket/`:
-`identity`, `catalog`, `families`, `notifications`, `jobs`, `bot`, `core`,
-`ops`, `dev`. Границы описаны в `docs/architecture.md`.
-
-- `families` — основной домен (Family Engine), не знает про marketplace.
-- `notifications` — только enqueues, не меняет бизнес-состояние.
-- `core` — shared инфраструктура (config, database, idempotency, rate_limit,
-  observability, models).
-- `families/service.py` — **теперь re-export модуль**. Реальная логика в
-  подмодулях (см. ниже). Сервисы **не делают `db.commit()`** — commit
-  выполняется в `get_db` (auto-commit после запроса).
-
-## Структура `families/` (после рефакторинга)
-
-```
-families/
-  _internal.py   — константы, хелперы, метрики владельца
-  creation.py    — create_family, update_family_*
-  invites.py     — create/rotate/disable/resolve invites
-  queries.py     — to_* мапперы, list_*, get_family_view
-  requests.py    — create/cancel/approve/reject join request
-  members.py     — leave/remove/acknowledge, close_family, mark_access
-  payments.py    — confirm_access, report/confirm/cancel payments, prepayments
-  service.py     — re-export всего (для обратной совместимости)
-  api.py         — endpoints (зависит от service.py)
-  models.py      — SQLAlchemy модели
-  schemas.py     — Pydantic схемы
-  audit.py       — record_family_audit_event
-  calendar.py    — add_payment_period, payment_due_at
-  crypto.py      — encrypt/decrypt payment requisite
-  pagination.py  — cursor encode/decode
-```
-
-**Важно:** `api.py` и `jobs/service.py` импортируют из `families.service`
-(который re-экспортирует из подмодулей). Не меняй импорты в `api.py` на
-прямые импорты из подмодулей — `service.py` остаётся агрегирующим модулем.
-
-## Недавние изменения (сессия 2026-06-22)
-
-Текущий полный прогон: lint, compile, 162 backend-теста, frontend build,
-7 Playwright E2E. PostgreSQL-only тесты могут быть skipped без тестовой БД.
-
-### 1. Таймзона Казахстана для расчёта периода
-
-**Проблема:** `date.today()` использует локальный TZ сервера. Бизнес-логика
-семей привязана к Казахстану (KZ, UTC+5), но `close_family` уже использовал
-`KAZAKHSTAN_TIMEZONE`, а `confirm_access_received`, `create_regular_payments`,
-`send_regular_payment_reminders`, `get_jobs_status` — нет. Несоответствие
-давало off-by-one около полуночи.
-
-**Решение:** общие хелперы в `core/database.py`:
-- `KAZAKHSTAN_TIMEZONE = timezone(timedelta(hours=5))`
-- `kz_today() -> date` — текущая дата в KZ.
-
-**Затронутые файлы:**
-- `core/database.py` — добавлены `KAZAKHSTAN_TIMEZONE` и `kz_today`.
-- `families/payments.py` — `confirm_access_received` использует `kz_today()`.
-- `jobs/service.py` — `create_regular_payments`, `send_regular_payment_reminders`
-  используют `kz_today()`.
-- `jobs/monitoring.py` — `get_jobs_status` использует `kz_today()`.
-- `dev/demo_flow.py`, `ops/write_load_smoke.py` — используют `kz_today()`.
-
-**Конвенция:** везде, где считается "сегодня" для бизнес-логики семей
-(периоды платежей, reminders, closing), использовать `kz_today()`, не
-`date.today()`. `utcnow()` остаётся для timestamp-ов.
-
-### 2. Cap на предоплату для monthly
-
-`record_owner_prepaid_periods` (`families/payments.py`) теперь ограничивает
-`data.periods > 12` для `family.period == "monthly"` → 409
-`MONTHLY_PREPAYMENT_LIMIT_REACHED`. Раньше cap был только для yearly (≤3).
-
-### 3. Guard повторного ack закрытия семьи
-
-`acknowledge_family_closing` (`families/members.py`) теперь возвращает
-member без записи в аудит, если `member.closing_acknowledged_at` уже задан
-(по аналогии с `acknowledge_member_removal`). Раньше повторный вызов
-создавал дубль в `FamilyAuditLog`.
-
-### 4. Дедупликация уведомлений через SQL
-
-**Проблема:** `cancel_pending_payment_notifications`,
-`_enqueue_member_notification_once`, `_payment_notification_exists`
-грузили все pending jobs получателя и фильтровали по `payload["payment_id"]`
-в Python. На росте данных — дорого.
-
-**Решение:** фильтр спущен в SQL через `NotificationJob.payload["key"].as_string()`
-(работает для PostgreSQL JSONB и SQLite JSON1). НЕ использовать `.astext` —
-это PostgreSQL-only, падает в тестах на SQLite.
-
-**Индекс:** `notification_jobs_recipient_event_created_idx` на
-`(recipient_user_id, event_type, created_at)`. Добавлен в модель
-`NotificationJob.__table_args__` и в миграцию
-`alembic/versions/20260622_0021_notification_dedup_index.py`.
-
-**Затронутые файлы:**
-- `families/payments.py` — `cancel_pending_payment_notifications`.
-- `jobs/service.py` — `_enqueue_member_notification_once`,
-  `_payment_notification_exists`.
-- `notifications/models.py` — `Index` в `__table_args__`.
-- `alembic/versions/20260622_0021_notification_dedup_index.py` — новая
-  миграция (revision `20260622_0021`, down_revision `20260620_0020`).
-
-**Конвенция:** для JSONB payload-фильтров использовать
-`Column.payload["key"].as_string() == value`, не `.astext` и не Python-фильтр.
-
-### 5. Изоляция auth-сессии
-
-**Проблема:** `upsert_user` делал `db.commit()` внутри сервиса и вызывался в
-`Depends(get_current_user)` для каждого families endpoint. Если endpoint
-откатывался, user уже был в БД (сайд-эффект auth в бизнес-транзакции).
-
-**Решение:** добавлена зависимость `get_auth_db` в `core/database.py` —
-отдельная сессия для auth. `get_current_user` (`families/api.py`) и
-`_me_response` (`identity/api.py`) вызывают `upsert_user(auth_db, ...)` (commit
-изолирован в auth_db), затем закрывают auth-сессию до обращения к основной
-сессии и получают fresh user через `db.get(User, user.id)`. Это важно: обе
-сессии используют один pool, и удержание auth-подключения до конца запроса
-может заблокировать бизнес-операции при параллельном входе.
-
-`upsert_user` (`identity/service.py`) **не изменён** — всё ещё коммитит
-внутри. Это оставлено осознанно: тест `test_identity_telegram.py` вызывает
-`upsert_user` напрямую без явного commit и полагается на внутренний commit.
-
-**Затронутые файлы:**
-- `core/database.py` — добавлена `get_auth_db`.
-- `families/api.py` — `get_current_user` принимает `auth_db`, импортирует
-  `User`, `get_auth_db`.
-- `identity/api.py` — endpoints принимают `auth_db`, `_me_response`
-  использует auth_db для upsert + db.get для fresh user.
-- `tests/test_family_api.py` — фикстура `client` переопределяет
-  `get_auth_db` той же test-сессией.
-
-**Конвенция для тестов:** любой TestClient-тест, переопределяющий `get_db`,
-должен также переопределять `get_auth_db` той же сессией:
-```python
-def _db_with_commit() -> Iterator[Session]:
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-
-app.dependency_overrides[get_db] = _db_with_commit
-app.dependency_overrides[get_auth_db] = lambda: db
-```
-
-### 6. Дробление `families/service.py` на подмодули
-
-**Проблема:** `service.py` был ~3440 строк в одном файле.
-
-**Решение:** разбит на 7 подмодулей + `service.py` как re-export:
-- `_internal.py` — константы, приватные хелперы, метрики владельца.
-- `creation.py` — `create_family`, `update_family_*`, `confirm_family_availability`.
-- `invites.py` — `create/rotate/disable/resolve_family_invite`.
-- `queries.py` — `to_*` мапперы, `list_*`, `get_family_view`, `list_family_audit_logs`.
-- `requests.py` — `create/cancel/approve/reject_join_request`.
-- `members.py` — `cancel_member_before_access`, `leave_family`, `remove_member`,
-  `revoke/acknowledge_member_removal`, `close_family`, `acknowledge_family_closing`,
-  `mark_access_provided`, `remind_access_confirmation`.
-- `payments.py` — `confirm_access_received`, `report/cancel/confirm_payment`,
-  `mark_payment_not_received`, `create_member_prepayment`,
-  `record_owner_prepaid_periods`, `cancel_scheduled_payments`,
-  `cancel_pending_payment_notifications`.
-- `service.py` — re-export: `from .creation import *` и т.д. с `# noqa: F401`.
-
-**Зависимости между подмодулями:**
-- `_internal.py` — не импортирует другие families подмодули.
-- `creation.py` → `_internal`, `queries`.
-- `invites.py` → `_internal`, `queries`.
-- `queries.py` → `_internal`.
-- `requests.py` → `_internal`.
-- `members.py` → `_internal`, `queries`, `invites`, `payments`, `requests`.
-- `payments.py` → `_internal`, `queries`.
-
-Нет circular imports.
-
-### 7. Полный отказ от `db.commit()` в сервисах
-
-**Проблема:** ~30 вызовов `db.commit()` внутри сервисных функций `families/`.
-Сайд-эффекты, невозможность композировать операции.
-
-**Решение:**
-1. Все `db.commit()` в подмодулях `families/` заменены на `db.flush()`.
-   `flush` отправляет изменения в БД в рамках транзакции (видимы для
-   последующих `SELECT`/`refresh` в той же сессии), но не фиксирует.
-2. `get_db` (`core/database.py`) теперь делает **auto-commit** после
-   успешного запроса и **auto-rollback** при исключении:
-   ```python
-   def get_db() -> Generator[Session]:
-       db = SessionLocal()
-       try:
-           yield db
-           db.commit()
-       except Exception:
-           db.rollback()
-           raise
-       finally:
-           db.close()
-   ```
-3. `get_auth_db` оставлен без auto-commit (`upsert_user` коммитит внутри).
-4. `jobs/service.py` — jobs коммитят внутри `_run_due_job_step` (этот слой
-   ок, не менялся).
-
-**Затронутые файлы:**
-- `core/database.py` — `get_db` с auto-commit.
-- `families/creation.py`, `invites.py`, `requests.py`, `members.py`,
-  `payments.py` — `db.commit()` → `db.flush()`.
-- `tests/test_family_api.py` — override `get_db` с auto-commit генератором.
-
-**Конвенция:**
-- Новые сервисы в `families/` делают `db.flush()` (не `db.commit()`).
-- Commit выполняется в `get_db` (или в тестовой фикстуре).
-- Сервисные тесты (`test_family_service.py`) работают без явного commit,
-  т.к. `flush` достаточно в рамках одной сессии.
-
-### 8. Frontend: React Query для server state
-
-**Проблема:** `App.tsx` — 694 строки, весь серверный стейт на `useState`,
-`runAction` после каждого действия делал `await load()` (4 параллельных
-запроса). Нет кэша, нет automatic invalidation.
-
-**Решение:**
-1. Установлен `@tanstack/react-query`.
-2. `main.tsx` — обёрнут в `QueryClientProvider` (staleTime 30s, retry 1).
-3. `hooks/useApi.ts` — ~30 hooks: `useQuery` для чтения, `useMutation`
-   для записи с `invalidateQueries` после успеха.
-4. `App.tsx` — переписан: server state через hooks, UI state (tab, form,
-   busy, error, notice) на `useState`. `load()` и `runAction()` заменены
-   на `runMutation` (обёртка над `mutateAsync`).
-
-**Query keys** (в `hooks/useApi.ts`):
-- `["me"]`, `["services", familyType]`, `["families", familyType]`,
-  `["myFamilies"]`, `["myRequests"]`,
-- `["familyView", familyId]`, `["familyAuditLog", familyId]`,
-  `["familyInvite", familyId]`, `["ownerRequests", familyId]`,
-  `["familyMembers", familyId]`, `["familyMemberPayments", familyId]`.
-
-**Конвенция:**
-- Новые API вызовы — добавлять hook в `hooks/useApi.ts`.
-- Server state — через React Query hooks, не через `useState`.
-- UI state (формы, вкладки, busy/error/notice) — `useState`.
-
-### 9. Telegram Mini App нативные UX-элементы
-
-**Что добавлено:**
-- `showTelegramConfirm(message): Promise<boolean>` — нативный confirm-попап
-  Telegram (Bot API 6.2+), fallback на `window.confirm`. Используется перед
-  деструктивными действиями: `close_family`, `leave_family`, `remove_member`,
-  `disable_family_invite`.
-- `showTelegramAlert(message): Promise<void>` — нативный alert.
-- `showTelegramPopup(params): Promise<string>` — кастомный попап с кнопками.
-- `setTelegramMainButton(text, handler, options?)` — нативная нижняя кнопка
-  Telegram (MainButton). Показывается на экране создания семьи с прогрессом
-  и disabled-состоянием. `hideTelegramMainButton()` — скрыть.
-  `setTelegramMainButtonProgress(visible)` — toggle loading.
-- `setTelegramClosingConfirmation(enabled)` — нативный диалог при попытке
-  закрыть Mini App. Включается при `busy !== null` или заполненной форме
-  создания семьи, отключается в остальных случаях.
-
-**Скелетоны:**
-- `components/skeleton.tsx` — `FamilyCardSkeleton`, `FamilyListSkeleton`,
-  `PanelSkeleton`.
-- CSS `.skeleton` + `@keyframes skeleton-shimmer` в `styles.css`.
-- `SearchScreen` показывает `FamilyListSkeleton` при `isLoading && empty`.
-
-**Затронутые файлы:**
-- `telegram.ts` — добавлены типы `TelegramBottomButton`, `TelegramPopupButton`,
-  функции `showTelegramAlert/Confirm/Popup`, `setTelegramClosingConfirmation`,
-  `setTelegramMainButton`, `hideTelegramMainButton`,
-  `setTelegramMainButtonProgress`.
-- `App.tsx` — деструктивные действия обёрнуты в `showTelegramConfirm`;
-  `useEffect` для `closingConfirmation` и `MainButton` на экране создания.
-- `components/skeleton.tsx` — новый файл.
-- `screens/SearchScreen.tsx` — `isLoading` prop + skeleton.
-- `styles.css` — `.skeleton*` классы и `skeleton-shimmer` анимация.
-
-**Конвенция:**
-- Деструктивные действия (remove, close, disable, leave) — через
-  `showTelegramConfirm`, не через кастомный modal.
-- Главный CTA экрана — через `setTelegramMainButton`, не через кнопку в
-  контенте (если экран подразумевает одно основное действие).
-- Loading state списка — `Skeleton` компонент, не пустой экран.
-- При форме с unsaved changes — `setTelegramClosingConfirmation(true)`.
-
-### 10. World Mini Apps UI Kit
-
-**Текущее состояние:**
-- UI-компоненты идут через `@worldcoin/mini-apps-ui-kit-react`.
-- `@telegram-apps/telegram-ui` больше не используется как UI-библиотека.
-  Telegram WebApp API остаётся платформенным слоем (`telegram.ts`):
-  BackButton, MainButton, native confirm/alert, haptics, safe areas,
-  `disableVerticalSwipes`.
-- Иконки идут через `lucide-react`, чтобы не держать самодельные SVG разных
-  стилей.
-- `main.tsx` подключает World styles и `Toaster`.
-
-**Конвенция:**
-- Перед крупными UI-правками читать `docs/design-system.md` и
-  `frontend/docs/design-system.md`. Не чинить отдельный экран вопреки общей
-  системе.
-- Новые UI-элементы сначала искать в `@worldcoin/mini-apps-ui-kit-react`.
-- Для иконок использовать `lucide-react`, не добавлять новые inline SVG без
-  явной причины.
-- Не смешивать несколько цветовых палитр на одном экране. Основной акцент:
-  синий; будущие/disabled разделы — нейтральные.
-- Toast-уведомления — через World `useToast`/`Toaster`.
-- Нативные Telegram UX-элементы оставлять в `telegram.ts`, не смешивать их с
-  UI Kit-компонентами.
-
-### 11. UX-улучшения (раунд 2)
-
-**Backend:**
-- `_cancel_pending_requests_for_full_family` (`requests.py`) — добавлен
-  `with_for_update()` для симметрии с closing-family (убирает гонку при
-  параллельном self-cancel).
-- `_get_or_create_owner_metric_for_update` (`_internal.py`) — убран лишний
-  `with_for_update` на `User` (создавал contention). Lock остаётся только
-  на `FamilyOwnerMetric`.
-
-**Frontend:**
-- `RequisiteBox` (`components/RequisiteBox.tsx`) — номер телефона маскируется
-  (`+7 *** *** ** 67`), кнопка "Показать"/"Скрыть". Заменила inline-вывод
-  в `MyFamiliesScreen` и `FamilyDetailsScreen`.
-- `BottomNav` — badge-индикаторы: сччик активных заявок на "Заявки",
-  сччик семей с pending payments на "Семьи". CSS `.nav-badge`.
-- `CreateFamilyScreen` — валидация в реальном времени: телефон (`+7\d{10}`),
-  цена > 0, день 1-31, дата не в прошлом, max_members ≤ service.max.
-  Inline ошибки `.field-error`, submit disabled при ошибках.
-- `OwnerDetails` (`families.tsx`) — табы "Заявки | Участники | Оплаты"
-  вместо 3 секций на одном скролле. Активный таб через `ownerTab` state.
-  CSS `.owner-tabs`.
-
-### 12. Немедленное удаление участника владельцем
-
-**Продуктовое правило:** владелец может удалить участника сразу. Он обязан
-выбрать причину: нет оплаты, нет ответа, проблема с доступом, по договорённости
-или другое. Участник получает уведомление, но не может отменить удаление.
-
-**Решение:**
-- `remove_member` сразу переводит участника в `removed`, освобождает место и
-  отменяет будущие платежи.
-- Причина и время удаления навсегда сохраняются в `FamilyAuditLog`.
-- В Mini App после удаления показывается обычное подтверждение, без окна
-  отмены.
-- Старый статус `removal_pending` оставлен только для безопасной обработки
-  записей, созданных прежней версией приложения; новые удаления его не создают.
-
-**Конвенция:** не добавлять ожидание, отмену или запрос отмены удаления без
-нового продуктового решения.
-
-**Не сделано (план):**
-- **Marketplace Engine** — отдельный крупный модуль (см. `docs/architecture.md`).
-
-### 13. Playwright E2E для основных flow семьи
-
-**Проблема:** E2E-тестов не было — регрессии UI (overlay-intercepts,
-race-условия React Query, табы OwnerDetails) ловились вручную.
-
-**Решение:**
-- `frontend/tests/family-flow.spec.ts` — 6 тестов:
-  1. `owner and member complete the first payment family flow` — полный flow:
-     create family → invite → join request → approve → access provided →
-     confirm access → report payment → confirm payment → prepayment →
-     immediate member removal with a reason.
-  2. `subscription and tariff families stay in separate storefronts` —
-     изоляция familyType в search/MyFamilies.
-  3. `create family form validates phone in real time` — inline-валидация
-     телефона (`+7\d{10}`), цены, дня.
-  4. `requisite phone is masked until revealed` — `RequisiteBox` маскирует
-     телефон (`+7 *** *** ** 67`) до тапа "Показать".
-  5. `owner tabs switch between requests members and payments` — табы
-     OwnerDetails переключаются, badge-индикаторы обновляются.
-  6. `owner removes a member immediately with a reason` — место освобождается,
-     а участник исчезает из активного списка.
-- `frontend/tests/tma-smoke.spec.ts` — 1 тест: TMA renders home/search/details.
-- Хелперы в spec-файле: `switchDevUser`, `openNav`, `waitForNetworkQuiet`,
-  `clickAndWait`. Все `.click()` используют `force: true` (World UI
-  компоненты имеют overlay-эффекты, перехватывающие pointer events).
-
-**Frontend-фиксы для тестов:**
-- `components/families.tsx` — `OwnerDetails` auto-switch таба: если
-  `details.requests.length === 0` и `ownerTab === "requests"`,
-  `useEffect` переключает на `"members"`. Без этого `access-provided-button`
-  оставался невидимым после approve последней заявки (тест таймаутился).
-- `hooks/useApi.ts` — `useRevokeMemberRemoval` инвалидирует `ownerRequests`,
-  `familyMembers`, `familyView`.
-
-**Затронутые файлы:**
-- `frontend/tests/family-flow.spec.ts` — новый файл, 6 тестов + хелперы.
-- `frontend/tests/tma-smoke.spec.ts` — существующий, 1 тест.
-- `frontend/src/components/families/OwnerDetails.tsx` — `useEffect` для auto-switch табы.
-- `frontend/src/App.tsx` — `data-testid` на Undo button.
-
-**Конвенции для E2E:**
-- Все `.click()` в Playwright — с `force: true` (World UI overlays).
-- После state-changing API вызовов — `waitForNetworkQuiet(page)` (ждёт
-  React Query refetch + re-render).
-- Для проверки исчезновения элемента — `toHaveCount(0)`, не `not.toBeVisible()`
-  (надёжнее после re-render).
-- Dev user switch через `switchDevUser(page, id)` + `openNav(page, index)`.
-- Backend должен быть запущен (`npm run backend:dev` или через
-  `npm run dev`), иначе тесты упадут на network-connect.
-- Для toast/notification проверок — использовать точные локаторы или
-  `data-testid`, не полагаться на нестрогий поиск по тексту: World Toaster
-  может рендерить видимый текст и aria-уведомление одновременно.
-**Команда запуска:**
-```powershell
-npm run test:ui      # все 7 Playwright тестов
-npm run backend:dev  # нужен для E2E (запустить в отдельном терминале)
-```
-
-### 17. Frontend API split и OpenAPI (2026-06-25)
-
-**Сделано:** `api/typed.ts` — `typedGet`/`typedPatch` + pilot `typedIdentity`.
-`api/identity.ts` делегирует в `typedIdentity`. Расширять pilot перед миграцией
-остальных `api/*.ts`; после изменений backend — `npm run openapi:sync`.
-
-**Сделано:** логика React Query hooks разделена в `hooks/api/`
-(`queryKeys`, `identity`, `catalog`, `families-queries`, `families-mutations`);
-`hooks/useApi.ts` остаётся re-export для обратной совместимости.
-Новые hooks — в соответствующий подмодуль + re-export.
-
-### 16. API-модули без shim `api.ts` (2026-06-25)
-
-**Было:** корневой `frontend/src/api.ts` re-export shim.
-
-**Стало:** публичный API только через `frontend/src/api/index.ts`:
-`client`, `dev`, `identity`, `catalog`, `families`. Импорты `from "./api"` /
-`from "../api"` резолвятся в папку `api/`.
-
-### 15. Frontend container state (текущее состояние)
-
-`App.tsx` пока остаётся основным контейнером экранов, навигации, toast/error
-state, owner details и requisites cache. Не добавлять второй параллельный слой
-`AppContext`/router/mutations без отдельного полноценного рефакторинга всего
-`App.tsx`.
-
-Если продолжать frontend-рефактор:
-- сначала выделить один маленький кусок из `App.tsx`;
-- подключить его в реальный render path;
-- обновить E2E под новый поток;
-- не оставлять неподключённые hooks/components "на потом".
-
-## Соглашения для правок
-
-- Не использовать `.astext` для JSON column — только `.as_string()`.
-- `date.today()` — только в code без бизнес-логики; в бизнес-логике семей —
-  `kz_today()` из `core.database`.
-- Новые TestClient-тесты: переопределять и `get_db` (с auto-commit), и
+Проект - модульный монолит с DDD-lite. Основные модули находятся в
+`backend/src/subsmarket/`:
+
+- `identity`, `catalog`;
+- `families` - семьи подписок и семьи тарифов;
+- `marketplace` - отдельные вертикали гигабайтов и аккаунтов;
+- `notifications`, `jobs`, `bot`;
+- `core`, `ops`, `dev`.
+
+Family Engine и Marketplace Engine не используют общую бизнес-сущность.
+Продажа гигабайтов и аккаунтов не моделируется как семья.
+
+### Families
+
+`families/service.py` - только совместимый re-export. Новую логику размещать в
+подходящем модуле:
+
+- `_internal.py` - константы и внутренние helpers;
+- `creation.py` - создание и изменение семьи;
+- `invites.py` - приглашения;
+- `queries.py` - чтение и преобразование данных;
+- `requests.py` - заявки на вступление;
+- `members.py` - участники, доступ, выход, удаление и закрытие;
+- `payments.py` - платежи и предоплаты.
+
+`families/api.py` и фоновые jobs импортируют публичные функции через
+`families.service`. Не переносить бизнес-логику обратно в `service.py`.
+
+### Транзакции и PostgreSQL
+
+- Сервисы `families` используют `db.flush()`, но не `db.commit()`.
+- Успешный HTTP-запрос фиксируется в `get_db`; исключение вызывает rollback.
+- `get_auth_db` изолирует Telegram-auth от бизнес-транзакции.
+- `upsert_user` пока сохраняет собственный commit по контракту существующих
+  тестов.
+- Бизнес-даты семей рассчитывать через `kz_today()`, а timestamps - через
+  `utcnow()`.
+- JSON payload фильтровать через `Column.payload["key"].as_string()`, не через
+  `.astext` и не в Python.
+- Критические конкурентные переходы проверять на PostgreSQL, а не только на
+  SQLite.
+- TestClient-тесты, переопределяющие `get_db`, должны переопределять и
   `get_auth_db` той же сессией.
-- Новые миграции: revision id в формате `YYYYMMDD_NNNN`, down_revision =
-  предыдущая. Текущая голова: `20260622_0021`.
-- JSON payload-фильтры в SQL — через `Column.payload["key"].as_string()`.
-- Сервисы в `families/` подмодулях делают `db.flush()` (не `db.commit()`).
-  Commit — в `get_db`.
-- `upsert_user` коммитит внутри (до отдельной задачи).
-- Новые функции в `families/` — добавлять в соответствующий подмодуль
-  (`creation`, `invites`, `queries`, `requests`, `members`, `payments`),
-  не в `service.py`. `service.py` — только re-export.
-- Новые frontend API вызовы — функция в `frontend/src/api/{module}.ts`,
-  re-export в `api/index.ts`; hook в `hooks/api/{domain}.ts` + re-export из
-  `hooks/useApi.ts`. Импорт API: `from "./api"` или `from "../api"`.
-- Пока `App.tsx` остаётся главным контейнером frontend-состояния. Не добавлять
-  параллельный `AppContext`/router слой без полного подключения в render path.
-- Playwright `.click()` — всегда с `force: true` (World UI overlay-эффекты
-  перехватывают pointer events). После state-changing API —
-  `waitForNetworkQuiet(page)`.
-- Для проверки исчезновения элемента в E2E — `toHaveCount(0)`, не
-  `not.toBeVisible()` (надёжнее после re-render).
-- Toast/notification проверки — делать строгими локаторами или через
-  `data-testid`; World Toaster может рендерить видимый текст и aria-текст.
-- UX-контракт: `frontend/docs/ux-states.md`.
+- Новая Alembic migration: уникальный revision, `down_revision` равен текущей
+  голове; затем проверить upgrade на чистой PostgreSQL-базе.
+
+### Продуктовые инварианты
+
+- Владелец занимает одно место семьи.
+- Семьи подписок и тарифов имеют общий движок, но разные `family_type` и
+  каталоги.
+- Реквизиты раскрываются только после подтверждения доступа.
+- SubsMarket не принимает и не проверяет переводы между людьми.
+- Владелец удаляет участника сразу с обязательной причиной; отмены удаления
+  нет.
+- Marketplace хранит объявления и заявки, но не логины, пароли и банковские
+  реквизиты.
+
+## Frontend
+
+- Экран `frontend/src/screens/SearchScreen.tsx` (`Маркет`) использует
+  семантические React/HTML-компоненты и изолированные стили
+  `frontend/src/styles/market.css`. Продуктовую структуру и переходы экрана
+  менять только по отдельному продуктовому решению.
+- HeroUI и Tailwind CSS в проекте не используются. Не подключать их и другие
+  UI-библиотеки без отдельного решения по дизайн-системе.
+- Остальные экраны пока остаются на
+  `@worldcoin/mini-apps-ui-kit-react`. Не смешивать World UI с кастомными
+  компонентами внутри одного экрана; переносить экраны по одному.
+- Server state хранится в TanStack Query; локальное UI-состояние - в React.
+- API-функции находятся в `frontend/src/api/{module}.ts`, hooks - в
+  `frontend/src/hooks/api/{domain}.ts`; совместимые re-export оставлять.
+- `App.tsx` пока является главным контейнером. Не добавлять параллельный
+  router/context без полного подключения реального render path.
+- Компоненты: семантический React/HTML и `market.css` для `Маркета`, World UI
+  для ещё не перенесённых экранов; иконки `Маркета`: `@hugeicons/react` и
+  `@hugeicons/core-free-icons`, остальных экранов: `lucide-react`; нативные Telegram API:
+  `frontend/src/telegram.ts`.
+- Дизайн-система: `docs/design-system.md` и
+  `frontend/docs/design-system.md`; состояния: `frontend/docs/ux-states.md`.
+- Деструктивные действия подтверждать через Telegram native confirm.
+- Для одного главного действия экрана использовать Telegram MainButton, если
+  это не конфликтует с нижней навигацией.
+- Не добавлять вторую палитру, другую библиотеку иконок или новые случайные
+  стили карточек.
+
+## E2E
+
+- После мутации ждать React Query refetch через `waitForNetworkQuiet(page)`.
+- Исчезновение элемента проверять через `toHaveCount(0)`.
+- Для World UI допустим `click({ force: true })`, когда overlay перехватывает
+  pointer events.
+- Для toast использовать точный locator или `data-testid`.
+- Playwright сам поднимает изолированные backend/frontend на `8001/5174` и
+  временную SQLite-базу в `.tmp`; работающий локальный стек ему не требуется.
+
+## Безопасность и эксплуатация
+
+- Не коммитить `.env`, токены, DSN с секретами, database URL и дампы с
+  пользовательскими данными.
+- Production не должен стартовать с dev-auth, wildcard CORS или пустыми
+  обязательными секретами.
+- Security-critical изменения в auth, crypto, jobs, bot webhook и миграциях
+  требуют отдельного просмотра diff и регрессионного теста.
+- Cloudflare Worker - основной production scheduler; GitHub Actions - fallback.
+- После production-инцидента добавлять регрессионный тест.
+
+## Границы правок
+
+- Не удалять и не откатывать незнакомые изменения в dirty worktree.
+- Не хранить временные планы и большие журналы сессий в репозитории.
+- Не добавлять неподключённые компоненты, hooks или API «на потом».
+- Перед крупной правкой сначала проверить существующий паттерн в коде и
+  соответствующий документ в `docs/`.

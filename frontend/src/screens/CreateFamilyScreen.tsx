@@ -104,7 +104,6 @@ export function CreateFamilyScreen({
     createForm.max_members
   );
   const freeMemberSlots = Math.max(0, createForm.max_members - 1);
-  const familySubject = familyType === "tariff" ? "тарифа" : "подписки";
   const errors = validateForm(createForm, service);
   const hasErrors = Object.keys(errors).length > 0;
   const canAdvance = !stepErrors(step, errors);
@@ -123,13 +122,13 @@ export function CreateFamilyScreen({
 
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
-    if (hasErrors) {
-      return;
-    }
     if (step !== "details") {
-      if (!stepErrors(step, errors)) {
+      if (canAdvance) {
         goNext();
       }
+      return;
+    }
+    if (hasErrors) {
       return;
     }
     onSubmit(event);
@@ -138,8 +137,7 @@ export function CreateFamilyScreen({
   const submitDisabled =
     busy !== null ||
     servicesCount === 0 ||
-    hasErrors ||
-    (step !== "details" && !canAdvance);
+    (step === "details" ? hasErrors : !canAdvance);
   const submitLabel =
     step === "details" ? "Создать семью" : canAdvance ? "Далее" : "Исправьте поля";
 
@@ -457,14 +455,20 @@ export function CreateFamilyScreen({
         <div className="create-wizard-footer">
           <div className="wizard-nav">
             {stepIndex > 0 ? (
-              <WorldButton type="button" variant="secondary" onClick={goBack}>
+              <WorldButton
+                type="button"
+                variant="secondary"
+                data-testid="create-family-back"
+                onClick={goBack}
+              >
                 Назад
               </WorldButton>
             ) : null}
             <WorldButton
-              type="submit"
+              type={step === "details" ? "submit" : "button"}
               data-testid="create-family-submit"
               disabled={submitDisabled}
+              onClick={step === "details" ? undefined : goNext}
             >
               {submitLabel}
             </WorldButton>

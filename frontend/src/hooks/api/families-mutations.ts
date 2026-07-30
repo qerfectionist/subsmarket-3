@@ -213,7 +213,7 @@ export function useCancelFamilyRequest() {
 export function useApproveFamilyRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familyId, requestId }: { familyId: string; requestId: string }) =>
+    mutationFn: ({ requestId }: { familyId: string; requestId: string }) =>
       approveFamilyRequest(requestId),
     onSuccess: (_data, { familyId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.ownerRequests(familyId) });
@@ -226,7 +226,7 @@ export function useApproveFamilyRequest() {
 export function useRejectFamilyRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familyId, requestId }: { familyId: string; requestId: string }) =>
+    mutationFn: ({ requestId }: { familyId: string; requestId: string }) =>
       rejectFamilyRequest(requestId),
     onSuccess: (_data, { familyId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.ownerRequests(familyId) });
@@ -239,7 +239,7 @@ export function useRejectFamilyRequest() {
 export function useMarkAccessProvided() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familyId, memberId }: { familyId: string; memberId: string }) =>
+    mutationFn: ({ memberId }: { familyId: string; memberId: string }) =>
       markAccessProvided(memberId),
     onSuccess: (_data, { familyId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.ownerRequests(familyId) });
@@ -252,7 +252,7 @@ export function useMarkAccessProvided() {
 export function useRemindAccessConfirmation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familyId, memberId }: { familyId: string; memberId: string }) =>
+    mutationFn: ({ memberId }: { familyId: string; memberId: string }) =>
       remindAccessConfirmation(memberId),
     onSuccess: (_data, { familyId }) =>
       qc.invalidateQueries({ queryKey: queryKeys.familyMembers(familyId) })
@@ -262,7 +262,7 @@ export function useRemindAccessConfirmation() {
 export function useCancelMemberBeforeAccess() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familyId, memberId }: { familyId: string; memberId: string }) =>
+    mutationFn: ({ memberId }: { familyId: string; memberId: string }) =>
       cancelMemberBeforeAccess(memberId),
     onSuccess: (_data, { familyId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.ownerRequests(familyId) });
@@ -302,7 +302,6 @@ export function useRemoveMember() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
-      familyId,
       memberId,
       reason
     }: {
@@ -338,7 +337,6 @@ export function useRecordOwnerPrepaidPeriods() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
-      familyId,
       memberId,
       periods
     }: {
@@ -385,7 +383,7 @@ export function useCancelPaymentReport() {
 export function useConfirmPaymentReceived() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familyId, paymentId }: { familyId: string; paymentId: string }) =>
+    mutationFn: ({ paymentId }: { familyId: string; paymentId: string }) =>
       confirmPaymentReceived(paymentId),
     onSuccess: (_data, { familyId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.ownerRequests(familyId) });
@@ -399,7 +397,7 @@ export function useConfirmPaymentReceived() {
 export function useMarkPaymentNotReceived() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ familyId, paymentId }: { familyId: string; paymentId: string }) =>
+    mutationFn: ({ paymentId }: { familyId: string; paymentId: string }) =>
       markPaymentNotReceived(paymentId),
     onSuccess: (_data, { familyId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.ownerRequests(familyId) });

@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { ensureLocalInfrastructure } from "./ensure-local-infrastructure.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const venvDir = path.join(repoRoot, "backend", ".venv");
@@ -20,6 +21,8 @@ if (!existsSync(python)) {
 const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
 const backendDir = path.join(repoRoot, "backend");
 const frontendDir = path.join(repoRoot, "frontend");
+const backendPort = 8002;
+const backendBaseUrl = `http://127.0.0.1:${backendPort}`;
 const children = [];
 let shuttingDown = false;
 
@@ -37,18 +40,26 @@ function isUp(url) {
   });
 }
 
+async function waitUntilUp(url, timeoutMs = 60_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await isUp(url)) return;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`Timed out waiting for ${url}`);
+}
+
 async function preflight() {
   const [backend, frontend] = await Promise.all([
-    isUp("http://127.0.0.1:8000/health"),
+    isUp(`${backendBaseUrl}/ready`),
     isUp("http://127.0.0.1:5173/")
   ]);
   if (backend && frontend) {
     console.log("Dev stack already running:");
     console.log("  frontend  http://127.0.0.1:5173/");
-    console.log("  backend   http://127.0.0.1:8000/health");
-    return true;
+    console.log(`  backend   ${backendBaseUrl}/health`);
   }
-  return false;
+  return { backend, frontend };
 }
 
 function start(name, command, args, options = {}) {
@@ -63,7 +74,7 @@ function start(name, command, args, options = {}) {
     if (!code || shuttingDown) return;
     const stillHealthy =
       name === "backend"
-        ? await isUp("http://127.0.0.1:8000/health")
+        ? await isUp(`${backendBaseUrl}/health`)
         : await isUp("http://127.0.0.1:5173/");
     if (stillHealthy) {
       console.log(`[${name}] process exited, but service is still reachable — keeping dev session alive.`);
@@ -88,20 +99,39 @@ process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
 async function main() {
-  if (await preflight()) {
+  await ensureLocalInfrastructure();
+
+  const status = await preflight();
+  if (status.backend && status.frontend) {
     process.exit(0);
   }
 
-  console.log("Starting backend on http://127.0.0.1:8000");
-  start(
-    "backend",
-    python,
-    ["-m", "uvicorn", "subsmarket.main:app", "--host", "127.0.0.1", "--port", "8000", "--reload"],
-    { cwd: backendDir, shell: false, env: { DEV_AUTH_ENABLED: "true" } }
-  );
+  if (!status.backend) {
+    console.log(`Starting backend on ${backendBaseUrl}`);
+    start(
+      "backend",
+      python,
+      [
+        "-m",
+        "uvicorn",
+        "subsmarket.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        String(backendPort),
+        "--reload"
+      ],
+      { cwd: backendDir, shell: false, env: { DEV_AUTH_ENABLED: "true" } }
+    );
+    console.log("Waiting for backend readiness...");
+    await waitUntilUp(`${backendBaseUrl}/ready`);
+    console.log("Backend is ready.");
+  }
 
-  console.log("Starting frontend on http://127.0.0.1:5173");
-  start("frontend", npmCmd, ["run", "dev"], { cwd: frontendDir, shell: true });
+  if (!status.frontend) {
+    console.log("Starting frontend on http://127.0.0.1:5173");
+    start("frontend", npmCmd, ["run", "dev"], { cwd: frontendDir, shell: true });
+  }
 }
 
 main().catch((error) => {

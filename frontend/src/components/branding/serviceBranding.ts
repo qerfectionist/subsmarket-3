@@ -121,6 +121,6 @@ export function resolveServiceBrand(input: {
   return DEFAULT_BRAND;
 }
 
-export function serviceIconUrl(iconSlug: string) {
-  return `https://cdn.simpleicons.org/${iconSlug}/ffffff`;
+export function serviceIconUrl(iconSlug: string, color = "ffffff") {
+  return `https://cdn.simpleicons.org/${iconSlug}/${color.replace("#", "")}`;
 }

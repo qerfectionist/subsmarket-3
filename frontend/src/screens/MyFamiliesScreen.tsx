@@ -82,7 +82,9 @@ export function MyFamiliesScreen({
   onOpenMarketplaceSalesActions,
   onOpenMarketplacePurchaseActions,
   onOpenAccountSalesActions,
-  onOpenAccountPurchaseActions
+  onOpenAccountPurchaseActions,
+  onOpenAccounts,
+  onOpenGigabytes
 }: {
   mode?: "mine" | "actions";
   myFamilyType: FamilyType;
@@ -144,6 +146,8 @@ export function MyFamiliesScreen({
   onOpenMarketplacePurchaseActions?: () => void;
   onOpenAccountSalesActions?: () => void;
   onOpenAccountPurchaseActions?: () => void;
+  onOpenAccounts?: () => void;
+  onOpenGigabytes?: () => void;
 }) {
   const actionFamilies = families.filter(hasPendingFamilyAction);
   const visibleFamilies = mode === "actions" ? actionFamilies : families;
@@ -197,7 +201,15 @@ export function MyFamiliesScreen({
             : "Ваши места, семьи и управление подписками."
         }
       >
-        {mode === "mine" ? <ProductScopeSwitch /> : null}
+        {mode === "mine" ? (
+          <ProductScopeSwitch
+            value="families"
+            onChange={(value) => {
+              if (value === "accounts") onOpenAccounts?.();
+              if (value === "gigabytes") onOpenGigabytes?.();
+            }}
+          />
+        ) : null}
         {mode === "actions" && hasFamilyActions ? (
           <ActionSummary
             pendingRequestCount={pendingRequestCount}
@@ -301,7 +313,7 @@ export function MyFamiliesScreen({
         ) : null}
         {isLoading && visibleFamilies.length === 0 ? (
           <FamilyListSkeleton count={3} />
-        ) : visibleFamilies.length === 0 && !hasMarketplaceActions ? (
+        ) : visibleFamilies.length === 0 && !hasFamilyActions && !hasMarketplaceActions ? (
           <EmptyState
             title={mode === "actions" ? "Сейчас нет действий" : "У вас пока нет семей"}
           >
@@ -692,6 +704,7 @@ function OwnerActions({
   onCloseFamily: (familyId: string, closesOn: string) => void;
   onConfirmAvailability: (familyId: string) => void;
 }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState(family.description ?? "");
   const [priceDraft, setPriceDraft] = useState(String(family.total_price_kzt));
   const [paymentDayDraft, setPaymentDayDraft] = useState(String(family.payment_day));
@@ -762,7 +775,19 @@ function OwnerActions({
           : "нет данных"}
       </Typography>
 
-      <div className="owner-settings-grid">
+      <WorldButton
+        type="button"
+        variant="tertiary"
+        fullWidth
+        data-testid="owner-settings-toggle"
+        aria-expanded={settingsOpen}
+        onClick={() => setSettingsOpen((current) => !current)}
+      >
+        {settingsOpen ? "Скрыть настройки" : "Настройки семьи"}
+      </WorldButton>
+
+      {settingsOpen ? <div className="owner-settings-form">
+        <div className="owner-settings-grid">
         <Input
           label="Доступ работает до"
           data-testid="close-family-date-input"
@@ -785,86 +810,87 @@ function OwnerActions({
         >
           Закрыть семью
         </WorldButton>
-      </div>
-      <Typography as="small" variant="body" level={4} className="muted">
-        Семья сразу исчезнет из поиска, а участники увидят точную дату окончания
-        доступа.
-      </Typography>
+        </div>
+        <Typography as="small" variant="body" level={4} className="muted">
+          Семья сразу исчезнет из поиска, а участники увидят точную дату окончания
+          доступа.
+        </Typography>
 
-      <TextArea
-        label="Описание семьи"
-        data-testid="owner-description-input"
-        rows={3}
-        value={descriptionDraft}
-        onChange={(event) => setDescriptionDraft(event.target.value)}
-      />
-      <WorldButton
-        type="button"
-        variant="secondary"
-        data-testid="owner-save-description-button"
-        disabled={busy !== null}
-        onClick={() =>
-          onUpdateDescription(family.id, descriptionValue ? descriptionValue : null)
-        }
-      >
-        Сохранить описание
-      </WorldButton>
-
-      <div className="owner-settings-grid">
-        <Input
-          label="Общая цена"
-          data-testid="owner-price-input"
-          min={1}
-          type="number"
-          value={priceDraft}
-          onChange={(event) => setPriceDraft(event.target.value)}
+        <TextArea
+          label="Описание семьи"
+          data-testid="owner-description-input"
+          rows={3}
+          value={descriptionDraft}
+          onChange={(event) => setDescriptionDraft(event.target.value)}
         />
         <WorldButton
           type="button"
           variant="secondary"
-          data-testid="owner-save-price-button"
-          disabled={busy !== null || !canSubmitPrice}
-          onClick={() => onUpdatePrice(family.id, priceValue)}
-        >
-          Изменить цену
-        </WorldButton>
-      </div>
-      <Typography as="small" variant="body" level={4} className="muted">
-        Цену можно менять один раз в месяц. Участники получат уведомление.
-      </Typography>
-
-      <div className="owner-settings-grid">
-        <Input
-          label="День оплаты"
-          data-testid="owner-payment-day-input"
-          max={31}
-          min={1}
-          type="number"
-          value={paymentDayDraft}
-          onChange={(event) => setPaymentDayDraft(event.target.value)}
-        />
-        <Input
-          label="Следующая дата"
-          data-testid="owner-next-payment-date-input"
-          type="date"
-          value={nextPaymentDateDraft}
-          onChange={(event) => setNextPaymentDateDraft(event.target.value)}
-        />
-        <WorldButton
-          type="button"
-          variant="secondary"
-          data-testid="owner-save-payment-day-button"
-          disabled={busy !== null || !canSubmitPaymentDay}
+          data-testid="owner-save-description-button"
+          disabled={busy !== null}
           onClick={() =>
-            onUpdatePaymentDay(family.id, paymentDayValue, nextPaymentDateDraft)
+            onUpdateDescription(family.id, descriptionValue ? descriptionValue : null)
           }
         >
-          Изменить дату оплаты
+          Сохранить описание
         </WorldButton>
-      </div>
-      <Typography as="small" variant="body" level={4} className="muted">
-        Дату оплаты можно менять только пока семья ещё не была полностью собрана.
-      </Typography>
+
+        <div className="owner-settings-grid">
+          <Input
+            label="Общая цена"
+            data-testid="owner-price-input"
+            min={1}
+            type="number"
+            value={priceDraft}
+            onChange={(event) => setPriceDraft(event.target.value)}
+          />
+          <WorldButton
+            type="button"
+            variant="secondary"
+            data-testid="owner-save-price-button"
+            disabled={busy !== null || !canSubmitPrice}
+            onClick={() => onUpdatePrice(family.id, priceValue)}
+          >
+            Изменить цену
+          </WorldButton>
+        </div>
+        <Typography as="small" variant="body" level={4} className="muted">
+          Цену можно менять один раз в месяц. Участники получат уведомление.
+        </Typography>
+
+        <div className="owner-settings-grid">
+          <Input
+            label="День оплаты"
+            data-testid="owner-payment-day-input"
+            max={31}
+            min={1}
+            type="number"
+            value={paymentDayDraft}
+            onChange={(event) => setPaymentDayDraft(event.target.value)}
+          />
+          <Input
+            label="Следующая дата"
+            data-testid="owner-next-payment-date-input"
+            type="date"
+            value={nextPaymentDateDraft}
+            onChange={(event) => setNextPaymentDateDraft(event.target.value)}
+          />
+          <WorldButton
+            type="button"
+            variant="secondary"
+            data-testid="owner-save-payment-day-button"
+            disabled={busy !== null || !canSubmitPaymentDay}
+            onClick={() =>
+              onUpdatePaymentDay(family.id, paymentDayValue, nextPaymentDateDraft)
+            }
+          >
+            Изменить дату оплаты
+          </WorldButton>
+        </div>
+        <Typography as="small" variant="body" level={4} className="muted">
+          Дату оплаты можно менять только пока семья ещё не была полностью собрана.
+        </Typography>
+      </div> : null}
     </div>
   );
 }

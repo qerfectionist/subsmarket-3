@@ -120,7 +120,8 @@ directly against the repository or the global Codex folder before a release.
 Use dry-run first and prefer project-local docs/checklists over hidden global
 automation.
 
-Current ECC decision: [ecc-adoption-plan.md](ecc-adoption-plan.md).
+Любой внешний agent bundle проверяется отдельно перед установкой; временные
+исследовательские решения не являются частью release checklist.
 
 ## 8. Rollback
 

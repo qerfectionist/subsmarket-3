@@ -57,7 +57,6 @@ These are intentional limitations for the first Family Engine release.
 
 ## Later Modules
 
-- Marketplace Engine for accounts.
 - Receipts.
 - Disputes.
 - Public reputation.

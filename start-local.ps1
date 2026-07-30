@@ -16,6 +16,22 @@ function Test-LocalUrl {
     }
 }
 
+function Wait-LocalUrl {
+    param(
+        [string] $Url,
+        [int] $TimeoutSeconds = 60
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        if (Test-LocalUrl $Url) {
+            return $true
+        }
+        Start-Sleep -Seconds 1
+    }
+    return $false
+}
+
 function Start-DevWindow {
     param(
         [string] $Title,
@@ -37,20 +53,25 @@ Set-Location -LiteralPath $Root
 Write-Host "SubsMarket local startup" -ForegroundColor Cyan
 Write-Host "Project: $Root"
 
-if (Get-Command docker -ErrorAction SilentlyContinue) {
-    Write-Host "Starting local PostgreSQL..." -ForegroundColor Cyan
-    docker compose up -d postgres
-}
-else {
-    Write-Host "Docker was not found in PATH. PostgreSQL may already be running; continuing." -ForegroundColor Yellow
+Write-Host "Preparing Docker, PostgreSQL and migrations..." -ForegroundColor Cyan
+node scripts/ensure-local-infrastructure.mjs
+if ($LASTEXITCODE -ne 0) {
+    throw "Local infrastructure startup failed. See the error above."
 }
 
-if (Test-LocalUrl $BackendHealthUrl) {
-    Write-Host "Backend is already running: $BackendHealthUrl" -ForegroundColor Green
+$BackendReadyUrl = "http://127.0.0.1:8000/ready"
+if (Test-LocalUrl $BackendReadyUrl) {
+    Write-Host "Backend is ready: $BackendReadyUrl" -ForegroundColor Green
+}
+elseif (Test-LocalUrl $BackendHealthUrl) {
+    throw "Backend process is running but the database is not ready. Restart the backend window."
 }
 else {
     Write-Host "Starting backend on http://127.0.0.1:8000..." -ForegroundColor Cyan
     Start-DevWindow -Title "SubsMarket backend" -Command "npm.cmd run dev:backend"
+    if (-not (Wait-LocalUrl -Url $BackendReadyUrl -TimeoutSeconds 60)) {
+        throw "Backend did not become ready within 60 seconds."
+    }
 }
 
 if (Test-LocalUrl $FrontendUrl) {
@@ -59,9 +80,11 @@ if (Test-LocalUrl $FrontendUrl) {
 else {
     Write-Host "Starting frontend on $FrontendUrl..." -ForegroundColor Cyan
     Start-DevWindow -Title "SubsMarket frontend" -Command "npm.cmd --prefix frontend run dev -- --host 127.0.0.1 --port 5175 --strictPort"
+    if (-not (Wait-LocalUrl -Url $FrontendUrl -TimeoutSeconds 30)) {
+        throw "Frontend did not become ready within 30 seconds."
+    }
 }
 
-Start-Sleep -Seconds 4
 Start-Process $FrontendUrl
 
 Write-Host ""

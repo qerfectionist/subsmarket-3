@@ -79,8 +79,10 @@ The Mini App should use compact mobile flows:
 
 Current implementation stack:
 
-- `@worldcoin/mini-apps-ui-kit-react` for base UI primitives;
-- `lucide-react` for line icons;
+- semantic React/HTML and isolated `frontend/src/styles/market.css` for the Market screen;
+- `@worldcoin/mini-apps-ui-kit-react` for screens not yet migrated;
+- `@hugeicons/react` with `@hugeicons/core-free-icons` for the Market screen;
+  `lucide-react` remains on screens that have not migrated yet;
 - custom CSS tokens in `frontend/src/styles/tokens.css`;
 - app-level styles in `frontend/src/styles.css`;
 - Telegram native APIs in `frontend/src/telegram.ts`.
@@ -88,7 +90,9 @@ Current implementation stack:
 Rules:
 
 - do not mix multiple visual libraries on one screen;
-- use World UI Kit primitives when they fit;
+- do not reintroduce HeroUI, Tailwind CSS, or another component library without
+  an explicit design-system decision;
+- use World UI Kit primitives only on screens not yet migrated;
 - use custom CSS only to create SubsMarket-specific layout and states;
 - use one icon family only: Lucide;
 - use real service logos only for services, not for generic controls.
@@ -431,9 +435,13 @@ Rules:
 
 Job: show what the user can find or buy right now.
 
-Chosen direction: **Telegram Wallet-style Market**.
+The Market product structure is fixed. Its isolated visual layer uses the
+measured HireHi mobile system as a design-system source: Inter, the
+`#141414 / #1D1E20 / #2E3035` surface hierarchy, `#4DB288` interaction accent,
+16px mobile gutters, 24px surface radii and 16px control radii. This changes
+presentation only; product logic, data, actions and transitions remain intact.
 
-This Market direction is inspired by Telegram Wallet interaction patterns:
+The current Market structure contains:
 
 1. Header with avatar and settings.
 2. Summary card:
@@ -478,7 +486,7 @@ Rules:
 - use `семья`, `место`, `заявка`, `оплата`;
 - `Создать семью`, not `Собрать клуб`;
 - only unimplemented modules are disabled/quiet; GB and accounts are active;
-- family results must be compact wallet-style list rows, not large marketplace cards;
+- family results must be compact list rows, not large marketplace cards;
 - Market should avoid vertical scroll on normal Telegram viewport.
 
 Recommended copy:
@@ -699,9 +707,10 @@ Avoid:
 When adding UI:
 
 1. first check if a component exists in `frontend/src/components`;
-2. use World UI Kit primitive if it fits;
-3. use Lucide icon if needed;
-4. only then add a custom component.
+2. on the Market screen, use its semantic components and isolated stylesheet;
+3. on a legacy screen, use a World UI Kit primitive if it fits;
+4. use a Lucide icon if needed;
+5. only then add a custom component.
 
 New reusable components should go under:
 
@@ -771,14 +780,15 @@ Redesign these screens as one system:
 
 ## Final Direction
 
-The recommended direction is **Telegram Wallet-style Finance Utility**:
+The product direction is a compact Telegram-native utility:
 
 - Telegram-native structure;
 - finance-app trust;
 - compact control-panel behavior;
 - neutral base;
-- blue as the only brand/action color;
+- green as the Market interaction accent and blue on screens not yet migrated;
 - semantic colors only when state requires them.
-- Wallet-style Market with summary, quick actions, and compact grouped lists.
+- Market with stable product actions and compact grouped lists.
 
-This direction should be used for the next full frontend UI pass.
+The Market visual pass uses HireHi-derived tokens while preserving all existing
+product actions, data, states, and navigation.

@@ -22,8 +22,9 @@ Rules:
 - do not add external hooks that can run shell commands automatically without a
   separate security review.
 
-The current ECC analysis is documented in
-[ecc-adoption-plan.md](ecc-adoption-plan.md).
+Решения по внешним AI-инструментам не хранятся как постоянный план: перед
+подключением каждого инструмента выполняется отдельная проверка его прав,
+скриптов установки и доступа к секретам.
 
 ### Gitleaks
 
@@ -58,9 +59,9 @@ and must never be committed.
 
 The GitHub workflow is only a fallback. Repository history has shown multi-hour
 gaps between scheduled runs, so it must not be the only production scheduler.
-The production implementation is in
-`ops/cloudflare-jobs-scheduler`. Before public launch deploy it as a Cloudflare
-Worker Cron Trigger with this order every 5 minutes:
+The production implementation is deployed from
+`ops/cloudflare-jobs-scheduler` as a Cloudflare Worker Cron Trigger with this
+order every 5 minutes:
 
 1. `POST /api/internal/jobs/run-due`;
 2. `POST /api/internal/jobs/dispatch-notifications`;
@@ -197,12 +198,12 @@ npm run production:check
 The command is still read-only by default. Do not run write-heavy load tests
 against production data.
 
-## External account values still required
+## External service configuration
 
 ### Sentry
 
-Create a Python/FastAPI project and provide its public DSN. Required Render
-values:
+The Python/FastAPI project is connected through its public DSN. Required Render
+values are:
 
 ```text
 SENTRY_DSN=<project DSN>
@@ -210,15 +211,18 @@ SENTRY_TRACES_SAMPLE_RATE=0
 SENTRY_SEND_DEFAULT_PII=false
 ```
 
-No Sentry auth token is required for the backend integration.
+No Sentry auth token is required for the backend integration. Verify event
+delivery with `npm run sentry:smoke` after changing these values.
 
-### Better Stack
+### Healthchecks.io
 
-Create one heartbeat monitor and provide its unique ping URL. It will be stored
-as the GitHub Actions secret `JOBS_HEARTBEAT_URL`.
+The production heartbeat monitor uses separate success and failure ping URLs.
+They are stored as Cloudflare Worker secrets; the success URL is also stored as
+the GitHub Actions secret `JOBS_HEARTBEAT_URL` for the fallback scheduler.
 
-This account step is not optional for production. A successful API uptime check
-does not prove that reminders, expirations, and payment-state jobs are running.
+The monitor expects a ping every 5 minutes with a 10-minute grace period. A
+successful API uptime check does not prove that reminders, expirations, and
+payment-state jobs are running.
 
 Create one uptime monitor for:
 

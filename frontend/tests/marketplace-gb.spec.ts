@@ -66,11 +66,9 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
 
   await page.locator(".bottom-nav button").nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
-  const pendingActionsHero = page.getByTestId("market-hero-pending-actions");
-  await expect(pendingActionsHero).toBeVisible();
-  await pendingActionsHero
-    .getByRole("button", { name: "Открыть действия", exact: true })
-    .click({ force: true });
+  const notificationsButton = page.getByTestId("market-notifications");
+  await expect(notificationsButton).toBeVisible();
+  await notificationsButton.click({ force: true });
   await expect(page.getByTestId("marketplace-actions-card")).toBeVisible();
   await page.getByTestId("open-marketplace-actions").click({ force: true });
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
@@ -86,11 +84,9 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
 
   await page.locator(".bottom-nav button").nth(0).click({ force: true });
   await switchDevUser(page, "200002", "Member · @demo_member");
-  const buyerActionsHero = page.getByTestId("market-hero-pending-actions");
-  await expect(buyerActionsHero).toBeVisible();
-  await buyerActionsHero
-    .getByRole("button", { name: "Открыть действия", exact: true })
-    .click({ force: true });
+  const buyerNotificationsButton = page.getByTestId("market-notifications");
+  await expect(buyerNotificationsButton).toBeVisible();
+  await buyerNotificationsButton.click({ force: true });
   await expect(page.getByTestId("marketplace-purchase-actions-card")).toBeVisible();
   await page.getByTestId("open-marketplace-purchase-actions").click({ force: true });
   await expect(page.getByTestId("marketplace-purchases-role")).toHaveClass(/active/);
@@ -98,9 +94,7 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
 
   await page.locator(".bottom-nav button").nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
-  await page.getByTestId("market-hero-pending-actions")
-    .getByRole("button", { name: "Открыть действия", exact: true })
-    .click({ force: true });
+  await page.getByTestId("market-notifications").click({ force: true });
   await page.getByTestId("open-marketplace-actions").click({ force: true });
   await page.getByRole("button", { name: "Продано" }).click({ force: true });
   await waitForNetworkQuiet(page);

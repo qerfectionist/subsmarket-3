@@ -21,22 +21,36 @@ test("Mini App renders market, create, my, and family details", async ({ page })
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("market-screen")).toBeVisible();
-  await expect(page.locator(".market-search-box")).toHaveCount(0);
-  await expect(page.locator(".market-fast-grid")).toBeVisible();
-  await expect(page.locator(".bottom-nav")).toBeVisible();
-  await expect(page.locator(".bottom-nav button")).toHaveCount(4);
-  await expect(page.locator(".bottom-nav")).toContainText("Маркет");
-  await expect(page.locator(".bottom-nav")).toContainText("Мои");
-  await expect(page.locator(".bottom-nav")).toContainText("Создать");
-  await expect(page.locator(".bottom-nav")).toContainText("Действия");
+  await expect(page.getByTestId("market-search-input")).toBeVisible();
+  await expect(page.getByTestId("family-type-subscription")).toBeVisible();
+  await expect(page.getByTestId("family-type-tariff")).toBeVisible();
+  const bottomNav = page.getByRole("navigation", { name: "Главная навигация" });
+  await expect(bottomNav).toBeVisible();
+  await expect(bottomNav.locator("button")).toHaveCount(4);
+  await expect(bottomNav).toContainText("Маркет");
+  await expect(bottomNav).toContainText("Мои");
+  await expect(bottomNav).toContainText("Создать");
+  await expect(bottomNav).toContainText("Действия");
 
-  await openMarketSection(page, "market-find-tariff", "market-section-tariff");
-  await expect(page.locator(".market-search-box")).toBeVisible();
-  await page.locator(".market-section-back").click({ force: true });
+  await page.getByTestId("family-type-tariff").click({ force: true });
+  await expect(page.getByTestId("family-catalog-screen")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Семейные тарифы" })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Назад в Маркет" }).click({
+    force: true
+  });
+  await expect(page.getByTestId("market-screen")).toBeVisible();
 
-  await openMarketSection(page, "market-find-subscription", "market-section-subscription");
-  await expect(page.locator(".market-search-box")).toBeVisible();
-  await page.locator(".market-section-back").click({ force: true });
+  await page.getByTestId("family-type-subscription").click({ force: true });
+  await expect(page.getByTestId("family-catalog-screen")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Семейные подписки" })
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Назад в Маркет" }).click({
+    force: true
+  });
+  await expect(page.getByTestId("market-screen")).toBeVisible();
 
   await page.getByTestId("market-buy-gigabytes").click({ force: true });
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
@@ -50,26 +64,20 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await page.locator(".gb-back").click({ force: true });
   await expect(page.getByTestId("market-screen")).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(0).click({ force: true });
-  await expect(page.getByTestId("invite-code-input")).toBeVisible();
+  await bottomNav.locator("button").nth(0).click({ force: true });
+  await expect(page.getByTestId("market-search-input")).toBeVisible();
 
-  const detailButtons = page.getByTestId("open-family-button");
-  if ((await detailButtons.count()) > 0) {
-    await detailButtons.first().click({ force: true });
-    await expect(page.locator(".detail-grid")).toBeVisible();
-  }
-
-  await page.locator(".bottom-nav button").nth(2).click({ force: true });
+  await bottomNav.locator("button").nth(2).click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-share-preview")).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(1).click({ force: true });
+  await bottomNav.locator("button").nth(1).click({ force: true });
   await expect(
     page.locator(".family-workspace, .empty-state, [data-testid='family-list-skeleton']")
   ).toBeVisible();
   await expect(page.getByTestId("my-screen")).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(3).click({ force: true });
+  await bottomNav.locator("button").nth(3).click({ force: true });
   await expect(page.getByTestId("actions-screen")).toBeVisible();
   await expect(page.getByTestId("actions-summary")).toHaveCount(0);
 
@@ -119,6 +127,7 @@ test("Mini App keeps readable surfaces with legacy Telegram dark theme params", 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("market-screen")).toBeVisible();
   await expect(page.locator("html")).toHaveClass(/tma-dark/);
+  await expect(page.locator("html")).toHaveClass(/dark/);
 
   const colors = await page.evaluate(() => {
     const read = (selector: string) => {
@@ -129,25 +138,15 @@ test("Mini App keeps readable surfaces with legacy Telegram dark theme params", 
     };
 
     return {
-      rootSurface: getComputedStyle(document.documentElement)
-        .getPropertyValue("--app-surface")
-        .trim(),
-      avatar: read(".app-user-avatar"),
-      fastCard: read(".market-fast-card"),
-      fastCardTitle: read(".market-fast-card strong"),
-      bottomNav: read(".bottom-nav")
+      market: read("[data-testid='market-screen']"),
+      title: read("[data-testid='family-type-subscription']"),
+      banner: read("[data-testid='market-first-run-banner']"),
+      bottomNav: read("nav[aria-label='Главная навигация']")
     };
   });
 
-  expect(colors.rootSurface.toLowerCase()).toBe("#182230");
-  expect(colors.avatar.background).toBe("rgb(24, 34, 48)");
-  expect(colors.avatar.color).not.toBe(colors.avatar.background);
-  expect(colors.fastCard.background).toBe("rgb(24, 34, 48)");
-  expect(colors.fastCardTitle.color).not.toBe(colors.fastCard.background);
+  expect(colors.market.background).not.toBe("rgb(255, 255, 255)");
+  expect(colors.title.color).not.toBe(colors.market.background);
+  expect(colors.banner.color).not.toBe(colors.banner.background);
   expect(colors.bottomNav.background).not.toBe("rgb(255, 255, 255)");
 });
-
-async function openMarketSection(page: Page, tileTestId: string, sectionTestId: string) {
-  await page.getByTestId(tileTestId).click({ force: true });
-  await expect(page.getByTestId(sectionTestId)).toBeVisible();
-}

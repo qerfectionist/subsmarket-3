@@ -54,7 +54,8 @@ Render hosts the long-running backend:
 This is intentionally different from SubsMarket 2.0, where a Vercel serverless
 entrypoint existed while backend code also needed long-running background work.
 For SubsMarket 3.0, deadline checks, notifications, and payment reminders run
-through protected backend endpoints triggered by GitHub Actions.
+through protected backend endpoints triggered by the Cloudflare Worker
+`subsmarket-jobs-scheduler`. GitHub Actions remains a fallback scheduler.
 
 ## Telegram bot webhook
 

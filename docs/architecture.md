@@ -25,7 +25,7 @@ Telegram Mini App.
 - [database-schema.md](database-schema.md) - логическая схема PostgreSQL;
 - [api-contract.md](api-contract.md) - REST-команды и ошибки;
 - [mini-app-screens.md](mini-app-screens.md) - карта экранов Telegram Mini App;
-- [development-plan.md](development-plan.md) - порядок реализации.
+- [long-term-roadmap.md](long-term-roadmap.md) - дальнейшие этапы развития.
 
 ## Два бизнес-движка
 
@@ -36,7 +36,7 @@ Telegram Mini App.
 Направления:
 
 - семейные цифровые подписки;
-- семейные тарифы мобильных операторов на следующем этапе.
+- семейные тарифы мобильных операторов.
 
 Основные сущности:
 

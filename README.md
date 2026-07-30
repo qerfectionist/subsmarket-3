@@ -30,9 +30,7 @@ Telegram Mini App и инфраструктура доверия для совм
 - [API контракт](docs/api-contract.md)
 - [Экраны Mini App](docs/mini-app-screens.md)
 - [Telegram Mini App plan](docs/telegram-mini-app.md)
-- [План разработки](docs/development-plan.md)
 - [Долгий roadmap](docs/long-term-roadmap.md)
-- [Gap-аудит Family Engine MVP](docs/mvp-gap-audit.md)
 - [Каталог семейных подписок](docs/catalog.md)
 - [Деплой и инфраструктура](docs/deployment.md)
 - [Резервное копирование и восстановление](docs/database-backup-and-restore.md)
@@ -73,28 +71,25 @@ email. Mini App фиксирует получение доступа, но не 
 - Node.js 24+
 - Docker для PostgreSQL
 
-Backend:
+Первичная установка:
 
 ```powershell
-docker compose up -d postgres
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-alembic upgrade head
-python -m subsmarket.catalog.seed
-uvicorn subsmarket.main:app --reload
+python -m venv backend\.venv
+.\backend\.venv\Scripts\python.exe -m pip install -e "backend[dev]"
+npm --prefix frontend install
 ```
 
-Frontend:
+После установки используйте ярлык `SubsMarket 3.0 - запуск` на рабочем столе.
+Он сам запускает Docker Desktop, PostgreSQL, применяет миграции, ждёт `/ready`,
+запускает backend и frontend и только потом открывает Mini App.
+
+Из корня проекта полный стек также запускается командой:
 
 ```powershell
-cd frontend
-npm install
 npm run dev
 ```
 
-Из корня проекта также доступны короткие команды:
+Команды проверки:
 
 ```powershell
 npm run build
@@ -129,13 +124,14 @@ cd backend
 - Backend API: Render web service.
 - Database: Supabase PostgreSQL project `subsmarket-3`
   (`oulwqlysozrdhlhheflk`, `eu-central-1`).
-- Background jobs: GitHub Actions workflow
-  `.github/workflows/subsmarket-jobs.yml`.
+- Background jobs: Cloudflare Worker `subsmarket-jobs-scheduler` с Cron Trigger
+  каждые 5 минут. `.github/workflows/subsmarket-jobs.yml` остаётся резервным
+  scheduler.
 
 Production database state:
 
-- Alembic version: verify before deploy with `alembic current`; older setup
-  notes referenced `20260619_0011`, but the repository head is newer.
+- Alembic version: проверять перед деплоем через `alembic current` и
+  `alembic heads`.
 - Catalog: 26 subscription services and 5 tariff services.
 - Supabase public tables have RLS enabled with explicit deny policies for
   `anon` and `authenticated`; the Mini App never connects to Supabase directly.

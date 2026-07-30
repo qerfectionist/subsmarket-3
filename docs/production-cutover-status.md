@@ -194,7 +194,8 @@ Verified in code on 2026-07-20:
 - every literal backend error code has a human-facing frontend label, enforced
   by `npm run check:error-labels`.
 
-Detailed backend launch plan: [backend-readiness-plan.md](backend-readiness-plan.md).
+Текущие критерии запуска и отката перечислены в
+[release-checklist.md](release-checklist.md).
 
 ## Infrastructure checklist status (2026-07-21)
 

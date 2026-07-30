@@ -7,6 +7,8 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .tmp/
+.codex-local/
+.local-logs/
 .vercel/
 data/research/
 backups/
@@ -23,5 +25,3 @@ frontend/.tmp-*.png
 
 .DS_Store
 Thumbs.db
-
-.vercel

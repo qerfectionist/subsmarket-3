@@ -52,10 +52,10 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("market-screen")).toBeVisible();
-  await expect(page.locator(".market-hero-carousel")).toBeVisible();
-  await expect(page.locator(".market-fast-grid")).toBeVisible();
-  await expect(page.getByTestId("market-find-tariff")).toBeVisible();
-  await expect(page.getByTestId("market-find-subscription")).toBeVisible();
+  await expect(page.getByTestId("market-first-run-banner")).toBeVisible();
+  await expect(page.getByTestId("market-search-input")).toBeVisible();
+  await expect(page.getByTestId("family-type-subscription")).toBeVisible();
+  await expect(page.getByTestId("family-type-tariff")).toBeVisible();
   await expect(page.getByTestId("market-buy-gigabytes")).toBeVisible();
   await expect(page.getByTestId("market-buy-accounts")).toBeVisible();
   await expect(page.locator(".bottom-nav button")).toHaveCount(4);
@@ -77,6 +77,9 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
   await expect(page.locator(".family-workspace")).toContainText("Access first");
 
+  await page
+    .getByTestId("owner-settings-toggle")
+    .evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("owner-description-input")).toBeVisible();
   await page.getByTestId("owner-description-input").fill("Updated owner description");
   await clickAndWait(page, "owner-save-description-button");
@@ -111,10 +114,10 @@ test("owner and member complete the first payment family flow", async ({ page })
   await switchDevUser(page, "200002");
   await openNav(page, 0);
   await expect(page.getByTestId("family-card")).toHaveCount(0);
-  await page.getByTestId("invite-code-input").fill(inviteCode);
-  await page
-    .getByTestId("open-invite-button")
-    .evaluate((element) => (element as HTMLElement).click());
+  await page.getByTestId("market-search-input").fill(inviteCode);
+  await page.getByRole("button", { name: `Открыть семью по коду ${inviteCode}` }).click({
+    force: true
+  });
   await expect(page.getByTestId("detail-send-request-button")).toBeVisible();
   await page.getByTestId("detail-send-request-button").click({ force: true });
   await expect(page.getByText("Заявка отправлена", { exact: true }).first()).toBeVisible();
@@ -124,13 +127,9 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByTestId("request-owner-chat-button")).toBeVisible();
 
   await switchDevUser(page, "200001");
-  const pendingActionsHero = page.getByTestId("market-hero-pending-actions");
-  await expect(pendingActionsHero).toBeVisible();
-  await expect(pendingActionsHero).toContainText("1 действие ждёт ответа");
-  await expect(page.getByTestId("market-alert-banner")).toHaveCount(0);
-  await pendingActionsHero
-    .getByRole("button", { name: "Открыть действия", exact: true })
-    .click({ force: true });
+  const notificationsButton = page.getByTestId("market-notifications");
+  await expect(notificationsButton).toBeVisible();
+  await notificationsButton.click({ force: true });
   await waitForNetworkQuiet(page);
   await page.getByTestId("owner-details-button").click({ force: true });
   await expect(page.getByTestId("approve-request-button")).toBeVisible();
@@ -238,6 +237,9 @@ test("create family form validates phone in real time", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
 
+  // Missing fields on later steps must not block navigation from service selection.
+  await expect(page.getByTestId("create-family-submit")).toBeEnabled();
+
   await fillCreateField(page, "create-payment-phone-input", "123");
   await expect(page.locator(".field-error")).toBeVisible();
   await expect(page.locator(".field-error")).toContainText("Формат");
@@ -248,8 +250,6 @@ test("create family form validates phone in real time", async ({ page }) => {
   await fillCreateField(page, "create-total-price-input", "0");
   await expect(page.locator(".field-error")).toBeVisible();
   await expect(page.locator(".field-error")).toContainText("больше нуля");
-
-  await goToCreateWizardStep(page, 3);
   await expect(page.getByTestId("create-family-submit")).toBeDisabled();
 });
 
@@ -263,9 +263,7 @@ test("requisite phone is masked until revealed", async ({ page }) => {
   await switchDevUser(page, "200002");
   await openNav(page, 0);
   await expect(page.getByTestId("family-card")).toHaveCount(1);
-  await page.getByTestId("open-family-button").first().click({ force: true });
-  await expect(page.locator(".detail-grid")).toBeVisible();
-  await page.getByTestId("detail-send-request-button").click({ force: true });
+  await clickAndWait(page, "request-family-button");
 
   await switchDevUser(page, "200001");
   await openNav(page, 1);
@@ -304,8 +302,8 @@ test("owner removes a member immediately with a reason", async ({ page }) => {
 
   await switchDevUser(page, "200002");
   await openNav(page, 0);
-  await page.getByTestId("open-family-button").first().click({ force: true });
-  await page.getByTestId("detail-send-request-button").click({ force: true });
+  await expect(page.getByTestId("request-family-button")).toHaveCount(1);
+  await clickAndWait(page, "request-family-button");
 
   await switchDevUser(page, "200001");
   await openNav(page, 1);
@@ -344,18 +342,23 @@ async function fillCreateField(page: Page, testId: string, value: string) {
 
 async function goToCreateWizardStep(page: Page, targetStep: number) {
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    const currentStep = Number(
-      await page.locator(".wizard-step-current .wizard-step-index").innerText()
+    const currentStep = Number.parseInt(
+      await page.locator(".wizard-step-current .wizard-step-index").innerText(),
+      10
     );
     if (currentStep - 1 === targetStep) {
       return;
     }
     if (currentStep - 1 < targetStep) {
-      await page.getByTestId("create-family-submit").click({ force: true });
+      await page
+        .getByTestId("create-family-submit")
+        .evaluate((element) => (element as HTMLElement).click());
       await page.waitForTimeout(80);
       continue;
     }
-    await page.getByRole("button", { name: "Назад" }).click({ force: true });
+    await page
+      .getByTestId("create-family-back")
+      .evaluate((element) => (element as HTMLElement).click());
     await page.waitForTimeout(80);
   }
 }
@@ -364,22 +367,31 @@ async function submitCreateFamily(page: Page) {
   await goToCreateWizardStep(page, 3);
   const submit = page.getByTestId("create-family-submit");
   await submit.scrollIntoViewIfNeeded();
-  await submit.click({ force: true });
+  await submit.evaluate((element) => (element as HTMLElement).click());
   await waitForNetworkQuiet(page);
 }
 
 async function switchDevUser(page: Page, userId: string) {
   await waitForNetworkQuiet(page);
   if (!(await page.getByTestId("dev-user-select").isVisible())) {
-    await openNav(page, 0);
+    await page.evaluate(
+      ({ key, value }) => window.localStorage.setItem(key, value),
+      { key: "subsmarket.devTelegramUser", value: userId }
+    );
+    await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("market-screen")).toBeVisible();
+    await waitForNetworkQuiet(page);
+    return;
   }
   const label = userId === "200001" ? "Owner · @demo_owner" : "Member · @demo_member";
   await selectWorldOption(page, "dev-user-select", label);
-  await expect(page.getByTestId("dev-user-select")).toHaveAttribute(
-    "data-value",
-    userId
-  );
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        window.localStorage.getItem("subsmarket.devTelegramUser")
+      )
+    )
+    .toBe(userId);
   await expect(page.getByTestId("market-screen")).toBeVisible();
   await waitForNetworkQuiet(page);
 }
@@ -399,21 +411,59 @@ async function openCreate(page: Page) {
 }
 
 async function selectMarketSubscriptions(page: Page) {
+  if ((await page.getByTestId("market-screen").count()) === 0) {
+    if ((await page.getByTestId("family-catalog-screen").count()) > 0) {
+      await page.getByRole("button", { name: "Назад в Маркет" }).click({
+        force: true
+      });
+    } else {
+      await page
+        .getByRole("navigation")
+        .getByRole("button", { name: "Маркет", exact: true })
+        .click({ force: true });
+    }
+    await expect(page.getByTestId("market-screen")).toBeVisible();
+  }
   await page
     .getByTestId("family-type-subscription")
     .evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("family-catalog-screen")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Семейные подписки" })
+  ).toBeVisible();
   await waitForNetworkQuiet(page);
 }
 
 async function selectMarketTariffs(page: Page) {
+  if ((await page.getByTestId("market-screen").count()) === 0) {
+    if ((await page.getByTestId("family-catalog-screen").count()) > 0) {
+      await page.getByRole("button", { name: "Назад в Маркет" }).click({
+        force: true
+      });
+    } else {
+      await page
+        .getByRole("navigation")
+        .getByRole("button", { name: "Маркет", exact: true })
+        .click({ force: true });
+    }
+    await expect(page.getByTestId("market-screen")).toBeVisible();
+  }
   await page
     .getByTestId("family-type-tariff")
     .evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("family-catalog-screen")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Семейные тарифы" })
+  ).toBeVisible();
   await waitForNetworkQuiet(page);
 }
 
 async function openNav(page: Page, index: number) {
-  await page.locator(".bottom-nav button").nth(index).click({ force: true });
+  await page
+    .getByRole("navigation")
+    .getByRole("button")
+    .nth(index)
+    .click({ force: true });
   await expect(navScreenLocator(page, index)).toBeVisible();
 }
 

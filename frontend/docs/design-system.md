@@ -18,45 +18,46 @@ Frontend state contracts:
 frontend/docs/ux-states.md
 ```
 
-Design reset plan:
-
-```text
-docs/design-reset-plan.md
-```
-
 ## Current Stack
 
-- Base components: `@worldcoin/mini-apps-ui-kit-react`
-- Icons: `lucide-react`
-- Tokens: `frontend/src/styles/tokens.css`
+- Market screen: semantic React/HTML with isolated `src/styles/market.css`
+- Screens not yet migrated: `@worldcoin/mini-apps-ui-kit-react`
+- Icons: `@hugeicons/react` with `@hugeicons/core-free-icons` on the Market
+  screen; `lucide-react` on the remaining legacy screens
+- Market tokens: local HireHi-derived tokens in `src/styles/market.css`
+- Other screen tokens: `frontend/src/styles/tokens.css`
 - Global styles: `frontend/src/styles.css`
 - Telegram native helpers: `frontend/src/telegram.ts`
 
-Do not add another visual component library for MVP UI.
+HeroUI and Tailwind CSS are not part of the frontend stack. Do not mix World
+UI and custom components inside one screen. New component libraries require an
+explicit design-system decision.
 
-## Immediate Implementation Order
+## Market Visual System
 
-1. Implement the selected first-screen direction: **Telegram Wallet-style Market**.
-2. Clean token duplication between `tokens.css` and `styles.css`.
-3. Convert hardcoded colors in `styles.css` to semantic tokens.
-4. Standardize shared components:
-   - app shell;
-   - bottom nav;
-   - status chip;
-   - family card/list item;
-   - empty state;
-   - error state;
-   - form field.
-5. Redesign screens in this order:
-   - Market;
-   - My;
-   - Create Family;
-   - Family Details;
-6. Run visual QA and E2E.
+The Market keeps the existing SubsMarket product structure and uses a dark
+visual system derived from the measured HireHi mobile interface:
+
+- canvas `#141414`;
+- primary surface `#1D1E20`;
+- secondary surface `#2E3035`;
+- interactive accent `#4DB288`, pressed `#3D8A6E`;
+- primary text `#FFFFFF`, secondary text `#888888`;
+- Inter with the system fallback stack;
+- radii `24px` for surfaces, `16px` for controls, `12px` for chips;
+- 16px mobile gutter and the `4 / 8 / 12 / 16 / 20 / 24 / 32` spacing scale;
+- no borders or shadows on in-flow cards; shadow is reserved for the floating
+  bottom navigation;
+- one nesting level: canvas -> primary surface -> secondary control.
+
+The accent marks the current navigation item and the main action. It is not
+used as decorative card color. Existing service data, actions, ordering, and
+navigation contracts remain unchanged.
 
 ## Frontend Rules
 
-- Blue is the only default action/brand color.
+- Market uses HireHi green as its interaction accent; screens not yet migrated
+  retain the existing blue action color.
 - Green is only for completed/confirmed states.
 - Orange is only for waiting/risk states.
 - Red is only for destructive/problem states.
@@ -66,7 +67,8 @@ Do not add another visual component library for MVP UI.
 - Do not create duplicate button/card styles without adding them to the
   design system.
 - First screen is `Маркет`, not a separate dashboard Home.
-- Market uses Wallet-style structure: summary card, quick actions, compact grouped list.
+- Market keeps its existing product structure and transitions. HireHi defines
+  its visual tokens and composition, not its product logic.
 - Do not add a top stats strip with `места / заявки / оплаты`.
 - Market groups can be visually unlabeled when cards explain the meaning; keep
   semantic `aria-label` for accessibility.

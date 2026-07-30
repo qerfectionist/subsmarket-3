@@ -12,7 +12,6 @@ import {
   getFamilyMembers,
   getOwnerFamilyRequests,
   initTelegramShell,
-  isDevAuthEnabled,
   isDevUserSwitchVisible,
   setActiveDevTelegramUser
 } from "./api";
@@ -36,13 +35,10 @@ import {
   useDisableFamilyInvite,
   useFamilyAuditLog,
   useFamilyInvite,
-  useFamilyMemberPayments,
-  useFamilyMembers,
   useFamilyServices,
   useFamilyView,
   useFamilies,
   useGetPaymentRequisite,
-  useImportFamilyServices,
   useLeaveFamily,
   useMarkAccessProvided,
   useMarkPaymentNotReceived,
@@ -50,13 +46,11 @@ import {
   useMe,
   useMyFamilies,
   useMyFamilyRequests,
-  useOwnerFamilyRequests,
   useRecordOwnerPrepaidPeriods,
   useRefreshTelegramProfile,
   useRemindAccessConfirmation,
   useRejectFamilyRequest,
   useReportPaymentPaid,
-  useResolveInviteCode,
   useRotateFamilyInvite,
   useRemoveMember,
   useUpdateFamilyDescription,
@@ -71,7 +65,6 @@ import { GigabytesScreen } from "./screens/GigabytesScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
 import { SearchScreen } from "./screens/SearchScreen";
 import type {
-  Family,
   FamilyCreate,
   FamilyMemberRemovalReason,
   FamilyType,
@@ -138,7 +131,6 @@ export function App() {
   );
   const [createForm, setCreateForm] = useState<FamilyCreate>(emptyCreateForm);
   const [myFamilyType, setMyFamilyType] = useState<FamilyType>("subscription");
-  const [familyFilter, setFamilyFilter] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const startParamHandled = useRef(false);
@@ -305,7 +297,6 @@ export function App() {
   }
 
   const refreshProfileMutation = useRefreshTelegramProfile();
-  const importCatalogMutation = useImportFamilyServices();
   const createFamilyMutation = useCreateFamily();
   const updateDescriptionMutation = useUpdateFamilyDescription();
   const updatePriceMutation = useUpdateFamilyPrice();
@@ -333,7 +324,6 @@ export function App() {
   const confirmPaymentMutation = useConfirmPaymentReceived();
   const notReceivedMutation = useMarkPaymentNotReceived();
   const getRequisiteMutation = useGetPaymentRequisite();
-  const resolveInviteMutation = useResolveInviteCode();
   const actualLeaveMutation = useLeaveFamily();
 
   function selectedService() {
@@ -343,7 +333,6 @@ export function App() {
   function changeFamilyType(nextType: FamilyType) {
     const nextServices = services.filter((service) => service.family_type === nextType);
     setFamilyType(nextType);
-    setFamilyFilter("all");
     setCreateForm((current) => ({
       ...current,
       service_id: nextServices[0]?.id || "",
@@ -443,42 +432,6 @@ export function App() {
     [myFamilies, myFamilyType]
   );
 
-  const filteredFamilies = useMemo(() => {
-    if (familyFilter === "all") return typedFamilies;
-    return typedFamilies.filter((family) => family.service_id === familyFilter);
-  }, [typedFamilies, familyFilter]);
-
-  const marketBannerMetrics = useMemo(() => {
-    const ownerFamilies = myFamilies.filter((item) => item.membership.role === "owner");
-    const joinedFamilies = myFamilies.filter((item) => item.membership.role === "member");
-    return {
-      pendingJoinRequests: ownerFamilies.reduce(
-        (total, item) => total + item.pending_requests_count,
-        0
-      ),
-      paymentConfirmations: ownerFamilies.reduce(
-        (total, item) =>
-          total + item.payments.filter((payment) => payment.status === "payment_reported").length,
-        0
-      ),
-      memberDuePayments: joinedFamilies.filter((item) =>
-        item.payments.some((payment) => payment.status === "due" || payment.status === "overdue")
-      ).length,
-      accessConfirmations: joinedFamilies.filter(
-        (item) => item.membership.status === "awaiting_confirmation"
-      ).length,
-      activeFamilies: myFamilies.filter((item) =>
-        ["active", "payment_due", "awaiting_access", "awaiting_confirmation"].includes(
-          item.membership.status
-        )
-      ).length,
-      ownedFamilies: ownerFamilies.length,
-      joinedFamilies: joinedFamilies.length,
-      freeFamilies: typedFamilies.length,
-      freeSlots: typedFamilies.reduce((total, family) => total + family.free_slots, 0)
-    };
-  }, [myFamilies, typedFamilies]);
-
   if (loadState === "loading") {
     return <Shell title="SubsMarket">Загружаем Mini App...</Shell>;
   }
@@ -534,11 +487,17 @@ export function App() {
 
   const user = me?.ok ? me.user : null;
   const service = selectedService();
+  const isMarket = tab === "home" || tab === "search";
 
   return (
-    <Shell title="SubsMarket">
-      <AppHeader userName={user?.username ?? "unknown"} firstName={user?.first_name} />
-      {isDevUserSwitchVisible() && devUser && (
+    <Shell title="SubsMarket" appearance={isMarket ? "market" : "default"}>
+      {!isMarket ? (
+        <AppHeader
+          userName={user?.username ?? "unknown"}
+          firstName={user?.first_name}
+        />
+      ) : null}
+      {isDevUserSwitchVisible() && devUser && !isMarket && (
         <DevUserSwitch value={devUser} onChange={(id) => void switchDevUser(id)} />
       )}
 
@@ -550,18 +509,22 @@ export function App() {
 
       {(tab === "home" || tab === "search") && (
         <SearchScreen
+          view={tab === "search" ? "family-catalog" : "market"}
+          userName={user?.username ?? "unknown"}
+          firstName={user?.first_name}
           familyType={familyType}
-          services={services}
-          typedServices={typedServices}
           filteredFamilies={typedFamilies}
-          bannerMetrics={marketBannerMetrics}
-          busy={busy}
+          myFamilies={myFamilies}
+          myRequests={myRequests}
           isLoading={familiesQuery.isLoading}
           hasMoreFamilies={Boolean(familiesQuery.hasNextPage)}
           isLoadingMoreFamilies={familiesQuery.isFetchingNextPage}
-          onChangeFamilyType={changeFamilyType}
-          onChangeFamilyFilter={setFamilyFilter}
-          onRefresh={() => familiesQuery.refetch()}
+          onOpenFamilyCatalog={(nextType) => {
+            changeFamilyType(nextType);
+            setTab("search");
+          }}
+          onBack={() => setTab("home")}
+          onRefresh={() => void familiesQuery.refetch()}
           onLoadMoreFamilies={() => void familiesQuery.fetchNextPage()}
           pendingActionsCount={familyPendingActionsCount + marketplacePendingActionsCount}
           onOpenMine={() => setTab("mine")}
@@ -583,11 +546,6 @@ export function App() {
             setTab("create");
           }}
           resetToken={marketResetToken}
-          onCreateRequest={(familyId) =>
-            void runMutation("create-request", () =>
-              createRequestMutation.mutateAsync(familyId)
-            ).then(() => openFamily(familyId, "home"))
-          }
         />
       )}
 
@@ -636,6 +594,14 @@ export function App() {
             setAccountsEntryMode("requests");
             setAccountsEntryRequestRole("buyer");
             setTab("accounts");
+          }}
+          onOpenAccounts={() => {
+            setAccountsEntryMode("catalog");
+            setTab("accounts");
+          }}
+          onOpenGigabytes={() => {
+            setGigabytesEntryMode("catalog");
+            setTab("gigabytes");
           }}
           busy={busy}
           isLoading={myFamiliesQuery.isLoading}
@@ -876,6 +842,7 @@ export function App() {
 
       <BottomNav
         active={tab}
+        appearance={tab === "home" || tab === "search" ? "market" : "default"}
         onChange={setTab}
         onReselect={(selectedTab) => {
           if (selectedTab === "home") {
