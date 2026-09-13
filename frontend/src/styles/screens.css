@@ -565,6 +565,9 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
   pointer-events: none;
 }
+.my-screen .product-scope-switch[data-scope-dragging="true"]::before {
+  transition: none;
+}
 .my-screen .product-scope-switch button { position: relative; z-index: 1; }
 .my-screen .product-scope-switch button.ui-button-tertiary {
   border: 0;
@@ -804,6 +807,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .my-calendar-disclosure + .stack { transition: none; }
   .app-shell button, .wizard-progress-bar { transition: none; transform: none !important; }
   .my-product-scope-swipe-track { will-change: auto; }
+  .my-screen .product-scope-switch::before { transition: none; }
   .my-payment-calendar-selection-wrap { transition: none; transform: none; }
 }
 

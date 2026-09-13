@@ -1,4 +1,4 @@
-import { useId, type CSSProperties, type ReactNode } from "react";
+import { forwardRef, useId, type CSSProperties, type ReactNode } from "react";
 
 import {
   Button as AppButton,
@@ -151,20 +151,20 @@ export function FamilyTypeSwitch({
   );
 }
 
-export function ProductScopeSwitch({
-  value = "families",
-  onChange,
-  familiesLabel = "Семьи",
-  dragPosition
-}: {
+export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
   value?: "families" | "accounts" | "gigabytes";
   onChange?: (value: "families" | "accounts" | "gigabytes") => void;
   familiesLabel?: string;
   dragPosition?: number;
-}) {
+}>(function ProductScopeSwitch({
+  value = "families",
+  onChange,
+  familiesLabel = "Семьи",
+  dragPosition
+}, ref) {
   const position = dragPosition ?? ["families", "accounts", "gigabytes"].indexOf(value);
   return (
-    <div className="product-scope-switch" role="group" aria-label="Разделы" style={{ "--scope-position": position } as CSSProperties}>
+    <div ref={ref} className="product-scope-switch" role="group" aria-label="Разделы" style={{ "--scope-position": position } as CSSProperties}>
       <AppButton
         type="button"
         size="sm"
@@ -194,7 +194,7 @@ export function ProductScopeSwitch({
       </AppButton>
     </div>
   );
-}
+});
 
 export function BottomNav({
   active, onChange, onReselect, badges

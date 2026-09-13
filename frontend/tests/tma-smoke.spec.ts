@@ -151,6 +151,37 @@ test("My sections switch with a horizontal swipe", async ({ page }) => {
   ).toHaveAttribute("aria-hidden", "false");
 });
 
+test("My scope indicator follows the pointer during a swipe", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Мои", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("my-screen")).toBeVisible();
+
+  const pager = page.locator(".my-product-scope-swipe-viewport");
+  const scopeSwitch = page.locator(".product-scope-switch");
+  const box = await pager.boundingBox();
+  if (!box) throw new Error("My product scope pager is not measurable");
+
+  const y = box.y + Math.min(box.height / 2, 180);
+  await page.mouse.move(box.x + box.width * 0.8, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, y, { steps: 1 });
+
+  await expect(scopeSwitch).toHaveAttribute("data-scope-dragging", "true");
+  const indicator = await scopeSwitch.evaluate((element) => ({
+    position: Number(element.style.getPropertyValue("--scope-position")),
+    transitionDuration: getComputedStyle(element, "::before").transitionDuration
+  }));
+  expect(indicator.position).toBeGreaterThan(0.1);
+  expect(indicator.position).toBeLessThan(0.6);
+  expect(indicator.transitionDuration).toBe("0s");
+
+  await page.mouse.up();
+  await expect(scopeSwitch).not.toHaveAttribute("data-scope-dragging", "true");
+});
+
 test("My families open a role picker from the families scope", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page

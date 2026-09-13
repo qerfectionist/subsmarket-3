@@ -235,7 +235,18 @@ export function MyFamiliesScreen({
   const [myMarketplaceRole, setMyMarketplaceRole] = useState<MarketplaceRequestRole>("seller");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isFamilyRolePickerOpen, setIsFamilyRolePickerOpen] = useState(false);
-  const [scopeDragPosition, setScopeDragPosition] = useState<number | undefined>(undefined);
+  const scopeSwitchRef = useRef<HTMLDivElement | null>(null);
+
+  function handleScopePositionChange(position: number, isDragging: boolean) {
+    const switchElement = scopeSwitchRef.current;
+    if (!switchElement) return;
+    switchElement.style.setProperty("--scope-position", String(position));
+    if (isDragging) {
+      switchElement.dataset.scopeDragging = "true";
+    } else {
+      delete switchElement.dataset.scopeDragging;
+    }
+  }
   useEffect(() => {
     if (myProductScope !== "families") setIsCalendarOpen(false);
   }, [myProductScope]);
@@ -496,10 +507,10 @@ export function MyFamiliesScreen({
         {mode === "mine" ? (
           <div className="my-screen-filters">
             <ProductScopeSwitch
+              ref={scopeSwitchRef}
               value={myProductScope}
               familiesLabel="Подписки"
               onChange={onChangeProductScope}
-              dragPosition={scopeDragPosition}
             />
           </div>
         ) : null}
@@ -507,7 +518,7 @@ export function MyFamiliesScreen({
           <MyProductScopePager
             value={myProductScope}
             onChange={onChangeProductScope}
-            onDragPositionChange={setScopeDragPosition}
+            onDragPositionChange={handleScopePositionChange}
             renderPane={(scope) => {
               if (scope === "accounts") {
                 return (
@@ -1521,7 +1532,7 @@ function MyProductScopePager({
   value: MyProductScope;
   onChange: (value: MyProductScope) => void;
   renderPane: (scope: MyProductScope) => ReactNode;
-  onDragPositionChange?: (position: number | undefined) => void;
+  onDragPositionChange?: (position: number, isDragging: boolean) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -1537,7 +1548,6 @@ function MyProductScopePager({
     if (trackRef.current) {
       trackRef.current.style.transform = `translate3d(${-position * pagePercent}%, 0, 0)`;
     }
-    onDragPositionChange?.(position);
   }
 
   function stopAnimation() {
@@ -1627,19 +1637,21 @@ function MyProductScopePager({
         ? lastIndex + (rawPosition - lastIndex) * 0.25
         : rawPosition;
     setPosition(position);
+    onDragPositionChange?.(position, true);
   }
 
   function handlePointerEnd(event: ReactPointerEvent<HTMLDivElement>, cancelled = false) {
     const pointer = pointerRef.current;
     if (!pointer || pointer.pointerId !== event.pointerId) return;
     pointerRef.current = null;
-    onDragPositionChange?.(undefined);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     if (pointer.cancelled) return;
     if (cancelled) {
-      animateTo(Math.round(positionRef.current));
+      const target = Math.round(positionRef.current);
+      onDragPositionChange?.(target, false);
+      animateTo(target);
       return;
     }
     if (!pointer.isDragging) return;
@@ -1654,6 +1666,7 @@ function MyProductScopePager({
       target = Math.round(pointer.originPosition) + direction;
     }
     target = Math.min(Math.max(target, 0), myProductScopeOrder.length - 1);
+    onDragPositionChange?.(target, false);
     animateTo(target, -pointer.velocityX / width);
     if (target !== activeIndex) onChange(myProductScopeOrder[target]);
   }
