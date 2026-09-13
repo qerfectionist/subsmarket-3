@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from subsmarket.core.database import get_auth_db, get_db
 from subsmarket.identity.models import User
-from subsmarket.identity.service import upsert_user
+from subsmarket.identity.service import PublicNamePoolExhausted, upsert_user
 from subsmarket.identity.telegram import parse_telegram_user
 
 
@@ -17,7 +17,13 @@ def get_current_user(
     if not telegram_user.username:
         raise HTTPException(status_code=403, detail="USERNAME_REQUIRED")
 
-    user = upsert_user(auth_db, telegram_user)
+    try:
+        user = upsert_user(auth_db, telegram_user)
+    except PublicNamePoolExhausted as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="PUBLIC_NAME_POOL_EXHAUSTED",
+        ) from exc
     user_id = user.id
     if auth_db is not db:
         auth_db.close()

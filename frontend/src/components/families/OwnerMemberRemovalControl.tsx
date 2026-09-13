@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
-  Button as WorldButton,
+  Button as AppButton,
   Select
-} from "@worldcoin/mini-apps-ui-kit-react";
+} from "../ui";
 
 import type { FamilyMember, FamilyMemberRemovalReason } from "../../types";
 import { memberRemovalReasonLabels } from "../../labels";
@@ -32,14 +32,14 @@ export function OwnerMemberRemovalControl({
           }))}
         />
       </div>
-      <WorldButton
+      <AppButton
         type="button"
         variant="secondary"
         data-testid="remove-member-button"
         onClick={() => void onRemove(member, reason)}
       >
         Удалить
-      </WorldButton>
+      </AppButton>
     </div>
   );
 }

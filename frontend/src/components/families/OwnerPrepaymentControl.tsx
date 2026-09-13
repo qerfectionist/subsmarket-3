@@ -1,9 +1,9 @@
 import { useState } from "react";
 import {
-  Button as WorldButton,
+  Button as AppButton,
   Select,
   Typography
-} from "@worldcoin/mini-apps-ui-kit-react";
+} from "../ui";
 
 import type { Family, FamilyMember } from "../../types";
 
@@ -32,14 +32,14 @@ export function OwnerPrepaymentControl({
           }))}
         />
       </div>
-      <WorldButton
+      <AppButton
         type="button"
         variant="secondary"
         data-testid="owner-record-prepayment-button"
         onClick={() => void onRecord(member, periods)}
       >
         Отметить
-      </WorldButton>
+      </AppButton>
       <Typography as="small" variant="body" level={4}>
         Используйте только после договоренности и фактического перевода вне
         SubsMarket.

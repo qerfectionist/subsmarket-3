@@ -49,7 +49,9 @@ def post_family(
         payload,
         idempotency_key=idempotency_key,
     )
-    return FamilyCreateResult(family=to_family_out(family))
+    return FamilyCreateResult(
+        family=to_family_out(family, include_owner_photo=True)
+    )
 
 
 def patch_family_description(
@@ -58,7 +60,10 @@ def patch_family_description(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyOut:
-    return to_family_out(update_family_description(db, user, family_id, payload))
+    return to_family_out(
+        update_family_description(db, user, family_id, payload),
+        include_owner_photo=True,
+    )
 
 
 def patch_family_price(
@@ -67,7 +72,10 @@ def patch_family_price(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyOut:
-    return to_family_out(update_family_price(db, user, family_id, payload))
+    return to_family_out(
+        update_family_price(db, user, family_id, payload),
+        include_owner_photo=True,
+    )
 
 
 def patch_family_payment_day(
@@ -76,7 +84,10 @@ def patch_family_payment_day(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyOut:
-    return to_family_out(update_family_payment_day(db, user, family_id, payload))
+    return to_family_out(
+        update_family_payment_day(db, user, family_id, payload),
+        include_owner_photo=True,
+    )
 
 
 def patch_family_visibility(
@@ -85,7 +96,10 @@ def patch_family_visibility(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyOut:
-    return to_family_out(update_family_visibility(db, user, family_id, payload))
+    return to_family_out(
+        update_family_visibility(db, user, family_id, payload),
+        include_owner_photo=True,
+    )
 
 
 def post_family_availability_confirmed(
@@ -93,7 +107,10 @@ def post_family_availability_confirmed(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyOut:
-    return to_family_out(confirm_family_availability(db, user, family_id))
+    return to_family_out(
+        confirm_family_availability(db, user, family_id),
+        include_owner_photo=True,
+    )
 
 
 def get_owner_family_invite(
@@ -144,7 +161,8 @@ def post_family_close(
             family_id,
             closes_on=payload.closes_on,
             idempotency_key=idempotency_key,
-        )
+        ),
+        include_owner_photo=True,
     )
 
 

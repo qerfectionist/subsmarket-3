@@ -1,4 +1,4 @@
-import { ListItem } from "@worldcoin/mini-apps-ui-kit-react";
+import { ListItem } from "../ui";
 
 import { familyTitle } from "../../format";
 import { periodLabels } from "../../labels";

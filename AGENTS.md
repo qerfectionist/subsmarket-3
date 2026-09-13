@@ -97,34 +97,31 @@ Family Engine и Marketplace Engine не используют общую биз�
   семантические React/HTML-компоненты и изолированные стили
   `frontend/src/styles/market.css`. Продуктовую структуру и переходы экрана
   менять только по отдельному продуктовому решению.
-- HeroUI и Tailwind CSS в проекте не используются. Не подключать их и другие
-  UI-библиотеки без отдельного решения по дизайн-системе.
-- Остальные экраны пока остаются на
-  `@worldcoin/mini-apps-ui-kit-react`. Не смешивать World UI с кастомными
-  компонентами внутри одного экрана; переносить экраны по одному.
+- Общие элементы остальных экранов используют локальные семантические
+  примитивы из `frontend/src/components/ui.tsx`, если для задачи не выбран
+  другой UI-компонент.
 - Server state хранится в TanStack Query; локальное UI-состояние - в React.
 - API-функции находятся в `frontend/src/api/{module}.ts`, hooks - в
   `frontend/src/hooks/api/{domain}.ts`; совместимые re-export оставлять.
 - `App.tsx` пока является главным контейнером. Не добавлять параллельный
   router/context без полного подключения реального render path.
-- Компоненты: семантический React/HTML и `market.css` для `Маркета`, World UI
-  для ещё не перенесённых экранов; иконки `Маркета`: `@hugeicons/react` и
-  `@hugeicons/core-free-icons`, остальных экранов: `lucide-react`; нативные Telegram API:
+- Компоненты: семантический React/HTML и `market.css` для `Маркета`, локальные
+  примитивы для общих контролов; иконки всех экранов: `lucide-react`; нативные Telegram API:
   `frontend/src/telegram.ts`.
-- Дизайн-система: `docs/design-system.md` и
-  `frontend/docs/design-system.md`; состояния: `frontend/docs/ux-states.md`.
+- Дизайн-система: `docs/design-system.md` — единственный источник визуальных
+  принципов и токенов; она задаёт рамки и оставляет место для креативных
+  вариантов, а не фиксирует макет каждого экрана.
 - Деструктивные действия подтверждать через Telegram native confirm.
 - Для одного главного действия экрана использовать Telegram MainButton, если
   это не конфликтует с нижней навигацией.
-- Не добавлять вторую палитру, другую библиотеку иконок или новые случайные
-  стили карточек.
 
 ## E2E
 
 - После мутации ждать React Query refetch через `waitForNetworkQuiet(page)`.
 - Исчезновение элемента проверять через `toHaveCount(0)`.
-- Для World UI допустим `click({ force: true })`, когда overlay перехватывает
-  pointer events.
+- Для мобильных overlay допустим `click({ force: true })`, когда слой
+  перехватывает pointer events; для локальных контролов предпочтителен
+  семантический locator или DOM click в E2E.
 - Для toast использовать точный locator или `data-testid`.
 - Playwright сам поднимает изолированные backend/frontend на `8001/5174` и
   временную SQLite-базу в `.tmp`; работающий локальный стек ему не требуется.

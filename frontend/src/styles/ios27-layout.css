@@ -1,0 +1,911 @@
+/*
+ * Reversible composition pass for the iOS-inspired mobile layout.
+ * main.tsx enables this layer by default; ?ios27=off exposes the previous
+ * geometry without changing product behavior or the shared design tokens.
+ */
+:root[data-ios27-layout="on"] {
+  --app-nav-height: 56px;
+  --app-nav-create-size: 52px;
+  --app-nav-clearance: calc(var(--app-nav-height) + 32px + var(--app-inset-bottom));
+  --app-market-material-radius: 28px;
+  --app-market-action-radius: 20px;
+  --app-market-action-inset: 12px;
+  --app-market-action-inner-radius: max(0px, calc(var(--app-market-action-radius) - var(--app-market-action-inset)));
+}
+
+:root[data-ios27-layout="on"] .sm-market-section-heading {
+  margin-top: 0;
+  min-height: var(--app-touch-min);
+}
+
+:root[data-ios27-layout="on"] .sm-market-section-heading-copy {
+  align-items: center;
+}
+
+:root[data-ios27-layout="on"] .sm-market-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding-block: 0;
+}
+
+/* A compact grouped search field, separate from the larger Liquid Glass banner. */
+:root[data-ios27-layout="on"] .sm-market-search {
+  min-height: 48px;
+  padding-inline: 14px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-secondary-bg);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-search:focus-within {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-search > svg {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+:root[data-ios27-layout="on"] .sm-market-search input {
+  flex: 1 1 auto;
+  width: auto;
+  height: 48px;
+  padding-block: 0;
+  line-height: 22px;
+}
+
+:root[data-ios27-layout="on"] .sm-market-family-list {
+  gap: var(--app-space-3);
+}
+
+/* iOS 19-style grouped categories: one surface, four calm cells, no floating cards. */
+:root[data-ios27-layout="on"] .sm-market-service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--app-border) 82%, var(--app-banner-purple) 18%);
+  border-radius: 20px;
+  background: var(--app-border);
+  box-shadow: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile {
+  min-height: 68px;
+  padding: 10px 16px;
+  border-radius: 0;
+  background: var(--app-surface);
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile {
+  border: 0;
+  border-radius: 0;
+  background: var(--app-surface);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Event aura lives on the screen layer, never inside a banner card. */
+:root[data-ios27-layout="on"] .sm-market-screen {
+  position: relative;
+  isolation: isolate;
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen > :not(.sm-market-screen-event-pulse) {
+  position: relative;
+  z-index: 1;
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse {
+  position: fixed;
+  z-index: 0;
+  display: block;
+  background: transparent;
+  opacity: 0;
+  --pulse-edge: color-mix(in srgb, var(--app-info) 78%, transparent);
+  --pulse-edge-soft: color-mix(in srgb, var(--app-info) 44%, transparent);
+  --pulse-edge-deep: color-mix(in srgb, var(--app-info) 24%, transparent);
+  will-change: opacity;
+  contain: paint;
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-top,
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-bottom {
+  right: 0;
+  left: 0;
+  height: clamp(96px, 22vh, 148px);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-top {
+  top: 0;
+  border-top: 1px solid var(--pulse-edge);
+  background: linear-gradient(to bottom, var(--pulse-edge) 0%, var(--pulse-edge-soft) 18%, var(--pulse-edge-deep) 52%, transparent 100%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-bottom {
+  bottom: 0;
+  border-bottom: 1px solid var(--pulse-edge);
+  background: linear-gradient(to top, var(--pulse-edge) 0%, var(--pulse-edge-soft) 18%, var(--pulse-edge-deep) 52%, transparent 100%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-left,
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-right {
+  top: 0;
+  bottom: 0;
+  width: clamp(96px, 24vw, 148px);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-left {
+  left: 0;
+  border-left: 1px solid var(--pulse-edge);
+  background: linear-gradient(to right, var(--pulse-edge) 0%, var(--pulse-edge-soft) 18%, var(--pulse-edge-deep) 52%, transparent 100%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse-right {
+  right: 0;
+  border-right: 1px solid var(--pulse-edge);
+  background: linear-gradient(to left, var(--pulse-edge) 0%, var(--pulse-edge-soft) 18%, var(--pulse-edge-deep) 52%, transparent 100%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse[data-tone="warning"] {
+  --pulse-edge: color-mix(in srgb, var(--app-warning) 78%, transparent);
+  --pulse-edge-soft: color-mix(in srgb, var(--app-warning) 44%, transparent);
+  --pulse-edge-deep: color-mix(in srgb, var(--app-warning) 24%, transparent);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse[data-tone="danger"] {
+  --pulse-edge: color-mix(in srgb, var(--app-danger) 78%, transparent);
+  --pulse-edge-soft: color-mix(in srgb, var(--app-danger) 44%, transparent);
+  --pulse-edge-deep: color-mix(in srgb, var(--app-danger) 24%, transparent);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse[data-tone="success"] {
+  --pulse-edge: color-mix(in srgb, var(--app-success) 78%, transparent);
+  --pulse-edge-soft: color-mix(in srgb, var(--app-success) 44%, transparent);
+  --pulse-edge-deep: color-mix(in srgb, var(--app-success) 24%, transparent);
+}
+
+:root[data-ios27-layout="on"] .sm-market-screen-event-pulse[data-tone="raspberry"] {
+  --pulse-edge: color-mix(in srgb, var(--app-raspberry) 78%, transparent);
+  --pulse-edge-soft: color-mix(in srgb, var(--app-raspberry) 44%, transparent);
+  --pulse-edge-deep: color-mix(in srgb, var(--app-raspberry) 24%, transparent);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button {
+  grid-template-columns: 32px minmax(0, 1fr) max-content;
+  grid-template-rows: auto auto;
+  align-items: center;
+  align-content: center;
+  row-gap: 2px;
+  height: auto;
+  min-height: 96px;
+  padding: var(--app-market-action-inset);
+  overflow: hidden;
+  --banner-light: var(--app-banner-purple);
+  --banner-deep: var(--app-banner-blue);
+  border: 1px solid transparent;
+  border-radius: var(--app-market-action-radius);
+  isolation: isolate;
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--app-font-family);
+  font-synthesis: none;
+  touch-action: pan-y;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid var(--app-action-banner-border);
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+  content: "";
+  pointer-events: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button > * {
+  position: relative;
+  z-index: 2;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-copy > *,
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta > * {
+  position: relative;
+  z-index: 2;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button[data-tone="info"] {
+  --banner-light: color-mix(in srgb, var(--app-info) 82%, white 18%);
+  --banner-deep: color-mix(in srgb, var(--app-info) 58%, #172b8a 42%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button[data-tone="warning"] {
+  --banner-light: color-mix(in srgb, var(--app-warning) 72%, white 28%);
+  --banner-deep: color-mix(in srgb, var(--app-warning) 48%, #8c2f17 52%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button[data-tone="danger"] {
+  --banner-light: color-mix(in srgb, var(--app-danger) 76%, white 24%);
+  --banner-deep: color-mix(in srgb, var(--app-danger) 50%, #681c49 50%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button[data-tone="success"] {
+  --banner-light: color-mix(in srgb, var(--app-success) 72%, white 28%);
+  --banner-deep: color-mix(in srgb, var(--app-success) 48%, #0d3d72 52%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button[data-tone="raspberry"] {
+  --banner-light: color-mix(in srgb, var(--app-raspberry) 78%, white 22%);
+  --banner-deep: color-mix(in srgb, var(--app-raspberry) 48%, #49206f 52%);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: transparent;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.8;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon .service-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 0;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon .service-logo-image {
+  width: 100%;
+  height: 100%;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon[data-tone="danger"] {
+  color: var(--app-danger);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon[data-tone="raspberry"] {
+  color: var(--app-raspberry);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon[data-tone="warning"] {
+  color: var(--app-warning);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon[data-tone="info"] {
+  color: var(--app-info);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-icon[data-tone="success"] {
+  color: var(--app-success);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-copy {
+  display: contents;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button strong {
+  display: block;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  min-width: 0;
+  max-width: 100%;
+  font-size: var(--app-size-body);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-card);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-wrap: nowrap;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-count {
+  color: var(--app-text);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-button small {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 0;
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-caption);
+  letter-spacing: 0;
+  overflow: hidden;
+  text-wrap: nowrap;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-detail-main {
+  display: block;
+  color: var(--app-action-banner-subtitle);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-caption);
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-detail-note {
+  display: block;
+  margin-top: 2px;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta {
+  display: block;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  margin: 0;
+  padding-top: 0;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-label);
+  letter-spacing: 0.005em;
+  max-width: 8.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--app-muted) 34%, transparent);
+  border-radius: var(--app-market-action-inner-radius);
+  background: transparent;
+  font-size: 12px;
+  font-weight: var(--app-weight-regular);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta > span[data-tone="danger"] {
+  color: var(--app-danger);
+  border-color: transparent;
+  background: var(--app-danger-soft);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta > span[data-tone="raspberry"] {
+  color: var(--app-raspberry-bright);
+  border-color: transparent;
+  background: var(--app-raspberry-soft);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta > span[data-tone="warning"] {
+  color: var(--app-warning);
+  border-color: transparent;
+  background: var(--app-warning-soft);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta > span[data-tone="info"] {
+  color: var(--app-info);
+  border-color: transparent;
+  background: var(--app-info-soft);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-meta > span[data-tone="success"] {
+  color: var(--app-success);
+  border-color: transparent;
+  background: var(--app-success-soft);
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-dots button.is-active::before {
+  width: 6px;
+  height: 6px;
+  background: var(--app-text);
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile > span {
+  flex-basis: 32px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.75;
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile strong {
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+}
+
+/* Actions: use one calm operational surface and keep the next step obvious. */
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  padding: 1px;
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface-inset);
+  box-shadow: var(--app-control-shadow);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div {
+  display: grid;
+  align-content: space-between;
+  gap: var(--app-space-2);
+  min-height: 72px;
+  padding: 13px 14px;
+  background: var(--app-surface);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div:first-child {
+  grid-column: 1 / -1;
+  min-height: 112px;
+  padding: 18px 20px;
+  background: var(--app-secondary-bg);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary span {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-label);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary strong {
+  color: var(--app-text);
+  font-size: 24px;
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div:first-child span {
+  color: var(--app-text);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-caption);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary-primary-head {
+  align-items: center;
+  display: flex;
+  gap: var(--app-space-2);
+  justify-content: space-between;
+  min-width: 0;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary-status {
+  flex: 0 1 auto;
+  min-height: 28px;
+  padding: 5px 9px;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-warning-soft);
+  color: var(--app-warning) !important;
+  font-size: var(--app-size-label) !important;
+  font-weight: var(--app-weight-medium) !important;
+  line-height: var(--app-leading-label) !important;
+  white-space: nowrap;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div:first-child strong {
+  font-size: 48px;
+  letter-spacing: -0.04em;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .my-requests-section {
+  gap: var(--app-space-3);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card {
+  gap: var(--app-space-3);
+  padding: var(--app-space-4);
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+  box-shadow: var(--app-control-shadow);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card > div:first-child {
+  display: grid;
+  gap: var(--app-space-3);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card-heading {
+  align-items: center;
+  gap: var(--app-space-3);
+  margin-bottom: 0;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card-heading > div {
+  gap: var(--app-space-2);
+  min-width: 0;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card-heading strong {
+  min-width: 0;
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card-heading .legacy-badge {
+  flex: 0 0 auto;
+  background: var(--app-warning-soft);
+  color: var(--app-warning);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card > div:first-child > p {
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card .row-actions {
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--app-space-2);
+  width: 100%;
+  padding-top: var(--app-space-1);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card .row-actions button {
+  flex: 0 1 auto;
+  min-height: var(--app-touch-min);
+  padding-inline: 16px;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .list-row[data-testid$="actions-card"] {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--app-space-4);
+  min-height: 76px;
+  padding: var(--app-space-4);
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+  box-shadow: var(--app-control-shadow);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .list-row[data-testid$="actions-card"] .list-row-main {
+  display: grid;
+  gap: var(--app-space-1);
+  min-width: 0;
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .list-row[data-testid$="actions-card"] .list-row-main strong {
+  color: var(--app-text);
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .list-row[data-testid$="actions-card"] .list-row-main span {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+}
+
+:root[data-ios27-layout="on"] [data-testid="actions-screen"] .list-row[data-testid$="actions-card"] button {
+  min-width: 82px;
+  min-height: var(--app-touch-min);
+}
+
+:root[data-ios27-layout="on"] .sm-listing-footer {
+  min-height: var(--app-touch-min);
+}
+
+:root[data-ios27-layout="on"] .subs-dock-surface {
+  min-height: var(--app-nav-height);
+  padding-block: 3px;
+}
+
+:root[data-ios27-layout="on"] .subs-dock button.subs-dock-item {
+  min-height: 48px;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  :root[data-ios27-layout="on"] {
+    --app-nav-height: 52px;
+    --app-nav-create-size: 48px;
+    --app-nav-clearance: calc(var(--app-nav-height) + 24px + var(--app-inset-bottom));
+  }
+
+  :root[data-ios27-layout="on"] .sm-market-screen {
+    gap: var(--app-space-3);
+    padding-top: calc(var(--app-space-4) + var(--app-inset-top));
+  }
+
+  :root[data-ios27-layout="on"] .subs-dock-surface {
+    padding-block: 1px;
+  }
+
+  :root[data-ios27-layout="on"] .sm-market-action-banner-button {
+    height: auto;
+    min-height: 88px;
+    padding-block: 10px;
+  }
+
+  :root[data-ios27-layout="on"] .sm-market-service-tile {
+    min-height: 60px;
+    padding-block: 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  :root[data-ios27-layout="on"] .sm-market-action-banner-button {
+    height: auto;
+    min-height: 112px;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  :root[data-ios27-layout="on"] .sm-market-action-banner-icon {
+    width: 28px;
+    height: 28px;
+    align-self: center;
+  }
+
+}
+
+@media (max-width: 360px) {
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div {
+    padding-inline: 8px;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div:first-child {
+    min-height: 96px;
+    padding: 16px;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary span {
+    font-size: 12px;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary strong {
+    font-size: 22px;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div:first-child span {
+    font-size: var(--app-size-label);
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary > div:first-child strong {
+    font-size: 40px;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card-heading {
+    align-items: flex-start;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card .row-actions {
+    justify-content: stretch;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .request-card .row-actions button {
+    flex: 1 1 0;
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .list-row[data-testid$="actions-card"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--app-space-3);
+  }
+
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .list-row[data-testid$="actions-card"] button {
+    width: 100%;
+  }
+
+  :root[data-ios27-layout="on"] .sm-market-service-tile {
+    gap: var(--app-space-2);
+    min-height: 60px;
+    padding: 6px 0;
+  }
+
+  :root[data-ios27-layout="on"] .sm-market-service-tile strong {
+    font-size: var(--app-size-caption);
+    line-height: var(--app-leading-caption);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root[data-ios27-layout="on"] :is(.sm-market-action-banner-button, .sm-market-service-tile) {
+    background: var(--app-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  :root[data-ios27-layout="on"] .sm-market-action-banner-button::after,
+  :root[data-ios27-layout="on"] .sm-market-screen-event-pulse {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ios27-layout="on"] .sm-market-screen-event-pulse[data-active="true"] {
+    box-shadow: none;
+    opacity: .75;
+  }
+}
+
+@media (min-width: 420px) {
+  :root[data-ios27-layout="on"] [data-testid="actions-screen"] .action-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Compact icon-only dock: labels remain available to assistive technology. */
+:root[data-ios27-layout="on"] .subs-dock button.subs-dock-item {
+  gap: 0;
+  min-height: 48px;
+}
+
+:root[data-ios27-layout="on"] .subs-dock .subs-dock-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+:root[data-ios27-layout="on"] .subs-dock .subs-dock-create button.subs-dock-item {
+  min-height: var(--app-nav-create-size);
+}
+
+:root[data-ios27-layout="on"] .subs-dock .subs-dock-create .subs-dock-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+:root[data-ios27-layout="on"] .sm-market-action-banner-notification-dots {
+  margin-top: -8px;
+  margin-bottom: -16px;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  :root[data-ios27-layout="on"] .subs-dock button.subs-dock-item {
+    flex-direction: row;
+    gap: 6px;
+    min-height: 44px;
+  }
+
+  :root[data-ios27-layout="on"] .subs-dock .subs-dock-create button.subs-dock-item {
+    min-height: var(--app-nav-create-size);
+  }
+}
+
+/* Classic catalog hub keeps the new hierarchy while the iOS layout layer is enabled. */
+:root[data-ios27-layout="on"] .sm-market-category-hub {
+  gap: 10px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-category-family-group {
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-radius-lg);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--app-surface) 92%, var(--app-text)), var(--app-surface));
+  box-shadow: var(--app-shadow-sm);
+}
+
+:root[data-ios27-layout="on"] .sm-market-category-family-actions,
+:root[data-ios27-layout="on"] .sm-market-category-direct-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--app-surface-inset);
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-inset);
+}
+
+:root[data-ios27-layout="on"] .sm-market-category-direct-actions { box-shadow: var(--app-shadow-sm); }
+
+:root[data-ios27-layout="on"] .sm-market-service-tile {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 68px;
+  padding: 11px 12px;
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface);
+  box-shadow: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-category-family-actions .sm-market-service-tile,
+:root[data-ios27-layout="on"] .sm-market-category-direct-actions .sm-market-service-tile {
+  min-height: 64px;
+  border: 0;
+  border-radius: 0;
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile > .sm-market-service-icon {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  background: transparent;
+  box-shadow: none;
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile > .sm-market-service-copy {
+  display: grid;
+  flex: 1 1 auto;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  gap: 2px;
+}
+
+:root[data-ios27-layout="on"] .sm-market-service-tile > .sm-market-service-chevron {
+  flex: 0 0 auto;
+  width: auto;
+  height: auto;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  :root[data-ios27-layout="on"] .sm-market-service-tile,
+  :root[data-ios27-layout="on"] .sm-market-category-family-actions .sm-market-service-tile,
+  :root[data-ios27-layout="on"] .sm-market-category-direct-actions .sm-market-service-tile {
+    min-height: 60px;
+    padding-block: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  :root[data-ios27-layout="on"] .sm-market-service-tile,
+  :root[data-ios27-layout="on"] .sm-market-category-family-actions .sm-market-service-tile,
+  :root[data-ios27-layout="on"] .sm-market-category-direct-actions .sm-market-service-tile {
+    min-height: 60px;
+    padding: 10px;
+  }
+}

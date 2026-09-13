@@ -22,6 +22,7 @@ from subsmarket.marketplace.models import (
     MarketplaceListingRequest,
     MarketplaceOperator,
 )
+from subsmarket.marketplace.owners import to_marketplace_listing_owner
 from subsmarket.marketplace.pagination import (
     cursor_datetime,
     cursor_int,
@@ -56,7 +57,10 @@ def get_listing_view(
 ) -> MarketplaceListingOut:
     listing = db.scalar(
         select(MarketplaceListing)
-        .options(joinedload(MarketplaceListing.operator))
+        .options(
+            joinedload(MarketplaceListing.operator),
+            joinedload(MarketplaceListing.seller),
+        )
         .where(MarketplaceListing.id == listing_id)
     )
     now = utcnow()
@@ -84,7 +88,10 @@ def list_marketplace_listings_page(
     stmt = (
         select(MarketplaceListing)
         .join(MarketplaceOperator)
-        .options(joinedload(MarketplaceListing.operator))
+        .options(
+            joinedload(MarketplaceListing.operator),
+            joinedload(MarketplaceListing.seller),
+        )
         .where(MarketplaceListing.listing_type == "mobile_data")
         .where(MarketplaceListing.status == "active")
         .where(MarketplaceListing.expires_at > now)
@@ -166,7 +173,10 @@ def list_my_marketplace_listings(
 ) -> tuple[list[MarketplaceListingOut], str | None]:
     stmt = (
         select(MarketplaceListing)
-        .options(joinedload(MarketplaceListing.operator))
+        .options(
+            joinedload(MarketplaceListing.operator),
+            joinedload(MarketplaceListing.seller),
+        )
         .where(MarketplaceListing.seller_user_id == user.id)
     )
     if cursor:
@@ -339,6 +349,7 @@ def to_listing_out(listing: MarketplaceListing, user_id: UUID) -> MarketplaceLis
         id=listing.id,
         listing_type="mobile_data",
         operator=MarketplaceOperatorOut.model_validate(listing.operator),
+        owner=to_marketplace_listing_owner(listing.seller),
         price_per_gb_kzt=listing.price_per_gb_kzt,
         description=listing.description,
         status=listing.status,

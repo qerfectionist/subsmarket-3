@@ -1,10 +1,11 @@
 import {
-  Button as WorldButton,
+  Button as AppButton,
   Typography
-} from "@worldcoin/mini-apps-ui-kit-react";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+} from "../components/ui";
+import { SystemSymbol } from "../components/SystemSymbol";
 
 import { ServiceLogo } from "../components/branding";
+import { ListingAuthor } from "../components/ListingAuthor";
 import { Badge, EmptyState, Panel } from "../components/layout";
 import { PanelSkeleton } from "../components/skeleton";
 import { RequisiteBox } from "../components/RequisiteBox";
@@ -26,6 +27,7 @@ export function FamilyDetailsScreen({
   requisite,
   busy,
   isLoading,
+  loadError,
   onBack,
   onRefresh,
   onCreateRequest,
@@ -47,6 +49,7 @@ export function FamilyDetailsScreen({
   invite: FamilyInvite | null;
   busy: string | null;
   isLoading?: boolean;
+  loadError?: boolean;
   onBack: () => void;
   onRefresh: () => void;
   onCreateRequest: (familyId: string) => void;
@@ -60,6 +63,16 @@ export function FamilyDetailsScreen({
   onUpdateVisibility: (familyId: string, isSearchVisible: boolean) => void;
   onConfirmAvailability: (familyId: string) => void;
 }) {
+  if (loadError) {
+    return <Panel title="Семья">
+      <div className="ui-feedback ui-feedback-error" role="alert">
+        <strong>Не удалось открыть семью</strong>
+        <p>Проверьте соединение и повторите загрузку.</p>
+        <AppButton variant="secondary" onClick={onRefresh}>Повторить</AppButton>
+        <AppButton variant="tertiary" onClick={onBack}>Назад</AppButton>
+      </div>
+    </Panel>;
+  }
   if (isLoading && !view) {
     return (
       <Panel title="Семья" description="Загружаем данные семьи…">
@@ -73,9 +86,9 @@ export function FamilyDetailsScreen({
         title="Семья"
         description="Откройте семью из поиска или из раздела Мои семьи."
         action={
-          <WorldButton type="button" size="sm" variant="secondary" onClick={onBack}>
+          <AppButton type="button" size="sm" variant="secondary" onClick={onBack}>
             Назад
-          </WorldButton>
+          </AppButton>
         }
       >
         <EmptyState title="Семья не выбрана">
@@ -92,7 +105,7 @@ export function FamilyDetailsScreen({
     <div className={`family-details-page family-details-page-${viewerState}`}>
       <Panel>
         <header className="family-detail-topbar">
-          <WorldButton
+          <AppButton
             type="button"
             size="icon"
             variant="tertiary"
@@ -100,17 +113,17 @@ export function FamilyDetailsScreen({
             aria-label="Назад"
             onClick={onBack}
           >
-            <ArrowLeft aria-hidden size={21} strokeWidth={2.2} />
-          </WorldButton>
+            <SystemSymbol name="arrow.left" size={21} />
+          </AppButton>
           <div className="family-detail-heading">
             <Typography as="span" variant="label" level={2}>
               {familyKindLabels[family.family_type]}
             </Typography>
             <Typography as="h1" variant="heading" level={4}>
-              {familyTitle(family)}
+              Объявление
             </Typography>
           </div>
-          <WorldButton
+          <AppButton
             type="button"
             size="icon"
             variant="tertiary"
@@ -119,8 +132,8 @@ export function FamilyDetailsScreen({
             data-testid="family-detail-refresh-button"
             onClick={onRefresh}
           >
-            <RefreshCw aria-hidden size={20} strokeWidth={2.1} />
-          </WorldButton>
+            <SystemSymbol name="arrow.clockwise" size={20} />
+          </AppButton>
         </header>
 
         <FamilyOverview family={family} />
@@ -155,8 +168,8 @@ export function FamilyDetailsScreen({
             />
           ) : (
             <StatusBlock
-              title="Можно вступить"
-              text="Сначала получите доступ, затем оплатите владельцу."
+              title={view.can_request ? "Можно вступить" : family.free_slots <= 0 ? "Свободных мест нет" : "Вступление недоступно"}
+              text={view.can_request ? "Сначала получите доступ, затем оплатите владельцу." : "Посмотрите другие предложения в Маркете."}
             />
           )}
         </section>
@@ -171,27 +184,27 @@ export function FamilyDetailsScreen({
         <section className="family-detail-actions">
           <div className="workspace-actions">
           {!membership && !request && view.can_request && (
-            <WorldButton
+            <AppButton
               type="button"
               data-testid="detail-send-request-button"
               disabled={busy !== null}
               onClick={() => onCreateRequest(family.id)}
             >
               Отправить заявку
-            </WorldButton>
+            </AppButton>
           )}
           {membership?.status === "awaiting_confirmation" && (
-            <WorldButton
+            <AppButton
               type="button"
               data-testid="detail-confirm-access-button"
               disabled={busy !== null}
               onClick={() => onConfirmAccess(membership.id)}
             >
               Доступ получен
-            </WorldButton>
+            </AppButton>
           )}
           {membership?.access_confirmed_at && (
-            <WorldButton
+            <AppButton
               type="button"
               variant="secondary"
               data-testid="detail-show-requisite-button"
@@ -199,10 +212,10 @@ export function FamilyDetailsScreen({
               onClick={() => onGetRequisite(membership.id)}
             >
               Показать реквизиты
-            </WorldButton>
+            </AppButton>
           )}
           {view.owner_username && membership?.role !== "owner" && (
-            <WorldButton
+            <AppButton
               type="button"
               variant="secondary"
               data-testid="owner-chat-button"
@@ -214,7 +227,7 @@ export function FamilyDetailsScreen({
               }
             >
               Написать владельцу
-            </WorldButton>
+            </AppButton>
           )}
           {!view.can_request && !membership && request && (
             <Badge>{statusText(request.status)}</Badge>
@@ -280,12 +293,12 @@ function FamilyOverview({ family }: { family: FamilyView["family"] }) {
           <dd>{family.payment_day} числа</dd>
         </div>
         <div>
-          <dt>Следующая</dt>
+          <dt>Следующая оплата</dt>
           <dd>{formatDate(family.next_payment_date)}</dd>
         </div>
         <div>
           <dt>Владелец</dt>
-          <dd>{family.owner.first_name}</dd>
+          <dd><ListingAuthor owner={family.owner} /></dd>
         </div>
       </dl>
 
@@ -348,25 +361,25 @@ function OwnerInvitePanel({
       </div>
       <div className="row-actions">
         {!invite ? (
-          <WorldButton
+          <AppButton
             type="button"
             data-testid="create-invite-button"
             disabled={busy !== null || !editable}
             onClick={() => onCreate(family.id)}
           >
             Создать код
-          </WorldButton>
+          </AppButton>
         ) : (
           <>
-            <WorldButton
+            <AppButton
               type="button"
               variant="secondary"
               size="sm"
               onClick={() => void copyInviteCode(invite.code)}
             >
               Копировать
-            </WorldButton>
-            <WorldButton
+            </AppButton>
+            <AppButton
               type="button"
               variant="secondary"
               size="sm"
@@ -374,8 +387,8 @@ function OwnerInvitePanel({
               onClick={() => onRotate(family.id)}
             >
               Заменить код
-            </WorldButton>
-            <WorldButton
+            </AppButton>
+            <AppButton
               type="button"
               variant="secondary"
               size="sm"
@@ -383,10 +396,10 @@ function OwnerInvitePanel({
               onClick={() => onDisable(family.id)}
             >
               Отключить код
-            </WorldButton>
+            </AppButton>
           </>
         )}
-        <WorldButton
+        <AppButton
           type="button"
           variant="secondary"
           size="sm"
@@ -397,8 +410,8 @@ function OwnerInvitePanel({
           }
         >
           {family.is_search_visible ? "Скрыть из поиска" : "Показывать в поиске"}
-        </WorldButton>
-        <WorldButton
+        </AppButton>
+        <AppButton
           type="button"
           variant="secondary"
           size="sm"
@@ -407,7 +420,7 @@ function OwnerInvitePanel({
           onClick={() => onConfirmAvailability(family.id)}
         >
           Семья актуальна
-        </WorldButton>
+        </AppButton>
       </div>
     </section>
   );
@@ -545,23 +558,23 @@ function FamilyPaymentActions({
             <PaymentTimeline payment={payment} />
           </div>
           {(payment.status === "due" || payment.status === "overdue") && (
-            <WorldButton
+            <AppButton
               type="button"
               data-testid="detail-report-payment-button"
               onClick={() => void onReportPayment(payment)}
             >
               Оплатил
-            </WorldButton>
+            </AppButton>
           )}
           {payment.status === "payment_reported" && (
-            <WorldButton
+            <AppButton
               type="button"
               variant="secondary"
               data-testid="detail-cancel-payment-report-button"
               onClick={() => void onCancelPaymentReport(payment)}
             >
               Отменить отметку
-            </WorldButton>
+            </AppButton>
           )}
         </div>
       ))}

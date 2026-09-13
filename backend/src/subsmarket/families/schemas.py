@@ -61,6 +61,7 @@ class FamilyCloseCreate(BaseModel):
 
 
 class PublicOwner(BaseModel):
+    avatar_name: str
     first_name: str
     photo_url: str | None
 

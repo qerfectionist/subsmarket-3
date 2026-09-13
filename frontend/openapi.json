@@ -10666,6 +10666,16 @@
               }
             }
           },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunDueJobsResult"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -11000,6 +11010,9 @@
           "service": {
             "$ref": "#/components/schemas/AccountServiceOut"
           },
+          "owner": {
+            "$ref": "#/components/schemas/MarketplaceListingOwner"
+          },
           "title": {
             "type": "string",
             "title": "Title"
@@ -11074,6 +11087,7 @@
         "required": [
           "id",
           "service",
+          "owner",
           "title",
           "price_kzt",
           "status",
@@ -12998,6 +13012,9 @@
           "operator": {
             "$ref": "#/components/schemas/MarketplaceOperatorOut"
           },
+          "owner": {
+            "$ref": "#/components/schemas/MarketplaceListingOwner"
+          },
           "price_per_gb_kzt": {
             "type": "integer",
             "title": "Price Per Gb Kzt"
@@ -13069,6 +13086,7 @@
           "id",
           "listing_type",
           "operator",
+          "owner",
           "price_per_gb_kzt",
           "status",
           "is_owner",
@@ -13079,6 +13097,35 @@
           "updated_at"
         ],
         "title": "MarketplaceListingOut"
+      },
+      "MarketplaceListingOwner": {
+        "properties": {
+          "avatar_name": {
+            "type": "string",
+            "title": "Avatar Name"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "avatar_name",
+          "first_name"
+        ],
+        "title": "MarketplaceListingOwner"
       },
       "MarketplaceListingPageOut": {
         "properties": {
@@ -14056,6 +14103,10 @@
       },
       "PublicOwner": {
         "properties": {
+          "avatar_name": {
+            "type": "string",
+            "title": "Avatar Name"
+          },
           "first_name": {
             "type": "string",
             "title": "First Name"
@@ -14074,6 +14125,7 @@
         },
         "type": "object",
         "required": [
+          "avatar_name",
           "first_name",
           "photo_url"
         ],

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Button as WorldButton, useToast } from "@worldcoin/mini-apps-ui-kit-react";
+import { Button as AppButton, useToast } from "./components/ui";
 
 import {
   type DevTelegramUser,
@@ -16,7 +16,8 @@ import {
   setActiveDevTelegramUser
 } from "./api";
 import type { LoadState, Tab } from "./appTypes";
-import { AppHeader, BottomNav, DevUserSwitch, Shell } from "./components/layout";
+import { BottomNav, DevUserSwitch, Shell } from "./components/layout";
+import { AsyncContent } from "./components/AsyncContent";
 import { formatError, futureDateISO, normalizeText } from "./format";
 import {
   useAcknowledgeFamilyClosing,
@@ -42,7 +43,9 @@ import {
   useLeaveFamily,
   useMarkAccessProvided,
   useMarkPaymentNotReceived,
+  useAccountListings,
   useMarketplaceActionSummary,
+  useMarketplaceListings,
   useMe,
   useMyFamilies,
   useMyFamilyRequests,
@@ -71,6 +74,29 @@ import type {
   OwnerFamilyDetails,
   PaymentRequisite
 } from "./types";
+
+function ViewportMetrics() {
+  const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const update = () => {
+      const viewport = window.visualViewport;
+      setSize({
+        width: Math.round(viewport?.width ?? window.innerWidth),
+        height: Math.round(viewport?.height ?? window.innerHeight)
+      });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+    };
+  }, []);
+
+  return <div className="viewport-metrics" aria-label={`Размер viewport ${size.width} на ${size.height}`}>{size.width} × {size.height}</div>;
+}
 import {
   setTelegramBackButton,
   setTelegramClosingConfirmation,
@@ -100,23 +126,50 @@ export function App() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [familyType, setFamilyType] = useState<FamilyType>("subscription");
+  const [tab, setTab] = useState<Tab>("home");
+  const [accountEntryId, setAccountEntryId] = useState<string | null>(null);
+  const [gigabytesEntryId, setGigabytesEntryId] = useState<string | null>(null);
+  const [accountsBackTab, setAccountsBackTab] = useState<Tab>("home");
+  const [gigabytesBackTab, setGigabytesBackTab] = useState<Tab>("home");
+  useEffect(() => {
+    if (tab !== "accounts") setAccountEntryId(null);
+    if (tab !== "gigabytes") setGigabytesEntryId(null);
+  }, [tab]);
   const meQuery = useMe();
   const servicesQuery = useFamilyServices();
-  const familiesQuery = useFamilies(familyType);
+  const subscriptionFamiliesQuery = useFamilies("subscription");
+  const tariffFamiliesQuery = useFamilies(
+    "tariff",
+    tab === "home" || familyType === "tariff" || tab === "search"
+  );
+  const familiesQuery = familyType === "tariff"
+    ? tariffFamiliesQuery
+    : subscriptionFamiliesQuery;
   const myFamiliesQuery = useMyFamilies();
   const myRequestsQuery = useMyFamilyRequests();
+  const homeMarketplaceEnabled =
+    tab === "home" && meQuery.isSuccess && Boolean(meQuery.data?.ok);
+  const marketplaceListingsQuery = useMarketplaceListings(
+    null,
+    "recent",
+    homeMarketplaceEnabled
+  );
+  const accountListingsQuery = useAccountListings(
+    null,
+    "recent",
+    homeMarketplaceEnabled
+  );
   const marketplaceActionSummaryQuery = useMarketplaceActionSummary(
     meQuery.isSuccess && Boolean(meQuery.data?.ok)
   );
 
-  const [tab, setTab] = useState<Tab>("home");
-  const [gigabytesEntryMode, setGigabytesEntryMode] = useState<"catalog" | "requests">(
+  const [gigabytesEntryMode, setGigabytesEntryMode] = useState<"catalog" | "requests" | "create" | "mine">(
     "catalog"
   );
   const [gigabytesEntryRequestRole, setGigabytesEntryRequestRole] =
     useState<"buyer" | "seller">("buyer");
   const [accountsEntryMode, setAccountsEntryMode] =
-    useState<"catalog" | "requests">("catalog");
+    useState<"catalog" | "requests" | "create" | "mine">("catalog");
   const [accountsEntryRequestRole, setAccountsEntryRequestRole] =
     useState<"buyer" | "seller">("buyer");
   const [marketResetToken, setMarketResetToken] = useState(0);
@@ -130,7 +183,9 @@ export function App() {
     getActiveDevTelegramUser()
   );
   const [createForm, setCreateForm] = useState<FamilyCreate>(emptyCreateForm);
-  const [myFamilyType, setMyFamilyType] = useState<FamilyType>("subscription");
+  const [myProductScope, setMyProductScope] = useState<
+    "families" | "accounts" | "gigabytes"
+  >("families");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const startParamHandled = useRef(false);
@@ -148,16 +203,25 @@ export function App() {
   const me = meQuery.data;
   const services = servicesQuery.data ?? [];
   const families = familiesQuery.data ?? [];
+  const subscriptionFamilies = subscriptionFamiliesQuery.data ?? [];
+  const tariffFamilies = tariffFamiliesQuery.data ?? [];
+  const marketplaceListings = marketplaceListingsQuery.data ?? [];
+  const accountListings = accountListingsQuery.data ?? [];
   const myFamilies = myFamiliesQuery.data ?? [];
   const myRequests = myRequestsQuery.data ?? [];
   const marketplaceActionSummary = marketplaceActionSummaryQuery.data;
   const familyPendingActionsCount =
     myRequests.filter((request) => request.status === "pending").length +
-    myFamilies.filter(
-      (item) =>
-        item.pending_requests_count > 0 ||
-        item.payments.some((payment) => payment.status === "payment_reported")
-    ).length;
+    myFamilies.reduce(
+      (total, item) =>
+        total +
+        item.pending_requests_count +
+        (["awaiting_access", "awaiting_confirmation"].includes(item.membership.status) ? 1 : 0) +
+        item.payments.filter((payment) =>
+          ["due", "overdue", "payment_reported"].includes(payment.status)
+        ).length,
+      0
+    );
   const marketplaceSalesActionCount =
     (marketplaceActionSummary?.pending_sales_requests ?? 0) +
     (marketplaceActionSummary?.accepted_sales_requests ?? 0);
@@ -358,7 +422,6 @@ export function App() {
         period: typedServices[0]?.supported_periods[0] ?? "monthly",
         max_members: Math.min(6, typedServices[0]?.max_members ?? 8)
       });
-      setMyFamilyType(familyType);
       setTab("mine");
     });
   }
@@ -376,6 +439,7 @@ export function App() {
   }, [loadState]);
 
   useEffect(() => {
+    if (tab === "accounts" || tab === "gigabytes" || tab === "create") return;
     return setTelegramBackButton(tab !== "home", () => {
       if (tab === "family") {
         setTab(familyBackTab);
@@ -387,6 +451,11 @@ export function App() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.querySelector<HTMLElement>(".app-shell, .market-shell")?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto"
+    });
   }, [selectedFamilyId, tab]);
 
   const createFormDirty = Boolean(
@@ -427,11 +496,6 @@ export function App() {
     [families, familyType]
   );
 
-  const typedMyFamilies = useMemo(
-    () => myFamilies.filter((item) => item.family.family_type === myFamilyType),
-    [myFamilies, myFamilyType]
-  );
-
   if (loadState === "loading") {
     return <Shell title="SubsMarket">Загружаем Mini App...</Shell>;
   }
@@ -446,13 +510,13 @@ export function App() {
             <li>Создайте username.</li>
             <li>Вернитесь в SubsMarket и обновите профиль.</li>
           </ol>
-          <WorldButton
+          <AppButton
             type="button"
             fullWidth
             onClick={() => void runMutation("refresh-profile", () => refreshProfileMutation.mutateAsync())}
           >
             Я создал username
-          </WorldButton>
+          </AppButton>
         </div>
       </Shell>
     );
@@ -467,18 +531,18 @@ export function App() {
           <p>{loadErrorMessage}</p>
           <div className="notice-actions">
             {requiresTelegram && (
-              <WorldButton type="button" fullWidth onClick={openTelegramMiniApp}>
+              <AppButton type="button" fullWidth onClick={openTelegramMiniApp}>
                 Открыть в Telegram
-              </WorldButton>
+              </AppButton>
             )}
-            <WorldButton
+            <AppButton
               type="button"
               fullWidth
               variant={requiresTelegram ? "secondary" : "primary"}
               onClick={() => meQuery.refetch()}
             >
               Повторить
-            </WorldButton>
+            </AppButton>
           </div>
         </div>
       </Shell>
@@ -488,15 +552,24 @@ export function App() {
   const user = me?.ok ? me.user : null;
   const service = selectedService();
   const isMarket = tab === "home" || tab === "search";
+  const bottomNavTab: Tab =
+    tab === "mine" ? "mine" :
+    tab === "requests" ? "requests" :
+    tab === "create" ? "create" :
+    "home";
+  const shellTitle =
+    tab === "search" ? (familyType === "tariff" ? "Семейные тарифы" : "Семейные подписки") :
+    tab === "create" ? "Создать семью" :
+    tab === "mine" ? "Мои" :
+    tab === "requests" ? "Действия" :
+    tab === "family" ? "Семья" :
+    tab === "gigabytes" ? "Гигабайты" :
+    tab === "accounts" ? "Аккаунты" :
+    "SubsMarket";
 
   return (
-    <Shell title="SubsMarket" appearance={isMarket ? "market" : "default"}>
-      {!isMarket ? (
-        <AppHeader
-          userName={user?.username ?? "unknown"}
-          firstName={user?.first_name}
-        />
-      ) : null}
+    <Shell title={shellTitle} appearance={isMarket ? "market" : "default"}>
+      {import.meta.env.DEV && <ViewportMetrics />}
       {isDevUserSwitchVisible() && devUser && !isMarket && (
         <DevUserSwitch value={devUser} onChange={(id) => void switchDevUser(id)} />
       )}
@@ -514,9 +587,18 @@ export function App() {
           firstName={user?.first_name}
           familyType={familyType}
           filteredFamilies={typedFamilies}
+          subscriptionFamilies={subscriptionFamilies}
+          tariffFamilies={tariffFamilies}
+          familyLoading={{
+            subscription: subscriptionFamiliesQuery.isLoading,
+            tariff: tariffFamiliesQuery.isLoading
+          }}
+          marketplaceListings={marketplaceListings}
+          accountListings={accountListings}
           myFamilies={myFamilies}
           myRequests={myRequests}
-          isLoading={familiesQuery.isLoading}
+          isLoading={tab === "home" ? [subscriptionFamiliesQuery, tariffFamiliesQuery, marketplaceListingsQuery, accountListingsQuery].some(query => query.isLoading) : familiesQuery.isLoading}
+          error={(tab === "home" ? [subscriptionFamiliesQuery, tariffFamiliesQuery, marketplaceListingsQuery, accountListingsQuery].find(query => query.isError) : familiesQuery.isError ? familiesQuery : undefined)?.error ? "Проверьте соединение и попробуйте ещё раз." : undefined}
           hasMoreFamilies={Boolean(familiesQuery.hasNextPage)}
           isLoadingMoreFamilies={familiesQuery.isFetchingNextPage}
           onOpenFamilyCatalog={(nextType) => {
@@ -524,22 +606,37 @@ export function App() {
             setTab("search");
           }}
           onBack={() => setTab("home")}
-          onRefresh={() => void familiesQuery.refetch()}
+          onRefresh={() => {
+            if (tab === "home") {
+              void subscriptionFamiliesQuery.refetch();
+              void tariffFamiliesQuery.refetch();
+              void marketplaceListingsQuery.refetch();
+              void accountListingsQuery.refetch();
+            } else void familiesQuery.refetch();
+          }}
           onLoadMoreFamilies={() => void familiesQuery.fetchNextPage()}
           pendingActionsCount={familyPendingActionsCount + marketplacePendingActionsCount}
+          marketplaceSalesActionCount={marketplaceSalesActionCount}
+          marketplacePurchaseActionCount={marketplacePurchaseActionCount}
+          accountSalesActionCount={accountSalesActionCount}
+          accountPurchaseActionCount={accountPurchaseActionCount}
           onOpenMine={() => setTab("mine")}
           onOpenActions={() => setTab("requests")}
-          onOpenGigabytes={() => {
+          onOpenGigabytes={(id) => {
+            setGigabytesEntryId(id ?? null);
+            setGigabytesBackTab("home");
             setGigabytesEntryMode("catalog");
             setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
           }}
-          onOpenAccounts={() => {
+          onOpenAccounts={(id) => {
+            setAccountEntryId(id ?? null);
+            setAccountsBackTab("home");
             setAccountsEntryMode("catalog");
             setAccountsEntryRequestRole("buyer");
             setTab("accounts");
           }}
-          onOpenFamily={(familyId) => openFamily(familyId, "home")}
+          onOpenFamily={(familyId) => openFamily(familyId, tab)}
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
             changeFamilyType(nextType);
@@ -550,7 +647,11 @@ export function App() {
       )}
 
       {tab === "create" && (
+        <AsyncContent query={servicesQuery}>
         <CreateFamilyScreen
+          onBack={() => setTab("home")}
+          onCreateAccounts={() => { setAccountsBackTab("create"); setAccountsEntryMode("create"); setTab("accounts"); }}
+          onCreateGigabytes={() => { setGigabytesBackTab("create"); setGigabytesEntryMode("create"); setTab("gigabytes"); }}
           familyType={familyType}
           typedServices={typedServices}
           service={service}
@@ -561,13 +662,16 @@ export function App() {
           onChangeForm={setCreateForm}
           onSubmit={(event) => void handleCreateFamily(event)}
         />
+        </AsyncContent>
       )}
 
       {(tab === "mine" || tab === "requests") && (
         <MyFamiliesScreen
+          loadError={myFamiliesQuery.isError || myRequestsQuery.isError || (tab === "requests" && marketplaceActionSummaryQuery.isError)}
+          onRetry={() => { void myFamiliesQuery.refetch(); void myRequestsQuery.refetch(); void marketplaceActionSummaryQuery.refetch(); }}
           mode={tab === "requests" ? "actions" : "mine"}
-          myFamilyType={myFamilyType}
-          families={tab === "requests" ? myFamilies : typedMyFamilies}
+          myProductScope={myProductScope}
+          families={myFamilies}
           ownerDetails={ownerDetails}
           requisites={requisites}
           requests={myRequests}
@@ -576,33 +680,59 @@ export function App() {
           accountSalesActionCount={accountSalesActionCount}
           accountPurchaseActionCount={accountPurchaseActionCount}
           onOpenMarketplaceSalesActions={() => {
+            setGigabytesBackTab("requests");
             setGigabytesEntryMode("requests");
             setGigabytesEntryRequestRole("seller");
             setTab("gigabytes");
           }}
           onOpenMarketplacePurchaseActions={() => {
+            setGigabytesBackTab("requests");
             setGigabytesEntryMode("requests");
             setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
           }}
           onOpenAccountSalesActions={() => {
+            setAccountsBackTab("requests");
             setAccountsEntryMode("requests");
             setAccountsEntryRequestRole("seller");
             setTab("accounts");
           }}
           onOpenAccountPurchaseActions={() => {
+            setAccountsBackTab("requests");
             setAccountsEntryMode("requests");
             setAccountsEntryRequestRole("buyer");
             setTab("accounts");
           }}
-          onOpenAccounts={() => {
-            setAccountsEntryMode("catalog");
+          onChangeProductScope={setMyProductScope}
+          onOpenAccountListing={(listingId) => {
+            setAccountEntryId(listingId);
+            setAccountsBackTab("mine");
+            setAccountsEntryMode("mine");
+            setAccountsEntryRequestRole("buyer");
             setTab("accounts");
           }}
-          onOpenGigabytes={() => {
-            setGigabytesEntryMode("catalog");
+          onCreateAccountListing={() => {
+            setAccountEntryId(null);
+            setAccountsBackTab("mine");
+            setAccountsEntryMode("create");
+            setAccountsEntryRequestRole("buyer");
+            setTab("accounts");
+          }}
+          onOpenGigabytesListing={(listingId) => {
+            setGigabytesEntryId(listingId);
+            setGigabytesBackTab("mine");
+            setGigabytesEntryMode("mine");
+            setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
           }}
+          onCreateGigabytesListing={() => {
+            setGigabytesEntryId(null);
+            setGigabytesBackTab("mine");
+            setGigabytesEntryMode("create");
+            setGigabytesEntryRequestRole("buyer");
+            setTab("gigabytes");
+          }}
+          onOpenMarket={() => setTab("home")}
           busy={busy}
           isLoading={myFamiliesQuery.isLoading}
           requestsLoading={myRequestsQuery.isLoading}
@@ -610,7 +740,6 @@ export function App() {
           isLoadingMoreFamilies={myFamiliesQuery.isFetchingNextPage}
           hasMoreRequests={Boolean(myRequestsQuery.hasNextPage)}
           isLoadingMoreRequests={myRequestsQuery.isFetchingNextPage}
-          onChangeFamilyType={setMyFamilyType}
           onLoadMoreFamilies={() => void myFamiliesQuery.fetchNextPage()}
           onLoadMoreRequests={() => void myRequestsQuery.fetchNextPage()}
           onOpenFamily={(familyId) =>
@@ -748,6 +877,7 @@ export function App() {
 
       {tab === "family" && (
         <FamilyDetailsScreen
+          loadError={familyViewQuery.isError}
           view={selectedFamilyView}
           requisite={
             selectedFamilyView?.my_membership
@@ -826,26 +956,28 @@ export function App() {
 
       {tab === "gigabytes" && (
         <GigabytesScreen
+          initialListingId={gigabytesEntryId}
           initialMode={gigabytesEntryMode}
           initialRequestRole={gigabytesEntryRequestRole}
-          onBack={() => setTab("home")}
+          onBack={() => setTab(gigabytesBackTab)}
         />
       )}
 
       {tab === "accounts" && (
         <AccountsScreen
+          initialListingId={accountEntryId}
           initialMode={accountsEntryMode}
           initialRequestRole={accountsEntryRequestRole}
-          onBack={() => setTab("home")}
+          onBack={() => setTab(accountsBackTab)}
         />
       )}
 
       <BottomNav
-        active={tab}
-        appearance={tab === "home" || tab === "search" ? "market" : "default"}
+        active={bottomNavTab}
         onChange={setTab}
         onReselect={(selectedTab) => {
           if (selectedTab === "home") {
+            if (tab !== "home") setTab("home");
             setMarketResetToken((current) => current + 1);
           }
         }}

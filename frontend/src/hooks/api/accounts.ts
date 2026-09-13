@@ -47,22 +47,25 @@ export const useAccountServices = () =>
 
 export function useAccountListings(
   service: string | null,
-  sort: MarketplaceSort
+  sort: MarketplaceSort,
+  enabled = true
 ) {
   return useInfiniteQuery({
     queryKey: queryKeys.accountListings(service, sort),
     queryFn: ({ pageParam }) =>
       getAccountListingsPage({ service, sort, cursor: pageParam }),
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
 
-export const useMyAccountListings = () =>
+export const useMyAccountListings = (enabled = true) =>
   useInfiniteQuery({
     queryKey: queryKeys.myAccountListings,
     queryFn: ({ pageParam }) => getMyAccountListingsPage(pageParam),
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     select: (data) => data.pages.flatMap((page) => page.items)
@@ -75,10 +78,14 @@ export const useAccountListing = (listingId: string | null) =>
     enabled: listingId !== null
   });
 
-export const useAccountRequests = (role: MarketplaceRequestRole) =>
+export const useAccountRequests = (
+  role: MarketplaceRequestRole,
+  enabled = true
+) =>
   useInfiniteQuery({
     queryKey: queryKeys.accountRequests(role),
     queryFn: ({ pageParam }) => getMyAccountRequestsPage(role, pageParam),
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     select: (data) => data.pages.flatMap((page) => page.items)

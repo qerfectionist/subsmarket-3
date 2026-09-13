@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import get_auth_db, get_db
 from subsmarket.identity.models import User
 from subsmarket.identity.schemas import MeResponse
-from subsmarket.identity.service import upsert_user
+from subsmarket.identity.service import PublicNamePoolExhausted, upsert_user
 from subsmarket.identity.telegram import parse_telegram_user
 
 router = APIRouter(prefix="/api", tags=["identity"])
@@ -20,7 +20,13 @@ def _me_response(db: Session, auth_db: Session, telegram_user) -> MeResponse:
             message="Создайте username в Telegram и снова откройте SubsMarket.",
         )
 
-    user = upsert_user(auth_db, telegram_user)
+    try:
+        user = upsert_user(auth_db, telegram_user)
+    except PublicNamePoolExhausted as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="PUBLIC_NAME_POOL_EXHAUSTED",
+        ) from exc
     user_id = user.id
     # Avoid holding the auth session's connection while the response session
     # needs a connection from the same pool.

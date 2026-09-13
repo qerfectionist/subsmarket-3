@@ -1,16 +1,13 @@
 import { useCallback, useState, type Dispatch, FormEvent, SetStateAction } from "react";
 import {
-  Button as WorldButton,
+  Button as AppButton,
   Input,
   Select,
   TextArea
-} from "@worldcoin/mini-apps-ui-kit-react";
+} from "../components/ui";
 
-import { FamilyTypeSwitch, Panel } from "../components/layout";
-import {
-  useTelegramBackButton,
-  useTelegramMainButton
-} from "../hooks/useTelegramAppEffects";
+import { FamilyTypeSwitch, Panel, ProductScopeSwitch } from "../components/layout";
+import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 import { serviceTitle } from "../format";
 import { bankLabels, familyTypeLabels, periodLabels } from "../labels";
 import type { FamilyCreate, FamilyService, FamilyType } from "../types";
@@ -84,6 +81,9 @@ export function CreateFamilyScreen({
   servicesCount,
   busy,
   onChangeFamilyType,
+  onCreateAccounts,
+  onCreateGigabytes,
+  onBack,
   onChangeForm,
   onSubmit
 }: {
@@ -94,6 +94,9 @@ export function CreateFamilyScreen({
   servicesCount: number;
   busy: string | null;
   onChangeFamilyType: (familyType: FamilyType) => void;
+  onCreateAccounts: () => void;
+  onCreateGigabytes: () => void;
+  onBack: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
   onSubmit: (event: FormEvent) => void;
 }) {
@@ -118,7 +121,7 @@ export function CreateFamilyScreen({
     if (prev) setStep(prev.id);
   }, [stepIndex]);
 
-  useTelegramBackButton(stepIndex > 0, goBack);
+  useTelegramBackButton(true, () => stepIndex > 0 ? goBack() : onBack());
 
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
@@ -141,32 +144,13 @@ export function CreateFamilyScreen({
   const submitLabel =
     step === "details" ? "Создать семью" : canAdvance ? "Далее" : "Исправьте поля";
 
-  const handleMainButtonClick = useCallback(() => {
-    if (step === "details") {
-      if (!hasErrors) {
-        void onSubmit({ preventDefault: () => {} } as FormEvent);
-      }
-      return;
-    }
-    if (canAdvance) {
-      goNext();
-    }
-  }, [canAdvance, goNext, hasErrors, onSubmit, step]);
-
-  useTelegramMainButton({
-    visible: true,
-    label: submitLabel,
-    onClick: handleMainButtonClick,
-    isPending: busy !== null,
-    disabled: submitDisabled
-  });
-
   return (
-    <Panel
-      title="Создать семью"
-      description={`${familyTypeLabels[familyType]} · доступ и оплата после заявки`}
-    >
+    <Panel title="Создать семью">
       <div className="screen-body-inset">
+      <ProductScopeSwitch value="families" onChange={value => {
+        if (value === "accounts") onCreateAccounts();
+        if (value === "gigabytes") onCreateGigabytes();
+      }} />
       <FamilyTypeSwitch value={familyType} onChange={onChangeFamilyType} />
 
       <div className="wizard-progress" aria-hidden>
@@ -212,8 +196,10 @@ export function CreateFamilyScreen({
 
       <form className="form-grid" data-testid="create-family-form" onSubmit={handleFormSubmit}>
         <div className={step === "service" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <div>
+            <div className="ui-field">
+              <label htmlFor="create-service">Сервис</label>
               <Select
+                id="create-service"
                 required
                 data-testid="create-service-select"
                 value={createForm.service_id}
@@ -237,8 +223,10 @@ export function CreateFamilyScreen({
                 }}
               />
             </div>
-            <div className="half">
+            <div className="half ui-field">
+              <label htmlFor="create-period">Период оплаты</label>
               <Select
+                id="create-period"
                 data-testid="create-period-select"
                 value={createForm.period}
                 placeholder="Период"
@@ -372,8 +360,10 @@ export function CreateFamilyScreen({
         </div>
 
         <div className={step === "payment" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <div className="half">
+            <div className="half ui-field">
+              <label htmlFor="create-bank">Банк</label>
               <Select
+                id="create-bank"
                 data-testid="create-bank-select"
                 value={createForm.payment_bank}
                 placeholder="Банк"
@@ -455,23 +445,23 @@ export function CreateFamilyScreen({
         <div className="create-wizard-footer">
           <div className="wizard-nav">
             {stepIndex > 0 ? (
-              <WorldButton
+              <AppButton
                 type="button"
                 variant="secondary"
                 data-testid="create-family-back"
                 onClick={goBack}
               >
                 Назад
-              </WorldButton>
+              </AppButton>
             ) : null}
-            <WorldButton
+            <AppButton
               type={step === "details" ? "submit" : "button"}
               data-testid="create-family-submit"
               disabled={submitDisabled}
               onClick={step === "details" ? undefined : goNext}
             >
               {submitLabel}
-            </WorldButton>
+            </AppButton>
           </div>
         </div>
       </form>

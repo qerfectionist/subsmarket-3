@@ -55,6 +55,6 @@ export function useTelegramMainButton({
       progress: isPending,
       disabled: disabled || isPending
     });
-    return cleanup;
+    return () => { cleanup(); hideTelegramMainButton(); };
   }, [disabled, isPending, label, onClick, visible]);
 }

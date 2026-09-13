@@ -879,7 +879,7 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
     )
     assert request_response.status_code == 201
     request_id = request_response.json()["id"]
-    assert request_response.json()["owner_username"] == "api_owner"
+    assert request_response.json()["owner_username"] is None
     repeated_request = client.post(
         f"/api/families/{family_id}/requests",
         headers=request_headers,
@@ -893,7 +893,7 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
         f"/api/families/{family_id}/view",
         headers=member_headers,
     )
-    assert after_request.json()["owner_username"] == "api_owner"
+    assert after_request.json()["owner_username"] is None
 
     owner_requests = client.get(
         f"/api/families/{family_id}/requests",
@@ -907,6 +907,12 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
         headers=owner_headers,
     )
     assert approve_response.status_code == 200
+    after_approval = client.get(
+        f"/api/families/{family_id}/view",
+        headers=member_headers,
+    )
+    assert after_approval.status_code == 200
+    assert after_approval.json()["owner_username"] == "api_owner"
     members_response = client.get(
         f"/api/families/{family_id}/members",
         headers=owner_headers,

@@ -62,22 +62,25 @@ export function useMarketplacePriceInsight(
 
 export function useMarketplaceListings(
   operator: string | null,
-  sort: MarketplaceSort
+  sort: MarketplaceSort,
+  enabled = true
 ) {
   return useInfiniteQuery({
     queryKey: queryKeys.marketplaceListings(operator, sort),
     queryFn: ({ pageParam }) =>
       getMarketplaceListingsPage({ operator, sort, cursor: pageParam }),
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
 
-export function useMyMarketplaceListings() {
+export function useMyMarketplaceListings(enabled = true) {
   return useInfiniteQuery({
     queryKey: queryKeys.myMarketplaceListings,
     queryFn: ({ pageParam }) => getMyMarketplaceListingsPage(pageParam),
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     select: (data) => data.pages.flatMap((page) => page.items)
@@ -92,10 +95,14 @@ export function useMarketplaceListing(listingId: string | null) {
   });
 }
 
-export function useMarketplaceRequests(role: MarketplaceRequestRole) {
+export function useMarketplaceRequests(
+  role: MarketplaceRequestRole,
+  enabled = true
+) {
   return useInfiniteQuery({
     queryKey: queryKeys.marketplaceRequests(role),
     queryFn: ({ pageParam }) => getMyMarketplaceRequestsPage(role, pageParam),
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     select: (data) => data.pages.flatMap((page) => page.items)

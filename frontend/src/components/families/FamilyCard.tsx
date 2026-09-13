@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { ServiceLogo } from "../branding";
+import { ListingAuthor } from "../ListingAuthor";
 import { familyTitle, formatDate, formatDateTime } from "../../format";
 import { familyKindLabels, periodLabels } from "../../labels";
 import type { Family } from "../../types";
@@ -65,7 +66,7 @@ export function FamilyCard({
 
       <div className="card-footer">
         <span>Оплата: {formatDate(family.next_payment_date)}</span>
-        <span>Владелец: {family.owner.first_name}</span>
+        <ListingAuthor owner={family.owner} />
       </div>
 
       {family.rounding_delta_kzt > 0 ? (

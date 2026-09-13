@@ -12,7 +12,6 @@ from subsmarket.core.config import settings
 from subsmarket.identity.schemas import TelegramUserData
 
 MAX_INIT_DATA_AGE = timedelta(days=1)
-LOCAL_DEV_AUTH_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
 
 
 def _verify_init_data(init_data: str, bot_token: str) -> dict[str, str]:
@@ -101,12 +100,9 @@ def parse_telegram_user(
             photo_url=user.get("photo_url"),
         )
 
-    client_host = request.client.host if request.client else ""
-    if (
-        settings.is_development
-        and settings.dev_auth_enabled
-        and client_host in LOCAL_DEV_AUTH_HOSTS
-    ):
+    # Development auth is intentionally available through the temporary preview
+    # tunnel. `create_app()` rejects this mode outside development.
+    if settings.is_development and settings.dev_auth_enabled:
         return TelegramUserData(
             telegram_user_id=x_dev_telegram_user_id or settings.demo_telegram_user_id,
             username=x_dev_telegram_username or settings.demo_telegram_username,

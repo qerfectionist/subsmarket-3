@@ -475,7 +475,7 @@ def test_search_prioritizes_recently_confirmed_families(
     assert [family.id for family in families] == [fresh_family.id, stale_family.id]
 
 
-def test_owner_username_is_visible_only_while_request_is_active(
+def test_owner_username_is_visible_after_request_acceptance(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 13)
@@ -486,11 +486,25 @@ def test_owner_username_is_visible_only_while_request_is_active(
 
     request = create_join_request(db, candidate, family.id)
 
+    assert get_family_view(db, candidate, family.id).owner_username is None
+
+    approve_join_request(db, owner, request.id)
+
     assert get_family_view(db, candidate, family.id).owner_username == owner.username
 
-    cancel_join_request(db, candidate, request.id)
 
-    assert get_family_view(db, candidate, family.id).owner_username is None
+def test_owner_photo_is_hidden_from_public_family_response(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 15)
+    owner.photo_url = "https://example.com/owner.jpg"
+    family = make_family(db, owner, subscription_service)
+
+    public_response = to_family_out(family)
+    owner_response = get_family_view(db, owner, family.id).family
+
+    assert public_response.owner.photo_url is None
+    assert owner_response.owner.photo_url == owner.photo_url
 
 
 def test_family_request_response_contains_family_summary(

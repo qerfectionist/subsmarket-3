@@ -24,8 +24,15 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await page.getByTestId("market-buy-gigabytes").click({ force: true });
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
 
-  await page.getByRole("button", { name: "Мои объявления" }).click({ force: true });
-  await page.getByRole("button", { name: "Продать ГБ" }).click({ force: true });
+  await page.getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Мои", exact: true })
+    .click({ force: true });
+  await page.locator(".product-scope-switch").getByRole("button", { name: "ГБ" }).click({ force: true });
+  await expect(page.getByTestId("my-screen")).toBeVisible();
+  await expect(page.getByTestId("my-gigabytes-screen")).toBeVisible();
+  await expect(page.getByTestId("gigabytes-screen")).toHaveCount(0);
+  await page.getByTestId("my-gigabytes-create-button").click({ force: true });
+  await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
   await page.getByLabel("Цена за 1 ГБ, ₸").fill("100");
   await expect(
     page.getByText("Пока недостаточно объявлений для сравнения цены.")
@@ -37,10 +44,10 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Tele2", { exact: true })).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(0).click({ force: true });
+  await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200002", "Member · @demo_member");
   await page.getByTestId("market-buy-gigabytes").click({ force: true });
-  const publicListing = page.locator(".gb-listing-row");
+  const publicListing = page.getByTestId("gigabytes-listing-card");
   await expect(publicListing).toHaveCount(1);
   await publicListing.click({ force: true });
   const amountInput = page.getByLabel("Сколько ГБ");
@@ -64,7 +71,7 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Заявка отправлена продавцу", { exact: true })).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(0).click({ force: true });
+  await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   const notificationsButton = page.getByTestId("market-notifications");
   await expect(notificationsButton).toBeVisible();
@@ -72,7 +79,6 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(page.getByTestId("marketplace-actions-card")).toBeVisible();
   await page.getByTestId("open-marketplace-actions").click({ force: true });
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
-  await expect(page.getByTestId("marketplace-requests-tab")).toHaveClass(/active/);
   await expect(page.getByTestId("marketplace-sales-role")).toHaveClass(/active/);
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Ждёт ответа", { exact: true })).toBeVisible();
@@ -82,7 +88,7 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(page.getByText("@demo_member", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Открыть Telegram" })).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(0).click({ force: true });
+  await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200002", "Member · @demo_member");
   const buyerNotificationsButton = page.getByTestId("market-notifications");
   await expect(buyerNotificationsButton).toBeVisible();
@@ -92,25 +98,37 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(page.getByTestId("marketplace-purchases-role")).toHaveClass(/active/);
   await expect(page.getByText("@demo_owner", { exact: true })).toBeVisible();
 
-  await page.locator(".bottom-nav button").nth(0).click({ force: true });
+  await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   await page.getByTestId("market-notifications").click({ force: true });
   await page.getByTestId("open-marketplace-actions").click({ force: true });
   await page.getByRole("button", { name: "Продано" }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Закрыта", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Мои объявления" }).click({ force: true });
+  await page.getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Мои", exact: true })
+    .click({ force: true });
+  await page.locator(".product-scope-switch").getByRole("button", { name: "ГБ" }).click({ force: true });
   await expect(page.getByText("Tele2", { exact: true })).toBeVisible();
 });
 
 async function switchDevUser(page: Page, userId: string, optionName: string) {
-  const select = page.getByTestId("dev-user-select");
-  await select.locator("button").click({ force: true });
-  await page.getByRole("option", { name: optionName, exact: true }).click({
-    force: true
-  });
-  await expect(select).toHaveAttribute("data-value", userId);
+  const container = page.getByTestId("dev-user-select");
+  let returnedToMarket = false;
+  if (!(await container.isVisible())) {
+    const nav = page.getByRole("navigation", { name: "Главная навигация" });
+    await nav.getByRole("button", { name: "Мои", exact: true }).click({ force: true });
+    await expect(container).toBeVisible();
+    returnedToMarket = true;
+  }
+  await container.locator("select").selectOption({ label: optionName });
   await waitForNetworkQuiet(page);
+  await expect(page.getByTestId("market-screen")).toBeVisible();
+  if (returnedToMarket) {
+    const nav = page.getByRole("navigation", { name: "Главная навигация" });
+    await nav.getByRole("button", { name: "Маркет", exact: true }).click({ force: true });
+    await expect(page.getByTestId("market-screen")).toBeVisible();
+  }
 }
 
 async function waitForNetworkQuiet(page: Page) {

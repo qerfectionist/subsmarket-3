@@ -10,6 +10,7 @@ export type ServiceCategory =
 export type ServiceBrand = {
   color: string;
   iconSlug: string | null;
+  logoPath?: string;
   category: ServiceCategory;
   monogram: string;
 };
@@ -30,27 +31,59 @@ const BRAND_BY_SLUG: Record<string, ServiceBrand> = {
   "ilook-tv": { color: "#2563EB", iconSlug: null, category: "video_streaming", monogram: "iL" },
   "spotify-family": { color: "#1DB954", iconSlug: "spotify", category: "music_audio", monogram: "S" },
   "apple-music": { color: "#FA243C", iconSlug: "applemusic", category: "music_audio", monogram: "♫" },
-  "duolingo-super": { color: "#58CC02", iconSlug: "duolingo", category: "education_books", monogram: "D" },
-  "duolingo-max": { color: "#58CC02", iconSlug: "duolingo", category: "education_books", monogram: "D" },
+  "duolingo-super": {
+    color: "#58CC02",
+    iconSlug: "duolingo",
+    logoPath: "/brand-assets/duolingo.png",
+    category: "education_books",
+    monogram: "D"
+  },
+  "duolingo-max": {
+    color: "#58CC02",
+    iconSlug: "duolingo",
+    logoPath: "/brand-assets/duolingo.png",
+    category: "education_books",
+    monogram: "D"
+  },
   "mybook-premium": { color: "#7C3AED", iconSlug: null, category: "education_books", monogram: "MB" },
   "microsoft-365-family": {
     color: "#00A4EF",
     iconSlug: null,
+    logoPath: "/microsoft-365.svg",
     category: "cloud_productivity",
     monogram: "365"
   },
   "apple-one": { color: "#111111", iconSlug: "apple", category: "cloud_productivity", monogram: "" },
   "icloud-plus-2tb": { color: "#3693F3", iconSlug: "icloud", category: "cloud_productivity", monogram: "iC" },
-  "google-one": { color: "#4285F4", iconSlug: "google", category: "cloud_productivity", monogram: "G" },
+  "google-one": {
+    color: "#4285F4",
+    iconSlug: "google",
+    logoPath: "/google-g.svg",
+    category: "cloud_productivity",
+    monogram: "G"
+  },
   "kaspersky-standard": { color: "#006D5C", iconSlug: "kaspersky", category: "security_utilities", monogram: "K" },
   "kaspersky-vpn": { color: "#006D5C", iconSlug: "kaspersky", category: "security_utilities", monogram: "K" },
   "adguard-vpn": { color: "#68BC71", iconSlug: "adguard", category: "security_utilities", monogram: "AG" },
   awax: { color: "#4F46E5", iconSlug: null, category: "security_utilities", monogram: "A" },
   "beeline-family-tariff": { color: "#FFC800", iconSlug: null, category: "mobile_tariffs", monogram: "B" },
-  "tele2-family-tariff": { color: "#000000", iconSlug: null, category: "mobile_tariffs", monogram: "T2" },
+  "tele2-family-tariff": {
+    color: "#FFFFFF",
+    iconSlug: null,
+    logoPath: "/brand-assets/tele2.svg",
+    category: "mobile_tariffs",
+    monogram: "T2"
+  },
   "altel-family-tariff": { color: "#E4002B", iconSlug: null, category: "mobile_tariffs", monogram: "A" },
   "kcell-family-tariff": { color: "#6B21A8", iconSlug: null, category: "mobile_tariffs", monogram: "K" },
-  "activ-family-tariff": { color: "#E11D48", iconSlug: null, category: "mobile_tariffs", monogram: "ac" }
+  "activ-family-tariff": { color: "#E11D48", iconSlug: null, category: "mobile_tariffs", monogram: "ac" },
+  chatgpt: {
+    color: "#FFFFFF",
+    iconSlug: null,
+    logoPath: "/brand-assets/openai.svg",
+    category: "cloud_productivity",
+    monogram: "AI"
+  }
 };
 
 const NAME_TO_SLUG: Record<string, string> = {
@@ -75,6 +108,7 @@ const NAME_TO_SLUG: Record<string, string> = {
   "Apple One": "apple-one",
   "iCloud+": "icloud-plus-2tb",
   "Google One": "google-one",
+  ChatGPT: "chatgpt",
   Kaspersky: "kaspersky-standard",
   "Kaspersky VPN": "kaspersky-vpn",
   "AdGuard VPN": "adguard-vpn",

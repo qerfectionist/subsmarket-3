@@ -15,11 +15,12 @@ import {
 import type { FamilyType } from "../../types";
 import { queryKeys } from "./queryKeys";
 
-export function useFamilies(familyType?: FamilyType) {
+export function useFamilies(familyType?: FamilyType, enabled = true) {
   return useInfiniteQuery({
     queryKey: queryKeys.families(familyType),
     queryFn: ({ pageParam }) =>
       getFamiliesPage({ familyType, cursor: pageParam }),
+    enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
     refetchOnMount: "always",
@@ -44,6 +45,7 @@ export function useMyFamilyRequests() {
     queryFn: ({ pageParam }) => getMyFamilyRequestsPage(pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchInterval: 5_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }

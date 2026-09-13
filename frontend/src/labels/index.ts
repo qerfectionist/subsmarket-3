@@ -181,5 +181,7 @@ export const errorLabels: Record<string, string> = {
   IDEMPOTENCY_KEY_REUSED: "Этот запрос уже использован для другого действия.",
   IDEMPOTENCY_REQUEST_IN_PROGRESS: "Запрос уже выполняется. Подождите несколько секунд.",
   RATE_LIMIT_EXCEEDED: "Слишком много попыток. Повторите позже.",
-  INTERNAL_JOB_TOKEN_REQUIRED: "Внутренний токен задания не настроен."
+  INTERNAL_JOB_TOKEN_REQUIRED: "Внутренний токен задания не настроен.",
+  PUBLIC_NAME_POOL_EXHAUSTED:
+    "Свободные публичные имена временно закончились. Попробуйте позже."
 };

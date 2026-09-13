@@ -1,4 +1,4 @@
-import { Button as WorldButton, Typography } from "@worldcoin/mini-apps-ui-kit-react";
+import { Button as AppButton, Typography } from "../ui";
 
 export function OwnerPanelError({
   errors,
@@ -13,9 +13,9 @@ export function OwnerPanelError({
       <Typography as="p" variant="body" level={3}>
         {message}
       </Typography>
-      <WorldButton type="button" variant="secondary" onClick={onRetry}>
+      <AppButton type="button" variant="secondary" onClick={onRetry}>
         Повторить
-      </WorldButton>
+      </AppButton>
     </div>
   );
 }

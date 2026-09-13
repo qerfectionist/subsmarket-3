@@ -21,6 +21,7 @@ from subsmarket.marketplace.account_schemas import (
     AccountRequestOut,
     AccountServiceOut,
 )
+from subsmarket.marketplace.owners import to_marketplace_listing_owner
 from subsmarket.marketplace.pagination import (
     cursor_datetime,
     cursor_int,
@@ -48,7 +49,10 @@ def get_account_listing_view(
 ) -> AccountListingOut:
     listing = db.scalar(
         select(MarketplaceAccountListing)
-        .options(joinedload(MarketplaceAccountListing.service))
+        .options(
+            joinedload(MarketplaceAccountListing.service),
+            joinedload(MarketplaceAccountListing.seller),
+        )
         .where(MarketplaceAccountListing.id == listing_id)
     )
     if listing is None or (
@@ -73,7 +77,10 @@ def list_account_listings_page(
     stmt = (
         select(MarketplaceAccountListing)
         .join(MarketplaceAccountService)
-        .options(joinedload(MarketplaceAccountListing.service))
+        .options(
+            joinedload(MarketplaceAccountListing.service),
+            joinedload(MarketplaceAccountListing.seller),
+        )
         .where(MarketplaceAccountListing.status == "active")
         .where(MarketplaceAccountListing.expires_at > utcnow())
         .where(MarketplaceAccountService.is_active.is_(True))
@@ -95,7 +102,10 @@ def list_my_account_listings(
 ) -> tuple[list[AccountListingOut], str | None]:
     stmt = (
         select(MarketplaceAccountListing)
-        .options(joinedload(MarketplaceAccountListing.service))
+        .options(
+            joinedload(MarketplaceAccountListing.service),
+            joinedload(MarketplaceAccountListing.seller),
+        )
         .where(MarketplaceAccountListing.seller_user_id == user.id)
     )
     if cursor:
@@ -203,6 +213,7 @@ def to_account_listing_out(
     return AccountListingOut(
         id=listing.id,
         service=AccountServiceOut.model_validate(listing.service),
+        owner=to_marketplace_listing_owner(listing.seller),
         title=listing.title,
         price_kzt=listing.price_kzt,
         description=listing.description,

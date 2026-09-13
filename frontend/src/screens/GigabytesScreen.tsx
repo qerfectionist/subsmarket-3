@@ -1,19 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
-import {
-  ArrowLeft,
-  BadgeInfo,
-  CalendarClock,
-  Check,
-  ChevronRight,
-  CirclePause,
-  MessageCircle,
-  Pencil,
-  Plus,
-  RadioTower,
-  RefreshCw,
-  X
-} from "lucide-react";
+import { Button as AppButton } from "../components/ui";
+import { ListingAuthor } from "../components/ListingAuthor";
+import { ServiceLogo } from "../components/branding";
+import { GigabytesListingCard as ListingRow } from "../components/ListingCard";
+import { AsyncContent } from "../components/AsyncContent";
+import { SystemSymbol } from "../components/SystemSymbol";
+import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 
 import { formatDate, formatError, normalizeText } from "../format";
 import {
@@ -59,14 +51,16 @@ const emptyForm: MarketplaceListingCreate = {
 export function GigabytesScreen({
   onBack,
   initialMode = "catalog",
-  initialRequestRole = "buyer"
+  initialRequestRole = "buyer",
+  initialListingId
 }: {
   onBack: () => void;
-  initialMode?: "catalog" | "requests";
+  initialMode?: "catalog" | "requests" | "mine" | "create";
   initialRequestRole?: MarketplaceRequestRole;
+  initialListingId?: string | null;
 }) {
-  const [mode, setMode] = useState<ScreenMode>(initialMode);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mode, setMode] = useState<ScreenMode>(initialListingId ? "detail" : initialMode);
+  const [selectedId, setSelectedId] = useState<string | null>(initialListingId ?? null);
   const [operator, setOperator] = useState<string | null>(null);
   const [sort, setSort] = useState<MarketplaceSort>("recent");
   const [requestRole, setRequestRole] = useState<MarketplaceRequestRole>(initialRequestRole);
@@ -75,6 +69,7 @@ export function GigabytesScreen({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const originMode: ScreenMode = initialListingId ? "catalog" : initialMode;
 
   const operatorsQuery = useMarketplaceOperators();
   const listingsQuery = useMarketplaceListings(operator, sort);
@@ -171,48 +166,37 @@ export function GigabytesScreen({
   }
 
   function goBack() {
-    if (mode === "catalog") {
+    if (mode === originMode) {
       onBack();
       return;
     }
-    setMode("catalog");
+    setMode(originMode);
     setSelectedId(null);
     setEditingId(null);
     setError(null);
     setNotice(null);
   }
 
+  useTelegramBackButton(true, goBack);
+  useEffect(() => {
+    document.querySelector(".app-shell")?.scrollTo({ top: 0, behavior: "auto" });
+  }, [mode, selectedId]);
+
   return (
     <div className="gb-screen" data-testid="gigabytes-screen">
       <header className="gb-header">
-        <button type="button" className="gb-back" onClick={goBack}>
-          <ArrowLeft size={20} />
-          Назад
+        <button type="button" className="gb-back" aria-label="Назад" onClick={goBack}>
+          <SystemSymbol name="arrow.left" size={20} />
         </button>
         <div>
-          <span>мобильный интернет</span>
           <h1>{screenTitle(mode)}</h1>
         </div>
       </header>
 
-      <nav className="gb-nav" aria-label="Раздел продажи гигабайтов">
-        <GbNavButton active={mode === "catalog" || mode === "detail"} onClick={() => setMode("catalog")}>
-          Купить
-        </GbNavButton>
-        <GbNavButton active={mode === "mine"} onClick={() => setMode("mine")}>
-          Мои объявления
-        </GbNavButton>
-        <GbNavButton
-          active={mode === "requests"}
-          data-testid="marketplace-requests-tab"
-          onClick={() => setMode("requests")}
-        >
-          Заявки
-        </GbNavButton>
-      </nav>
+      {error ? <div className="inline-error" role="alert">{error}</div> : null}
+      {notice ? <div className="gb-notice" role="status">{notice}</div> : null}
 
-      {error ? <div className="inline-error">{error}</div> : null}
-      {notice ? <div className="gb-notice">{notice}</div> : null}
+      <AsyncContent query={mode === "catalog" ? listingsQuery : mode === "detail" ? listingQuery : mode === "mine" ? myListingsQuery : mode === "requests" ? requestsQuery : operatorsQuery}>
 
       {mode === "catalog" ? (
         <CatalogView
@@ -332,6 +316,7 @@ export function GigabytesScreen({
           }
         />
       ) : null}
+      </AsyncContent>
     </div>
   );
 }
@@ -381,7 +366,7 @@ function CatalogView({
             </button>
           ))}
         </div>
-        <select value={sort} onChange={(event) => onSort(event.target.value as MarketplaceSort)}>
+        <select aria-label="Сортировка объявлений" value={sort} onChange={(event) => onSort(event.target.value as MarketplaceSort)}>
           <option value="recent">Сначала новые</option>
           <option value="price_asc">Цена: ниже</option>
           <option value="price_desc">Цена: выше</option>
@@ -392,19 +377,19 @@ function CatalogView({
         <div className="gb-empty">
           <strong>Активных объявлений пока нет</strong>
           <span>Можно опубликовать первое предложение.</span>
-          <WorldButton type="button" onClick={onCreate}>Продать ГБ</WorldButton>
+          <AppButton type="button" onClick={onCreate}>Продать ГБ</AppButton>
         </div>
       ) : (
-        <div className="gb-list">
+        <div className="sm-market-family-list">
           {listings.map((listing) => (
             <ListingRow key={listing.id} listing={listing} onClick={() => onListing(listing.id)} />
           ))}
         </div>
       )}
       {hasMore ? (
-        <WorldButton type="button" variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>
+        <AppButton type="button" variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>
           {loadingMore ? "Загружаем..." : "Показать ещё"}
-        </WorldButton>
+        </AppButton>
       ) : null}
     </section>
   );
@@ -445,15 +430,16 @@ function ListingDetails({
   return (
     <section className="gb-stack">
       <article className="gb-detail-card">
-        <div className="gb-detail-icon"><RadioTower size={28} /></div>
+        <ServiceLogo serviceSlug={listing.operator.slug + "-family-tariff"} serviceName={listing.operator.name} size={48} />
         <span>{listing.operator.name}</span>
         <h2>{formatKzt(listing.price_per_gb_kzt)} за 1 ГБ</h2>
         {listing.description ? <p>{listing.description}</p> : null}
+        <ListingAuthor className="gb-detail-author" owner={listing.owner} />
       </article>
       <article className="gb-info-card">
-        <div><CalendarClock size={19} /><span>Объявление до {formatDate(listing.expires_at)}</span></div>
+        <div><SystemSymbol name="calendar" size={19} /><span>Объявление до {formatDate(listing.expires_at)}</span></div>
         {listing.operator.validity_days ? (
-          <div><BadgeInfo size={19} /><span>Переданные ГБ действуют {listing.operator.validity_days} дней</span></div>
+          <div><SystemSymbol name="info.circle" size={19} /><span>Переданные ГБ действуют {listing.operator.validity_days} дней</span></div>
         ) : null}
         {listing.operator.conditions ? <p>{listing.operator.conditions}</p> : null}
         {listing.operator.fee_note ? <p>{listing.operator.fee_note}</p> : null}
@@ -515,16 +501,16 @@ function ListingDetails({
       ) : (
         <>
           <div className="gb-owner-actions">
-            <WorldButton variant="tertiary" onClick={() => onEdit(listing)}><Pencil size={18} />Изменить</WorldButton>
+            <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onEdit(listing)}><SystemSymbol name="pencil" size={18} />Изменить</AppButton>
             {listing.status === "active" ? (
-              <WorldButton variant="tertiary" onClick={() => onPause(listing.id)}><CirclePause size={18} />Скрыть</WorldButton>
+              <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onPause(listing.id)}><SystemSymbol name="pause.circle" size={18} />Скрыть</AppButton>
             ) : listing.status === "paused" ? (
-              <WorldButton variant="tertiary" onClick={() => onResume(listing.id)}><Check size={18} />Показать</WorldButton>
+              <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onResume(listing.id)}><SystemSymbol name="checkmark" size={18} />Показать</AppButton>
             ) : null}
             {listing.can_renew ? (
-              <WorldButton variant="tertiary" onClick={() => onRenew(listing.id)}><RefreshCw size={18} />Продлить</WorldButton>
+              <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onRenew(listing.id)}><SystemSymbol name="arrow.clockwise" size={18} />Продлить</AppButton>
             ) : null}
-            <WorldButton variant="tertiary" onClick={() => onArchive(listing.id)}><X size={18} />Убрать</WorldButton>
+            <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onArchive(listing.id)}><SystemSymbol name="xmark" size={18} />Убрать</AppButton>
           </div>
         </>
       )}
@@ -550,7 +536,7 @@ function ListingForm({ form, operator, operators, editing, busy, priceInsight, o
       <PriceInsight insight={priceInsight} price={form.price_per_gb_kzt} />
       <label>Описание<textarea maxLength={300} rows={3} value={form.description ?? ""} placeholder="Необязательно" onChange={(event) => onChange({ ...form, description: event.target.value })} /></label>
       {operator ? <div className="gb-operator-hint">Один перевод: от {formatGb(Math.max(MINIMUM_GB_ORDER, Number(operator.min_lot_gb ?? 0)))} до {formatGb(operator.max_lot_gb)} ГБ, только целое количество.</div> : null}
-      <WorldButton fullWidth type="submit" disabled={busy}>{busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 7 дней"}</WorldButton>
+      <AppButton fullWidth type="submit" disabled={busy}>{busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 7 дней"}</AppButton>
       <p className="gb-safety-note">Номер телефона, карту и банковские реквизиты здесь указывать нельзя.</p>
     </form>
   );
@@ -595,7 +581,7 @@ function MyListingsView({ listings, loading, loadingMore, hasMore, onCreate, onO
   onOpen: (id: string) => void;
   onLoadMore: () => unknown;
 }) {
-  return <section className="gb-stack"><WorldButton fullWidth onClick={onCreate}><Plus size={18} />Продать ГБ</WorldButton>{loading ? <div className="gb-empty">Загружаем...</div> : listings.length === 0 ? <div className="gb-empty"><strong>Объявлений пока нет</strong></div> : <div className="gb-list">{listings.map((item) => <ListingRow key={item.id} listing={item} onClick={() => onOpen(item.id)} showStatus />)}</div>}{hasMore ? <WorldButton variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Загружаем..." : "Показать ещё"}</WorldButton> : null}</section>;
+  return <section className="gb-stack"><AppButton fullWidth onClick={onCreate}><SystemSymbol name="plus" size={18} />Продать ГБ</AppButton>{loading ? <div className="gb-empty">Загружаем...</div> : listings.length === 0 ? <div className="gb-empty"><strong>Объявлений пока нет</strong></div> : <div className="sm-market-family-list">{listings.map((item) => <ListingRow key={item.id} listing={item} onClick={() => onOpen(item.id)} showStatus />)}</div>}{hasMore ? <AppButton variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Загружаем..." : "Показать ещё"}</AppButton> : null}</section>;
 }
 
 function RequestsView({ role, requests, loading, loadingMore, hasMore, busy, onRole, onLoadMore, onAccept, onReject, onCancel, onClose, onRemind }: {
@@ -634,7 +620,7 @@ function RequestsView({ role, requests, loading, loadingMore, hasMore, busy, onR
           {requests.map((item) => <RequestCard key={item.id} request={item} busy={busy !== null} onAccept={onAccept} onReject={onReject} onCancel={onCancel} onClose={onClose} onRemind={onRemind} />)}
         </div>
       )}
-      {hasMore ? <WorldButton variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Загружаем..." : "Показать ещё"}</WorldButton> : null}
+      {hasMore ? <AppButton variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Загружаем..." : "Показать ещё"}</AppButton> : null}
     </section>
   );
 }
@@ -656,46 +642,13 @@ function RequestCard({ request, busy, onAccept, onReject, onCancel, onClose, onR
       </div>
       {request.counterparty_username ? <p>@{request.counterparty_username}</p> : null}
       <div className="gb-request-actions">
-        {request.role === "seller" && request.status === "pending" ? <><button disabled={busy} onClick={() => onAccept(request.id)} type="button"><Check size={17} />Принять</button><button disabled={busy} onClick={() => onReject(request.id)} type="button"><X size={17} />Отклонить</button></> : null}
-        {request.role === "buyer" && request.status === "pending" ? <><button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button><button disabled={busy || !request.can_remind} onClick={() => onRemind(request.id)} type="button"><RefreshCw size={17} />Напомнить</button></> : null}
+        {request.role === "seller" && request.status === "pending" ? <><button disabled={busy} onClick={() => onAccept(request.id)} type="button"><SystemSymbol name="checkmark" size={17} />Принять</button><button disabled={busy} onClick={() => onReject(request.id)} type="button"><SystemSymbol name="xmark" size={17} />Отклонить</button></> : null}
+        {request.role === "buyer" && request.status === "pending" ? <><button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button><button disabled={busy || !request.can_remind} onClick={() => onRemind(request.id)} type="button"><SystemSymbol name="arrow.clockwise" size={17} />Напомнить</button></> : null}
         {request.role === "buyer" && request.status === "accepted" ? <button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить заявку</button> : null}
-        {request.status === "accepted" && request.counterparty_username ? <button type="button" onClick={() => openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined)}><MessageCircle size={17} />Открыть Telegram</button> : null}
-        {request.role === "seller" && request.status === "accepted" ? <><button disabled={busy} type="button" onClick={() => onClose(request.id, "sold")}><Check size={17} />Продано</button><button disabled={busy} type="button" onClick={() => onClose(request.id, "not_sold")}><X size={17} />Не состоялось</button></> : null}
+        {request.status === "accepted" && request.counterparty_username ? <button type="button" onClick={() => openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined)}><SystemSymbol name="message" size={17} />Открыть Telegram</button> : null}
+        {request.role === "seller" && request.status === "accepted" ? <><button disabled={busy} type="button" onClick={() => onClose(request.id, "sold")}><SystemSymbol name="checkmark" size={17} />Продано</button><button disabled={busy} type="button" onClick={() => onClose(request.id, "not_sold")}><SystemSymbol name="xmark" size={17} />Не состоялось</button></> : null}
       </div>
     </article>
-  );
-}
-
-function ListingRow({ listing, onClick, showStatus = false }: { listing: MarketplaceListing; onClick: () => void; showStatus?: boolean }) {
-  return (
-    <button className="gb-listing-row" type="button" onClick={onClick}>
-      <span className="gb-listing-logo">{listing.operator.name.slice(0, 2)}</span>
-      <span className="gb-listing-copy">
-        <strong>
-          {listing.operator.name}
-        </strong>
-        {showStatus ? <small>{listingStatus(listing)}</small> : null}
-      </span>
-      <span className="gb-listing-price"><strong>{formatKzt(listing.price_per_gb_kzt)}/ГБ</strong><ChevronRight size={18} /></span>
-    </button>
-  );
-}
-
-function GbNavButton({
-  active,
-  children,
-  onClick,
-  ...buttonProps
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { active: boolean }) {
-  return (
-    <button
-      type="button"
-      className={active ? "active" : ""}
-      onClick={onClick}
-      {...buttonProps}
-    >
-      {children}
-    </button>
   );
 }
 

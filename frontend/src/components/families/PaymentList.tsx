@@ -1,7 +1,7 @@
 import {
-  Button as WorldButton,
+  Button as AppButton,
   Typography
-} from "@worldcoin/mini-apps-ui-kit-react";
+} from "../ui";
 
 import { formatDateTime, statusText } from "../../format";
 import { paymentCancelReasonLabels, paymentKindText, periodLabels } from "../../labels";
@@ -56,7 +56,7 @@ export function PaymentList({
           {!ownerMode ? (
             <div className="row-actions">
               {(payment.status === "due" || payment.status === "overdue") && onReport ? (
-                <WorldButton
+                <AppButton
                   type="button"
                   size="sm"
                   data-payment-id={payment.id}
@@ -69,10 +69,10 @@ export function PaymentList({
                   }}
                 >
                   Оплатил
-                </WorldButton>
+                </AppButton>
               ) : null}
               {payment.status === "payment_reported" && onCancel ? (
-                <WorldButton
+                <AppButton
                   type="button"
                   size="sm"
                   variant="secondary"
@@ -80,23 +80,23 @@ export function PaymentList({
                   onClick={() => void onCancel(payment)}
                 >
                   Отменить
-                </WorldButton>
+                </AppButton>
               ) : null}
             </div>
           ) : payment.status === "payment_reported" ? (
             <div className="row-actions">
               {onConfirm ? (
-                <WorldButton
+                <AppButton
                   type="button"
                   size="sm"
                   data-testid="confirm-payment-button"
                   onClick={() => void onConfirm(payment)}
                 >
                   Подтвердить
-                </WorldButton>
+                </AppButton>
               ) : null}
               {onNotReceived ? (
-                <WorldButton
+                <AppButton
                   type="button"
                   size="sm"
                   variant="secondary"
@@ -104,7 +104,7 @@ export function PaymentList({
                   onClick={() => void onNotReceived(payment)}
                 >
                   Не получил
-                </WorldButton>
+                </AppButton>
               ) : null}
             </div>
           ) : null}

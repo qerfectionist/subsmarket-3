@@ -1,59 +1,17 @@
-import type { ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 
 import {
-  Button as WorldButton,
+  Button as AppButton,
   Select,
-  Tabs,
-  TabItem,
-  TopBar,
   Typography
-} from "@worldcoin/mini-apps-ui-kit-react";
-import Add01Icon from "@hugeicons/core-free-icons/Add01Icon";
-import Home01Icon from "@hugeicons/core-free-icons/Home01Icon";
-import Task01Icon from "@hugeicons/core-free-icons/Task01Icon";
-import UserMultipleIcon from "@hugeicons/core-free-icons/UserMultipleIcon";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ClipboardList, Home, Plus, Settings, UsersRound } from "lucide-react";
+} from "./ui";
+import { SystemSymbol } from "./SystemSymbol";
 
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
 import { familyTypeLabels } from "../labels";
 import { triggerTelegramSelection } from "../telegram";
 import type { FamilyType } from "../types";
-
-export function AppHeader({
-  userName,
-  firstName
-}: {
-  userName: string;
-  firstName?: string;
-}) {
-  const acronym = (firstName ?? userName).slice(0, 2).toUpperCase();
-
-  return (
-    <TopBar
-      className="app-topbar"
-      title=""
-      startAdornment={
-        <span className="app-user-avatar" aria-hidden>
-          {acronym}
-          <span className="app-user-status" />
-        </span>
-      }
-      endAdornment={
-        <WorldButton
-          type="button"
-          size="icon"
-          variant="tertiary"
-          className="app-settings-button"
-          aria-label="Настройки"
-        >
-          <SettingsIcon />
-        </WorldButton>
-      }
-    />
-  );
-}
 
 export function DevUserSwitch({
   value,
@@ -116,9 +74,20 @@ export function Panel({
   );
 }
 
-export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
+export function EmptyState({
+  title,
+  children,
+  icon,
+  className
+}: {
+  title: string;
+  children: ReactNode;
+  icon?: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="empty-state">
+    <div className={["empty-state", className ?? ""].filter(Boolean).join(" ")}>
+      {icon ? <div className="empty-state-icon" aria-hidden="true">{icon}</div> : null}
       <Typography as="strong" variant="subtitle" level={2}>
         {title}
       </Typography>
@@ -161,20 +130,22 @@ export function FamilyTypeSwitch({
   value: FamilyType;
   onChange: (value: FamilyType) => void;
 }) {
+  const position = value === "subscription" ? 0 : 1;
   return (
-    <div className="family-type-switch">
+    <div className="family-type-switch" role="group" aria-label="Тип семейного предложения" style={{ "--family-type-position": position } as CSSProperties}>
       {(["subscription", "tariff"] as FamilyType[]).map((type) => (
-        <WorldButton
+        <AppButton
           key={type}
           type="button"
           data-testid={`family-type-${type}`}
+          aria-pressed={value === type}
           variant={value === type ? "primary" : "tertiary"}
           size="sm"
           fullWidth
           onClick={() => onChange(type)}
         >
           {familyTypeLabels[type]}
-        </WorldButton>
+        </AppButton>
       ))}
     </div>
   );
@@ -182,146 +153,90 @@ export function FamilyTypeSwitch({
 
 export function ProductScopeSwitch({
   value = "families",
-  onChange
+  onChange,
+  familiesLabel = "Семьи",
+  dragPosition
 }: {
   value?: "families" | "accounts" | "gigabytes";
   onChange?: (value: "families" | "accounts" | "gigabytes") => void;
+  familiesLabel?: string;
+  dragPosition?: number;
 }) {
+  const position = dragPosition ?? ["families", "accounts", "gigabytes"].indexOf(value);
   return (
-    <div className="product-scope-switch" aria-label="Разделы SubsMarket">
-      <WorldButton
+    <div className="product-scope-switch" role="group" aria-label="Разделы" style={{ "--scope-position": position } as CSSProperties}>
+      <AppButton
         type="button"
         size="sm"
+        aria-pressed={value === "families"}
         variant={value === "families" ? "primary" : "tertiary"}
         onClick={() => onChange?.("families")}
       >
-        Семьи
-      </WorldButton>
-      <WorldButton
+        {familiesLabel}
+      </AppButton>
+      <AppButton
         type="button"
         size="sm"
+        aria-pressed={value === "accounts"}
         variant={value === "accounts" ? "primary" : "tertiary"}
         onClick={() => onChange?.("accounts")}
       >
         Аккаунты
-      </WorldButton>
-      <WorldButton
+      </AppButton>
+      <AppButton
         type="button"
         size="sm"
+        aria-pressed={value === "gigabytes"}
         variant={value === "gigabytes" ? "primary" : "tertiary"}
         onClick={() => onChange?.("gigabytes")}
       >
         ГБ
-      </WorldButton>
+      </AppButton>
     </div>
   );
 }
 
 export function BottomNav({
-  active,
-  appearance = "default",
-  onChange,
-  onReselect,
-  badges
+  active, onChange, onReselect, badges
 }: {
   active: Tab;
-  appearance?: "default" | "market";
   onChange: (tab: Tab) => void;
   onReselect?: (tab: Tab) => void;
   badges?: Partial<Record<Tab, number>>;
 }) {
-  if (appearance === "market") {
-    return (
-      <nav
-        className="subs-dock"
-        aria-label="Главная навигация"
-      >
-        <div className="subs-dock-surface">
-          <MarketNavItem
-            value="home"
-            icon="home"
-            label="Маркет"
-            active={active === "home" || active === "search"}
-            onChange={onChange}
-            onReselect={onReselect}
-          />
-          <MarketNavItem
-            value="mine"
-            icon="mine"
-            label="Мои"
-            badge={badges?.mine}
-            active={active === "mine"}
-            onChange={onChange}
-            onReselect={onReselect}
-          />
-          <MarketNavItem
-            value="create"
-            icon="create"
-            label="Создать"
-            active={active === "create"}
-            onChange={onChange}
-            onReselect={onReselect}
-          />
-          <MarketNavItem
-            value="requests"
-            icon="requests"
-            label="Действия"
-            badge={badges?.requests}
-            active={active === "requests"}
-            onChange={onChange}
-            onReselect={onReselect}
-          />
-        </div>
-      </nav>
-    );
-  }
-
-  const activeValue =
-    active === "family" || active === "gigabytes" || active === "accounts"
-      ? ""
-      : active;
-
   return (
-    <nav className="bottom-nav" aria-label="Главная навигация">
-      <Tabs
-        value={activeValue}
-        onValueChange={(value) => {
-          if (value) onChange(value as Tab);
-        }}
-      >
-      <NavItem
-        value="home"
-        icon="home"
-        label="Маркет"
-        active={active === "home"}
-        onReselect={onReselect}
-      />
-      <NavItem
-        value="mine"
-        icon="mine"
-        label="Мои"
-        badge={badges?.mine}
-        active={active === "mine"}
-        onReselect={onReselect}
-      />
-      <NavItem
-        value="create"
-        icon="create"
-        label="Создать"
-        active={active === "create"}
-        onReselect={onReselect}
-      />
-      <NavItem
-        value="requests"
-        icon="requests"
-        label="Действия"
-        badge={badges?.requests}
-        active={active === "requests"}
-        onReselect={onReselect}
-      />
-      </Tabs>
-    </nav>
+    <div className="subs-dock">
+      <nav className="subs-dock-surface" aria-label="Главная навигация">
+        <MarketNavItem value="home" icon="home" label="Маркет"
+          active={active === "home" || active === "search"}
+          onChange={onChange} onReselect={onReselect} />
+        <MarketNavItem value="mine" icon="mine" label="Мои"
+          badge={badges?.mine} active={active === "mine"}
+          onChange={onChange} onReselect={onReselect} />
+        <MarketNavItem value="requests" icon="requests" label="Действия"
+          badge={badges?.requests} active={active === "requests"}
+          onChange={onChange} onReselect={onReselect} />
+      </nav>
+      <div className="subs-dock-create">
+        <MarketNavItem value="create" icon="create" label="Создать"
+          active={active === "create"} onChange={onChange} onReselect={onReselect} />
+      </div>
+    </div>
   );
+}
+
+function pluralRu(value: number, one: string, few: string, many: string) {
+  const mod10 = value % 10;
+  const mod100 = value % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
+function formatNavBadgeDescription(badge?: number) {
+  if (badge === undefined || badge <= 0) return undefined;
+  if (badge > 9) return "9 или больше уведомлений";
+  return `${badge} ${pluralRu(badge, "уведомление", "уведомления", "уведомлений")}`;
 }
 
 function MarketNavItem({
@@ -341,6 +256,9 @@ function MarketNavItem({
   onChange: (tab: Tab) => void;
   onReselect?: (tab: Tab) => void;
 }) {
+  const badgeDescriptionId = useId();
+  const badgeDescription = formatNavBadgeDescription(badge);
+
   return (
     <button
       type="button"
@@ -349,6 +267,7 @@ function MarketNavItem({
       data-kind={value === "create" ? "create" : "tab"}
       data-active={active ? "true" : "false"}
       aria-current={active ? "page" : undefined}
+      aria-describedby={badgeDescription ? badgeDescriptionId : undefined}
       aria-label={label}
       onClick={() => {
         triggerTelegramSelection();
@@ -362,12 +281,15 @@ function MarketNavItem({
       <span className="subs-dock-icon">
         <MarketNavIcon icon={icon} active={active} />
         {badge !== undefined && badge > 0 ? (
-          <span className="subs-dock-badge">
+          <span className="subs-dock-badge" aria-hidden="true">
             {badge > 9 ? "9+" : badge}
           </span>
         ) : null}
       </span>
       <span className="subs-dock-label">{label}</span>
+      {badgeDescription ? (
+        <span className="sr-only" id={badgeDescriptionId}>{badgeDescription}</span>
+      ) : null}
     </button>
   );
 }
@@ -379,92 +301,33 @@ function MarketNavIcon({
   icon: "home" | "create" | "mine" | "requests";
   active: boolean;
 }) {
-  const strokeWidth = active ? 2.2 : 1.7;
-
-  if (icon === "home") {
-    return <HugeiconsIcon aria-hidden icon={Home01Icon} size={22} strokeWidth={strokeWidth} />;
-  }
-
-  if (icon === "create") {
-    return <HugeiconsIcon aria-hidden icon={Add01Icon} size={22} strokeWidth={2.3} />;
-  }
-
-  if (icon === "requests") {
-    return <HugeiconsIcon aria-hidden icon={Task01Icon} size={22} strokeWidth={strokeWidth} />;
-  }
-
-  return <HugeiconsIcon aria-hidden icon={UserMultipleIcon} size={22} strokeWidth={strokeWidth} />;
-}
-
-function NavItem({
-  value,
-  icon,
-  label,
-  badge,
-  active,
-  onReselect
-}: {
-  value: Tab;
-  icon: "home" | "create" | "mine" | "requests";
-  label: string;
-  badge?: number;
-  active?: boolean;
-  onReselect?: (tab: Tab) => void;
-}) {
-  function handlePointerDown() {
-    triggerTelegramSelection();
-    if (active) {
-      onReselect?.(value);
-    }
-  }
-
-  return (
-    <TabItem
-      value={value}
-      data-testid="nav-item"
-      className={`nav-item nav-item-${value}`}
-      icon={
-        <span className="nav-icon-wrap">
-          <NavIcon icon={icon} />
-          {badge !== undefined && badge > 0 && (
-            <span className="nav-badge">{badge > 9 ? "9+" : badge}</span>
-          )}
-        </span>
-      }
-      label={label}
-      onPointerDown={handlePointerDown}
-    />
-  );
-}
-
-function SettingsIcon() {
-  return <Settings aria-hidden className="topbar-icon" size={22} strokeWidth={2} />;
+  return <NavIcon icon={icon} active={active} plain />;
 }
 
 function NavIcon({
   icon,
+  active = false,
   plain = false
 }: {
   icon: "home" | "create" | "mine" | "requests";
+  active?: boolean;
   plain?: boolean;
 }) {
   const common = {
-    viewBox: "0 0 24 24",
-    "aria-hidden": true,
     className: plain ? undefined : "nav-icon"
   } as const;
 
   if (icon === "home") {
-    return <Home {...common} size={22} strokeWidth={1.8} />;
+    return <SystemSymbol name={active ? "square.grid.2x2.fill" : "square.grid.2x2"} {...common} size={22} />;
   }
 
   if (icon === "create") {
-    return <Plus {...common} size={23} strokeWidth={1.8} />;
+    return <SystemSymbol name="plus" {...common} size={23} />;
   }
 
   if (icon === "requests") {
-    return <ClipboardList {...common} size={22} strokeWidth={1.8} />;
+    return <SystemSymbol name="clipboard.list" {...common} size={22} />;
   }
 
-  return <UsersRound {...common} size={22} strokeWidth={1.8} />;
+  return <SystemSymbol name={active ? "person.crop.circle.fill" : "person.crop.circle"} {...common} size={22} />;
 }

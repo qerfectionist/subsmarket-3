@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from subsmarket.marketplace.schemas import MarketplaceListingOwner
+
 
 class AccountServiceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -41,6 +43,7 @@ class AccountListingUpdate(BaseModel):
 class AccountListingOut(BaseModel):
     id: UUID
     service: AccountServiceOut
+    owner: MarketplaceListingOwner
     title: str
     price_kzt: int
     description: str | None = None

@@ -1,0 +1,1293 @@
+/* Screen composition. Values come from tokens.css; controls live in ui.css. */
+html, body, #root {
+  font-family: var(--app-font-family);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+body, #root { background: var(--app-bg); color: var(--app-text); }
+button, input, select, textarea { font-family: inherit; }
+button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.app-shell {
+  width: 100%; max-width: var(--app-page-width);
+  margin: 0 auto;
+  padding: calc(24px + var(--app-inset-top)) calc(16px + var(--app-inset-right)) var(--app-nav-clearance) calc(16px + var(--app-inset-left));
+  background: var(--app-bg); color: var(--app-text);
+  font-size: var(--app-size-body); line-height: var(--app-leading-body);
+  letter-spacing: 0; scroll-padding-bottom: var(--app-nav-clearance);
+}
+.app-shell :where(button:not(.sm-listing):not(.subs-dock-item)) {
+  min-height: 44px; border-radius: var(--app-radius-pill);
+  font-weight: 500; font-size: var(--app-size-caption); line-height: var(--app-leading-caption);
+}
+.app-shell button:disabled { opacity: .5; }
+.app-shell :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--app-text); outline-offset: 3px;
+}
+.app-shell :is(h1, h2, h3, h4, p) { overflow-wrap: anywhere; }
+.app-shell h1, .app-shell .app-panel-head h1, .app-shell .family-detail-heading h1, .app-shell .gb-header h1 {
+  font-size: var(--app-size-screen); line-height: var(--app-leading-screen);
+  font-weight: 600; letter-spacing: -.018em;
+}
+.app-shell h2, .app-shell .owner-details h4, .app-shell .family-overview-title h2 {
+  font-size: var(--app-size-section); line-height: var(--app-leading-section);
+  font-weight: 600; letter-spacing: -.01em;
+}
+.app-shell h3, .app-shell .ui-typography-subtitle, .app-shell .family-card-title {
+  font-size: var(--app-size-card); font-weight: 600; line-height: var(--app-leading-card);
+}
+.app-shell p, .app-shell .ui-typography-body { font-size: var(--app-size-body); line-height: var(--app-leading-body); font-weight: 400; }
+.app-shell small, .app-shell .field-helper, .app-shell .field-error, .app-shell .card-footer,
+.app-shell .gb-safety-note, .app-shell .family-card-subtitle, .app-shell .family-card-rules,
+.app-shell .ui-typography-body.ui-typography-level-4 {
+  color: var(--app-muted); font-size: var(--app-size-caption); line-height: var(--app-leading-caption); font-weight: 400;
+}
+.app-shell .ui-typography-label, .app-shell .family-detail-heading > span,
+.app-shell .family-overview-facts dt, .app-shell .family-overview-badges > span:not(.badge) {
+  font-size: var(--app-size-label); line-height: var(--app-leading-label); color: var(--app-muted); font-weight: 400;
+}
+.app-panel, .app-panel-body, .screen-body-inset, .stack, .card-grid, .form-grid,
+.payment-list, .my-requests-section, .gb-stack, .gb-screen { gap: var(--app-space-4); }
+.app-panel, .app-panel-body, .screen-body-inset { display: grid; }
+.app-panel-body > *, .screen-body-inset > * { min-width: 0; }
+.app-panel-head { padding: 0; align-items: start; }
+.app-panel-head > div:only-child { width: 100%; text-align: center; }
+.app-panel-head p { margin-top: 8px; color: var(--app-muted); }
+.app-shell .panel, .app-shell .notice { background: transparent; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
+.app-topbar { margin: 0 0 20px; padding: 0; }
+.app-user-avatar { display: grid; place-items: center; width: 44px; height: 44px; background: var(--app-accent); color: var(--app-accent-text); border-radius: 50%; font-size: 13px; font-weight: 500; }
+.dev-user-compact, .dev-user-switch { padding: 8px 12px; margin-bottom: 16px; border-radius: var(--app-radius-md); border: 1px solid var(--app-border); background: var(--app-surface); color: var(--app-muted); }
+
+.app-shell input:not([type="checkbox"]):not([type="radio"]), .app-shell select, .app-shell textarea {
+  appearance: none; width: 100%; min-width: 0; min-height: 50px;
+  padding: 12px 14px; border: 1px solid transparent; border-radius: var(--app-radius-md);
+  background: var(--app-secondary-bg); color: var(--app-text);
+  font-size: 1rem; font-weight: 400; line-height: 1.5; letter-spacing: 0;
+}
+.app-shell select {
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23949494' stroke-width='1.5'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+}
+.app-shell input::placeholder, .app-shell textarea::placeholder { color: var(--app-placeholder); opacity: 1; }
+.app-shell :is(input, select, textarea):focus { border-color: var(--app-border-strong); box-shadow: none; }
+.ui-field, .form-grid label, .gb-form label, .gb-buy-box label, .owner-settings-card label,
+.owner-prepayment-control label { display: grid; gap: 8px; font-size: var(--app-size-caption); font-weight: 500; line-height: var(--app-leading-caption); color: var(--app-text); }
+.ui-field > span { font-size: inherit; font-weight: inherit; color: inherit; }
+.form-grid { column-gap: 12px; row-gap: 20px; }
+.app-shell button.ui-button { border: 0; border-radius: var(--app-radius-pill); min-height: 48px; padding: 12px 20px; font-size: var(--app-size-caption); line-height: var(--app-leading-caption); font-weight: 600; }
+.app-shell button.ui-button-icon { min-height: 44px; width: 44px; height: 44px; padding: 0; }
+.app-shell button.ui-button-primary, .app-shell button.gb-primary-button { background: var(--app-accent); color: var(--app-accent-text); }
+.app-shell button.ui-button-secondary, .app-shell button.secondary { background: var(--app-secondary-bg); color: var(--app-text); }
+.app-shell button.ui-button-tertiary { background: transparent; color: var(--app-text); border: 1px solid var(--app-border); }
+.app-shell button.danger { background: var(--app-danger-soft); color: var(--app-danger); }
+@media (hover: hover) {
+  .app-shell button.ui-button-primary:hover:not(:disabled), .app-shell button.gb-primary-button:hover:not(:disabled) { background: var(--app-accent-hover); }
+  .app-shell button.ui-button-secondary:hover:not(:disabled), .app-shell button.ui-button-tertiary:hover:not(:disabled) { background: var(--app-secondary-bg); }
+}
+
+.empty-state, .family-workspace, .owner-details, .owner-settings-card, .detail-section,
+.status-block, .payment-row, .request-card, .family-card, .family-overview-card,
+.invite-owner-card, .requisite-box, .gb-empty, .gb-notice, .gb-detail-card,
+.gb-info-card, .gb-form, .gb-buy-box, .list-row {
+  border: 0; border-radius: var(--app-radius-lg); background: var(--app-surface); box-shadow: none;
+}
+.empty-state, .gb-empty { padding: 24px; align-items: start; text-align: left; }
+.empty-state strong, .gb-empty strong { font-size: var(--app-size-card); font-weight: 600; color: var(--app-text); }
+.list-row, .payment-row, .request-card, .family-card { padding: 20px; }
+.list-row + .list-row, .payment-row + .payment-row { margin-top: 12px; }
+.family-workspace, .owner-details, .owner-settings-card, .family-overview-card { padding: 20px; gap: 16px; }
+.family-workspace .owner-details { padding: 0; }
+.family-workspace .family-card { padding: 0; }
+.family-card-offer div { background: var(--app-surface-inset); }
+.family-overview-title h2 { white-space: normal; overflow: visible; }
+.family-overview-facts { display: grid; grid-template-columns: 1fr; border: 0; margin: 0; gap: 0; }
+.family-overview-facts > div { display: flex; align-items: center; justify-content: space-between; min-width: 0; gap: 16px; padding: 10px 0; }
+.family-overview-facts > div + div { border-left: 0; border-top: 1px solid var(--app-border); }
+.family-overview-facts dt, .family-overview-facts dd { margin: 0; padding: 0; min-width: 0; }
+.family-overview-facts dd { text-align: right; }
+.family-overview-copy p { padding: 0; }
+.family-overview-copy p + p { padding: 16px; }
+.service-logo, .service-logo-monogram { color: var(--app-text); }
+.service-logo-image { width: 100%; height: 100%; }
+.badge-success { background: var(--app-success-soft); color: var(--app-success); }
+.badge-warning { background: var(--app-warning-soft); color: var(--app-warning); }
+.badge-danger { background: var(--app-danger-soft); color: var(--app-danger); }
+.detail-section, .status-block { padding: 20px; }
+.section-inline-title { min-height: 32px; }
+.section-inline-title > span, .section-inline-title h2, .section-inline-title h3 {
+  font-size: var(--app-size-section); line-height: var(--app-leading-section); color: var(--app-text); font-weight: 600;
+}
+.my-screen .app-panel-head > div:only-child { text-align: center; }
+.my-screen .app-panel-head { align-items: center; min-height: 48px; }
+.my-screen .app-panel-head p { margin: 6px auto 0; max-width: 28rem; text-align: center; }
+.my-screen .app-panel-head > div:first-child { min-width: 0; }
+.my-screen .app-panel-action { display: flex; align-items: center; }
+.my-screen-context-control {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+.my-screen-context-action {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--app-muted);
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 140ms ease;
+}
+.my-screen-context-action:hover,
+.my-screen-context-action.is-active {
+  border-color: var(--app-control-border);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+.my-screen-context-action:active { transform: scale(.94); }
+.my-screen-context-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  gap: 4px;
+  width: min(224px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid var(--app-control-border);
+  border-radius: 18px;
+  background: var(--app-control-material);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--app-shadow);
+  color: var(--app-text);
+  animation: my-screen-context-menu-in 180ms cubic-bezier(.22, 1, .36, 1) both;
+  transform-origin: top right;
+}
+.my-screen-context-menu-label {
+  padding: 3px 8px 2px;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+}
+.my-screen-context-option {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-height: var(--app-touch-min);
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-text);
+  text-align: left;
+  transition: background-color 160ms ease, transform 140ms ease;
+}
+.my-screen-context-option:hover { background: var(--app-secondary-bg); }
+.my-screen-context-option:active { transform: scale(.985); }
+.my-screen-context-option-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--app-secondary-bg);
+  color: var(--app-muted);
+}
+.my-screen-context-option-copy {
+  display: grid;
+  min-width: 0;
+}
+.my-screen-context-option-copy strong {
+  overflow: hidden;
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-screen-context-option > .sm-system-symbol { color: var(--app-text); }
+@keyframes my-screen-context-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .my-screen-context-action,
+  .my-screen-context-option { transition: none; }
+  .my-screen-context-menu { animation: none; }
+}
+.my-trade-requests { min-width: 0; }
+.my-trade-request-list { display: grid; gap: 8px; }
+.my-trade-request {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+}
+.my-trade-request-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.my-trade-request-copy strong,
+.my-trade-request-copy span,
+.my-trade-request-copy small {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-trade-request-copy strong {
+  color: var(--app-text);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-caption);
+}
+.my-trade-request-copy span,
+.my-trade-request-copy small {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+}
+.my-trade-request-status {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  text-align: right;
+  white-space: nowrap;
+}
+.my-screen-filters { display: grid; gap: var(--app-space-3); }
+.my-screen .app-panel-body { gap: var(--app-space-4); }
+.my-family-filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  min-height: 44px;
+}
+.my-family-filter-row button { min-height: 48px; padding-inline: 16px; }
+.my-account-filter-chips { display: flex; gap: 8px; margin-left: auto; }
+.my-family-section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  margin-right: auto;
+}
+.my-family-section-title {
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--app-text);
+  font-size: var(--app-size-section);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-section);
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+.my-family-section-count {
+  flex: 0 0 auto;
+  color: var(--app-muted);
+  font-size: var(--app-size-section);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-section);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.my-family-role-trigger {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.my-family-role-trigger > svg { flex: 0 0 14px; }
+.my-family-role-trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-calendar-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  opacity: 0;
+  margin-top: calc(-1 * var(--app-space-4));
+  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1), opacity 200ms ease, margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-calendar-disclosure.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0;
+}
+.my-calendar-disclosure + .stack {
+  margin-top: 0;
+  transition: margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-calendar-disclosure:not(.is-open) + .stack {
+  margin-top: calc(-1 * var(--app-space-4));
+}
+.my-calendar-disclosure-content {
+  min-height: 0;
+  overflow: hidden;
+}
+.my-calendar-month-viewport {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.my-payment-calendar {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 12px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+  color: var(--app-text);
+}
+.my-payment-calendar-selection-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: grid-template-rows 280ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease, transform 280ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-payment-calendar-selection-wrap.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+.my-payment-calendar-selection {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  border-top: 1px solid transparent;
+}
+.my-payment-calendar-selection-wrap.is-open .my-payment-calendar-selection {
+  padding-top: 10px;
+  border-top-color: var(--app-border);
+}
+.my-payment-calendar-selection-heading {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-label);
+}
+.my-payment-calendar-selection-list { display: grid; gap: 4px; }
+.my-payment-calendar-selection-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--app-surface-inset);
+}
+.my-payment-calendar-selection-item strong,
+.my-payment-calendar-selection-item > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-payment-calendar-selection-item strong { font-weight: var(--app-weight-medium); }
+.my-payment-calendar-selection-item > span { color: var(--app-muted); }
+.my-family-role-control {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+.my-family-role-picker {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  gap: 6px;
+  width: min(220px, calc(100vw - 32px));
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--app-control-border);
+  border-radius: 18px;
+  background: var(--app-control-material);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--app-shadow);
+  color: var(--app-text);
+  animation: my-family-role-picker-in 180ms cubic-bezier(.22, 1, .36, 1) both;
+  transform-origin: top right;
+}
+.my-family-role-picker-label {
+  padding: 3px 8px 2px;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+}
+.my-family-role-options { display: grid; gap: 8px; }
+.my-family-role-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--app-touch-min);
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-text);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-caption);
+  text-align: left;
+  transition: background-color 160ms ease, transform 140ms ease;
+}
+.my-family-role-option:hover { background: var(--app-secondary-bg); }
+.my-family-role-option:active { transform: scale(.985); }
+.my-family-role-option.is-active { background: var(--app-secondary-bg); }
+.my-family-role-option-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--app-secondary-bg);
+  color: var(--app-muted);
+}
+.my-family-role-option.is-active .my-family-role-option-icon { color: var(--app-text); }
+.my-family-role-option > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
+.my-family-role-option > .sm-system-symbol:last-child { flex: 0 0 auto; color: var(--app-text); }
+.my-family-filter-actions { position: relative; display: inline-flex; }
+.my-family-role-reset {
+  width: 100%;
+  min-height: var(--app-touch-min);
+  margin-top: 2px;
+  padding: 6px 8px;
+  border: 0;
+  border-top: 1px solid var(--app-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-medium);
+  text-align: left;
+}
+.my-family-role-reset:hover { background: var(--app-surface-inset); color: var(--app-text); }
+@keyframes my-family-role-picker-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .my-family-role-picker { animation: none; }
+  .my-family-role-option { transition: none; }
+}
+@media (max-width: 440px) {
+  .my-family-filter-row {
+    flex-wrap: nowrap;
+    column-gap: 6px;
+    row-gap: 0;
+  }
+  .my-family-section-heading {
+    flex: 0 0 auto;
+    margin-right: auto;
+  }
+  .app-shell .my-screen .my-family-filter-row .sm-market-filter-chip {
+    gap: 4px;
+    min-width: 0;
+    padding-inline: 13px;
+    font-size: 12px;
+  }
+  .my-family-filter-row > .my-family-role-control,
+  .my-family-filter-row > .my-family-filter-actions {
+    flex: 0 1 auto;
+  }
+  .my-family-filter-row > .my-family-filter-actions { margin-left: 0; }
+}
+@media (max-width: 360px) {
+  .my-family-filter-row { flex-wrap: wrap; row-gap: 8px; }
+  .my-family-section-heading { flex: 1 0 100%; }
+}
+.my-screen-filters .product-scope-switch { width: 100%; }
+.my-screen .product-scope-switch {
+  --scope-position: 0;
+  position: relative;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-control-material);
+  box-shadow: var(--app-control-shadow);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+.my-screen .product-scope-switch button {
+  min-height: var(--app-touch-min);
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: transparent;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-caption);
+  transition: background-color 220ms cubic-bezier(.22, 1, .36, 1), color 220ms ease, box-shadow 220ms ease;
+}
+.my-screen .product-scope-switch button.ui-button-primary {
+  background: transparent;
+  color: var(--app-text);
+  box-shadow: none;
+}
+.my-screen .product-scope-switch::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 4px auto 4px 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-nav-active);
+  box-shadow: var(--app-nav-active-shadow);
+  transform: translateX(calc(var(--scope-position) * 100%));
+  transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+  pointer-events: none;
+}
+.my-screen .product-scope-switch button { position: relative; z-index: 1; }
+.my-screen .product-scope-switch button.ui-button-tertiary {
+  border: 0;
+  background: transparent;
+  color: var(--app-muted);
+}
+.my-product-scope-swipe-viewport {
+  min-width: 0;
+  min-height: min(60vh, 620px);
+  overflow: hidden;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+}
+.my-product-scope-swipe-track {
+  align-items: flex-start;
+  display: flex;
+  user-select: none;
+  transform: translate3d(0, 0, 0);
+  width: 300%;
+  will-change: transform;
+}
+.my-product-scope-swipe-pane {
+  display: grid;
+  flex: 0 0 33.333333%;
+  gap: var(--app-space-4);
+  min-width: 0;
+  box-sizing: border-box;
+  padding-inline: 6px;
+}
+.my-product-scope-swipe-pane[aria-hidden="true"] { pointer-events: none; }
+.my-screen .my-account-listings {
+  display: grid;
+  gap: var(--app-space-3);
+  min-width: 0;
+}
+.my-screen .sm-listing-copy > span,
+.my-screen .sm-listing-price > span,
+.my-screen .sm-listing-detail,
+.my-screen .sm-market-family-avatar-name {
+  color: color-mix(in srgb, var(--app-text) 64%, var(--app-surface));
+  font-size: 14px;
+  line-height: 1.3;
+}
+.my-screen .my-listings-toolbar {
+  align-items: center;
+  display: flex;
+  gap: var(--app-space-3);
+  justify-content: space-between;
+  min-height: var(--app-touch-min);
+}
+.my-screen .my-account-listings-heading {
+  flex: 1 1 auto;
+  gap: var(--app-space-2);
+  justify-content: flex-start;
+  min-width: 0;
+}
+.my-screen .my-account-listings-heading h2 {
+  min-width: 0;
+}
+.my-screen .my-account-listings-heading > .legacy-badge {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 4px 8px;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+.app-shell button.my-listings-create-button {
+  flex: 0 0 auto;
+  min-height: var(--app-touch-min);
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+.actions-screen .request-card { border: 1px solid var(--app-control-border); box-shadow: var(--app-control-shadow); }
+.actions-screen .request-card-dates { display: grid; gap: 2px; }
+.actions-screen .request-card-pending .request-card-heading > .legacy-badge { background: var(--app-warning-soft); color: var(--app-warning); }
+.actions-screen .request-card-accepted .request-card-heading > .legacy-badge { background: var(--app-success-soft); color: var(--app-success); }
+.my-screen .empty-state { background: var(--app-surface-inset); border: 1px dashed var(--app-border); box-shadow: none; }
+.my-screen .empty-state-body { display: grid; gap: var(--app-space-3); margin-top: 0; }
+.my-screen .empty-state-body button { justify-self: start; width: auto; }
+.my-screen .my-family-empty-state {
+  align-items: center;
+  background: var(--app-surface);
+  border: 0;
+  border-radius: var(--app-radius-lg);
+  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  padding: 28px 24px;
+  text-align: center;
+}
+.my-screen .my-family-empty-state .empty-state-icon {
+  align-items: center;
+  background: var(--app-secondary-bg);
+  border-radius: 50%;
+  color: var(--app-muted);
+  display: grid;
+  height: 48px;
+  justify-items: center;
+  width: 48px;
+}
+.my-screen .my-family-empty-state > .ui-typography-subtitle { margin: 0; }
+.my-screen .my-family-empty-state .empty-state-body {
+  justify-items: center;
+  gap: 20px;
+  min-width: 0;
+  max-width: 280px;
+}
+.my-screen .my-family-empty-state .empty-state-body button { justify-self: center; min-height: 44px; }
+.my-screen .my-family-empty-state .empty-state-body > span {
+  color: var(--app-muted);
+  display: block;
+}
+.legacy-badge, .badge, .type-label, .request-card-heading em, .gb-request-head em {
+  background: var(--app-secondary-bg); border: 0; border-radius: var(--app-radius-sm); color: var(--app-muted);
+  padding: 5px 8px; font-size: var(--app-size-label); font-weight: 500; line-height: var(--app-leading-label); font-style: normal;
+}
+.inline-error, .notice-error { padding: 16px; margin-bottom: 12px; border: 0; border-radius: var(--app-radius-md); background: var(--app-danger-soft); color: var(--app-danger); font-size: var(--app-size-caption); line-height: var(--app-leading-caption); }
+.warning, .member-next-step-warning { background: var(--app-warning-soft); border-color: transparent; color: var(--app-warning); }
+.member-next-step-success, .flow-step-done { background: var(--app-success-soft); border-color: transparent; color: var(--app-success); }
+.member-next-step-info, .flow-step-active { background: var(--app-secondary-bg); border-color: transparent; color: var(--app-text); }
+.flow-step-pending { background: var(--app-surface-inset); border-color: transparent; }
+.requisite-box { padding: 20px; background: var(--app-secondary-bg); color: var(--app-text); }
+.action-summary { border: 0; border-radius: var(--app-radius-lg); overflow: hidden; background: var(--app-border); gap: 1px; box-shadow: none; }
+.action-summary > div { min-height: 72px; background: var(--app-surface); }
+.action-summary strong, .action-summary span { color: var(--app-text); }
+.owner-work-summary div, .metrics div, .detail-item, .owner-prepayment-control, .audit-event {
+  padding: 16px; background: var(--app-surface-inset); border: 0; border-radius: var(--app-radius-md);
+}
+.owner-work-summary strong, .detail-item strong, .family-overview-facts dd { font-size: var(--app-size-card); font-weight: 500; color: var(--app-text); }
+.owner-settings-form { border-color: var(--app-border); }
+.family-overview-metrics .detail-item { background: var(--app-surface-inset); }
+.family-overview-copy p + p { background: var(--app-surface-inset); }
+.family-overview-copy p { padding: 16px; }
+.family-overview-facts dt { color: var(--app-muted); }
+.family-overview-facts div + div { border-color: var(--app-border); }
+.family-detail-topbar { gap: 12px; }
+.family-detail-heading { min-width: 0; }
+.family-detail-icon-button, .gb-back { background: var(--app-surface); color: var(--app-text); border: 0; }
+.workspace-actions, .row-actions, .card-actions, .family-detail-actions .workspace-actions { gap: 12px; }
+.family-detail-actions button { min-height: 48px; }
+.family-details-page-public .family-detail-actions:has(button) {
+  position: sticky; bottom: var(--app-nav-clearance); z-index: 5;
+  padding: 8px 0; background: var(--app-bg);
+}
+.family-type-switch, .product-scope-switch, .owner-tabs, .gb-nav, .gb-role-switch {
+  padding: 4px; border: 0; border-radius: var(--app-radius-pill); background: var(--app-surface); box-shadow: none;
+}
+.family-type-switch { position: relative; }
+.family-type-switch::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 4px auto 4px 4px;
+  width: calc((100% - 8px) / 2);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-secondary-bg);
+  transform: translateX(calc(var(--family-type-position) * 100%));
+  transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+  pointer-events: none;
+}
+.family-type-switch button { position: relative; z-index: 1; }
+.app-shell :is(.family-type-switch, .product-scope-switch, .owner-tabs, .gb-nav, .gb-role-switch) button {
+  padding: 10px 12px; min-height: 44px; border: 0; border-radius: var(--app-radius-pill);
+  font-size: var(--app-size-caption); line-height: var(--app-leading-caption); background: transparent; color: var(--app-muted); font-weight: 500;
+}
+.app-shell :is(.family-type-switch, .product-scope-switch) .ui-button-primary,
+.app-shell :is(.owner-tabs, .gb-nav, .gb-role-switch) button.active {
+  background: var(--app-secondary-bg); color: var(--app-text);
+}
+.app-shell .family-type-switch .ui-button-primary { background: transparent; }
+.app-shell .owner-tabs button[aria-selected="true"] { background: var(--app-secondary-bg); color: var(--app-text); }
+.create-preview { padding: 16px; border: 0; border-radius: var(--app-radius-lg); background: var(--app-surface); color: var(--app-text); }
+.create-preview div { padding: 12px; background: var(--app-surface-inset); border-radius: var(--app-radius-md); }
+.create-preview strong { font-size: var(--app-size-card); font-weight: 600; line-height: var(--app-leading-card); color: var(--app-text); }
+.create-preview span, .create-preview p, .summary { font-size: var(--app-size-caption); line-height: var(--app-leading-caption); color: var(--app-muted); }
+.summary { background: var(--app-surface); border-radius: var(--app-radius-md); }
+.wizard-progress { height: 4px; border-radius: var(--app-radius-pill); background: var(--app-secondary-bg); overflow: hidden; }
+.wizard-progress-bar { height: 100%; background: var(--app-text); border-radius: inherit; }
+.wizard-steps { gap: 4px; }
+.wizard-step, .wizard-step-index { color: var(--app-muted); font-size: var(--app-size-label); }
+.wizard-step-index { background: var(--app-secondary-bg); }
+.wizard-step-current, .wizard-step-done { color: var(--app-text); }
+.wizard-step-current .wizard-step-index, .wizard-step-done .wizard-step-index { background: var(--app-accent); color: var(--app-accent-text); }
+.wizard-nav { padding-top: 16px; border: 0; }
+
+.gb-header { align-items: center; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; position: relative; }
+.gb-header > div { grid-column: 1 / -1; grid-row: 1; padding-inline: 56px; text-align: center; }
+.gb-header .gb-back { grid-column: 1; grid-row: 1; position: relative; z-index: 1; }
+.app-shell button.gb-back { width: 44px; height: 44px; padding: 0; overflow: hidden; border: 0; border-radius: 50%; background: var(--app-surface); }
+.gb-header span { font-size: var(--app-size-label); color: var(--app-muted); letter-spacing: 0; text-transform: none; }
+.gb-header h1 { margin-top: 0; }
+.gb-nav { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+.gb-role-switch { display: grid; grid-template-columns: 1fr 1fr; }
+.gb-toolbar { gap: 12px; }
+.gb-chip-row { gap: 8px; }
+.app-shell .gb-chip-row button { padding: 10px 16px; border: 0; border-radius: var(--app-radius-pill); background: var(--app-surface); color: var(--app-muted); font-size: var(--app-size-caption); }
+.app-shell .gb-chip-row button.active { background: var(--app-accent); color: var(--app-accent-text); }
+.gb-notice { padding: 16px; background: var(--app-success-soft); color: var(--app-success); }
+.gb-detail-card, .gb-info-card, .gb-form, .gb-buy-box { padding: 24px; }
+.gb-detail-card { align-items: start; justify-items: start; text-align: left; }
+.gb-detail-card h2 { font-size: var(--app-size-screen); font-weight: 600; margin-top: 8px; }
+.gb-detail-card > strong { font-size: var(--app-size-screen); font-weight: 600; line-height: var(--app-leading-screen); color: var(--app-text); }
+.gb-detail-card p { font-size: var(--app-size-body); line-height: var(--app-leading-body); color: var(--app-text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.gb-detail-card > small { display: block; margin-top: 12px; color: var(--app-muted); }
+.gb-detail-card > .gb-detail-author { font-size: var(--app-size-caption); margin-top: 16px; }
+.gb-detail-icon { height: 48px; width: 48px; border-radius: var(--app-radius-md); background: transparent; color: var(--app-text); }
+.app-shell .gb-primary-button { min-height: 50px; padding: 12px 20px; border: 0; border-radius: var(--app-radius-pill); font-size: var(--app-size-caption); font-weight: 600; }
+.gb-owner-actions, .gb-request-actions { gap: 12px; }
+.app-shell .gb-amount-presets button, .app-shell .gb-owner-actions button, .app-shell .gb-request-actions button {
+  padding: 10px 14px; min-height: 44px; border: 0; border-radius: var(--app-radius-pill); background: var(--app-secondary-bg); color: var(--app-text); font-size: var(--app-size-caption);
+}
+.app-shell .gb-amount-presets button.active { background: var(--app-accent); color: var(--app-accent-text); }
+.gb-operator-hint, .gb-price-insight, .gb-price-insight.neutral { padding: 16px; background: var(--app-surface-inset); border-radius: var(--app-radius-md); color: var(--app-muted); }
+.gb-request-list { display: grid; gap: 12px; background: transparent; border: 0; overflow: visible; }
+.gb-request-card { padding: 20px; border: 0; border-radius: var(--app-radius-lg); background: var(--app-surface); }
+.gb-request-list > *:not(:last-child) { border: 0; }
+.gb-request-head { flex-wrap: wrap; gap: 8px; }
+.gb-request-head strong { font-size: var(--app-size-card); color: var(--app-text); font-weight: 600; overflow-wrap: anywhere; }
+.gb-request-head span, .gb-request-card p, .gb-info-card p { color: var(--app-muted); font-size: var(--app-size-caption); line-height: var(--app-leading-caption); overflow-wrap: anywhere; }
+.gb-request-head em { white-space: normal; }
+.skeleton, .skeleton-card { background: var(--app-secondary-bg); border-color: transparent; }
+.tma-dark [data-monochrome-source="dark"] img { filter: brightness(0) invert(1); }
+.tma-light [data-monochrome-source="light"] img { filter: brightness(0); }
+@media (max-width: 360px) {
+  .app-shell .gb-header h1 { font-size: 1.5rem; }
+  .gb-detail-card, .gb-form, .gb-buy-box { padding: 20px; }
+  .app-shell .gb-nav button { padding-inline: 8px; font-size: var(--app-size-label); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .my-calendar-disclosure,
+  .my-calendar-disclosure + .stack { transition: none; }
+  .app-shell button, .wizard-progress-bar { transition: none; transform: none !important; }
+  .my-product-scope-swipe-track { will-change: auto; }
+  .my-payment-calendar-selection-wrap { transition: none; transform: none; }
+}
+
+/* HIG pass: hierarchy, legibility and system accessibility settings. */
+html {
+  font-size: 100%;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body, #root {
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+.app-shell :is(h1, h2, h3, h4, p, label, button, input, select, textarea) {
+  text-wrap: pretty;
+}
+
+.app-shell h1, .app-shell .app-panel-head h1, .app-shell .family-detail-heading h1, .app-shell .gb-header h1 {
+  font-weight: var(--app-weight-semibold);
+}
+
+.app-shell h2, .app-shell h3, .app-shell h4,
+.app-shell .ui-typography-heading, .app-shell .ui-typography-subtitle {
+  font-weight: var(--app-weight-semibold);
+}
+
+.app-shell .ui-typography-label,
+.app-shell .ui-typography-body,
+.app-shell .field-helper,
+.app-shell .field-error {
+  font-weight: var(--app-weight-regular);
+}
+
+.app-shell .gb-header span,
+.app-shell .gb-nav button,
+.app-shell .gb-role-switch button,
+.app-shell .gb-chip-row button,
+.app-shell .gb-form label,
+.app-shell .gb-buy-box label,
+.app-shell .owner-settings-card label,
+.app-shell .owner-prepayment-control label {
+  font-weight: var(--app-weight-medium);
+}
+
+.app-shell .family-card h3,
+.app-shell .family-card-title,
+.app-shell .family-overview-title h2,
+.app-shell .owner-details h4,
+.app-shell .section-inline-title h2,
+.app-shell .section-inline-title h3,
+.app-shell .gb-detail-card h2,
+.app-shell .gb-detail-card > strong {
+  font-weight: var(--app-weight-semibold);
+}
+
+.app-shell :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--app-focus);
+  outline-offset: 3px;
+}
+
+.app-shell :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-shell .family-details-page-public .family-detail-actions:has(button) {
+    background: var(--app-bg);
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .app-shell :is(input, select, textarea),
+  .app-shell :is(.family-type-switch, .product-scope-switch, .owner-tabs, .gb-nav, .gb-role-switch),
+  .app-shell :is(.empty-state, .family-workspace, .owner-details, .owner-settings-card, .detail-section, .status-block, .payment-row, .request-card, .family-card, .family-overview-card, .gb-empty, .gb-detail-card, .gb-info-card, .gb-form, .gb-buy-box) {
+    border: 1px solid var(--app-border-strong);
+  }
+}
+
+/* Shared iOS text roles for legacy family, marketplace and wizard surfaces. */
+.app-shell .family-card-title,
+.app-shell .family-compact-copy strong,
+.app-shell .family-row-price strong,
+.app-shell .market-fast-copy strong,
+.app-shell .market-section-actions strong,
+.app-shell .market-section-soon strong,
+.app-shell .market-empty-row strong,
+.app-shell .market-more-row strong,
+.app-shell .market-section-summary strong,
+.app-shell .metrics strong,
+.app-shell .owner-work-summary strong,
+.app-shell .detail-item strong,
+.app-shell .request-card-heading strong {
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: 0;
+}
+
+.app-shell .family-card-offer span,
+.app-shell .family-compact-copy small,
+.app-shell .family-row-price small,
+.app-shell .market-fast-copy small,
+.app-shell .market-more-row span,
+.app-shell .market-empty-row span,
+.app-shell .market-section-actions span,
+.app-shell .market-section-summary span,
+.app-shell .metrics span,
+.app-shell .owner-work-summary span,
+.app-shell .detail-item span,
+.app-shell .member-next-step span,
+.app-shell .family-detail-heading > span,
+.app-shell .family-overview-badges > span:not(.badge),
+.app-shell .family-overview-metrics .detail-item span,
+.app-shell .family-overview-facts dt,
+.app-shell .family-flow-compact .flow-step > span,
+.app-shell .wizard-step,
+.app-shell .wizard-step-index,
+.app-shell .wizard-step-label {
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  font-weight: var(--app-weight-regular);
+  letter-spacing: 0;
+}
+
+.app-shell .family-card-offer strong,
+.app-shell .family-overview-metrics .detail-item strong,
+.app-shell .family-overview-facts dd,
+.app-shell .action-summary strong {
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: 0;
+}
+
+.app-shell .family-card-subtitle,
+.app-shell .family-card-rules,
+.app-shell .family-card-note,
+.app-shell .market-hero-card p,
+.app-shell .market-section-soon p,
+.app-shell .family-overview-copy p,
+.app-shell .family-detail-status-section .status-block p,
+.app-shell .member-next-step p,
+.app-shell .field-helper,
+.app-shell .field-error,
+.app-shell .gb-operator-hint,
+.app-shell .gb-price-insight {
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+  font-weight: var(--app-weight-regular);
+  letter-spacing: 0;
+}
+
+.app-shell .market-hero-card span,
+.app-shell .market-section-top p,
+.app-shell .family-overview-badges .badge,
+.app-shell .family-flow-compact .flow-step strong,
+.app-shell .gb-request-head em,
+.app-shell .gb-request-actions button,
+.app-shell .gb-buy-box label,
+.app-shell .gb-form label,
+.app-shell .market-section-back,
+.app-shell .market-hero-action {
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  font-weight: var(--app-weight-medium);
+  letter-spacing: 0;
+}
+
+.app-shell .market-hero-card strong,
+.app-shell .market-section-top h1 {
+  font-size: var(--app-size-screen);
+  line-height: var(--app-leading-screen);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: -.018em;
+}
+
+.app-shell .family-detail-heading h1,
+.app-shell .family-overview-title h2,
+.app-shell .detail-section h3,
+.app-shell .owner-details h4,
+.app-shell .section-inline-title h2,
+.app-shell .section-inline-title h3,
+.app-shell .panel h2 {
+  letter-spacing: -.01em;
+}
+
+.app-shell .section-inline-title > span {
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: 0;
+}
+
+.app-shell .section-inline-title > .legacy-badge {
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  font-weight: var(--app-weight-medium);
+}
+
+/* HeroUI calendar keeps navigation and keyboard behavior accessible while the
+   payment cells follow the same compact surfaces as the rest of this screen. */
+.my-payment-calendar-hero {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  color: var(--app-text);
+  font-family: var(--app-font-family);
+}
+
+.my-payment-calendar-hero .calendar__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 4px;
+  padding: 0 0 12px;
+}
+
+.my-payment-calendar-month-heading {
+  position: relative;
+  min-width: 0;
+}
+
+.app-shell button.my-payment-calendar-month-button {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  width: 100%;
+  min-width: var(--app-touch-min);
+  min-height: var(--app-touch-min);
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-text);
+  text-align: left;
+}
+
+.app-shell button.my-payment-calendar-month-button:hover {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+
+.app-shell button.my-payment-calendar-month-button:focus-visible {
+  outline: 2px solid var(--app-focus);
+  outline-offset: -2px;
+}
+
+.my-payment-calendar-month-name {
+  font-size: var(--app-size-card);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-card);
+  text-transform: capitalize;
+}
+
+.my-payment-calendar-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-label);
+}
+
+.my-payment-calendar-hero .calendar__heading {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: var(--app-size-card);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-card);
+  letter-spacing: -.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-payment-calendar-hero .calendar__nav-button {
+  width: var(--app-touch-min);
+  min-width: var(--app-touch-min);
+  height: var(--app-touch-min);
+  min-height: var(--app-touch-min);
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-muted);
+}
+
+.my-payment-calendar-hero .calendar__nav-button:hover,
+.my-payment-calendar-hero .calendar__nav-button[data-hovered="true"] {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+
+.my-payment-calendar-hero .calendar__nav-button:focus-visible,
+.my-payment-calendar-hero .calendar__nav-button[data-focus-visible="true"] {
+  outline: 2px solid var(--app-focus);
+  outline-offset: -2px;
+}
+
+.my-payment-calendar-hero .calendar__nav-button-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total {
+  display: grid;
+  grid-template-rows: var(--app-leading-label) 22px;
+  flex: 0 0 auto;
+  gap: 0;
+  width: 82px;
+  min-width: 82px;
+  text-align: right;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total > span {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-label);
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total > strong {
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 18px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 22px;
+  letter-spacing: -.018em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total.is-empty > strong {
+  font-size: var(--app-size-label);
+  line-height: 22px;
+}
+
+.my-payment-calendar-hero .calendar__grid {
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  row-gap: 8px;
+}
+
+.my-payment-calendar-hero .calendar__grid-header,
+.my-payment-calendar-hero .calendar__grid-body,
+.my-payment-calendar-hero .calendar__grid-header > tr,
+.my-payment-calendar-hero .calendar__grid-body > tr {
+  display: contents;
+}
+
+.my-payment-calendar-hero .calendar__grid th,
+.my-payment-calendar-hero .calendar__grid td {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.my-payment-calendar-hero .calendar__header-cell {
+  min-width: 0;
+  padding: 0 0 4px;
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: var(--app-weight-medium);
+  line-height: 16px;
+  text-align: center;
+}
+
+.my-payment-calendar-hero .calendar__grid-body > tr:first-child > td {
+  margin-top: 0;
+}
+
+.my-payment-calendar-hero .calendar__cell {
+  display: grid;
+  width: 100%;
+  height: 68px;
+  min-height: 68px;
+  padding: 6px 3px 5px;
+  grid-template-rows: 32px 14px;
+  row-gap: 8px;
+  align-content: space-between;
+  justify-items: center;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--app-surface) 76%, var(--app-secondary-bg) 24%);
+  color: var(--app-muted);
+  font-family: var(--app-font-family);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 14px;
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.my-payment-calendar-hero .calendar__cell.has-event {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-outside-month="true"] {
+  background: transparent;
+  color: transparent;
+  opacity: 1;
+  pointer-events: none;
+}
+
+.my-payment-calendar-hero .calendar__cell[data-selected="true"] {
+  border-color: transparent;
+  background: var(--app-nav-active);
+  color: var(--app-text);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-today="true"] {
+  border-color: var(--app-border-strong);
+  background: color-mix(in srgb, var(--app-surface) 76%, var(--app-secondary-bg) 24%);
+}
+
+.my-payment-calendar-hero .calendar__cell.has-event[data-today="true"] {
+  background: var(--app-secondary-bg);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-selected="true"][data-today="true"] {
+  background: var(--app-nav-active);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-focus-visible="true"] {
+  outline: 2px solid var(--app-focus);
+  outline-offset: 2px;
+}
+
+.my-payment-calendar-hero .calendar__cell[data-pressed="true"] {
+  transform: scale(.97);
+}
+
+.my-payment-calendar-hero .calendar__cell:not(.has-event):not([data-outside-month="true"]):hover {
+  background: color-mix(in srgb, var(--app-surface) 76%, var(--app-secondary-bg) 24%);
+}
+
+.my-payment-calendar-hero .my-payment-calendar-event-logos {
+  display: inline-flex;
+  grid-row: 1;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 32px;
+  gap: 2px;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-event-logos .service-logo {
+  flex: 0 1 32px;
+  min-width: 0;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-extra-count {
+  grid-row: 2;
+  grid-column: 1;
+  justify-self: start;
+  margin-inline-start: 4px;
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: var(--app-weight-semibold);
+}
+
+.my-payment-calendar-hero .my-payment-calendar-day-number {
+  grid-row: 2;
+  grid-column: 1;
+  justify-self: end;
+  margin-inline-end: 4px;
+  color: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .my-payment-calendar-hero .calendar__cell {
+    transition: none;
+    transform: none !important;
+  }
+}

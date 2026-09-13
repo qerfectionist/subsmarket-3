@@ -60,6 +60,7 @@ def create_marketplace_listing(
         expires_at=now + timedelta(days=settings.marketplace_listing_days),
         published_at=now,
     )
+    listing.seller = user
     listing.operator = operator
     try:
         with db.begin_nested():
@@ -305,7 +306,10 @@ def _get_listing(db: Session, listing_id: UUID | None) -> MarketplaceListing:
         raise RuntimeError("Marketplace listing id is missing")
     listing = db.scalar(
         select(MarketplaceListing)
-        .options(joinedload(MarketplaceListing.operator))
+        .options(
+            joinedload(MarketplaceListing.operator),
+            joinedload(MarketplaceListing.seller),
+        )
         .where(MarketplaceListing.id == listing_id)
     )
     if listing is None:
@@ -320,7 +324,10 @@ def _get_owned_listing_for_update(
 ) -> MarketplaceListing:
     listing = db.scalar(
         select(MarketplaceListing)
-        .options(selectinload(MarketplaceListing.operator))
+        .options(
+            selectinload(MarketplaceListing.operator),
+            joinedload(MarketplaceListing.seller),
+        )
         .where(MarketplaceListing.id == listing_id)
         .with_for_update()
     )

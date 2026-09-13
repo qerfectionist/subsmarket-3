@@ -1,16 +1,11 @@
-import { useMemo, useState } from "react";
-import { Button as WorldButton } from "@worldcoin/mini-apps-ui-kit-react";
-import {
-  ArrowLeft,
-  Check,
-  CirclePause,
-  KeyRound,
-  MessageCircle,
-  Pencil,
-  Plus,
-  RefreshCw,
-  X
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Button as AppButton } from "../components/ui";
+import { ListingAuthor } from "../components/ListingAuthor";
+import { ServiceLogo } from "../components/branding";
+import { AccountListingCard as ListingRow } from "../components/ListingCard";
+import { AsyncContent } from "../components/AsyncContent";
+import { SystemSymbol } from "../components/SystemSymbol";
+import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 
 import { formatDate, formatError, normalizeText } from "../format";
 import {
@@ -52,14 +47,16 @@ const EMPTY_FORM: AccountListingCreate = {
 export function AccountsScreen({
   onBack,
   initialMode = "catalog",
-  initialRequestRole = "buyer"
+  initialRequestRole = "buyer",
+  initialListingId
 }: {
   onBack: () => void;
-  initialMode?: "catalog" | "requests";
+  initialMode?: "catalog" | "requests" | "mine" | "create";
   initialRequestRole?: MarketplaceRequestRole;
+  initialListingId?: string | null;
 }) {
-  const [mode, setMode] = useState<ScreenMode>(initialMode);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mode, setMode] = useState<ScreenMode>(initialListingId ? "detail" : initialMode);
+  const [selectedId, setSelectedId] = useState<string | null>(initialListingId ?? null);
   const [service, setService] = useState<string | null>(null);
   const [sort, setSort] = useState<MarketplaceSort>("recent");
   const [requestRole, setRequestRole] =
@@ -69,6 +66,7 @@ export function AccountsScreen({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const originMode: ScreenMode = initialListingId ? "catalog" : initialMode;
 
   const servicesQuery = useAccountServices();
   const listingsQuery = useAccountListings(service, sort);
@@ -166,53 +164,56 @@ export function AccountsScreen({
   }
 
   function goBack() {
-    if (mode === "catalog") return onBack();
-    setMode("catalog");
+    if (mode === originMode) return onBack();
+    setMode(originMode);
     setSelectedId(null);
     setEditingId(null);
   }
 
+  useTelegramBackButton(true, goBack);
+  useEffect(() => {
+    document.querySelector(".app-shell")?.scrollTo({ top: 0, behavior: "auto" });
+  }, [mode, selectedId]);
+
   return (
     <div className="gb-screen" data-testid="accounts-screen">
       <header className="gb-header">
-        <button type="button" className="gb-back" onClick={goBack}>
-          <ArrowLeft size={20} />Назад
+        <button type="button" className="gb-back" aria-label="Назад" onClick={goBack}>
+          <SystemSymbol name="arrow.left" size={20} />
         </button>
-        <div><span>аккаунты и доступы</span><h1>{screenTitle(mode)}</h1></div>
+        <div><h1>{screenTitle(mode)}</h1></div>
       </header>
-      <nav className="gb-nav" aria-label="Раздел аккаунтов">
-        <NavButton active={mode === "catalog" || mode === "detail"} onClick={() => setMode("catalog")}>Купить</NavButton>
-        <NavButton active={mode === "mine"} onClick={() => setMode("mine")}>Мои объявления</NavButton>
-        <NavButton active={mode === "requests"} onClick={() => setMode("requests")}>Заявки</NavButton>
-      </nav>
-      {error ? <div className="inline-error">{error}</div> : null}
-      {notice ? <div className="gb-notice">{notice}</div> : null}
+      {error ? <div className="inline-error" role="alert">{error}</div> : null}
+      {notice ? <div className="gb-notice" role="status">{notice}</div> : null}
+
+      <AsyncContent query={mode === "catalog" ? listingsQuery : mode === "detail" ? listingQuery : mode === "mine" ? myListingsQuery : mode === "requests" ? requestsQuery : servicesQuery}>
 
       {mode === "catalog" ? (
         <section className="gb-stack">
+          <p className="gb-safety-note">Доска объявлений: SubsMarket не принимает оплату, не передаёт аккаунты и не гарантирует результат сделки.</p>
           <div className="gb-toolbar">
             <div className="gb-chip-row">
               <button className={!service ? "active" : ""} onClick={() => setService(null)} type="button">Все</button>
               {services.map((item) => <button key={item.slug} className={service === item.slug ? "active" : ""} onClick={() => setService(item.slug)} type="button">{item.name}</button>)}
             </div>
-            <select value={sort} onChange={(event) => setSort(event.target.value as MarketplaceSort)}>
+            <select aria-label="Сортировка объявлений" value={sort} onChange={(event) => setSort(event.target.value as MarketplaceSort)}>
               <option value="recent">Сначала новые</option>
               <option value="price_asc">Цена: ниже</option>
               <option value="price_desc">Цена: выше</option>
             </select>
           </div>
           {listingsQuery.isLoading ? <div className="gb-empty">Загружаем...</div> : listings.length === 0 ? (
-            <div className="gb-empty"><strong>Объявлений пока нет</strong><span>Можно опубликовать первое предложение.</span><WorldButton onClick={startCreate}>Продать аккаунт</WorldButton></div>
-          ) : <div className="gb-list">{listings.map((item) => <ListingRow key={item.id} listing={item} onClick={() => openListing(item.id)} />)}</div>}
-          {listingsQuery.hasNextPage ? <WorldButton variant="tertiary" disabled={listingsQuery.isFetchingNextPage} onClick={() => listingsQuery.fetchNextPage()}>Показать ещё</WorldButton> : null}
+            <div className="gb-empty"><strong>Объявлений пока нет</strong><span>Можно опубликовать первое предложение.</span><AppButton onClick={startCreate}>Продать аккаунт</AppButton></div>
+          ) : <div className="sm-market-family-list">{listings.map((item) => <ListingRow key={item.id} listing={item} onClick={() => openListing(item.id)} />)}</div>}
+          {listingsQuery.hasNextPage ? <AppButton variant="tertiary" disabled={listingsQuery.isFetchingNextPage} onClick={() => listingsQuery.fetchNextPage()}>Показать ещё</AppButton> : null}
         </section>
       ) : null}
 
       {mode === "detail" ? (
         selectedListing ? <section className="gb-stack">
-          <article className="gb-detail-card"><div className="gb-detail-icon"><KeyRound size={28} /></div><span>{selectedListing.service.name}</span><h2>{selectedListing.title}</h2><strong>{formatKzt(selectedListing.price_kzt)}</strong>{selectedListing.description ? <p>{selectedListing.description}</p> : null}<small>Объявление до {formatDate(selectedListing.expires_at)}</small></article>
-          {!selectedListing.is_owner ? <div className="gb-buy-box"><button className="gb-primary-button" data-testid="account-submit-request" disabled={busy !== null || selectedListing.status !== "active"} onClick={() => run("account-request", () => createRequest.mutateAsync(selectedListing.id), "Заявка отправлена продавцу")} type="button">Купить</button></div> : <div className="gb-owner-actions"><WorldButton variant="tertiary" onClick={() => startEdit(selectedListing)}><Pencil size={18} />Изменить</WorldButton>{selectedListing.status === "active" ? <WorldButton variant="tertiary" onClick={() => run("account-pause", () => pauseListing.mutateAsync(selectedListing.id), "Объявление скрыто")}><CirclePause size={18} />Скрыть</WorldButton> : selectedListing.status === "paused" ? <WorldButton variant="tertiary" onClick={() => run("account-resume", () => resumeListing.mutateAsync(selectedListing.id), "Объявление опубликовано") }><Check size={18} />Показать</WorldButton> : null}{selectedListing.can_renew ? <WorldButton variant="tertiary" onClick={() => run("account-renew", () => renewListing.mutateAsync(selectedListing.id), "Срок продлён на 30 дней")}><RefreshCw size={18} />Продлить</WorldButton> : null}<WorldButton variant="tertiary" onClick={async () => { if (await showTelegramConfirm("Убрать объявление? Неотвеченные заявки закроются.")) { await run("account-archive", () => archiveListing.mutateAsync(selectedListing.id), "Объявление убрано"); setMode("mine"); } }}><X size={18} />Убрать</WorldButton></div>}
-          <p className="gb-safety-note">SubsMarket не принимает оплату и не передаёт аккаунт. После принятия заявки продавец пишет покупателю в Telegram.</p>
+          <article className="gb-detail-card"><ServiceLogo serviceSlug={selectedListing.service.slug} serviceName={selectedListing.service.name} size={48} /><h2>{selectedListing.title}</h2><strong>{formatKzt(selectedListing.price_kzt)}</strong>{selectedListing.description ? <p>{selectedListing.description}</p> : null}<ListingAuthor className="gb-detail-author" owner={selectedListing.owner} /><small>Объявление до {formatDate(selectedListing.expires_at)}</small></article>
+          {!selectedListing.is_owner ? <div className="gb-buy-box"><button className="gb-primary-button" data-testid="account-submit-request" disabled={busy !== null || selectedListing.status !== "active"} onClick={() => run("account-request", () => createRequest.mutateAsync(selectedListing.id), "Запрос отправлен продавцу")} type="button">Связаться с продавцом</button></div> : <div className="gb-owner-actions"><AppButton variant="tertiary" disabled={busy !== null} onClick={() => startEdit(selectedListing)}><SystemSymbol name="pencil" size={18} />Изменить</AppButton>{selectedListing.status === "active" ? <AppButton variant="tertiary" disabled={busy !== null} onClick={() => run("account-pause", () => pauseListing.mutateAsync(selectedListing.id), "Объявление скрыто")}><SystemSymbol name="pause.circle" size={18} />Скрыть</AppButton> : selectedListing.status === "paused" ? <AppButton variant="tertiary" disabled={busy !== null} onClick={() => run("account-resume", () => resumeListing.mutateAsync(selectedListing.id), "Объявление опубликовано") }><SystemSymbol name="checkmark" size={18} />Показать</AppButton> : null}{selectedListing.can_renew ? <AppButton variant="tertiary" disabled={busy !== null} onClick={() => run("account-renew", () => renewListing.mutateAsync(selectedListing.id), "Срок продлён на 30 дней")}><SystemSymbol name="arrow.clockwise" size={18} />Продлить</AppButton> : null}<AppButton variant="tertiary" disabled={busy !== null} onClick={async () => { if (await showTelegramConfirm("Убрать объявление? Неотвеченные запросы закроются.")) { await run("account-archive", () => archiveListing.mutateAsync(selectedListing.id), "Объявление убрано"); setMode("mine"); } }}><SystemSymbol name="xmark" size={18} />Убрать</AppButton></div>}
+          <p className="gb-safety-note">После принятия запроса продавец и покупатель связываются в Telegram. Условия, оплату и передачу доступа они согласуют самостоятельно.</p>
         </section> : <div className="gb-empty">Открываем объявление...</div>
       ) : null}
 
@@ -221,30 +222,22 @@ export function AccountsScreen({
         <label>Что продаёте<input maxLength={100} value={form.title} placeholder={`${activeService?.name ?? "Сервис"} на месяц`} onChange={(event) => setForm({ ...form, title: event.target.value })} required /></label>
         <label>Цена, ₸<input type="number" min="1" max="10000000" value={form.price_kzt} onChange={(event) => setForm({ ...form, price_kzt: Number(event.target.value) })} required /></label>
         <label>Описание<textarea rows={3} maxLength={500} value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Необязательно" /></label>
-        <WorldButton fullWidth type="submit" disabled={busy !== null || form.title.trim().length < 2}>{editingId ? "Сохранить" : "Опубликовать на 30 дней"}</WorldButton>
-        <p className="gb-safety-note">Не указывайте логин, пароль, номер карты или банковские реквизиты.</p>
+        <AppButton fullWidth type="submit" disabled={busy !== null || form.title.trim().length < 2}>{editingId ? "Сохранить" : "Опубликовать на 30 дней"}</AppButton>
+        <p className="gb-safety-note">Не указывайте логин, пароль, номер карты или банковские реквизиты. Все условия сделки продавец согласует с покупателем напрямую.</p>
       </form> : null}
 
-      {mode === "mine" ? <section className="gb-stack"><WorldButton fullWidth onClick={startCreate}><Plus size={18} />Продать аккаунт</WorldButton>{myListings.length === 0 ? <div className="gb-empty"><strong>Объявлений пока нет</strong></div> : <div className="gb-list">{myListings.map((item) => <ListingRow key={item.id} listing={item} onClick={() => openListing(item.id)} showStatus />)}</div>}{myListingsQuery.hasNextPage ? <WorldButton variant="tertiary" disabled={myListingsQuery.isFetchingNextPage} onClick={() => myListingsQuery.fetchNextPage()}>Показать ещё</WorldButton> : null}</section> : null}
+      {mode === "mine" ? <section className="gb-stack"><AppButton fullWidth onClick={startCreate}><SystemSymbol name="plus" size={18} />Продать аккаунт</AppButton>{myListings.length === 0 ? <div className="gb-empty"><strong>Объявлений пока нет</strong></div> : <div className="sm-market-family-list">{myListings.map((item) => <ListingRow key={item.id} listing={item} onClick={() => openListing(item.id)} showStatus />)}</div>}{myListingsQuery.hasNextPage ? <AppButton variant="tertiary" disabled={myListingsQuery.isFetchingNextPage} onClick={() => myListingsQuery.fetchNextPage()}>Показать ещё</AppButton> : null}</section> : null}
 
-      {mode === "requests" ? <section className="gb-stack"><div className="gb-role-switch"><button className={requestRole === "buyer" ? "active" : ""} onClick={() => setRequestRole("buyer")} type="button">Покупки</button><button className={requestRole === "seller" ? "active" : ""} onClick={() => setRequestRole("seller")} type="button">Продажи</button></div>{requests.length === 0 ? <div className="gb-empty"><strong>Заявок пока нет</strong></div> : <div className="gb-request-list">{requests.map((request) => <RequestCard key={request.id} request={request} busy={busy !== null} onAccept={(id) => run("account-accept", () => acceptRequest.mutateAsync(id), "Заявка принята")} onReject={(id) => run("account-reject", () => rejectRequest.mutateAsync({ id }), "Заявка отклонена")} onCancel={(id) => run("account-cancel", () => cancelRequest.mutateAsync({ id }), "Заявка отменена")} onRemind={(id) => run("account-remind", () => remindRequest.mutateAsync(id), "Напоминание отправлено")} onClose={(id, outcome) => run("account-close", () => closeRequest.mutateAsync({ id, outcome }), "Заявка закрыта")} />)}</div>}{requestsQuery.hasNextPage ? <WorldButton variant="tertiary" disabled={requestsQuery.isFetchingNextPage} onClick={() => requestsQuery.fetchNextPage()}>Показать ещё</WorldButton> : null}</section> : null}
+      {mode === "requests" ? <section className="gb-stack"><div className="gb-role-switch"><button className={requestRole === "buyer" ? "active" : ""} onClick={() => setRequestRole("buyer")} type="button">Мои запросы</button><button className={requestRole === "seller" ? "active" : ""} onClick={() => setRequestRole("seller")} type="button">Входящие</button></div>{requests.length === 0 ? <div className="gb-empty"><strong>Контактов пока нет</strong></div> : <div className="gb-request-list">{requests.map((request) => <RequestCard key={request.id} request={request} busy={busy !== null} onAccept={(id) => run("account-accept", () => acceptRequest.mutateAsync(id), "Запрос принят")} onReject={(id) => run("account-reject", () => rejectRequest.mutateAsync({ id }), "Запрос отклонён")} onCancel={(id) => run("account-cancel", () => cancelRequest.mutateAsync({ id }), "Запрос отменён")} onRemind={(id) => run("account-remind", () => remindRequest.mutateAsync(id), "Напоминание отправлено")} onClose={(id, outcome) => run("account-close", () => closeRequest.mutateAsync({ id, outcome }), "Контакт закрыт")} />)}</div>}{requestsQuery.hasNextPage ? <AppButton variant="tertiary" disabled={requestsQuery.isFetchingNextPage} onClick={() => requestsQuery.fetchNextPage()}>Показать ещё</AppButton> : null}</section> : null}
+      </AsyncContent>
     </div>
   );
 }
 
-function ListingRow({ listing, onClick, showStatus = false }: { listing: AccountListing; onClick: () => void; showStatus?: boolean }) {
-  return <button className="gb-listing-row" type="button" onClick={onClick}><span className="gb-listing-logo"><KeyRound size={22} /></span><span className="gb-listing-copy"><strong>{listing.title}</strong><small>{listing.service.name}{showStatus ? ` · ${listingStatus(listing.status)}` : ""}</small></span><span className="gb-listing-price"><strong>{formatKzt(listing.price_kzt)}</strong><small>за доступ</small></span></button>;
-}
-
 function RequestCard({ request, busy, onAccept, onReject, onCancel, onRemind, onClose }: { request: AccountRequest; busy: boolean; onAccept: (id: string) => void; onReject: (id: string) => void; onCancel: (id: string) => void; onRemind: (id: string) => void; onClose: (id: string, outcome: "sold" | "not_sold") => void }) {
-  return <article className="gb-request-card"><div className="gb-request-head"><div><strong>{request.title}</strong><span>{request.service_name} · {formatKzt(request.price_kzt)}</span></div><em>{requestStatus(request.status)}</em></div>{request.counterparty_username ? <p>@{request.counterparty_username}</p> : null}<div className="gb-request-actions">{request.role === "seller" && request.status === "pending" ? <><button disabled={busy} onClick={() => onAccept(request.id)} type="button"><Check size={17} />Принять</button><button disabled={busy} onClick={() => onReject(request.id)} type="button"><X size={17} />Отклонить</button></> : null}{request.role === "buyer" && request.status === "pending" ? <><button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button><button disabled={busy || !request.can_remind} onClick={() => onRemind(request.id)} type="button"><RefreshCw size={17} />Напомнить</button></> : null}{request.status === "accepted" && request.counterparty_username ? <button type="button" onClick={() => openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined)}><MessageCircle size={17} />Написать</button> : null}{request.role === "buyer" && request.status === "accepted" ? <button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button> : null}{request.role === "seller" && request.status === "accepted" ? <><button disabled={busy} onClick={() => onClose(request.id, "sold")} type="button">Продано</button><button disabled={busy} onClick={() => onClose(request.id, "not_sold")} type="button">Не продано</button></> : null}</div></article>;
-}
-
-function NavButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <button className={active ? "active" : ""} onClick={onClick} type="button">{children}</button>;
+  return <article className="gb-request-card"><div className="gb-request-head"><div><strong>{request.title}</strong><span>{request.service_name} · {formatKzt(request.price_kzt)}</span></div><em>{requestStatus(request.status)}</em></div>{request.counterparty_username ? <p>@{request.counterparty_username}</p> : null}<div className="gb-request-actions">{request.role === "seller" && request.status === "pending" ? <><button disabled={busy} onClick={() => onAccept(request.id)} type="button"><SystemSymbol name="checkmark" size={17} />Принять</button><button disabled={busy} onClick={() => onReject(request.id)} type="button"><SystemSymbol name="xmark" size={17} />Отклонить</button></> : null}{request.role === "buyer" && request.status === "pending" ? <><button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button><button disabled={busy || !request.can_remind} onClick={() => onRemind(request.id)} type="button"><SystemSymbol name="arrow.clockwise" size={17} />Напомнить</button></> : null}{request.status === "accepted" && request.counterparty_username ? <button type="button" onClick={() => openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined)}><SystemSymbol name="message" size={17} />Написать</button> : null}{request.role === "buyer" && request.status === "accepted" ? <button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button> : null}{request.role === "seller" && request.status === "accepted" ? <><button disabled={busy} onClick={() => onClose(request.id, "sold")} type="button">Продано</button><button disabled={busy} onClick={() => onClose(request.id, "not_sold")} type="button">Не продано</button></> : null}</div></article>;
 }
 
 const formatKzt = (value: number) => `${new Intl.NumberFormat("ru-RU").format(value)} ₸`;
-const screenTitle = (mode: ScreenMode) => ({ catalog: "Купить аккаунт", detail: "Объявление", create: "Объявление", mine: "Мои объявления", requests: "Заявки" })[mode];
-const listingStatus = (status: AccountListing["status"]) => ({ active: "активно", paused: "скрыто", expired: "истекло", archived: "убрано" })[status];
+const screenTitle = (mode: ScreenMode) => ({ catalog: "Объявления аккаунтов", detail: "Объявление", create: "Объявление", mine: "Мои объявления", requests: "Заявки" })[mode];
 const requestStatus = (status: AccountRequest["status"]) => ({ pending: "ожидает", accepted: "принята", rejected: "отклонена", cancelled: "отменена", closed: "закрыта", expired: "истекла" })[status];

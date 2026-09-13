@@ -18,7 +18,7 @@ from starlette.requests import Request
 from subsmarket.core.config import settings
 from subsmarket.core.database import Base, get_auth_db, get_db
 from subsmarket.core.rate_limit import InMemoryRateLimiter, RateLimitRule
-from subsmarket.identity.models import User
+from subsmarket.identity.models import PublicNamePool, User
 from subsmarket.identity.schemas import TelegramUserData
 from subsmarket.identity.service import upsert_user
 from subsmarket.identity.telegram import (
@@ -215,10 +215,28 @@ def test_parse_telegram_user_allows_local_development_fallback(
     assert telegram_user.first_name == "Local"
 
 
-def test_parse_telegram_user_rejects_remote_development_fallback(
+def test_parse_telegram_user_allows_development_fallback_through_tunnel(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "app_env", "development")
+    monkeypatch.setattr(settings, "dev_auth_enabled", True)
+
+    telegram_user = parse_telegram_user(
+        make_request("203.0.113.10"),
+        x_telegram_init_data=None,
+        x_dev_telegram_user_id=123,
+        x_dev_telegram_username="remote_dev",
+        x_dev_telegram_first_name="Remote",
+    )
+
+    assert telegram_user.telegram_user_id == 123
+    assert telegram_user.username == "remote_dev"
+
+
+def test_parse_telegram_user_rejects_development_fallback_outside_development(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "app_env", "production")
     monkeypatch.setattr(settings, "dev_auth_enabled", True)
 
     with pytest.raises(HTTPException) as exc:
@@ -227,6 +245,7 @@ def test_parse_telegram_user_rejects_remote_development_fallback(
             x_telegram_init_data=None,
             x_dev_telegram_user_id=123,
             x_dev_telegram_username="remote_dev",
+            x_dev_telegram_first_name="Remote",
         )
 
     assert exc.value.status_code == 401
@@ -256,7 +275,10 @@ def test_upsert_user_updates_existing_profile_without_duplicate() -> None:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(engine, tables=[User.__table__])
+    Base.metadata.create_all(
+        engine,
+        tables=[User.__table__, PublicNamePool.__table__],
+    )
     SessionLocal = sessionmaker(
         bind=engine,
         autoflush=False,
@@ -291,4 +313,17 @@ def test_upsert_user_updates_existing_profile_without_duplicate() -> None:
         assert updated.first_name == "New"
         assert updated.last_name == "User"
         assert updated.photo_url == "https://example.com/avatar.png"
+        assert updated.public_name
+        assert updated.public_name != updated.username
+        assert (
+            upsert_user(
+                db,
+                TelegramUserData(
+                    telegram_user_id=777001,
+                    username="another_username",
+                    first_name="Updated",
+                ),
+            ).public_name
+            == updated.public_name
+        )
         assert db.query(User).count() == 1

@@ -1570,6 +1570,7 @@ export interface components {
              */
             id: string;
             service: components["schemas"]["AccountServiceOut"];
+            owner: components["schemas"]["MarketplaceListingOwner"];
             /** Title */
             title: string;
             /** Price Kzt */
@@ -2262,6 +2263,7 @@ export interface components {
              */
             listing_type: "mobile_data";
             operator: components["schemas"]["MarketplaceOperatorOut"];
+            owner: components["schemas"]["MarketplaceListingOwner"];
             /** Price Per Gb Kzt */
             price_per_gb_kzt: number;
             /** Description */
@@ -2297,6 +2299,15 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** MarketplaceListingOwner */
+        MarketplaceListingOwner: {
+            /** Avatar Name */
+            avatar_name: string;
+            /** First Name */
+            first_name: string;
+            /** Photo Url */
+            photo_url?: string | null;
         };
         /** MarketplaceListingPageOut */
         MarketplaceListingPageOut: {
@@ -2588,6 +2599,8 @@ export interface components {
         };
         /** PublicOwner */
         PublicOwner: {
+            /** Avatar Name */
+            avatar_name: string;
             /** First Name */
             first_name: string;
             /** Photo Url */
@@ -6072,6 +6085,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunDueJobsResult"];
                 };
             };
         };

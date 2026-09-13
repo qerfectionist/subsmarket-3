@@ -32,7 +32,7 @@ from subsmarket.families.service import (
     mark_access_provided,
     remove_member,
 )
-from subsmarket.identity.models import User
+from subsmarket.identity.models import PublicNamePool, User
 from subsmarket.identity.schemas import TelegramUserData
 from subsmarket.identity.service import upsert_user
 from subsmarket.marketplace.account_models import (
@@ -538,6 +538,72 @@ def test_parallel_first_identity_requests_return_one_user() -> None:
     finally:
         with session_factory() as db:
             db.execute(delete(User).where(User.telegram_user_id == telegram_user_id))
+            db.commit()
+        engine.dispose()
+
+
+def test_parallel_new_users_claim_different_public_names() -> None:
+    assert POSTGRES_TEST_DATABASE_URL is not None
+    engine = create_engine(POSTGRES_TEST_DATABASE_URL, pool_size=4, max_overflow=0)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    suffix = uuid.uuid4().hex[:10]
+    telegram_users = [
+        TelegramUserData(
+            telegram_user_id=770000000 + int(suffix[:6], 16) + offset,
+            username=f"pool_user_{suffix}_{offset}",
+            first_name="Pool",
+        )
+        for offset in range(2)
+    ]
+    barrier = threading.Barrier(2)
+    results: list[tuple[uuid.UUID, str]] = []
+    errors: list[Exception] = []
+
+    def create(telegram_user: TelegramUserData) -> None:
+        try:
+            with session_factory() as db:
+                barrier.wait(timeout=10)
+                user = upsert_user(db, telegram_user)
+                results.append((user.id, user.public_name or ""))
+        except Exception as exc:  # pragma: no cover - reports exact DB error
+            errors.append(exc)
+
+    threads = [
+        threading.Thread(target=create, args=(telegram_user,), daemon=True)
+        for telegram_user in telegram_users
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=15)
+
+    try:
+        assert all(not thread.is_alive() for thread in threads)
+        assert errors == []
+        assert len(results) == 2
+        assert len({user_id for user_id, _ in results}) == 2
+        assert len({public_name for _, public_name in results}) == 2
+        assert all(public_name for _, public_name in results)
+        with session_factory() as db:
+            pool_entries = list(
+                db.scalars(
+                    select(PublicNamePool).where(
+                        PublicNamePool.assigned_user_id.in_(
+                            [user_id for user_id, _ in results]
+                        )
+                    )
+                ).all()
+            )
+            assert {entry.name for entry in pool_entries} == {
+                public_name for _, public_name in results
+            }
+    finally:
+        with session_factory() as db:
+            db.execute(
+                delete(User).where(
+                    User.id.in_([user_id for user_id, _ in results])
+                )
+            )
             db.commit()
         engine.dispose()
 

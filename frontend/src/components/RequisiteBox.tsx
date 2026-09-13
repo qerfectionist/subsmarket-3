@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button as WorldButton, Typography } from "@worldcoin/mini-apps-ui-kit-react";
+import { Button as AppButton, Typography } from "./ui";
 
 import { bankLabels } from "../labels";
 import { triggerTelegramImpact, triggerTelegramNotification } from "../telegram";
@@ -44,7 +44,7 @@ export function RequisiteBox({ requisite }: { requisite: PaymentRequisite }) {
         {phoneDisplay}
       </Typography>
       <div className="row-actions">
-        <WorldButton
+        <AppButton
           type="button"
           size="sm"
           variant="secondary"
@@ -53,9 +53,9 @@ export function RequisiteBox({ requisite }: { requisite: PaymentRequisite }) {
           onClick={handleReveal}
         >
           {revealed ? "Скрыть" : "Показать"}
-        </WorldButton>
+        </AppButton>
         {revealed ? (
-          <WorldButton
+          <AppButton
             type="button"
             size="sm"
             variant="tertiary"
@@ -64,7 +64,7 @@ export function RequisiteBox({ requisite }: { requisite: PaymentRequisite }) {
             onClick={handleCopy}
           >
             {copied ? "Скопировано" : "Копировать"}
-          </WorldButton>
+          </AppButton>
         ) : null}
       </div>
     </div>

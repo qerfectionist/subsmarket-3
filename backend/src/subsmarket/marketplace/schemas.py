@@ -51,10 +51,17 @@ class MarketplaceListingUpdate(BaseModel):
         return self
 
 
+class MarketplaceListingOwner(BaseModel):
+    avatar_name: str
+    first_name: str
+    photo_url: str | None = None
+
+
 class MarketplaceListingOut(BaseModel):
     id: UUID
     listing_type: Literal["mobile_data"]
     operator: MarketplaceOperatorOut
+    owner: MarketplaceListingOwner
     price_per_gb_kzt: int
     description: str | None = None
     status: Literal["active", "paused", "expired", "archived"]

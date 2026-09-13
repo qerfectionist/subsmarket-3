@@ -56,6 +56,7 @@ def create_account_listing(
         expires_at=now + timedelta(days=settings.marketplace_account_listing_days),
         published_at=now,
     )
+    listing.seller = user
     listing.service = service
     db.add(listing)
     db.flush()
@@ -220,7 +221,10 @@ def _get_listing(db: Session, listing_id: UUID | None) -> MarketplaceAccountList
         raise RuntimeError("Account listing id is missing")
     listing = db.scalar(
         select(MarketplaceAccountListing)
-        .options(joinedload(MarketplaceAccountListing.service))
+        .options(
+            joinedload(MarketplaceAccountListing.service),
+            joinedload(MarketplaceAccountListing.seller),
+        )
         .where(MarketplaceAccountListing.id == listing_id)
     )
     if listing is None:
@@ -233,7 +237,10 @@ def _get_owned_listing_for_update(
 ) -> MarketplaceAccountListing:
     listing = db.scalar(
         select(MarketplaceAccountListing)
-        .options(selectinload(MarketplaceAccountListing.service))
+        .options(
+            selectinload(MarketplaceAccountListing.service),
+            joinedload(MarketplaceAccountListing.seller),
+        )
         .where(MarketplaceAccountListing.id == listing_id)
         .with_for_update()
     )

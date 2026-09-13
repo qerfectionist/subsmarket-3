@@ -151,7 +151,6 @@ function setCssVar(name: string, value: string | number | undefined) {
 
 function applyTelegramTheme() {
   const app = webApp();
-  const theme = app?.themeParams ?? {};
   const previewTheme = import.meta.env.DEV
     ? new URLSearchParams(window.location.search).get("theme")
     : null;
@@ -160,79 +159,54 @@ function applyTelegramTheme() {
     (previewTheme !== "light" &&
       (app?.colorScheme === "dark" ||
         (!app && window.matchMedia?.("(prefers-color-scheme: dark)").matches === true)));
-  const fallback = isDark
-    ? {
-        bg: "#0f1620",
-        surface: "#182230",
-        secondaryBg: "#1f2a3a",
-        headerBg: "#0f1620",
-        text: "#f1f4f9",
-        muted: "#8a96a8",
-        link: "#4f8dff",
-        accent: "#4f8dff",
-        accentText: "#ffffff",
-        danger: "#ff6b6b",
-        bottomBarBg: "#182230",
-        border: "rgba(148, 163, 184, 0.22)"
-      }
-    : {
-        bg: "#eef1f6",
-        surface: "#ffffff",
-        secondaryBg: "#e4e9f2",
-        headerBg: "#f7f9fd",
-        text: "#111827",
-        muted: "#667085",
-        link: "#2481cc",
-        accent: "#2481cc",
-        accentText: "#ffffff",
-        danger: "#b42318",
-        bottomBarBg: "#ffffff",
-        border: "rgba(17, 24, 39, 0.08)"
-      };
-
-  setCssVar("--app-bg", theme.bg_color ?? fallback.bg);
-  setCssVar("--app-surface", theme.section_bg_color ?? fallback.surface);
-  setCssVar("--app-secondary-bg", theme.secondary_bg_color ?? fallback.secondaryBg);
-  setCssVar(
-    "--app-header-bg",
-    theme.header_bg_color ?? theme.secondary_bg_color ?? fallback.headerBg
-  );
-  setCssVar("--app-text", theme.text_color ?? fallback.text);
-  setCssVar("--app-muted", theme.hint_color ?? fallback.muted);
-  setCssVar(
-    "--app-subtitle",
-    theme.subtitle_text_color ?? theme.hint_color ?? fallback.muted
-  );
-  setCssVar(
-    "--app-section-header",
-    theme.section_header_text_color ?? theme.text_color ?? fallback.text
-  );
-  setCssVar("--app-link", theme.link_color ?? fallback.link);
-  setCssVar("--app-accent", theme.button_color ?? fallback.accent);
-  setCssVar(
-    "--app-accent-text",
-    theme.accent_text_color ?? theme.button_text_color ?? fallback.accentText
-  );
-  setCssVar("--app-danger", theme.destructive_text_color ?? fallback.danger);
-  setCssVar("--app-bottom-bar-bg", theme.bottom_bar_bg_color ?? fallback.bottomBarBg);
-  setCssVar(
-    "--app-border",
-    theme.section_separator_color ?? fallback.border
-  );
-
   const root = document.documentElement;
   root.classList.remove("tma-light", "tma-dark", "light", "dark");
   root.classList.add(isDark ? "tma-dark" : "tma-light", isDark ? "dark" : "light");
   root.dataset.theme = isDark ? "dark" : "light";
 
+  const theme = app?.themeParams ?? {};
+  const themeTokens: Array<[string, keyof TelegramThemeParams]> = [
+    ["--app-bg", "bg_color"],
+    ["--app-surface", "section_bg_color"],
+    ["--app-secondary-bg", "secondary_bg_color"],
+    ["--app-text", "text_color"],
+    ["--app-muted", "subtitle_text_color"],
+    ["--app-placeholder", "hint_color"],
+    ["--app-accent", "button_color"],
+    ["--app-accent-text", "button_text_color"],
+    ["--app-link", "link_color"],
+    ["--app-border", "section_separator_color"],
+    ["--app-header-bg", "header_bg_color"],
+    ["--app-bottom-bar-bg", "bottom_bar_bg_color"],
+    ["--app-section-header", "section_header_text_color"]
+  ];
+  for (const [token, source] of themeTokens) {
+    const value = theme[source];
+    if (value) setCssVar(token, value);
+  }
+  if (!theme.subtitle_text_color && theme.hint_color) {
+    setCssVar("--app-muted", theme.hint_color);
+  }
+  if (!theme.link_color && theme.button_color) {
+    setCssVar("--app-link", theme.button_color);
+  }
+  if (theme.bg_color) setCssVar("--app-surface-inset", theme.bg_color);
+  if (theme.button_color) setCssVar("--app-focus", theme.button_color);
+  if (theme.section_bg_color || theme.bottom_bar_bg_color) {
+    const glassColor = theme.bottom_bar_bg_color ?? theme.section_bg_color;
+    setCssVar("--app-glass", `color-mix(in srgb, ${glassColor} 88%, transparent)`);
+  }
+
+  // The app palette owns the surfaces; Telegram follows the selected theme.
+  const styles = getComputedStyle(root);
+  const canvas = styles.getPropertyValue("--app-bg").trim();
+  const surface = styles.getPropertyValue("--app-surface").trim();
   if (supportsWebAppVersion("6.1")) {
-    app?.setHeaderColor?.(
-      theme.header_bg_color ?? theme.secondary_bg_color ?? theme.bg_color ?? fallback.headerBg
-    );
-    app?.setBackgroundColor?.(theme.bg_color ?? fallback.bg);
+    app?.setHeaderColor?.(supportsWebAppVersion("6.9") ? canvas : "bg_color");
+    app?.setBackgroundColor?.(canvas);
   }
   if (supportsWebAppVersion("7.10")) {
-    app?.setBottomBarColor?.(theme.bottom_bar_bg_color ?? fallback.bottomBarBg);
+    app?.setBottomBarColor?.(surface);
   }
 }
 
@@ -283,12 +257,36 @@ export function initTelegramShell() {
 
   const handleTheme = () => applyTelegramTheme();
   const handleViewport = () => applyTelegramViewport();
+  const handleKeyboard = () => {
+    const viewport = window.visualViewport;
+    const focused = document.activeElement;
+    const editing = focused instanceof HTMLElement &&
+      focused.matches("input:not([type=checkbox]):not([type=radio]), textarea, [contenteditable=true]");
+    const visibleHeight = Math.min(app?.viewportHeight || window.innerHeight, viewport?.height || window.innerHeight);
+    const stableHeight = app?.viewportStableHeight || window.innerHeight;
+    const open = editing && (viewport?.scale ?? 1) === 1 && stableHeight - visibleHeight > 120;
+    document.documentElement.toggleAttribute("data-keyboard-open", open);
+    if (open) {
+      setCssVar("--app-keyboard-height", visibleHeight);
+      focused.scrollIntoView({ block: "nearest" });
+    }
+  };
+  const handleFocus = () => requestAnimationFrame(handleKeyboard);
+  window.visualViewport?.addEventListener("resize", handleKeyboard);
+  document.addEventListener("focusin", handleFocus);
+  document.addEventListener("focusout", handleFocus);
+  app?.onEvent?.("viewportChanged", handleKeyboard);
   app?.onEvent?.("themeChanged", handleTheme);
   app?.onEvent?.("viewportChanged", handleViewport);
   app?.onEvent?.("safeAreaChanged", handleViewport);
   app?.onEvent?.("contentSafeAreaChanged", handleViewport);
 
   return () => {
+    window.visualViewport?.removeEventListener("resize", handleKeyboard);
+    document.removeEventListener("focusin", handleFocus);
+    document.removeEventListener("focusout", handleFocus);
+    app?.offEvent?.("viewportChanged", handleKeyboard);
+    document.documentElement.removeAttribute("data-keyboard-open");
     app?.offEvent?.("themeChanged", handleTheme);
     app?.offEvent?.("viewportChanged", handleViewport);
     app?.offEvent?.("safeAreaChanged", handleViewport);
@@ -458,6 +456,11 @@ export function setTelegramMainButton(
   }
 
   button.setText?.(text);
+  const colors = getComputedStyle(document.documentElement);
+  button.setParams?.({
+    color: options?.color ?? colors.getPropertyValue("--app-accent").trim(),
+    text_color: options?.textColor ?? colors.getPropertyValue("--app-accent-text").trim()
+  });
   if (options?.color) {
     button.setParams?.({ color: options.color });
   }

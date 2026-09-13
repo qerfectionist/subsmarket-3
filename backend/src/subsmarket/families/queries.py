@@ -39,10 +39,15 @@ from subsmarket.families.schemas import (
     PublicOwner,
     RequestUserOut,
 )
+from subsmarket.identity.avatars import default_avatar_name
 from subsmarket.identity.models import User
 
 
-def to_family_out(family: Family) -> FamilyOut:
+def to_family_out(
+    family: Family,
+    *,
+    include_owner_photo: bool = False,
+) -> FamilyOut:
     return FamilyOut(
         id=family.id,
         service_id=family.service_id,
@@ -52,8 +57,12 @@ def to_family_out(family: Family) -> FamilyOut:
         service_variant=family.service.variant,
         plan_name=family.plan_name,
         owner=PublicOwner(
+            avatar_name=family.owner.public_name
+            or default_avatar_name(family.owner.id),
             first_name=family.owner.first_name,
-            photo_url=family.owner.photo_url,
+            photo_url=(
+                family.owner.photo_url if include_owner_photo else None
+            ),
         ),
         status=family.status,
         period=family.period,
@@ -86,7 +95,7 @@ def to_family_request_out(request: FamilyRequest) -> FamilyRequestOut:
         plan_name=request.family.plan_name,
         owner_username=(
             request.family.owner.username
-            if request.status in {"pending", "approved"}
+            if request.status == "approved"
             else None
         ),
         user_id=request.user_id,
@@ -362,7 +371,7 @@ def _my_family_out_from_memberships(
         )
         result.append(
             MyFamilyOut(
-                family=to_family_out(membership.family),
+                family=to_family_out(membership.family, include_owner_photo=True),
                 membership=to_member_out(membership),
                 payments=[to_payment_out(payment) for payment in payments],
                 pending_requests_count=pending_requests_count,
@@ -653,11 +662,15 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
     )
 
     return FamilyViewOut(
-        family=to_family_out(family),
+        family=to_family_out(
+            family,
+            include_owner_photo=family.owner_user_id == user.id
+            or membership is not None,
+        ),
         owner_username=(
             family.owner.username
             if membership is not None
-            or (request is not None and request.status in {"pending", "approved"})
+            or (request is not None and request.status == "approved")
             else None
         ),
         my_membership=to_member_out(membership) if membership else None,
