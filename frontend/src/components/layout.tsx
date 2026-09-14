@@ -156,13 +156,22 @@ export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
   onChange?: (value: "families" | "accounts" | "gigabytes") => void;
   familiesLabel?: string;
   dragPosition?: number;
+  activateOnPointerDown?: boolean;
 }>(function ProductScopeSwitch({
   value = "families",
   onChange,
   familiesLabel = "Семьи",
-  dragPosition
+  dragPosition,
+  activateOnPointerDown = false
 }, ref) {
   const position = dragPosition ?? ["families", "accounts", "gigabytes"].indexOf(value);
+  const handlePointerDown = (nextValue: "families" | "accounts" | "gigabytes") => {
+    if (activateOnPointerDown && nextValue !== value) onChange?.(nextValue);
+  };
+  const handleClick = (nextValue: "families" | "accounts" | "gigabytes") => {
+    if (activateOnPointerDown && nextValue === value) return;
+    onChange?.(nextValue);
+  };
   return (
     <div ref={ref} className="product-scope-switch" role="group" aria-label="Разделы" style={{ "--scope-position": position } as CSSProperties}>
       <AppButton
@@ -170,7 +179,8 @@ export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
         size="sm"
         aria-pressed={value === "families"}
         variant={value === "families" ? "primary" : "tertiary"}
-        onClick={() => onChange?.("families")}
+        onPointerDown={() => handlePointerDown("families")}
+        onClick={() => handleClick("families")}
       >
         {familiesLabel}
       </AppButton>
@@ -179,7 +189,8 @@ export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
         size="sm"
         aria-pressed={value === "accounts"}
         variant={value === "accounts" ? "primary" : "tertiary"}
-        onClick={() => onChange?.("accounts")}
+        onPointerDown={() => handlePointerDown("accounts")}
+        onClick={() => handleClick("accounts")}
       >
         Аккаунты
       </AppButton>
@@ -188,7 +199,8 @@ export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
         size="sm"
         aria-pressed={value === "gigabytes"}
         variant={value === "gigabytes" ? "primary" : "tertiary"}
-        onClick={() => onChange?.("gigabytes")}
+        onPointerDown={() => handlePointerDown("gigabytes")}
+        onClick={() => handleClick("gigabytes")}
       >
         ГБ
       </AppButton>

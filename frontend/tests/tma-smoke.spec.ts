@@ -211,6 +211,34 @@ test("My scope indicator starts with content on click", async ({ page }) => {
   expect(settledMotion.transitionDuration).toBe("0s");
 });
 
+test("My scope indicator responds on pointer down", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Мои", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("my-screen")).toBeVisible();
+
+  const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
+  const accountsButton = scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true });
+  await accountsButton.dispatchEvent("pointerdown", {
+    button: 0,
+    pointerId: 1,
+    pointerType: "mouse"
+  });
+
+  const motion = await scopeSwitch.evaluate((element) => ({
+    isMoving: element.dataset.scopeDragging === "true",
+    position: Number(element.style.getPropertyValue("--scope-position")),
+    transitionDuration: getComputedStyle(element, "::before").transitionDuration
+  }));
+  expect(motion.isMoving).toBe(true);
+  expect(motion.position).toBeGreaterThanOrEqual(0);
+  expect(motion.position).toBeLessThan(0.4);
+  expect(motion.transitionDuration).toBe("0s");
+  await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
+});
+
 test("My scope indicator follows the pointer during a swipe", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page

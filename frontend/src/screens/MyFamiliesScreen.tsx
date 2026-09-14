@@ -511,6 +511,7 @@ export function MyFamiliesScreen({
               ref={scopeSwitchRef}
               value={myProductScope}
               familiesLabel="Подписки"
+              activateOnPointerDown
               onChange={onChangeProductScope}
             />
           </div>
@@ -1576,14 +1577,40 @@ function MyProductScopePager({
 
     let position = positionRef.current;
     let velocity = Math.max(-4, Math.min(4, initialVelocity));
-    const stiffness = interaction === "click" ? 500 : 260;
-    const damping = interaction === "click" ? 44 : 32;
+    if (interaction === "click") {
+      const startPosition = position;
+      const startTime = performance.now();
+      const duration = 220;
+      onDragPositionChange?.(startPosition, true);
+
+      const step = (time: number) => {
+        const progress = Math.min((time - startTime) / duration, 1);
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        setPosition(startPosition + (target - startPosition) * easedProgress);
+        onDragPositionChange?.(positionRef.current, progress < 1);
+
+        if (progress >= 1) {
+          setPosition(target);
+          onDragPositionChange?.(target, false);
+          animationTargetRef.current = null;
+          animationFrameRef.current = null;
+          return;
+        }
+        animationFrameRef.current = requestAnimationFrame(step);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(step);
+      return;
+    }
+
+    const stiffness = 260;
+    const damping = 32;
     onDragPositionChange?.(position, true);
     let previousTime = performance.now();
     const step = (time: number) => {
       const deltaTime = Math.min((time - previousTime) / 1000, 0.032);
       previousTime = time;
-        const acceleration = (target - position) * stiffness - velocity * damping;
+      const acceleration = (target - position) * stiffness - velocity * damping;
       velocity += acceleration * deltaTime;
       position += velocity * deltaTime;
       setPosition(position);
