@@ -802,7 +802,6 @@ function MyScreenContextAction({
         onClick={onOpenOrders}
       >
         <SystemSymbol name="clipboard.list" size={20} />
-        <span>Заказы</span>
       </button>
     );
   }

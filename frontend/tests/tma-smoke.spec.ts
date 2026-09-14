@@ -374,6 +374,8 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
 
   const ordersTrigger = page.getByTestId("my-accounts-orders-trigger");
   await expect(ordersTrigger).toHaveAccessibleName("Заказы");
+  await expect(ordersTrigger.locator(".sm-system-symbol")).toHaveCount(1);
+  await expect(ordersTrigger).not.toContainText("Заказы");
   await ordersTrigger.click();
   await expect(page.getByTestId("accounts-screen")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Заявки", exact: true })).toBeVisible();
