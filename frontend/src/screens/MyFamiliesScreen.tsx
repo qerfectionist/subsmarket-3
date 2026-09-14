@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -1681,7 +1682,7 @@ function MyProductScopePager({
     if (target !== activeIndex) onChange(myProductScopeOrder[target]);
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (pointerRef.current) return;
     if (animationTargetRef.current === activeIndex) return;
     if (Math.abs(positionRef.current - activeIndex) < 0.001) {

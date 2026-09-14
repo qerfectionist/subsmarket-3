@@ -151,6 +151,44 @@ test("My sections switch with a horizontal swipe", async ({ page }) => {
   ).toHaveAttribute("aria-hidden", "false");
 });
 
+test("My scope indicator starts with content on click", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Мои", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("my-screen")).toBeVisible();
+
+  const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
+  const accountsButton = scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true });
+  await accountsButton.dispatchEvent("click");
+
+  const motion = await scopeSwitch.evaluate((element) => {
+    const track = document.querySelector<HTMLElement>(".my-product-scope-swipe-track");
+    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
+    if (!track || !pager) throw new Error("My product scope motion elements are missing");
+
+    const readTranslateX = (transform: string) =>
+      transform === "none" ? 0 : new DOMMatrix(transform).m41;
+    const switchWidth = element.getBoundingClientRect().width;
+    const pagerWidth = pager.getBoundingClientRect().width;
+    const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
+    const trackX = readTranslateX(getComputedStyle(track).transform);
+
+    return {
+      isMoving: element.dataset.scopeDragging === "true",
+      indicatorPosition: indicatorX / ((switchWidth - 8) / 3),
+      contentPosition: -trackX / pagerWidth,
+      transitionDuration: getComputedStyle(element, "::before").transitionDuration
+    };
+  });
+
+  expect(motion.isMoving).toBe(true);
+  expect(Math.abs(motion.indicatorPosition - motion.contentPosition)).toBeLessThan(0.02);
+  expect(motion.transitionDuration).toBe("0s");
+  await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
+});
+
 test("My scope indicator follows the pointer during a swipe", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page
