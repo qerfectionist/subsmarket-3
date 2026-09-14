@@ -71,6 +71,7 @@ test("owner and member complete the first payment family flow", async ({ page })
   await fillCreateField(page, "create-owner-rules-input", "Access first, payment after check.");
   await submitCreateFamily(page);
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
+  await expandFirstFamilyCard(page);
   await expect(page.locator(".family-workspace")).toContainText("Access first");
 
   await page
@@ -120,7 +121,7 @@ test("owner and member complete the first payment family flow", async ({ page })
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Заявка отправлена", { exact: true }).first()).toBeVisible();
   await expect(page.getByTestId("owner-chat-button")).toHaveCount(0);
-  await openNav(page, 1);
+  await openNav(page, 3);
   await expect(page.getByTestId("request-card")).toContainText("Apple One");
   await expect(page.getByTestId("request-owner-chat-button")).toHaveCount(0);
 
@@ -129,31 +130,28 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(notificationsButton).toBeVisible();
   await notificationsButton.click({ force: true });
   await waitForNetworkQuiet(page);
-  await page
-    .getByTestId("owner-details-button")
-    .evaluate((element) => (element as HTMLElement).click());
+  await openOwnerDetails(page);
   await expect(page.getByTestId("approve-request-button")).toBeVisible();
-  await page.getByTestId("approve-request-button").click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "approve-request-button");
   await expect(page.getByTestId("access-provided-button")).toBeVisible();
-  await page.getByTestId("access-provided-button").click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "access-provided-button");
   await expect(page.getByTestId("access-provided-button")).toHaveCount(0);
   await expect(page.getByTestId("remind-access-button")).toBeVisible();
-  await page.getByTestId("remind-access-button").click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "remind-access-button");
 
   await switchDevUser(page, "200002");
   await expect(page.getByTestId("market-notifications")).toHaveAttribute(
     "aria-label",
-    /Заявка принята/
+    /Заявка принята|Проверьте доступ/
   );
   await openNav(page, 1);
+  await expandFirstFamilyCard(page);
   await expect(page.getByTestId("confirm-access-button")).toBeVisible();
   await clickAndWait(page, "confirm-access-button");
   await openFamilyDetailsFromMine(page);
   await expect(page.getByTestId("owner-chat-button")).toBeVisible();
   await openNav(page, 1);
+  await expandFirstFamilyCard(page);
   await expect(page.locator(".requisite-box")).toBeVisible();
   await clickAndWait(page, "report-payment-button");
   await expect(page.getByTestId("cancel-payment-report-button")).toBeVisible();
@@ -162,12 +160,12 @@ test("owner and member complete the first payment family flow", async ({ page })
   await openNav(page, 1);
   await openOwnerDetails(page);
   await expect(page.getByTestId("confirm-payment-button").first()).toBeVisible();
-  await page.getByTestId("confirm-payment-button").first().click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "confirm-payment-button");
   await expect(page.getByTestId("confirm-payment-button")).toHaveCount(0);
 
   await switchDevUser(page, "200002");
   await openNav(page, 1);
+  await expandFirstFamilyCard(page);
   await expect(page.getByTestId("create-prepayment-button")).toBeVisible();
   await clickAndWait(page, "create-prepayment-button");
   await expect(page.locator(".payment-list")).toContainText("предоплата");
@@ -178,14 +176,13 @@ test("owner and member complete the first payment family flow", async ({ page })
   await openNav(page, 1);
   await openOwnerDetails(page);
   await expect(page.getByTestId("confirm-payment-button").first()).toBeVisible();
-  await page.getByTestId("confirm-payment-button").first().click({ force: true });
+  await clickAndWait(page, "confirm-payment-button");
   await expect(page.getByTestId("owner-prepayment-periods")).toBeVisible();
   await clickAndWait(page, "owner-record-prepayment-button");
   await expect(page.locator(".payment-list").last()).toContainText("предоплата");
 
   await selectOptionByLabel(page, "remove-member-reason", "Нет связи");
-  await page.getByTestId("remove-member-button").click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "remove-member-button");
   await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
 
   await switchDevUser(page, "200002");
@@ -237,7 +234,11 @@ test("subscription and tariff families stay in separate storefronts", async ({
   );
 
   await selectMarketSubscriptions(page);
-  await expect(page.getByTestId("family-card")).toHaveCount(0);
+  await expect(
+    page.locator(
+      '[data-catalog-type="subscription"][aria-hidden="false"] [data-testid="family-card"]'
+    )
+  ).toHaveCount(0);
 });
 
 test("create family form validates phone in real time", async ({ page }) => {
@@ -276,14 +277,13 @@ test("requisite phone is masked until revealed", async ({ page }) => {
   await openNav(page, 1);
   await openOwnerDetails(page);
   await expect(page.getByTestId("approve-request-button")).toBeVisible();
-  await page.getByTestId("approve-request-button").click({ force: true });
-  await waitForNetworkQuiet(page);
-  await page.getByTestId("access-provided-button").click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "approve-request-button");
+  await clickAndWait(page, "access-provided-button");
 
   await switchDevUser(page, "200002");
   await openNav(page, 1);
-  await page.getByTestId("confirm-access-button").click({ force: true });
+  await expandFirstFamilyCard(page);
+  await clickAndWait(page, "confirm-access-button");
   await expect(page.locator(".requisite-box")).toBeVisible();
   await expect(page.locator(".requisite-box")).toContainText("***");
   await expect(page.locator(".requisite-box")).not.toContainText("+77001234567");
@@ -314,21 +314,153 @@ test("owner removes a member immediately with a reason", async ({ page }) => {
 
   await switchDevUser(page, "200001");
   await openNav(page, 1);
-  await page
-    .getByTestId("owner-details-button")
-    .evaluate((element) => (element as HTMLElement).click());
+  await openOwnerDetails(page);
   await expect(page.getByTestId("approve-request-button")).toBeVisible();
-  await page.getByTestId("approve-request-button").click({ force: true });
-  await waitForNetworkQuiet(page);
-  await page.getByTestId("access-provided-button").click({ force: true });
-  await waitForNetworkQuiet(page);
+  await clickAndWait(page, "approve-request-button");
+  await clickAndWait(page, "access-provided-button");
 
   await expect(page.getByTestId("remove-member-button")).toBeVisible();
   await selectOptionByLabel(page, "remove-member-reason", "Нет связи");
+  await clickAndWait(page, "remove-member-button");
+
+  await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
+});
+
+test("cancelling family closure does not call the mutation or show success", async ({
+  page
+}) => {
+  await createFamilyForOwner(page);
+  await page
+    .getByTestId("owner-settings-toggle")
+    .evaluate((element) => (element as HTMLElement).click());
+  await page.getByTestId("close-family-date-input").fill(futureDateISO(30));
+
+  const closeRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && /\/api\/families\/[^/]+\/close$/.test(path)) {
+      closeRequests.push(path);
+    }
+  });
+  dismissNextDialog(page);
+  await page.getByTestId("close-family-button").click();
+  await waitForNetworkQuiet(page);
+
+  expect(closeRequests).toHaveLength(0);
+  await expect(page.getByText("Семья закрывается", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("close-family-button")).toBeVisible();
+});
+
+test("cancelling leaving a family does not call the mutation or show success", async ({
+  page
+}) => {
+  await createFamilyWithActiveMember(page);
+
+  const leaveRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && /\/api\/families\/members\/[^/]+\/leave$/.test(path)) {
+      leaveRequests.push(path);
+    }
+  });
+  dismissNextDialog(page);
+  await page.getByTestId("leave-family-button").click({ force: true });
+  await waitForNetworkQuiet(page);
+
+  expect(leaveRequests).toHaveLength(0);
+  await expect(page.getByText("Вы вышли из семьи", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("leave-family-button")).toBeVisible();
+});
+
+test("cancelling member removal does not call the mutation or show success", async ({
+  page
+}) => {
+  await createFamilyWithActiveMember(page);
+  await switchDevUser(page, "200001");
+  await openNav(page, 1);
+  await openOwnerDetails(page);
+  await expect(page.getByTestId("remove-member-button")).toBeVisible();
+  await selectOptionByLabel(page, "remove-member-reason", "Нет связи");
+
+  const removeRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && /\/api\/families\/members\/[^/]+\/remove$/.test(path)) {
+      removeRequests.push(path);
+    }
+  });
+  dismissNextDialog(page);
   await page.getByTestId("remove-member-button").click({ force: true });
   await waitForNetworkQuiet(page);
 
-  await expect(page.getByTestId("remove-member-button")).toHaveCount(0);
+  expect(removeRequests).toHaveLength(0);
+  await expect(page.getByText("Участник удалён", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("remove-member-button")).toBeVisible();
+});
+
+test("mutation errors stay visible and do not trigger owner detail reload", async ({
+  page
+}) => {
+  await createOwnerPendingRequest(page);
+
+  const approveRequests: string[] = [];
+  const ownerDetailRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && /\/api\/families\/requests\/[^/]+\/approve$/.test(path)) {
+      approveRequests.push(path);
+    }
+    if (
+      request.method() === "GET" &&
+      (/\/api\/families\/[^/]+\/requests\/page$/.test(path) ||
+        /\/api\/families\/[^/]+\/members\/page$/.test(path) ||
+        /\/api\/families\/[^/]+\/payments$/.test(path))
+    ) {
+      ownerDetailRequests.push(path);
+    }
+  });
+  await page.route(/\/api\/families\/requests\/[^/]+\/approve$/, (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ detail: "Тестовая ошибка мутации" })
+    })
+  );
+
+  await clickAndWait(page, "approve-request-button");
+
+  expect(approveRequests).toHaveLength(1);
+  expect(ownerDetailRequests).toHaveLength(0);
+  await expect(page.locator(".inline-error")).toHaveText("Тестовая ошибка мутации");
+  await expect(page.getByTestId("approve-request-button")).toBeVisible();
+});
+
+test("successful mutation shows success and refreshes owner details once", async ({ page }) => {
+  await createOwnerPendingRequest(page);
+
+  const approveRequests: string[] = [];
+  const ownerDetailRequests: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (request.method() === "POST" && /\/api\/families\/requests\/[^/]+\/approve$/.test(path)) {
+      approveRequests.push(path);
+    }
+    if (
+      request.method() === "GET" &&
+      (/\/api\/families\/[^/]+\/requests\/page$/.test(path) ||
+        /\/api\/families\/[^/]+\/members\/page$/.test(path) ||
+        /\/api\/families\/[^/]+\/payments$/.test(path))
+    ) {
+      ownerDetailRequests.push(path);
+    }
+  });
+
+  await clickAndWait(page, "approve-request-button");
+
+  expect(approveRequests).toHaveLength(1);
+  expect(ownerDetailRequests.length).toBeGreaterThan(0);
+  await expect(page.getByText("Заявка принята", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("access-provided-button")).toBeVisible();
 });
 
 const CREATE_FIELD_STEP: Record<string, number> = {
@@ -344,6 +476,45 @@ const CREATE_FIELD_STEP: Record<string, number> = {
   "create-description-input": 3,
   "create-owner-rules-input": 3
 };
+
+async function createFamilyForOwner(page: Page) {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await openCreate(page);
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await submitCreateFamily(page);
+  await expect(page.getByTestId("family-workspace")).toHaveCount(1);
+  await expandFirstFamilyCard(page);
+  await expect(page.getByTestId("owner-settings-toggle")).toBeVisible();
+}
+
+async function createOwnerPendingRequest(page: Page) {
+  await createFamilyForOwner(page);
+  await switchDevUser(page, "200002");
+  await openNav(page, 0);
+  await openFirstFamilyAndRequest(page);
+  await switchDevUser(page, "200001");
+  await openNav(page, 1);
+  await openOwnerDetails(page);
+  await expect(page.getByTestId("approve-request-button")).toBeVisible();
+}
+
+async function createFamilyWithActiveMember(page: Page) {
+  await createOwnerPendingRequest(page);
+  await clickAndWait(page, "approve-request-button");
+  await expect(page.getByTestId("access-provided-button")).toBeVisible();
+  await clickAndWait(page, "access-provided-button");
+  await switchDevUser(page, "200002");
+  await openNav(page, 1);
+  await expandFirstFamilyCard(page);
+  await expect(page.getByTestId("confirm-access-button")).toBeVisible();
+  await clickAndWait(page, "confirm-access-button");
+  await expect(page.getByTestId("leave-family-button")).toBeVisible();
+}
+
+function dismissNextDialog(page: Page) {
+  page.removeAllListeners("dialog");
+  page.once("dialog", (dialog) => void dialog.dismiss());
+}
 
 async function fillCreateField(page: Page, testId: string, value: string) {
   await goToCreateWizardStep(page, CREATE_FIELD_STEP[testId] ?? 0);
@@ -491,14 +662,26 @@ function navScreenLocator(page: Page, index: number) {
 }
 
 async function openFamilyDetailsFromMine(page: Page) {
-  await page.getByTestId("workspace-open-family-button").first().click({ force: true });
-  await waitForNetworkQuiet(page);
+  const openButton = page.getByTestId("workspace-open-family-button").first();
+  if ((await openButton.count()) === 0) {
+    await expandFirstFamilyCard(page);
+  }
+  await clickAndWait(page, "workspace-open-family-button");
   await expect(page.locator(".detail-grid")).toBeVisible();
 }
 
 async function openOwnerDetails(page: Page) {
+  const detailsButton = page.getByTestId("owner-details-button");
+  if ((await detailsButton.count()) === 0) {
+    await expandFirstFamilyCard(page);
+  }
+  await detailsButton.evaluate((element) => (element as HTMLElement).click());
+}
+
+async function expandFirstFamilyCard(page: Page) {
   await page
-    .getByTestId("owner-details-button")
+    .getByTestId("family-card")
+    .first()
     .evaluate((element) => (element as HTMLElement).click());
 }
 

@@ -122,6 +122,9 @@ const emptyCreateForm: FamilyCreate = {
   payment_phone: ""
 };
 
+type MutationOutcome = "success" | "cancelled" | "error";
+type MutationConfirmation = () => Promise<boolean>;
+
 export function App() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -284,17 +287,26 @@ export function App() {
     return messages[label] ?? "Готово";
   }, []);
 
-  async function runMutation(label: string, mutation: () => Promise<unknown>) {
+  async function runMutation(
+    label: string,
+    mutation: () => Promise<unknown>,
+    confirm?: MutationConfirmation
+  ): Promise<MutationOutcome> {
     try {
-      triggerTelegramSelection();
       setBusy(label);
+      if (confirm && !(await confirm())) {
+        return "cancelled";
+      }
+      triggerTelegramSelection();
       setError(null);
       await mutation();
       triggerTelegramNotification("success");
       toast.success({ title: toastMessage(label) });
+      return "success";
     } catch (err) {
       triggerTelegramNotification("error");
       setError(formatError(err));
+      return "error";
     } finally {
       setBusy(null);
     }
@@ -762,13 +774,14 @@ export function App() {
             )
           }
           onCloseFamily={(familyId, closesOn) =>
-            void runMutation("close-family", async () => {
-              const ok = await showTelegramConfirm(
-                `Закрыть семью с ${closesOn}? Участники получат уведомление, новые заявки будут отменены.`
-              );
-              if (!ok) return;
-              await closeFamilyMutation.mutateAsync({ familyId, closesOn });
-            })
+            void runMutation(
+              "close-family",
+              () => closeFamilyMutation.mutateAsync({ familyId, closesOn }),
+              () =>
+                showTelegramConfirm(
+                  `Закрыть семью с ${closesOn}? Участники получат уведомление, новые заявки будут отменены.`
+                )
+            )
           }
           onConfirmAvailability={(familyId) =>
             void runMutation("confirm-availability", () =>
@@ -797,13 +810,14 @@ export function App() {
             void runMutation("ack-closing", () => ackClosingMutation.mutateAsync(familyId))
           }
           onLeaveFamily={(memberId) =>
-            void runMutation("leave-family", async () => {
-              const ok = await showTelegramConfirm(
-                "Покинуть семью? Будущие платежи отменятся, место освободится."
-              );
-              if (!ok) return;
-              await actualLeaveMutation.mutateAsync(memberId);
-            })
+            void runMutation(
+              "leave-family",
+              () => actualLeaveMutation.mutateAsync(memberId),
+              () =>
+                showTelegramConfirm(
+                  "Покинуть семью? Будущие платежи отменятся, место освободится."
+                )
+            )
           }
           onCreatePrepayment={(memberId) =>
             void runMutation("create-prepayment", () =>
@@ -819,55 +833,75 @@ export function App() {
           onApproveRequest={(familyId, request) =>
             runMutation("approve-request", () =>
               approveRequestMutation.mutateAsync({ familyId, requestId: request.id })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onRejectRequest={(familyId, request) =>
             runMutation("reject-request", () =>
               rejectRequestMutation.mutateAsync({ familyId, requestId: request.id })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onAccessProvided={(familyId, member) =>
             runMutation("access-provided", () =>
               markAccessMutation.mutateAsync({ familyId, memberId: member.id })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onRemindAccess={(familyId, member) =>
             runMutation("remind-access", () =>
               remindAccessMutation.mutateAsync({ familyId, memberId: member.id })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onCancelBeforeAccess={(familyId, member) =>
             runMutation("cancel-before-access", () =>
               cancelBeforeAccessMutation.mutateAsync({ familyId, memberId: member.id })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onRemoveMember={(familyId, member, reason: FamilyMemberRemovalReason) =>
-            runMutation("remove-member", async () => {
-              const ok = await showTelegramConfirm(
-                `Удалить @${member.user.username} из семьи? Причина: ${reason}.`
-              );
-              if (!ok) return;
-                await removeMemberMutation.mutateAsync({
+            runMutation(
+              "remove-member",
+              () =>
+                removeMemberMutation.mutateAsync({
                   familyId,
                   memberId: member.id,
                   reason
-                });
-            }).then(() => loadOwnerDetails(familyId))
+                }),
+              () =>
+                showTelegramConfirm(
+                  `Удалить @${member.user.username} из семьи? Причина: ${reason}.`
+                )
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onConfirmPayment={(familyId, payment) =>
             runMutation("confirm-payment", () =>
               confirmPaymentMutation.mutateAsync({ familyId, paymentId: payment.id })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onNotReceived={(familyId, payment) =>
             runMutation("not-received", () =>
               notReceivedMutation.mutateAsync({ familyId, paymentId: payment.id })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onRecordPrepayment={(familyId, member, periods) =>
             runMutation("record-prepayment", () =>
               recordPrepaymentMutation.mutateAsync({ familyId, memberId: member.id, periods })
-            ).then(() => loadOwnerDetails(familyId))
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
           }
           onCancelRequest={(requestId) =>
             void runMutation("cancel-request", () => cancelRequestMutation.mutateAsync(requestId))
@@ -896,7 +930,9 @@ export function App() {
           onCreateRequest={(familyId) =>
             void runMutation("create-request", () =>
               createRequestMutation.mutateAsync(familyId)
-            ).then(() => familyViewQuery.refetch())
+            ).then((outcome) =>
+              outcome === "success" ? familyViewQuery.refetch() : undefined
+            )
           }
           onCreateInvite={(familyId) =>
             void runMutation("create-invite", () => createInviteMutation.mutateAsync(familyId))
@@ -905,23 +941,25 @@ export function App() {
             void runMutation("rotate-invite", () => rotateInviteMutation.mutateAsync(familyId))
           }
           onDisableInvite={(familyId) =>
-            void runMutation("disable-invite", async () => {
-              const ok = await showTelegramConfirm(
-                "Отключить приглашение? Новый код не будет работать."
-              );
-              if (!ok) return;
-              await disableInviteMutation.mutateAsync(familyId);
-            })
+            void runMutation(
+              "disable-invite",
+              () => disableInviteMutation.mutateAsync(familyId),
+              () => showTelegramConfirm("Отключить приглашение? Новый код не будет работать.")
+            )
           }
           onUpdateVisibility={(familyId, isSearchVisible) =>
             void runMutation("update-visibility", () =>
               updateVisibilityMutation.mutateAsync({ familyId, isSearchVisible })
-            ).then(() => familyViewQuery.refetch())
+            ).then((outcome) =>
+              outcome === "success" ? familyViewQuery.refetch() : undefined
+            )
           }
           onConfirmAvailability={(familyId) =>
             void runMutation("confirm-availability", () =>
               confirmAvailabilityMutation.mutateAsync(familyId)
-            ).then(() => familyViewQuery.refetch())
+            ).then((outcome) =>
+              outcome === "success" ? familyViewQuery.refetch() : undefined
+            )
           }
           onConfirmAccess={(memberId) =>
             void runMutation("confirm-access", async () => {
@@ -930,7 +968,9 @@ export function App() {
                 ...current,
                 [memberId]: result.payment_requisite
               }));
-            }).then(() => familyViewQuery.refetch())
+            }).then((outcome) =>
+              outcome === "success" ? familyViewQuery.refetch() : undefined
+            )
           }
           onGetRequisite={(memberId) =>
             void runMutation("get-requisite", async () => {
@@ -943,12 +983,12 @@ export function App() {
           }
           onReportPayment={(payment) =>
             runMutation("report-paid", () => reportPaymentMutation.mutateAsync(payment.id)).then(
-              () => familyViewQuery.refetch()
+              (outcome) => outcome === "success" ? familyViewQuery.refetch() : undefined
             )
           }
           onCancelPaymentReport={(payment) =>
             runMutation("cancel-report", () => cancelReportMutation.mutateAsync(payment.id)).then(
-              () => familyViewQuery.refetch()
+              (outcome) => outcome === "success" ? familyViewQuery.refetch() : undefined
             )
           }
         />
