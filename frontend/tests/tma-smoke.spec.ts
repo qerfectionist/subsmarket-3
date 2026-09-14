@@ -187,6 +187,28 @@ test("My scope indicator starts with content on click", async ({ page }) => {
   expect(Math.abs(motion.indicatorPosition - motion.contentPosition)).toBeLessThan(0.02);
   expect(motion.transitionDuration).toBe("0s");
   await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
+
+  await page.waitForTimeout(320);
+  const settledMotion = await scopeSwitch.evaluate((element) => {
+    const track = document.querySelector<HTMLElement>(".my-product-scope-swipe-track");
+    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
+    if (!track || !pager) throw new Error("My product scope motion elements are missing");
+
+    const readTranslateX = (transform: string) =>
+      transform === "none" ? 0 : new DOMMatrix(transform).m41;
+    const switchWidth = element.getBoundingClientRect().width;
+    const pagerWidth = pager.getBoundingClientRect().width;
+    const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
+    const trackX = readTranslateX(getComputedStyle(track).transform);
+
+    return {
+      indicatorPosition: indicatorX / ((switchWidth - 8) / 3),
+      contentPosition: -trackX / pagerWidth,
+      transitionDuration: getComputedStyle(element, "::before").transitionDuration
+    };
+  });
+  expect(Math.abs(settledMotion.indicatorPosition - settledMotion.contentPosition)).toBeLessThan(0.01);
+  expect(settledMotion.transitionDuration).toBe("0s");
 });
 
 test("My scope indicator follows the pointer during a swipe", async ({ page }) => {

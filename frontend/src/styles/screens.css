@@ -562,7 +562,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: var(--app-nav-active);
   box-shadow: var(--app-nav-active-shadow);
   transform: translateX(calc(var(--scope-position) * 100%));
-  transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+  transition: none;
   pointer-events: none;
 }
 .my-screen .product-scope-switch[data-scope-dragging="true"]::before {
