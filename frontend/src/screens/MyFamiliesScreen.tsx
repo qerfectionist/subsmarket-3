@@ -1364,6 +1364,7 @@ function MyAccountPurchasesSection({
       }))}
       query={query}
       emptyMessage="Здесь появятся купленные вами аккаунты."
+      emptyStateClassName="my-account-orders-empty-state"
       title="Заказы"
     />
   );
@@ -1395,19 +1396,21 @@ function MyTradeRequestsSection({
   requests,
   query,
   emptyMessage,
-  title
+  title,
+  emptyStateClassName
 }: {
   requests: MyTradeRequestPreview[];
   query: MyTradeRequestsQuery;
   emptyMessage: string;
   title?: string;
+  emptyStateClassName?: string;
 }) {
   return (
     <AsyncContent query={query} label="Загружаем покупки...">
       <section className="my-account-listings my-trade-requests">
         {title ? <div className="my-family-filter-row my-generic-section-heading"><div className="my-family-section-heading"><h2 className="my-family-section-title">{title}</h2><span className="my-family-section-count">{requests.length}</span></div></div> : null}
         {requests.length === 0 ? (
-          <EmptyState title="Покупок пока нет">{emptyMessage}</EmptyState>
+          <EmptyState className={emptyStateClassName} title="Покупок пока нет">{emptyMessage}</EmptyState>
         ) : (
           <div className="my-trade-request-list">
             {requests.map((request) => (

@@ -681,6 +681,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .actions-screen .request-card-pending .request-card-heading > .legacy-badge { background: var(--app-warning-soft); color: var(--app-warning); }
 .actions-screen .request-card-accepted .request-card-heading > .legacy-badge { background: var(--app-success-soft); color: var(--app-success); }
 .my-screen .empty-state { background: var(--app-surface-inset); border: 1px dashed var(--app-border); box-shadow: none; }
+.my-screen .my-account-orders-empty-state { border: 0; }
 .my-screen .empty-state-body { display: grid; gap: var(--app-space-3); margin-top: 0; }
 .my-screen .empty-state-body button { justify-self: start; width: auto; }
 .my-screen .my-family-empty-state {

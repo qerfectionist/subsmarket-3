@@ -383,6 +383,7 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
   await expect(page.locator("#my-account-orders")).toHaveAttribute("aria-hidden", "false");
   await expect(page.getByRole("heading", { name: "Заказы", exact: true })).toBeVisible();
   await expect(page.getByText("Покупок пока нет", { exact: true })).toBeVisible();
+  await expect(page.locator(".my-account-orders-empty-state")).toHaveCSS("border-style", "none");
 
   await ordersTrigger.click();
   await expect(ordersTrigger).toHaveAttribute("aria-expanded", "false");
