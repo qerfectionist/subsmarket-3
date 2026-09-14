@@ -932,6 +932,7 @@ function FamilyRoleControl({
     <div
       ref={controlRef}
       className="my-family-role-control"
+      onPointerDown={(event) => event.stopPropagation()}
     >
       <button
         ref={triggerRef}

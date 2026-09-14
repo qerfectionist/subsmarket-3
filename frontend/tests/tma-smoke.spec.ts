@@ -347,7 +347,7 @@ test("My families open a role picker from the families scope", async ({ page }) 
   await picker.getByTestId("my-family-role-all").click();
   await expect(picker).toHaveCount(0);
 
-  const filterRowMetrics = await page.getByTestId("my-screen").locator(".my-family-filter-row").evaluate((element) => ({
+  const filterRowMetrics = await page.locator(".my-product-scope-swipe-pane[data-product-scope=\"families\"][aria-hidden=\"false\"] .my-family-filter-row").evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth
   }));
