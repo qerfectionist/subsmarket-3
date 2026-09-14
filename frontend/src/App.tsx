@@ -715,12 +715,6 @@ export function App() {
             setAccountsEntryRequestRole("buyer");
             setTab("accounts");
           }}
-          onOpenAccountOrders={() => {
-            setAccountsBackTab("mine");
-            setAccountsEntryMode("requests");
-            setAccountsEntryRequestRole("buyer");
-            setTab("accounts");
-          }}
           onChangeProductScope={setMyProductScope}
           onOpenAccountListing={(listingId) => {
             setAccountEntryId(listingId);

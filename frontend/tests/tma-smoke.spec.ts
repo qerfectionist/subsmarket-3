@@ -377,12 +377,15 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
   await expect(ordersTrigger.locator(".sm-system-symbol")).toHaveCount(1);
   await expect(ordersTrigger).not.toContainText("Заказы");
   await ordersTrigger.click();
-  await expect(page.getByTestId("accounts-screen")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Заявки", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Мои запросы", exact: true })).toBeVisible();
-
-  await page.getByRole("button", { name: "Назад", exact: true }).click();
   await expect(page.getByTestId("my-screen")).toBeVisible();
+  await expect(page.getByTestId("accounts-screen")).toHaveCount(0);
+  await expect(ordersTrigger).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#my-account-orders")).toHaveAttribute("aria-hidden", "false");
+  await expect(page.getByRole("heading", { name: "Заказы", exact: true })).toBeVisible();
+  await expect(page.getByText("Покупок пока нет", { exact: true })).toBeVisible();
+
+  await ordersTrigger.click();
+  await expect(ordersTrigger).toHaveAttribute("aria-expanded", "false");
 
   await scopeSwitch.getByRole("button", { name: "ГБ", exact: true }).click();
   const tradeTrigger = page.getByTestId("my-gigabytes-trade-trigger");

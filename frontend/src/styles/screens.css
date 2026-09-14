@@ -226,6 +226,24 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .my-screen-context-menu { animation: none; }
 }
 .my-trade-requests { min-width: 0; }
+.my-account-orders-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  opacity: 0;
+  margin-top: calc(-1 * var(--app-space-4));
+  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1), opacity 200ms ease, margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-account-orders-disclosure.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0;
+}
+.my-account-orders-disclosure-content {
+  min-height: 0;
+  overflow: hidden;
+  padding-inline: 6px;
+}
 .my-trade-request-list { display: grid; gap: 8px; }
 .my-trade-request {
   display: grid;
@@ -817,7 +835,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 }
 @media (prefers-reduced-motion: reduce) {
   .my-calendar-disclosure,
-  .my-calendar-disclosure + .stack { transition: none; }
+  .my-calendar-disclosure + .stack,
+  .my-account-orders-disclosure { transition: none; }
   .app-shell button, .wizard-progress-bar { transition: none; transform: none !important; }
   .my-product-scope-swipe-track { will-change: auto; }
   .my-screen .product-scope-switch::before { transition: none; }

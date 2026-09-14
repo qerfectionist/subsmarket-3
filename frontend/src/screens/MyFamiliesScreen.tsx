@@ -154,7 +154,6 @@ export function MyFamiliesScreen({
   onOpenMarketplacePurchaseActions,
   onOpenAccountSalesActions,
   onOpenAccountPurchaseActions,
-  onOpenAccountOrders,
   onChangeProductScope,
   onOpenAccountListing,
   onCreateAccountListing,
@@ -223,7 +222,6 @@ export function MyFamiliesScreen({
   onOpenMarketplacePurchaseActions?: () => void;
   onOpenAccountSalesActions?: () => void;
   onOpenAccountPurchaseActions?: () => void;
-  onOpenAccountOrders?: () => void;
   onChangeProductScope: (scope: MyProductScope) => void;
   onOpenAccountListing: (listingId: string) => void;
   onCreateAccountListing: () => void;
@@ -237,6 +235,7 @@ export function MyFamiliesScreen({
   const [familyRoleFilter, setFamilyRoleFilter] = useState<MyFamilyRoleFilter>("all");
   const [myMarketplaceRole, setMyMarketplaceRole] = useState<MarketplaceRequestRole>("seller");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isAccountOrdersOpen, setIsAccountOrdersOpen] = useState(false);
   const [isFamilyRolePickerOpen, setIsFamilyRolePickerOpen] = useState(false);
   const scopeSwitchRef = useRef<HTMLDivElement | null>(null);
 
@@ -252,6 +251,7 @@ export function MyFamiliesScreen({
   }
   useEffect(() => {
     if (myProductScope !== "families") setIsCalendarOpen(false);
+    if (myProductScope !== "accounts") setIsAccountOrdersOpen(false);
   }, [myProductScope]);
   const visibleFamilies = mode === "actions" ? actionFamilies : families;
   const filteredFamilies = visibleFamilies.filter(
@@ -270,7 +270,7 @@ export function MyFamiliesScreen({
   const myGigabytesListings = myGigabytesListingsQuery.data ?? [];
   const myAccountPurchaseRequestsQuery = useAccountRequests(
     "buyer",
-    mode === "mine" && myProductScope === "accounts" && myMarketplaceRole === "buyer"
+    mode === "mine" && myProductScope === "accounts" && isAccountOrdersOpen
   );
   const myAccountPurchaseRequests = myAccountPurchaseRequestsQuery.data ?? [];
   const myGigabytesPurchaseRequestsQuery = useMarketplaceRequests(
@@ -504,7 +504,8 @@ export function MyFamiliesScreen({
             onToggleCalendar={() => setIsCalendarOpen((open) => !open)}
             tradeRole={myMarketplaceRole}
             onTradeRoleChange={setMyMarketplaceRole}
-            onOpenOrders={onOpenAccountOrders}
+            isOrdersOpen={isAccountOrdersOpen}
+            onToggleOrders={() => setIsAccountOrdersOpen((open) => !open)}
           />
         ) : undefined}
       >
@@ -519,6 +520,21 @@ export function MyFamiliesScreen({
             />
           </div>
         ) : null}
+        {mode === "mine" && myProductScope === "accounts" ? (
+          <div
+            id="my-account-orders"
+            className={`my-account-orders-disclosure${isAccountOrdersOpen ? " is-open" : ""}`}
+            aria-hidden={!isAccountOrdersOpen}
+            inert={!isAccountOrdersOpen}
+          >
+            <div className="my-account-orders-disclosure-content">
+              <MyAccountPurchasesSection
+                requests={myAccountPurchaseRequests}
+                query={myAccountPurchaseRequestsQuery}
+              />
+            </div>
+          </div>
+        ) : null}
         {mode === "mine" ? (
           <MyProductScopePager
             value={myProductScope}
@@ -527,19 +543,12 @@ export function MyFamiliesScreen({
             renderPane={(scope) => {
               if (scope === "accounts") {
                 return (
-                  myMarketplaceRole === "buyer" ? (
-                    <MyAccountPurchasesSection
-                      requests={myAccountPurchaseRequests}
-                      query={myAccountPurchaseRequestsQuery}
-                    />
-                  ) : (
-                    <MyAccountListingsSection
-                      listings={myAccountListings}
-                      query={myAccountListingsQuery}
-                      onOpenListing={onOpenAccountListing}
-                      onCreateListing={onCreateAccountListing}
-                    />
-                  )
+                  <MyAccountListingsSection
+                    listings={myAccountListings}
+                    query={myAccountListingsQuery}
+                    onOpenListing={onOpenAccountListing}
+                    onCreateListing={onCreateAccountListing}
+                  />
                 );
               }
               if (scope === "gigabytes") {
@@ -740,14 +749,16 @@ function MyScreenContextAction({
   onToggleCalendar,
   tradeRole,
   onTradeRoleChange,
-  onOpenOrders
+  isOrdersOpen,
+  onToggleOrders
 }: {
   scope: MyProductScope;
   isCalendarOpen: boolean;
   onToggleCalendar: () => void;
   tradeRole: MarketplaceRequestRole;
   onTradeRoleChange: (role: MarketplaceRequestRole) => void;
-  onOpenOrders?: () => void;
+  isOrdersOpen: boolean;
+  onToggleOrders: () => void;
 }) {
   const [isTradeMenuOpen, setIsTradeMenuOpen] = useState(false);
   const controlRef = useRef<HTMLDivElement | null>(null);
@@ -795,13 +806,15 @@ function MyScreenContextAction({
     return (
       <button
         type="button"
-        className="my-screen-context-action my-screen-context-action--orders"
+        className={`my-screen-context-action${isOrdersOpen ? " is-active" : ""}`}
+        aria-expanded={isOrdersOpen}
+        aria-controls="my-account-orders"
         aria-label="Заказы"
         title="История покупок"
         data-testid="my-accounts-orders-trigger"
-        onClick={onOpenOrders}
+        onClick={onToggleOrders}
       >
-        <SystemSymbol name="clipboard.list" size={20} />
+        <SystemSymbol name="clipboard.list" size={24} />
       </button>
     );
   }
@@ -1327,6 +1340,8 @@ type MyTradeRequestPreview = {
   detail: string;
   status: string;
   counterparty?: string | null;
+  date?: string;
+  showMeta?: boolean;
 };
 
 function MyAccountPurchasesSection({
@@ -1343,11 +1358,13 @@ function MyAccountPurchasesSection({
         title: request.title,
         detail: `${request.service_name} · ${formatMyKzt(request.price_kzt)}`,
         status: myTradeRequestStatus(request.status),
-        counterparty: request.counterparty_username
+        counterparty: request.counterparty_username,
+        date: formatDateTime(accountOrderDate(request)),
+        showMeta: true
       }))}
       query={query}
-      emptyMessage="Здесь появятся выбранные вами доступы."
-      title="Аккаунты"
+      emptyMessage="Здесь появятся купленные вами аккаунты."
+      title="Заказы"
     />
   );
 }
@@ -1398,7 +1415,14 @@ function MyTradeRequestsSection({
                 <div className="my-trade-request-copy">
                   <strong>{request.title}</strong>
                   <span>{request.detail}</span>
-                  {request.counterparty ? (
+                  {request.showMeta ? (
+                    <>
+                      <small>
+                        Продавец: {request.counterparty ? `@${request.counterparty}` : "не указан"}
+                      </small>
+                      {request.date ? <small>Дата заказа: {request.date}</small> : null}
+                    </>
+                  ) : request.counterparty ? (
                     <small>@{request.counterparty}</small>
                   ) : null}
                 </div>
@@ -1421,6 +1445,10 @@ function MyTradeRequestsSection({
       </section>
     </AsyncContent>
   );
+}
+
+function accountOrderDate(request: AccountRequest) {
+  return request.closed_at ?? request.decided_at ?? request.created_at;
 }
 
 function formatMyKzt(value: number) {
