@@ -1480,21 +1480,25 @@ function MyAccountListingsSection({
   onOpenListing: (listingId: string) => void;
   onCreateListing: () => void;
 }) {
-  const [serviceFilter, setServiceFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const services = ["all", ...Array.from(new Set(listings.map((item) => item.service.name)))];
   const statuses = ["all", "active", "paused", "expired"];
-  const filteredListings = listings.filter((item) => (serviceFilter === "all" || item.service.name === serviceFilter) && (statusFilter === "all" || item.status === statusFilter));
+  const filteredListings = listings.filter((item) => statusFilter === "all" || item.status === statusFilter);
   const statusLabels: Record<string, string> = { all: "Статус", active: "Опубликовано", paused: "Приостановлено", expired: "Истекло" };
   return (
     <AsyncContent query={query} label="Загружаем объявления...">
       <section className="my-account-listings" data-testid="my-accounts-screen">
-        <div className="my-family-filter-row my-generic-section-heading"><div className="my-family-section-heading"><h2 className="my-family-section-title">Аккаунты</h2><span className="my-family-section-count">{filteredListings.length}</span></div><div className="my-account-filter-chips" onPointerDown={(event) => event.stopPropagation()}><button type="button" className={`sm-market-filter-chip${serviceFilter !== "all" ? " is-active" : ""}`} onClick={() => setServiceFilter(services[(services.indexOf(serviceFilter) + 1) % services.length])}><SystemSymbol name="sort" size={14} />{serviceFilter === "all" ? "Сервисы" : serviceFilter}</button><button type="button" className={`sm-market-filter-chip${statusFilter !== "all" ? " is-active" : ""}`} onClick={() => setStatusFilter(statuses[(statuses.indexOf(statusFilter) + 1) % statuses.length])}><SystemSymbol name="sort" size={14} />{statusLabels[statusFilter]}</button></div></div>
-        {filteredListings.length === 0 ? (
+        <div className="my-family-filter-row my-generic-section-heading"><div className="my-family-section-heading"><h2 className="my-family-section-title">Аккаунты</h2><span className="my-family-section-count">{filteredListings.length}</span></div><div className="my-account-filter-chips" onPointerDown={(event) => event.stopPropagation()}><button type="button" className={`sm-market-filter-chip${statusFilter !== "all" ? " is-active" : ""}`} onClick={() => setStatusFilter(statuses[(statuses.indexOf(statusFilter) + 1) % statuses.length])}><SystemSymbol name="sort" size={14} />{statusLabels[statusFilter]}</button></div></div>
+        {listings.length === 0 ? (
           <EmptyState title="Объявлений пока нет">
             Опубликуйте первое предложение доступа к сервису.
             <AppButton type="button" variant="secondary" size="sm" onClick={onCreateListing}>
               Добавить объявление
+            </AppButton>
+          </EmptyState>
+        ) : filteredListings.length === 0 ? (
+          <EmptyState title="По выбранным фильтрам ничего не найдено">
+            <AppButton type="button" variant="secondary" size="sm" onClick={() => setStatusFilter("all")}>
+              Сбросить фильтры
             </AppButton>
           </EmptyState>
         ) : (

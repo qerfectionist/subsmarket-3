@@ -388,6 +388,9 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
     return pagerBox.top - filtersBox.bottom;
   });
   expect(Math.abs(accountsPagerGap - subscriptionsPagerGap)).toBeLessThanOrEqual(1);
+  const accountFilterChips = page.locator("[data-testid=\"my-accounts-screen\"] .sm-market-filter-chip");
+  await expect(accountFilterChips).toHaveCount(1);
+  await expect(accountFilterChips).toHaveText("Статус");
 
   const ordersTrigger = page.getByTestId("my-accounts-orders-trigger");
   await expect(ordersTrigger).toHaveAccessibleName("Заказы");
