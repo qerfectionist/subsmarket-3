@@ -370,7 +370,25 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
   await expect(page.getByTestId("my-screen")).toBeVisible();
 
   const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
+  const subscriptionsPagerGap = await page.evaluate(() => {
+    const filters = document.querySelector<HTMLElement>(".my-screen-filters");
+    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
+    if (!filters || !pager) throw new Error("Subscriptions layout elements were not found");
+    const filtersBox = filters.getBoundingClientRect();
+    const pagerBox = pager.getBoundingClientRect();
+    return pagerBox.top - filtersBox.bottom;
+  });
   await scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true }).click();
+  await expect(page.locator(".my-account-orders-disclosure + .my-product-scope-swipe-viewport")).toHaveCSS("margin-top", "-16px");
+  const accountsPagerGap = await page.evaluate(() => {
+    const filters = document.querySelector<HTMLElement>(".my-screen-filters");
+    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
+    if (!filters || !pager) throw new Error("Accounts layout elements were not found");
+    const filtersBox = filters.getBoundingClientRect();
+    const pagerBox = pager.getBoundingClientRect();
+    return pagerBox.top - filtersBox.bottom;
+  });
+  expect(Math.abs(accountsPagerGap - subscriptionsPagerGap)).toBeLessThanOrEqual(1);
 
   const ordersTrigger = page.getByTestId("my-accounts-orders-trigger");
   await expect(ordersTrigger).toHaveAccessibleName("Заказы");
