@@ -1560,11 +1560,7 @@ function MyProductScopePager({
     animationFrameRef.current = null;
   }
 
-  function animateTo(
-    nextPosition: number,
-    initialVelocity = 0,
-    interaction: "gesture" | "click" = "gesture"
-  ) {
+  function animateTo(nextPosition: number, initialVelocity = 0) {
     const target = Math.min(Math.max(nextPosition, 0), myProductScopeOrder.length - 1);
     stopAnimation();
     animationTargetRef.current = target;
@@ -1577,32 +1573,6 @@ function MyProductScopePager({
 
     let position = positionRef.current;
     let velocity = Math.max(-4, Math.min(4, initialVelocity));
-    if (interaction === "click") {
-      const startPosition = position;
-      const startTime = performance.now();
-      const duration = 220;
-      onDragPositionChange?.(startPosition, true);
-
-      const step = (time: number) => {
-        const progress = Math.min((time - startTime) / duration, 1);
-        const easedProgress = 1 - Math.pow(1 - progress, 3);
-        setPosition(startPosition + (target - startPosition) * easedProgress);
-        onDragPositionChange?.(positionRef.current, progress < 1);
-
-        if (progress >= 1) {
-          setPosition(target);
-          onDragPositionChange?.(target, false);
-          animationTargetRef.current = null;
-          animationFrameRef.current = null;
-          return;
-        }
-        animationFrameRef.current = requestAnimationFrame(step);
-      };
-
-      animationFrameRef.current = requestAnimationFrame(step);
-      return;
-    }
-
     const stiffness = 260;
     const damping = 32;
     onDragPositionChange?.(position, true);
@@ -1722,7 +1692,7 @@ function MyProductScopePager({
       setPosition(activeIndex);
       return;
     }
-    animateTo(activeIndex, 0, "click");
+    animateTo(activeIndex);
   }, [activeIndex]);
 
   useEffect(() => () => {
