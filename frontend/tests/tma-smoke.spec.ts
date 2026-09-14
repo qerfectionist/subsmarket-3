@@ -361,7 +361,7 @@ test("My families open a role picker from the families scope", async ({ page }) 
   expect(calendarGridMetrics.scrollWidth).toBeLessThanOrEqual(calendarGridMetrics.clientWidth + 1);
 });
 
-test("My marketplace role stays inside the selected product scope", async ({ page }) => {
+test("My accounts opens purchase orders from the header", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page
     .getByRole("navigation", { name: "Главная навигация" })
@@ -372,25 +372,23 @@ test("My marketplace role stays inside the selected product scope", async ({ pag
   const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
   await scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true }).click();
 
-  const tradeTrigger = page.getByTestId("my-accounts-trade-trigger");
+  const ordersTrigger = page.getByTestId("my-accounts-orders-trigger");
+  await expect(ordersTrigger).toHaveAccessibleName("Заказы");
+  await ordersTrigger.click();
+  await expect(page.getByTestId("accounts-screen")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Заявки", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Мои запросы", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Назад", exact: true }).click();
+  await expect(page.getByTestId("my-screen")).toBeVisible();
+
+  await scopeSwitch.getByRole("button", { name: "ГБ", exact: true }).click();
+  const tradeTrigger = page.getByTestId("my-gigabytes-trade-trigger");
   await tradeTrigger.click();
-  const tradeMenu = page.getByRole("menu", { name: "Покупки и продажи аккаунтов" });
+  const tradeMenu = page.getByRole("menu", { name: "Покупки и продажи ГБ" });
   await expect(tradeMenu).toBeVisible();
   await expect(tradeMenu.getByText("Покупки", { exact: true })).toBeVisible();
   await expect(tradeMenu.getByText("Продажи", { exact: true })).toBeVisible();
-
-  await page.getByTestId("my-accounts-buyer-action").click();
-  await expect(page.getByTestId("my-screen")).toBeVisible();
-  await expect(page.getByText("Покупок пока нет")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Заявки", exact: true })).toHaveCount(0);
-
-  await tradeTrigger.click();
-  await page.getByTestId("my-accounts-seller-action").click();
-  await expect(page.getByTestId("my-screen")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Заявки", exact: true })).toHaveCount(0);
-
-  await tradeTrigger.click();
-  await expect(page.getByTestId("my-accounts-seller-action")).toHaveAttribute("aria-checked", "true");
 });
 
 test("Mini App keeps readable surfaces with legacy Telegram dark theme params", async ({

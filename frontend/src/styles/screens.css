@@ -146,6 +146,21 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: var(--app-secondary-bg);
   color: var(--app-text);
 }
+.my-screen-context-action--orders {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 44px;
+  gap: 6px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.my-screen-context-action--orders span {
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-caption);
+}
 .my-screen-context-action:active { transform: scale(.94); }
 .my-screen-context-menu {
   position: absolute;

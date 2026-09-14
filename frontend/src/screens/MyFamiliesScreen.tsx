@@ -154,6 +154,7 @@ export function MyFamiliesScreen({
   onOpenMarketplacePurchaseActions,
   onOpenAccountSalesActions,
   onOpenAccountPurchaseActions,
+  onOpenAccountOrders,
   onChangeProductScope,
   onOpenAccountListing,
   onCreateAccountListing,
@@ -222,6 +223,7 @@ export function MyFamiliesScreen({
   onOpenMarketplacePurchaseActions?: () => void;
   onOpenAccountSalesActions?: () => void;
   onOpenAccountPurchaseActions?: () => void;
+  onOpenAccountOrders?: () => void;
   onChangeProductScope: (scope: MyProductScope) => void;
   onOpenAccountListing: (listingId: string) => void;
   onCreateAccountListing: () => void;
@@ -502,6 +504,7 @@ export function MyFamiliesScreen({
             onToggleCalendar={() => setIsCalendarOpen((open) => !open)}
             tradeRole={myMarketplaceRole}
             onTradeRoleChange={setMyMarketplaceRole}
+            onOpenOrders={onOpenAccountOrders}
           />
         ) : undefined}
       >
@@ -736,13 +739,15 @@ function MyScreenContextAction({
   isCalendarOpen,
   onToggleCalendar,
   tradeRole,
-  onTradeRoleChange
+  onTradeRoleChange,
+  onOpenOrders
 }: {
   scope: MyProductScope;
   isCalendarOpen: boolean;
   onToggleCalendar: () => void;
   tradeRole: MarketplaceRequestRole;
   onTradeRoleChange: (role: MarketplaceRequestRole) => void;
+  onOpenOrders?: () => void;
 }) {
   const [isTradeMenuOpen, setIsTradeMenuOpen] = useState(false);
   const controlRef = useRef<HTMLDivElement | null>(null);
@@ -786,7 +791,23 @@ function MyScreenContextAction({
     );
   }
 
-  const productLabel = scope === "accounts" ? "аккаунтов" : "ГБ";
+  if (scope === "accounts") {
+    return (
+      <button
+        type="button"
+        className="my-screen-context-action my-screen-context-action--orders"
+        aria-label="Заказы"
+        title="История покупок"
+        data-testid="my-accounts-orders-trigger"
+        onClick={onOpenOrders}
+      >
+        <SystemSymbol name="clipboard.list" size={20} />
+        <span>Заказы</span>
+      </button>
+    );
+  }
+
+  const productLabel = "ГБ";
   const menuId = `my-${scope}-trade-menu`;
 
   function selectTradeRole(role: MarketplaceRequestRole) {
