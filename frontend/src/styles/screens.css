@@ -545,12 +545,20 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   font-size: var(--app-size-caption);
   font-weight: var(--app-weight-semibold);
   line-height: var(--app-leading-caption);
-  transition: background-color 220ms cubic-bezier(.22, 1, .36, 1), color 220ms ease, box-shadow 220ms ease;
+  transition: color 220ms ease, transform 140ms ease;
 }
 .my-screen .product-scope-switch button.ui-button-primary {
   background: transparent;
   color: var(--app-text);
   box-shadow: none;
+}
+.app-shell .my-screen .product-scope-switch button.ui-button-primary {
+  background: transparent;
+}
+.my-screen .product-scope-switch button:active {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
 }
 .my-screen .product-scope-switch::before {
   content: "";
@@ -560,7 +568,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   width: calc((100% - 8px) / 3);
   border-radius: var(--app-radius-pill);
   background: var(--app-nav-active);
-  box-shadow: var(--app-nav-active-shadow);
+  box-shadow: none;
   transform: translateX(calc(var(--scope-position) * 100%));
   transition: none;
   pointer-events: none;

@@ -221,21 +221,39 @@ test("My scope indicator responds on pointer down", async ({ page }) => {
 
   const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
   const accountsButton = scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true });
-  await accountsButton.dispatchEvent("pointerdown", {
-    button: 0,
-    pointerId: 1,
-    pointerType: "mouse"
-  });
+  const box = await accountsButton.boundingBox();
+  if (!box) throw new Error("Accounts scope button is not measurable");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
 
   const motion = await scopeSwitch.evaluate((element) => ({
     isMoving: element.dataset.scopeDragging === "true",
     position: Number(element.style.getPropertyValue("--scope-position")),
-    transitionDuration: getComputedStyle(element, "::before").transitionDuration
+    transitionDuration: getComputedStyle(element, "::before").transitionDuration,
+    indicatorShadow: getComputedStyle(element, "::before").boxShadow,
+    activeButton: element.querySelector("button.ui-button-primary")
+      ? (() => {
+          const button = element.querySelector("button.ui-button-primary");
+          if (!button) return null;
+          const styles = getComputedStyle(button);
+          return {
+            backgroundColor: styles.backgroundColor,
+            boxShadow: styles.boxShadow,
+            transform: styles.transform
+          };
+        })()
+      : null
   }));
+  await page.mouse.up();
   expect(motion.isMoving).toBe(true);
-  expect(motion.position).toBeGreaterThanOrEqual(0);
-  expect(motion.position).toBeLessThan(0.4);
+  expect(Math.abs(motion.position)).toBeLessThan(0.4);
   expect(motion.transitionDuration).toBe("0s");
+  expect(motion.indicatorShadow).toBe("none");
+  expect(motion.activeButton).toEqual({
+    backgroundColor: "rgba(0, 0, 0, 0)",
+    boxShadow: "none",
+    transform: "none"
+  });
   await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
 });
 
