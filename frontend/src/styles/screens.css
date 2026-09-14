@@ -246,7 +246,6 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 }
 .my-account-orders-disclosure + .my-product-scope-swipe-viewport {
   margin-top: 0;
-  transition: margin-top 320ms cubic-bezier(.22, 1, .36, 1);
 }
 .my-account-orders-disclosure:not(.is-open) + .my-product-scope-swipe-viewport {
   margin-top: calc(-1 * var(--app-space-4));

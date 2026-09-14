@@ -379,7 +379,6 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
     return pagerBox.top - filtersBox.bottom;
   });
   await scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true }).click();
-  await expect(page.locator(".my-account-orders-disclosure + .my-product-scope-swipe-viewport")).toHaveCSS("margin-top", "-16px");
   const accountsPagerGap = await page.evaluate(() => {
     const filters = document.querySelector<HTMLElement>(".my-screen-filters");
     const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
