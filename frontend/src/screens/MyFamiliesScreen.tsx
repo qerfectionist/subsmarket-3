@@ -1539,6 +1539,7 @@ function MyProductScopePager({
   const positionRef = useRef(myProductScopeOrder.indexOf(value));
   const pointerRef = useRef<MyProductScopePointerState | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const animationTargetRef = useRef<number | null>(null);
   const wasSwipedRef = useRef(false);
   const activeIndex = myProductScopeOrder.indexOf(value);
   const pagePercent = 100 / myProductScopeOrder.length;
@@ -1560,13 +1561,17 @@ function MyProductScopePager({
   function animateTo(nextPosition: number, initialVelocity = 0) {
     const target = Math.min(Math.max(nextPosition, 0), myProductScopeOrder.length - 1);
     stopAnimation();
+    animationTargetRef.current = target;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setPosition(target);
+      onDragPositionChange?.(target, false);
+      animationTargetRef.current = null;
       return;
     }
 
     let position = positionRef.current;
     let velocity = Math.max(-4, Math.min(4, initialVelocity));
+    onDragPositionChange?.(position, true);
     let previousTime = performance.now();
     const step = (time: number) => {
       const deltaTime = Math.min((time - previousTime) / 1000, 0.032);
@@ -1575,9 +1580,12 @@ function MyProductScopePager({
       velocity += acceleration * deltaTime;
       position += velocity * deltaTime;
       setPosition(position);
+      onDragPositionChange?.(position, true);
 
       if (Math.abs(target - position) < 0.001 && Math.abs(velocity) < 0.01) {
         setPosition(target);
+        onDragPositionChange?.(target, false);
+        animationTargetRef.current = null;
         animationFrameRef.current = null;
         return;
       }
@@ -1589,6 +1597,7 @@ function MyProductScopePager({
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     stopAnimation();
+    animationTargetRef.current = null;
     wasSwipedRef.current = false;
     pointerRef.current = {
       pointerId: event.pointerId,
@@ -1647,11 +1656,13 @@ function MyProductScopePager({
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    if (pointer.cancelled) return;
+    if (pointer.cancelled) {
+      setPosition(activeIndex);
+      onDragPositionChange?.(activeIndex, false);
+      return;
+    }
     if (cancelled) {
-      const target = Math.round(positionRef.current);
-      onDragPositionChange?.(target, false);
-      animateTo(target);
+      animateTo(activeIndex);
       return;
     }
     if (!pointer.isDragging) return;
@@ -1666,13 +1677,13 @@ function MyProductScopePager({
       target = Math.round(pointer.originPosition) + direction;
     }
     target = Math.min(Math.max(target, 0), myProductScopeOrder.length - 1);
-    onDragPositionChange?.(target, false);
     animateTo(target, -pointer.velocityX / width);
     if (target !== activeIndex) onChange(myProductScopeOrder[target]);
   }
 
   useEffect(() => {
     if (pointerRef.current) return;
+    if (animationTargetRef.current === activeIndex) return;
     if (Math.abs(positionRef.current - activeIndex) < 0.001) {
       setPosition(activeIndex);
       return;
@@ -1680,7 +1691,10 @@ function MyProductScopePager({
     animateTo(activeIndex);
   }, [activeIndex]);
 
-  useEffect(() => () => stopAnimation(), []);
+  useEffect(() => () => {
+    stopAnimation();
+    animationTargetRef.current = null;
+  }, []);
 
   return (
     <div

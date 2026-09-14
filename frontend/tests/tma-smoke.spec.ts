@@ -179,6 +179,27 @@ test("My scope indicator follows the pointer during a swipe", async ({ page }) =
   expect(indicator.transitionDuration).toBe("0s");
 
   await page.mouse.up();
+  await page.waitForTimeout(40);
+  const settlingMotion = await scopeSwitch.evaluate((element) => {
+    const track = document.querySelector<HTMLElement>(".my-product-scope-swipe-track");
+    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
+    if (!track || !pager) throw new Error("My product scope motion elements are missing");
+
+    const readTranslateX = (transform: string) =>
+      transform === "none" ? 0 : new DOMMatrix(transform).m41;
+    const switchWidth = element.getBoundingClientRect().width;
+    const pagerWidth = pager.getBoundingClientRect().width;
+    const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
+    const trackX = readTranslateX(getComputedStyle(track).transform);
+
+    return {
+      indicatorPosition: indicatorX / ((switchWidth - 8) / 3),
+      contentPosition: -trackX / pagerWidth,
+      transitionDuration: getComputedStyle(element, "::before").transitionDuration
+    };
+  });
+  expect(Math.abs(settlingMotion.indicatorPosition - settlingMotion.contentPosition)).toBeLessThan(0.06);
+  expect(settlingMotion.transitionDuration).toBe("0s");
   await expect(scopeSwitch).not.toHaveAttribute("data-scope-dragging", "true");
 });
 
