@@ -389,21 +389,18 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
   });
   expect(Math.abs(accountsPagerGap - subscriptionsPagerGap)).toBeLessThanOrEqual(1);
   const accountFilterChips = page.locator("[data-testid=\"my-accounts-screen\"] .sm-market-filter-chip");
-  await expect(accountFilterChips).toHaveCount(2);
-  await expect(accountFilterChips.nth(0)).toHaveText("Опубликовано");
-  await expect(accountFilterChips.nth(1)).toHaveText("Приостановлено");
-  await expect(accountFilterChips.nth(0)).toHaveAttribute("aria-pressed", "false");
-  await expect(accountFilterChips.nth(1)).toHaveAttribute("aria-pressed", "false");
-  const accountFilterRowMetrics = await page.locator("[data-testid=\"my-accounts-screen\"] .my-account-status-filter-row").evaluate((element) => ({
+  await expect(accountFilterChips).toHaveCount(1);
+  await expect(accountFilterChips).toHaveText("Опубликовано");
+  await expect(accountFilterChips).toHaveAttribute("aria-pressed", "true");
+  const accountFilterRowMetrics = await page.locator("[data-testid=\"my-accounts-screen\"] .my-family-filter-row").evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth
   }));
   expect(accountFilterRowMetrics.scrollWidth).toBeLessThanOrEqual(accountFilterRowMetrics.clientWidth + 1);
-  await accountFilterChips.nth(0).click();
-  await expect(accountFilterChips.nth(0)).toHaveAttribute("aria-pressed", "true");
-  await expect(accountFilterChips.nth(1)).toHaveAttribute("aria-pressed", "false");
-  await accountFilterChips.nth(0).click();
-  await expect(accountFilterChips.nth(0)).toHaveAttribute("aria-pressed", "false");
+  await accountFilterChips.click();
+  await expect(accountFilterChips).toHaveText("Приостановлено");
+  await accountFilterChips.click();
+  await expect(accountFilterChips).toHaveText("Опубликовано");
 
   const ordersTrigger = page.getByTestId("my-accounts-orders-trigger");
   await expect(ordersTrigger).toHaveAccessibleName("Заказы");
