@@ -1480,14 +1480,16 @@ function MyAccountListingsSection({
   onOpenListing: (listingId: string) => void;
   onCreateListing: () => void;
 }) {
-  const [statusFilter, setStatusFilter] = useState("all");
-  const statuses = ["all", "active", "paused", "expired"];
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
+  const statusFilters = [
+    { value: "active", label: "Опубликовано", icon: "checkmark" },
+    { value: "paused", label: "Приостановлено", icon: "pause.circle" }
+  ] as const;
   const filteredListings = listings.filter((item) => statusFilter === "all" || item.status === statusFilter);
-  const statusLabels: Record<string, string> = { all: "Статус", active: "Опубликовано", paused: "Приостановлено", expired: "Истекло" };
   return (
     <AsyncContent query={query} label="Загружаем объявления...">
       <section className="my-account-listings" data-testid="my-accounts-screen">
-        <div className="my-family-filter-row my-generic-section-heading"><div className="my-family-section-heading"><h2 className="my-family-section-title">Аккаунты</h2><span className="my-family-section-count">{filteredListings.length}</span></div><div className="my-account-filter-chips" onPointerDown={(event) => event.stopPropagation()}><button type="button" className={`sm-market-filter-chip${statusFilter !== "all" ? " is-active" : ""}`} onClick={() => setStatusFilter(statuses[(statuses.indexOf(statusFilter) + 1) % statuses.length])}><SystemSymbol name="sort" size={14} />{statusLabels[statusFilter]}</button></div></div>
+        <div className="my-family-filter-row my-generic-section-heading my-account-status-filter-row"><div className="my-family-section-heading"><h2 className="my-family-section-title">Аккаунты</h2><span className="my-family-section-count">{filteredListings.length}</span></div><div className="my-account-filter-chips" onPointerDown={(event) => event.stopPropagation()}>{statusFilters.map((filter) => <button key={filter.value} type="button" className={`sm-market-filter-chip${statusFilter === filter.value ? " is-active" : ""}`} aria-pressed={statusFilter === filter.value} onClick={() => setStatusFilter((current) => current === filter.value ? "all" : filter.value)}><SystemSymbol name={filter.icon} size={14} />{filter.label}</button>)}</div></div>
         {listings.length === 0 ? (
           <EmptyState title="Объявлений пока нет">
             Опубликуйте первое предложение доступа к сервису.

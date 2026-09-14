@@ -546,6 +546,16 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     flex: 0 1 auto;
   }
   .my-family-filter-row > .my-family-filter-actions { margin-left: 0; }
+  .my-screen .my-account-status-filter-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .my-screen .my-account-status-filter-row > .my-family-section-heading {
+    flex: 1 0 100%;
+  }
+  .my-screen .my-account-status-filter-row > .my-account-filter-chips {
+    margin-left: 0;
+  }
 }
 @media (max-width: 360px) {
   .my-family-filter-row { flex-wrap: wrap; row-gap: 8px; }
