@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
 
@@ -7,6 +7,90 @@ test.use({
   isMobile: true,
   viewport: { width: 390, height: 844 }
 });
+
+type SegmentPositionVariable = "--scope-position" | "--catalog-type-position" | "--family-type-position";
+
+async function readSegmentIndicatorGeometry(
+  scopeSwitch: Locator,
+  segmentIndex: number,
+  positionVariable: SegmentPositionVariable
+) {
+  return scopeSwitch.evaluate(
+    (element, { index, variable }) => {
+      const segments = Array.from(element.querySelectorAll("button"));
+      const target = segments[index];
+      if (!target) throw new Error("Scope segment is missing");
+
+      const switchBox = element.getBoundingClientRect();
+      const segmentBox = target.getBoundingClientRect();
+      const switchStyle = getComputedStyle(element);
+      const indicatorStyle = getComputedStyle(element, "::before");
+      const indicatorWidth = Number.parseFloat(indicatorStyle.width);
+      const indicatorGap = Number.parseFloat(switchStyle.gap);
+      const position = Number(element.style.getPropertyValue(variable));
+
+      return {
+        position,
+        indicatorWidth,
+        indicatorLeft:
+          switchBox.left +
+          Number.parseFloat(switchStyle.borderLeftWidth) +
+          Number.parseFloat(switchStyle.paddingLeft) +
+          position * (indicatorWidth + indicatorGap),
+        segmentWidth: segmentBox.width,
+        segmentLeft: segmentBox.left
+      };
+    },
+    { index: segmentIndex, variable: positionVariable }
+  );
+}
+
+async function readScopeMotion(scopeSwitch: Locator) {
+  return scopeSwitch.evaluate((element) => {
+    const track = document.querySelector<HTMLElement>(".my-product-scope-swipe-track");
+    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
+    if (!track || !pager) throw new Error("My product scope motion elements are missing");
+
+    const readTranslateX = (transform: string) =>
+      transform === "none" ? 0 : new DOMMatrix(transform).m41;
+    // Шаг берём из реальной раскладки сегментов, а не из магической константы:
+    // иначе допуск теста съедает расхождение самой формулы.
+    const segments = Array.from(element.querySelectorAll("button")).map((button) =>
+      button.getBoundingClientRect()
+    );
+    const segmentStep =
+      segments.length > 1
+        ? segments[1].left - segments[0].left
+        : element.getBoundingClientRect().width;
+    const pagerWidth = pager.getBoundingClientRect().width;
+    const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
+    const trackX = readTranslateX(getComputedStyle(track).transform);
+
+    return {
+      isMoving: element.dataset.scopeDragging === "true",
+      position: Number(element.style.getPropertyValue("--scope-position")),
+      indicatorPosition: indicatorX / segmentStep,
+      contentPosition: -trackX / pagerWidth,
+      transitionDuration: getComputedStyle(element, "::before").transitionDuration
+    };
+  });
+}
+
+async function waitForScopeSettled(scopeSwitch: Locator, targetIndex: number) {
+  await expect
+    .poll(async () =>
+      scopeSwitch.evaluate(
+        (element, index) => {
+          const position = Number(element.style.getPropertyValue("--scope-position"));
+          return (
+            element.dataset.scopeDragging === undefined && Math.abs(position - index) < 0.001
+          );
+        },
+        targetIndex
+      )
+    )
+    .toBe(true);
+}
 
 test("Mini App renders market, create, my, and family details", async ({ page }) => {
   const messages: string[] = [];
@@ -163,50 +247,15 @@ test("My scope indicator starts with content on click", async ({ page }) => {
   const accountsButton = scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true });
   await accountsButton.dispatchEvent("click");
 
-  const motion = await scopeSwitch.evaluate((element) => {
-    const track = document.querySelector<HTMLElement>(".my-product-scope-swipe-track");
-    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
-    if (!track || !pager) throw new Error("My product scope motion elements are missing");
-
-    const readTranslateX = (transform: string) =>
-      transform === "none" ? 0 : new DOMMatrix(transform).m41;
-    const switchWidth = element.getBoundingClientRect().width;
-    const pagerWidth = pager.getBoundingClientRect().width;
-    const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
-    const trackX = readTranslateX(getComputedStyle(track).transform);
-
-    return {
-      isMoving: element.dataset.scopeDragging === "true",
-      indicatorPosition: indicatorX / ((switchWidth - 8) / 3),
-      contentPosition: -trackX / pagerWidth,
-      transitionDuration: getComputedStyle(element, "::before").transitionDuration
-    };
-  });
+  const motion = await readScopeMotion(scopeSwitch);
 
   expect(motion.isMoving).toBe(true);
   expect(Math.abs(motion.indicatorPosition - motion.contentPosition)).toBeLessThan(0.02);
   expect(motion.transitionDuration).toBe("0s");
   await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
 
-  await page.waitForTimeout(320);
-  const settledMotion = await scopeSwitch.evaluate((element) => {
-    const track = document.querySelector<HTMLElement>(".my-product-scope-swipe-track");
-    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
-    if (!track || !pager) throw new Error("My product scope motion elements are missing");
-
-    const readTranslateX = (transform: string) =>
-      transform === "none" ? 0 : new DOMMatrix(transform).m41;
-    const switchWidth = element.getBoundingClientRect().width;
-    const pagerWidth = pager.getBoundingClientRect().width;
-    const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
-    const trackX = readTranslateX(getComputedStyle(track).transform);
-
-    return {
-      indicatorPosition: indicatorX / ((switchWidth - 8) / 3),
-      contentPosition: -trackX / pagerWidth,
-      transitionDuration: getComputedStyle(element, "::before").transitionDuration
-    };
-  });
+  await waitForScopeSettled(scopeSwitch, 1);
+  const settledMotion = await readScopeMotion(scopeSwitch);
   expect(Math.abs(settledMotion.indicatorPosition - settledMotion.contentPosition)).toBeLessThan(0.01);
   expect(settledMotion.transitionDuration).toBe("0s");
 });
@@ -226,11 +275,20 @@ test("My scope indicator responds on pointer down", async ({ page }) => {
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
 
-  const motion = await scopeSwitch.evaluate((element) => ({
-    isMoving: element.dataset.scopeDragging === "true",
-    position: Number(element.style.getPropertyValue("--scope-position")),
+  const motion = await readScopeMotion(scopeSwitch);
+  const appearance = await scopeSwitch.evaluate((element) => ({
     transitionDuration: getComputedStyle(element, "::before").transitionDuration,
     indicatorShadow: getComputedStyle(element, "::before").boxShadow,
+    tokenIndicatorShadow: (() => {
+      const probe = document.createElement("span");
+      probe.style.boxShadow = getComputedStyle(document.documentElement)
+        .getPropertyValue("--app-nav-active-shadow")
+        .trim();
+      document.body.appendChild(probe);
+      const resolved = getComputedStyle(probe).boxShadow;
+      probe.remove();
+      return resolved;
+    })(),
     activeButton: element.querySelector("button.ui-button-primary")
       ? (() => {
           const button = element.querySelector("button.ui-button-primary");
@@ -246,15 +304,86 @@ test("My scope indicator responds on pointer down", async ({ page }) => {
   }));
   await page.mouse.up();
   expect(motion.isMoving).toBe(true);
-  expect(Math.abs(motion.position)).toBeLessThan(0.4);
-  expect(motion.transitionDuration).toBe("0s");
-  expect(motion.indicatorShadow).toBe("none");
-  expect(motion.activeButton).toEqual({
+  // Абсолютная позиция зависит от задержки протокола: пружина успевает доехать
+  // до 0.7 за время round-trip, поэтому проверяем инвариант, не зависящий от
+  // фазы анимации, — капсула и контент едут синхронно.
+  expect(Math.abs(motion.indicatorPosition - motion.contentPosition)).toBeLessThan(0.02);
+  expect(appearance.transitionDuration).toBe("0s");
+  // Индикатор «Моих» выровнен с Маркетом и использует токен подсветки навигации.
+  expect(appearance.indicatorShadow).toBe(appearance.tokenIndicatorShadow);
+  expect(appearance.activeButton).toEqual({
     backgroundColor: "rgba(0, 0, 0, 0)",
     boxShadow: "none",
     transform: "none"
   });
   await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
+});
+
+test("My scope indicator matches its segment geometry", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Мои", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("my-screen")).toBeVisible();
+
+  const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
+  const gigabytesButton = scopeSwitch.getByRole("button", { name: "ГБ", exact: true });
+  await gigabytesButton.click();
+  await expect(gigabytesButton).toHaveAttribute("aria-pressed", "true");
+  // Индикатор доезжает анимацией, поэтому сначала ждём остановки.
+  await expect
+    .poll(async () =>
+      scopeSwitch.evaluate((element) => Number(element.style.getPropertyValue("--scope-position")))
+    )
+    .toBeGreaterThan(1.99);
+
+  const geometry = await readSegmentIndicatorGeometry(scopeSwitch, 2, "--scope-position");
+
+  expect(geometry.position).toBeGreaterThan(1.99);
+  expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
+  expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
+});
+
+test("Market catalog indicator matches its segment geometry", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  const tariffButton = page.getByTestId("family-type-tariff");
+  await tariffButton.click({ force: true });
+  await expect(page.getByTestId("family-catalog-screen")).toBeVisible();
+  await expect(tariffButton).toHaveAttribute("aria-pressed", "true");
+
+  const scopeSwitch = page.locator(".sm-market-family-type-switch");
+  // Капсула доезжает анимацией, поэтому сначала ждём остановки.
+  await expect
+    .poll(async () =>
+      scopeSwitch.evaluate((element) =>
+        Number(element.style.getPropertyValue("--catalog-type-position"))
+      )
+    )
+    .toBeGreaterThan(0.99);
+
+  const geometry = await readSegmentIndicatorGeometry(scopeSwitch, 1, "--catalog-type-position");
+
+  expect(geometry.position).toBeGreaterThan(0.99);
+  expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
+  expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
+});
+
+test("Create family type indicator matches its segment geometry", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click({ force: true });
+  await expect(page.getByTestId("create-family-form")).toBeVisible();
+
+  const typeSwitch = page.locator(".family-type-switch");
+  const tariffButton = typeSwitch.getByTestId("family-type-tariff");
+  await tariffButton.click({ force: true });
+  await expect(tariffButton).toHaveAttribute("aria-pressed", "true");
+
+  const geometry = await readSegmentIndicatorGeometry(typeSwitch, 1, "--family-type-position");
+
+  expect(geometry.position).toBe(1);
+  expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
+  expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
 });
 
 test("My scope indicator follows the pointer during a swipe", async ({ page }) => {
@@ -286,27 +415,13 @@ test("My scope indicator follows the pointer during a swipe", async ({ page }) =
 
   await page.mouse.up();
   await page.waitForTimeout(40);
-  const settlingMotion = await scopeSwitch.evaluate((element) => {
-    const track = document.querySelector<HTMLElement>(".my-product-scope-swipe-track");
-    const pager = document.querySelector<HTMLElement>(".my-product-scope-swipe-viewport");
-    if (!track || !pager) throw new Error("My product scope motion elements are missing");
-
-    const readTranslateX = (transform: string) =>
-      transform === "none" ? 0 : new DOMMatrix(transform).m41;
-    const switchWidth = element.getBoundingClientRect().width;
-    const pagerWidth = pager.getBoundingClientRect().width;
-    const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
-    const trackX = readTranslateX(getComputedStyle(track).transform);
-
-    return {
-      indicatorPosition: indicatorX / ((switchWidth - 8) / 3),
-      contentPosition: -trackX / pagerWidth,
-      transitionDuration: getComputedStyle(element, "::before").transitionDuration
-    };
-  });
+  const settlingMotion = await readScopeMotion(scopeSwitch);
   expect(Math.abs(settlingMotion.indicatorPosition - settlingMotion.contentPosition)).toBeLessThan(0.06);
   expect(settlingMotion.transitionDuration).toBe("0s");
   await expect(scopeSwitch).not.toHaveAttribute("data-scope-dragging", "true");
+
+  const settledMotion = await readScopeMotion(scopeSwitch);
+  expect(Math.abs(settledMotion.indicatorPosition - settledMotion.contentPosition)).toBeLessThan(0.01);
 });
 
 test("My families open a role picker from the families scope", async ({ page }) => {

@@ -272,8 +272,8 @@
 .sm-market-family-type-switch {
   --catalog-type-position: 0;
   position: relative;
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;
-  padding: 4px; border: 1px solid var(--app-control-border); border-radius: var(--app-radius-pill);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--app-segment-gap);
+  padding: var(--app-segment-padding); border: 1px solid var(--app-control-border); border-radius: var(--app-radius-pill);
   background: var(--app-control-material); box-shadow: var(--app-control-shadow);
   backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%);
 }
@@ -283,11 +283,13 @@
 }
 .sm-market-family-type-switch button.is-active { background: transparent; color: var(--app-text); }
 .sm-market-family-type-switch::before {
-  content: ""; position: absolute; z-index: 0; inset: 4px auto 4px 4px;
-  width: calc((100% - 8px) / 2); border-radius: var(--app-radius-pill);
+  content: ""; position: absolute; z-index: 0; inset: var(--app-segment-padding) auto var(--app-segment-padding) var(--app-segment-padding);
+  /* Две колонки и один gap: ширина капсулы равна ширине сегмента. */
+  width: calc((100% - 2 * var(--app-segment-padding) - var(--app-segment-gap)) / 2); border-radius: var(--app-radius-pill);
   background: var(--app-nav-active); box-shadow: var(--app-nav-active-shadow);
-  transform: translateX(calc(var(--catalog-type-position) * 100%));
-  transition: transform 220ms cubic-bezier(.22, 1, .36, 1); pointer-events: none;
+  /* Шаг равен ширине сегмента плюс gap. */
+  transform: translateX(calc(var(--catalog-type-position) * (100% + var(--app-segment-gap))));
+  transition: none; pointer-events: none;
 }
 .sm-market-family-type-switch button { position: relative; z-index: 1; }
   .sm-market-family-section { display: grid; gap: var(--app-space-3); }

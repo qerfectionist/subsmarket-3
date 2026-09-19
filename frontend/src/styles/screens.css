@@ -555,8 +555,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .my-screen .product-scope-switch {
   --scope-position: 0;
   position: relative;
-  gap: 4px;
-  padding: 4px;
+  gap: var(--app-segment-gap);
+  padding: var(--app-segment-padding);
   border: 1px solid var(--app-control-border);
   border-radius: var(--app-radius-pill);
   background: var(--app-control-material);
@@ -593,12 +593,14 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   content: "";
   position: absolute;
   z-index: 0;
-  inset: 4px auto 4px 4px;
-  width: calc((100% - 8px) / 3);
+  inset: var(--app-segment-padding) auto var(--app-segment-padding) var(--app-segment-padding);
+  /* Три колонки и два gap: ширина индикатора равна ширине сегмента. */
+  width: calc((100% - 2 * var(--app-segment-padding) - 2 * var(--app-segment-gap)) / 3);
   border-radius: var(--app-radius-pill);
   background: var(--app-nav-active);
-  box-shadow: none;
-  transform: translateX(calc(var(--scope-position) * 100%));
+  box-shadow: var(--app-nav-active-shadow);
+  /* Шаг равен ширине сегмента плюс gap, иначе индикатор уезжает от подписи. */
+  transform: translateX(calc(var(--scope-position) * (100% + var(--app-segment-gap))));
   transition: none;
   pointer-events: none;
 }
@@ -757,18 +759,20 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   padding: 8px 0; background: var(--app-bg);
 }
 .family-type-switch, .product-scope-switch, .owner-tabs, .gb-nav, .gb-role-switch {
-  padding: 4px; border: 0; border-radius: var(--app-radius-pill); background: var(--app-surface); box-shadow: none;
+  padding: var(--app-segment-padding); border: 0; border-radius: var(--app-radius-pill); background: var(--app-surface); box-shadow: none;
 }
-.family-type-switch { position: relative; }
+.family-type-switch { position: relative; gap: var(--app-segment-gap); }
 .family-type-switch::before {
   content: "";
   position: absolute;
   z-index: 0;
-  inset: 4px auto 4px 4px;
-  width: calc((100% - 8px) / 2);
+  inset: var(--app-segment-padding) auto var(--app-segment-padding) var(--app-segment-padding);
+  /* Две колонки и один gap: ширина капсулы равна ширине сегмента. */
+  width: calc((100% - 2 * var(--app-segment-padding) - var(--app-segment-gap)) / 2);
   border-radius: var(--app-radius-pill);
   background: var(--app-secondary-bg);
-  transform: translateX(calc(var(--family-type-position) * 100%));
+  /* Шаг равен ширине сегмента плюс gap. */
+  transform: translateX(calc(var(--family-type-position) * (100% + var(--app-segment-gap))));
   transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
   pointer-events: none;
 }
@@ -783,6 +787,12 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 }
 .app-shell .family-type-switch .ui-button-primary { background: transparent; }
 .app-shell .owner-tabs button[aria-selected="true"] { background: var(--app-secondary-bg); color: var(--app-text); }
+/* Маркет-переключатель задаёт 600/8px (market.css), поэтому «Мои» повторяет
+   те же метрики явным селектором поверх общего HIG-правила выше. */
+.app-shell .my-screen .product-scope-switch button {
+  padding: 8px 12px;
+  font-weight: var(--app-weight-semibold);
+}
 .create-preview { padding: 16px; border: 0; border-radius: var(--app-radius-lg); background: var(--app-surface); color: var(--app-text); }
 .create-preview div { padding: 12px; background: var(--app-surface-inset); border-radius: var(--app-radius-md); }
 .create-preview strong { font-size: var(--app-size-card); font-weight: 600; line-height: var(--app-leading-card); color: var(--app-text); }

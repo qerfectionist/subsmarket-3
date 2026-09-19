@@ -92,6 +92,11 @@
   --app-duration-press: 140ms;
   --app-duration-reveal: 220ms;
   --app-touch-min: 44px;
+  /* Сегмент-контрол разделов: общая геометрия трека и капсулы для всех
+     переключателей. Ширина капсулы считается как
+     (100% - 2 * padding - (N - 1) * gap) / N, шаг — width + gap. */
+  --app-segment-gap: 4px;
+  --app-segment-padding: 4px;
   --app-page-width: 480px;
   --app-nav-height: 64px;
   --app-nav-create-size: 56px;
