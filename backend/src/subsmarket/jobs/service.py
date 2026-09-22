@@ -39,7 +39,6 @@ CLOSING_ACK_MEMBER_STATUSES = {
     "awaiting_confirmation",
     "payment_due",
     "active",
-    "removal_pending",
 }
 logger = logging.getLogger(__name__)
 
@@ -64,7 +63,6 @@ def run_due_jobs(db: Session) -> RunDueJobsResult:
         regular_payment_reminders_sent=0,
         owner_payment_confirmation_reminders_sent=0,
         closing_acknowledgement_reminders_sent=0,
-        executed_member_removals=0,
         closed_families=0,
         marketplace_listing_expiry_reminders_sent=0,
         expired_marketplace_listings=0,
@@ -218,16 +216,6 @@ def _due_job_steps() -> tuple[DueJobStep, ...]:
                 step_result,
                 count_field="closing_acknowledgement_reminders_sent",
             ),
-        ),
-        DueJobStep(
-            name="execute_member_removals",
-            run=execute_member_removals,
-            apply=lambda result, step_result: _apply_count_and_notifications(
-                result,
-                step_result,
-                count_field="executed_member_removals",
-            ),
-            drain_batches=True,
         ),
         DueJobStep(
             name="close_due_families",
@@ -781,7 +769,7 @@ def send_regular_payment_reminders(db: Session) -> int:
             .where(FamilyPayment.status.in_({"due", "overdue"}))
             .where(Family.status.in_({"active", "full", "closing"}))
             .where(
-                FamilyMember.status.in_({"payment_due", "active", "removal_pending"})
+                FamilyMember.status.in_({"payment_due", "active"})
             )
             .order_by(FamilyPayment.due_at.asc())
             .limit(_job_scan_limit())
@@ -1034,67 +1022,6 @@ def _payment_notification_exists(
     )
 
 
-def execute_member_removals(db: Session) -> tuple[int, int]:
-    now = utcnow()
-    members = list(
-        db.scalars(
-            select(FamilyMember)
-            .join(FamilyMember.user)
-            .options(contains_eager(FamilyMember.user))
-            .where(FamilyMember.status == "removal_pending")
-            .where(FamilyMember.removal_scheduled_at <= now)
-            .order_by(FamilyMember.removal_scheduled_at.asc())
-            .limit(settings.job_batch_size)
-            .with_for_update(of=FamilyMember, skip_locked=True)
-        ).all()
-    )
-
-    notification_count = 0
-    for member in members:
-        old_member_status = member.status
-        member.status = "removed"
-        member.removed_at = now
-        family = db.scalar(
-            select(Family).where(Family.id == member.family_id).with_for_update()
-        )
-        if family is None:
-            raise RuntimeError(f"Family {member.family_id} disappeared during removal")
-        cancel_scheduled_payments(
-            db,
-            family_id=family.id,
-            member_id=member.id,
-            reason="member_removed",
-        )
-        family.active_members_count = max(1, family.active_members_count - 1)
-        if family.status == "full" and family.active_members_count < family.max_members:
-            family.status = "active"
-        record_family_audit_event(
-            db,
-            family_id=member.family_id,
-            action="family_member_removed_by_timeout",
-            target_user_id=member.user_id,
-            target_member_id=member.id,
-            old_status=old_member_status,
-            new_status=member.status,
-            details={"removed_at": member.removed_at.isoformat()},
-        )
-        enqueue_notification(
-            db,
-            recipient_user_id=member.user_id,
-            event_type="family_member_removed",
-            payload={
-                "family_id": str(member.family_id),
-                "member_id": str(member.id),
-                "message": "Вы удалены из семьи после 12-часового предупреждения.",
-            },
-        )
-        notification_count += 1
-
-    if members:
-        db.flush()
-    return len(members), notification_count
-
-
 def close_due_families(db: Session) -> tuple[int, int]:
     now = utcnow()
     families = list(
@@ -1135,7 +1062,6 @@ def close_due_families(db: Session) -> tuple[int, int]:
                             "awaiting_confirmation",
                             "payment_due",
                             "active",
-                            "removal_pending",
                         }
                     )
                 )

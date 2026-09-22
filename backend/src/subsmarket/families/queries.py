@@ -60,9 +60,7 @@ def to_family_out(
             avatar_name=family.owner.public_name
             or default_avatar_name(family.owner.id),
             first_name=family.owner.first_name,
-            photo_url=(
-                family.owner.photo_url if include_owner_photo else None
-            ),
+            photo_url=(family.owner.photo_url if include_owner_photo else None),
         ),
         status=family.status,
         period=family.period,
@@ -94,9 +92,7 @@ def to_family_request_out(request: FamilyRequest) -> FamilyRequestOut:
         service_variant=request.family.service.variant,
         plan_name=request.family.plan_name,
         owner_username=(
-            request.family.owner.username
-            if request.status == "approved"
-            else None
+            request.family.owner.username if request.status == "approved" else None
         ),
         user_id=request.user_id,
         status=request.status,
@@ -136,9 +132,6 @@ def to_member_out(member: FamilyMember) -> FamilyMemberOut:
         joined_at=member.joined_at,
         access_provided_at=member.access_provided_at,
         access_confirmed_at=member.access_confirmed_at,
-        removal_scheduled_at=member.removal_scheduled_at,
-        removal_acknowledged_at=member.removal_acknowledged_at,
-        removal_cancel_requested_at=member.removal_cancel_requested_at,
         removal_reason=member.removal_reason,
         left_at=member.left_at,
         removed_at=member.removed_at,
@@ -238,9 +231,7 @@ def list_searchable_families(
     )
     if family_type:
         stmt = stmt.where(Family.family_type == family_type)
-    return list(
-        db.scalars(stmt).all()
-    )
+    return list(db.scalars(stmt).all())
 
 
 def list_searchable_families_page(
@@ -656,8 +647,7 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
         and family.status == "active"
         and family.active_members_count < family.max_members
         and (
-            request is None
-            or request.status not in {ACTIVE_REQUEST_STATUS, "rejected"}
+            request is None or request.status not in {ACTIVE_REQUEST_STATUS, "rejected"}
         )
     )
 

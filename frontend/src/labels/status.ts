@@ -11,7 +11,6 @@ const statusToneMap: Record<string, StatusTone> = {
   payment_reported: "info",
   overdue: "danger",
   rejected: "danger",
-  removal_pending: "danger",
   closing: "warning",
   full: "neutral",
   closed: "neutral",
@@ -42,7 +41,6 @@ export const statusLabels: Record<string, string> = {
   payment_reported: "Участник отметил оплату",
   paid: "Оплачено",
   overdue: "Просрочено",
-  removal_pending: "Удаление обрабатывается",
   left: "Вышел",
   removed: "Удален",
   cancelled_before_access: "Отменено до доступа"

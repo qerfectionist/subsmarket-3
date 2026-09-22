@@ -164,9 +164,6 @@ class FamilyMemberOut(BaseModel):
     joined_at: datetime
     access_provided_at: datetime | None
     access_confirmed_at: datetime | None
-    removal_scheduled_at: datetime | None = None
-    removal_acknowledged_at: datetime | None = None
-    removal_cancel_requested_at: datetime | None = None
     removal_reason: str | None = None
     left_at: datetime | None = None
     removed_at: datetime | None = None

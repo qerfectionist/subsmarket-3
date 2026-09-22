@@ -190,9 +190,6 @@ def remove_member(
     member.status = "removed"
     member.removal_reason = reason
     member.removed_at = now
-    member.removal_scheduled_at = None
-    member.removal_acknowledged_at = None
-    member.removal_cancel_requested_at = None
     _release_family_slot(family)
     cancel_scheduled_payments(
         db,
