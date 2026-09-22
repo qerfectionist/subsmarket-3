@@ -156,9 +156,8 @@ def run_write_load(
                 status="active",
                 service_metadata={"temporary": True, "run_id": run_id},
             )
-            base_telegram_id = (
-                8_000_000_000
-                + int(run_id[:8], 16) * (family_count * 2 + 1000)
+            base_telegram_id = 8_000_000_000 + int(run_id[:8], 16) * (
+                family_count * 2 + 1000
             )
             owners = [
                 User(

@@ -166,9 +166,7 @@ DEFAULT_RATE_LIMIT_RULES = (
     RateLimitRule(
         "account_request_create",
         "POST",
-        re.compile(
-            r"/api/marketplace/accounts/listings/[0-9a-fA-F-]{36}/requests"
-        ),
+        re.compile(r"/api/marketplace/accounts/listings/[0-9a-fA-F-]{36}/requests"),
         20,
         3600,
         key_by_telegram_user=True,
@@ -248,6 +246,9 @@ class InMemoryRateLimiter:
         bucket.append(now)
         return True
 
+    def reset(self) -> None:
+        self._hits.clear()
+
     def _prune_if_due(self, now: float) -> None:
         if now - self._last_prune < self.prune_interval_seconds:
             return
@@ -313,10 +314,25 @@ class RedisRateLimiter:
         return int(count) <= rule.max_requests
 
 
+_default_in_memory_limiter: InMemoryRateLimiter | None = None
+
+
+def get_in_memory_limiter() -> InMemoryRateLimiter:
+    global _default_in_memory_limiter
+    if _default_in_memory_limiter is None:
+        _default_in_memory_limiter = InMemoryRateLimiter()
+    return _default_in_memory_limiter
+
+
 def build_rate_limiter() -> InMemoryRateLimiter | RedisRateLimiter:
     if settings.rate_limit_redis_url:
         return RedisRateLimiter(settings.rate_limit_redis_url)
-    return InMemoryRateLimiter()
+    return get_in_memory_limiter()
+
+
+def reset_rate_limiter() -> None:
+    if _default_in_memory_limiter is not None:
+        _default_in_memory_limiter.reset()
 
 
 async def rate_limit_backend_status() -> str:
@@ -372,9 +388,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         )
         allow_result = self.limiter.allow(rule=rule, client_key=client_key)
         allowed = (
-            await allow_result
-            if inspect.isawaitable(allow_result)
-            else allow_result
+            await allow_result if inspect.isawaitable(allow_result) else allow_result
         )
         if not allowed:
             return JSONResponse(

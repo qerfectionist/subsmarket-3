@@ -4,10 +4,12 @@ import hmac
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy.orm import Session
 
 from subsmarket.bot.service import handle_telegram_update
 from subsmarket.core.config import settings
+from subsmarket.core.database import get_db
 
 router = APIRouter(prefix="/api/telegram", tags=["telegram-bot"])
 logger = logging.getLogger(__name__)
@@ -34,6 +36,7 @@ def verify_webhook_secret(secret_header: str | None) -> None:
 def post_telegram_webhook(
     update: dict[str, Any],
     x_telegram_bot_api_secret_token: str | None = Header(default=None),
+    db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     verify_webhook_secret(x_telegram_bot_api_secret_token)
-    return handle_telegram_update(update)
+    return handle_telegram_update(update, db=db)

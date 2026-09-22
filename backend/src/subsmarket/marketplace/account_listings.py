@@ -60,9 +60,7 @@ def create_account_listing(
     listing.service = service
     db.add(listing)
     db.flush()
-    complete_idempotency(
-        claim, resource_type="account_listing", resource_id=listing.id
-    )
+    complete_idempotency(claim, resource_type="account_listing", resource_id=listing.id)
     return to_account_listing_out(listing, user.id)
 
 
@@ -101,9 +99,7 @@ def update_account_listing(
     if "description" in data.model_fields_set:
         listing.description = _normalize_optional(data.description)
     listing.updated_at = utcnow()
-    complete_idempotency(
-        claim, resource_type="account_listing", resource_id=listing.id
-    )
+    complete_idempotency(claim, resource_type="account_listing", resource_id=listing.id)
     db.flush()
     return to_account_listing_out(listing, user.id)
 
@@ -112,8 +108,13 @@ def pause_account_listing(
     db: Session, user: User, listing_id: UUID, *, idempotency_key: str | None = None
 ) -> AccountListingOut:
     return _set_status(
-        db, user, listing_id, operation="account_listing.pause",
-        allowed={"active"}, target="paused", idempotency_key=idempotency_key
+        db,
+        user,
+        listing_id,
+        operation="account_listing.pause",
+        allowed={"active"},
+        target="paused",
+        idempotency_key=idempotency_key,
     )
 
 
@@ -121,8 +122,13 @@ def resume_account_listing(
     db: Session, user: User, listing_id: UUID, *, idempotency_key: str | None = None
 ) -> AccountListingOut:
     return _set_status(
-        db, user, listing_id, operation="account_listing.resume",
-        allowed={"paused"}, target="active", idempotency_key=idempotency_key,
+        db,
+        user,
+        listing_id,
+        operation="account_listing.resume",
+        allowed={"paused"},
+        target="active",
+        idempotency_key=idempotency_key,
         require_unexpired=True,
     )
 
@@ -131,8 +137,11 @@ def renew_account_listing(
     db: Session, user: User, listing_id: UUID, *, idempotency_key: str | None = None
 ) -> AccountListingOut:
     claim = claim_idempotency(
-        db, user_id=user.id, operation="account_listing.renew",
-        idempotency_key=idempotency_key, payload={"listing_id": str(listing_id)},
+        db,
+        user_id=user.id,
+        operation="account_listing.renew",
+        idempotency_key=idempotency_key,
+        payload={"listing_id": str(listing_id)},
         resource_type="account_listing",
     )
     if claim.is_replay:
@@ -148,17 +157,13 @@ def renew_account_listing(
     )
     if listing.status != "expired" and now < renew_available_at:
         raise HTTPException(status_code=409, detail="ACCOUNT_LISTING_RENEW_TOO_EARLY")
-    listing.expires_at = now + timedelta(
-        days=settings.marketplace_account_listing_days
-    )
+    listing.expires_at = now + timedelta(days=settings.marketplace_account_listing_days)
     listing.published_at = now
     listing.expiry_reminder_sent_at = None
     if listing.status == "expired":
         listing.status = "active"
     listing.updated_at = now
-    complete_idempotency(
-        claim, resource_type="account_listing", resource_id=listing.id
-    )
+    complete_idempotency(claim, resource_type="account_listing", resource_id=listing.id)
     db.flush()
     return to_account_listing_out(listing, user.id)
 
@@ -167,8 +172,12 @@ def archive_account_listing(
     db: Session, user: User, listing_id: UUID, *, idempotency_key: str | None = None
 ) -> AccountListingOut:
     result = _set_status(
-        db, user, listing_id, operation="account_listing.archive",
-        allowed={"active", "paused", "expired"}, target="archived",
+        db,
+        user,
+        listing_id,
+        operation="account_listing.archive",
+        allowed={"active", "paused", "expired"},
+        target="archived",
         idempotency_key=idempotency_key,
     )
     _expire_pending_requests(db, listing_id, message="Объявление больше неактуально.")
@@ -188,8 +197,12 @@ def _set_status(
     require_unexpired: bool = False,
 ) -> AccountListingOut:
     claim = claim_idempotency(
-        db, user_id=user.id, operation=operation, idempotency_key=idempotency_key,
-        payload={"listing_id": str(listing_id)}, resource_type="account_listing",
+        db,
+        user_id=user.id,
+        operation=operation,
+        idempotency_key=idempotency_key,
+        payload={"listing_id": str(listing_id)},
+        resource_type="account_listing",
     )
     if claim.is_replay:
         return to_account_listing_out(_get_listing(db, claim.resource_id), user.id)
@@ -209,9 +222,7 @@ def _set_status(
         raise HTTPException(status_code=409, detail="ACCOUNT_LISTING_STATUS_CONFLICT")
     listing.status = target
     listing.updated_at = utcnow()
-    complete_idempotency(
-        claim, resource_type="account_listing", resource_id=listing.id
-    )
+    complete_idempotency(claim, resource_type="account_listing", resource_id=listing.id)
     db.flush()
     return to_account_listing_out(listing, user.id)
 
@@ -295,7 +306,8 @@ def _expire_pending_requests(db: Session, listing_id: UUID, *, message: str) -> 
         request.status = "expired"
         request.decided_at = now
         enqueue_notification(
-            db, recipient_user_id=request.buyer_user_id,
+            db,
+            recipient_user_id=request.buyer_user_id,
             event_type="account_request_expired",
             payload={
                 "listing_id": str(listing_id),

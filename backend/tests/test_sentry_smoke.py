@@ -39,4 +39,3 @@ def test_sentry_smoke_sends_controlled_message(monkeypatch) -> None:
     }
     assert calls == [("SubsMarket Sentry smoke check", "info")]
     assert flush_timeouts == [5]
-

@@ -41,9 +41,7 @@ class MarketplaceAccountListing(Base):
             "status in ('active', 'paused', 'expired', 'archived')",
             name="marketplace_account_listing_status_ck",
         ),
-        CheckConstraint(
-            "price_kzt > 0", name="marketplace_account_listing_price_ck"
-        ),
+        CheckConstraint("price_kzt > 0", name="marketplace_account_listing_price_ck"),
         CheckConstraint(
             "length(title) between 2 and 100",
             name="marketplace_account_listing_title_length_ck",

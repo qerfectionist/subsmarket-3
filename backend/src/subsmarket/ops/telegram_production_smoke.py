@@ -24,9 +24,7 @@ def validate_telegram_state(
     problems: list[str] = []
     if not bot.get("username"):
         problems.append("bot username is missing")
-    if _normalized_url(webhook.get("url")) != _normalized_url(
-        expected_webhook_url
-    ):
+    if _normalized_url(webhook.get("url")) != _normalized_url(expected_webhook_url):
         problems.append("Telegram webhook URL does not match production config")
     if webhook.get("last_error_message"):
         problems.append(f"Telegram webhook error: {webhook['last_error_message']}")

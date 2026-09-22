@@ -80,9 +80,7 @@ def get_my_account_listings(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> AccountListingPageOut:
-    items, next_cursor = list_my_account_listings(
-        db, user, limit=limit, cursor=cursor
-    )
+    items, next_cursor = list_my_account_listings(db, user, limit=limit, cursor=cursor)
     return AccountListingPageOut(items=items, next_cursor=next_cursor)
 
 
@@ -93,9 +91,7 @@ def post_account_listing(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> AccountListingOut:
-    return create_account_listing(
-        db, user, data, idempotency_key=idempotency_key
-    )
+    return create_account_listing(db, user, data, idempotency_key=idempotency_key)
 
 
 @router.get("/listings/{listing_id}", response_model=AccountListingOut)
@@ -127,9 +123,7 @@ def _listing_action(operation):
         db: Session = Depends(get_db),
         user=Depends(get_current_user),
     ) -> AccountListingOut:
-        return operation(
-            db, user, listing_id, idempotency_key=idempotency_key
-        )
+        return operation(db, user, listing_id, idempotency_key=idempotency_key)
 
     endpoint.__name__ = f"post_{operation.__name__}"
     return endpoint
@@ -150,7 +144,8 @@ router.post("/listings/{listing_id}/archive", response_model=AccountListingOut)(
 
 
 @router.post(
-    "/listings/{listing_id}/requests", response_model=AccountRequestOut,
+    "/listings/{listing_id}/requests",
+    response_model=AccountRequestOut,
     status_code=201,
 )
 def post_account_request(
@@ -159,9 +154,7 @@ def post_account_request(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> AccountRequestOut:
-    return create_account_request(
-        db, user, listing_id, idempotency_key=idempotency_key
-    )
+    return create_account_request(db, user, listing_id, idempotency_key=idempotency_key)
 
 
 @router.get("/requests/me", response_model=AccountRequestPageOut)
@@ -185,9 +178,7 @@ def post_account_request_accept(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> AccountRequestOut:
-    return accept_account_request(
-        db, user, request_id, idempotency_key=idempotency_key
-    )
+    return accept_account_request(db, user, request_id, idempotency_key=idempotency_key)
 
 
 @router.post("/requests/{request_id}/reject", response_model=AccountRequestOut)
@@ -225,7 +216,11 @@ def post_account_request_close(
     user=Depends(get_current_user),
 ) -> AccountRequestOut:
     return close_account_request(
-        db, user, request_id, outcome=data.outcome, reason=data.reason,
+        db,
+        user,
+        request_id,
+        outcome=data.outcome,
+        reason=data.reason,
         idempotency_key=idempotency_key,
     )
 
@@ -237,6 +232,4 @@ def post_account_request_remind(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> AccountRequestOut:
-    return remind_account_request(
-        db, user, request_id, idempotency_key=idempotency_key
-    )
+    return remind_account_request(db, user, request_id, idempotency_key=idempotency_key)

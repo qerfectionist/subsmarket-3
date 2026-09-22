@@ -37,12 +37,9 @@ def fetch_json(base_url: str, path: str) -> dict[str, Any]:
 
 
 def validate_openapi_paths(paths: set[str]) -> list[str]:
-    problems = [
-        f"missing route: {path}" for path in sorted(REQUIRED_PATHS - paths)
-    ]
+    problems = [f"missing route: {path}" for path in sorted(REQUIRED_PATHS - paths)]
     problems.extend(
-        f"development route exposed: {path}"
-        for path in sorted(FORBIDDEN_PATHS & paths)
+        f"development route exposed: {path}" for path in sorted(FORBIDDEN_PATHS & paths)
     )
     return problems
 

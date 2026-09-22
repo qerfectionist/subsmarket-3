@@ -49,9 +49,7 @@ def test_family_catalog_keeps_subscriptions_and_tariffs_separate(db: Session) ->
     assert all(service.supported_periods == ["monthly"] for service in tariffs)
 
 
-def test_catalog_rejects_unsupported_family_type(
-    db: Session, tmp_path: Path
-) -> None:
+def test_catalog_rejects_unsupported_family_type(db: Session, tmp_path: Path) -> None:
     catalog_file = tmp_path / "bad-catalog.json"
     catalog_file.write_text(
         """

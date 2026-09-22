@@ -57,9 +57,7 @@ def get_account_listing_view(
     )
     if listing is None or (
         listing.seller_user_id != user.id
-        and (
-            listing.status != "active" or as_utc(listing.expires_at) <= utcnow()
-        )
+        and (listing.status != "active" or as_utc(listing.expires_at) <= utcnow())
     ):
         raise HTTPException(status_code=404, detail="ACCOUNT_LISTING_NOT_FOUND")
     return to_account_listing_out(listing, user.id)
@@ -349,9 +347,7 @@ def _listing_cursor(
     payload: dict[str, object] = {
         "sort": sort,
         "value": (
-            listing.published_at.isoformat()
-            if sort == "recent"
-            else listing.price_kzt
+            listing.published_at.isoformat() if sort == "recent" else listing.price_kzt
         ),
         "id": str(listing.id),
     }

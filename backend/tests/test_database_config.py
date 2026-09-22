@@ -30,4 +30,3 @@ def test_sqlite_engine_kwargs_skip_queue_pool_options() -> None:
     settings = Settings(DATABASE_URL="sqlite+pysqlite:///:memory:")
 
     assert settings.sqlalchemy_engine_kwargs == {"pool_pre_ping": True}
-

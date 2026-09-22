@@ -60,9 +60,7 @@ def _decrypt_v2_payment_requisite(value: str, secret: str) -> str:
     _, encoded_salt, encrypted = value.split(":", 2)
     salt = base64.urlsafe_b64decode(encoded_salt.encode("ascii"))
     return (
-        _pbkdf2_fernet(salt, secret)
-        .decrypt(encrypted.encode("ascii"))
-        .decode("utf-8")
+        _pbkdf2_fernet(salt, secret).decrypt(encrypted.encode("ascii")).decode("utf-8")
     )
 
 
@@ -91,16 +89,18 @@ def decrypt_payment_requisite(value: str) -> str:
     if value.startswith(f"{V3_PREFIX}:"):
         _, encrypted = value.split(":", 1)
         return _decrypt_with_configured_secrets(
-            lambda secret: _cached_fernet(secret)
-            .decrypt(encrypted.encode("ascii"))
-            .decode("utf-8")
+            lambda secret: (
+                _cached_fernet(secret)
+                .decrypt(encrypted.encode("ascii"))
+                .decode("utf-8")
+            )
         )
     if value.startswith(f"{V2_PREFIX}:"):
         return _decrypt_with_configured_secrets(
             lambda secret: _decrypt_v2_payment_requisite(value, secret)
         )
     return _decrypt_with_configured_secrets(
-        lambda secret: _legacy_fernet(secret)
-        .decrypt(value.encode("ascii"))
-        .decode("utf-8")
+        lambda secret: (
+            _legacy_fernet(secret).decrypt(value.encode("ascii")).decode("utf-8")
+        )
     )

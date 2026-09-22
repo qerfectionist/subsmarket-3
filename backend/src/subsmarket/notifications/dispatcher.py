@@ -146,9 +146,7 @@ def dispatch_pending_notifications(
     max_batches: int | None = None,
     sender: NotificationSender | None = None,
 ) -> DispatchNotificationsResult:
-    active_limit = (
-        settings.notification_dispatch_batch_size if limit is None else limit
-    )
+    active_limit = settings.notification_dispatch_batch_size if limit is None else limit
     active_max_batches = (
         settings.notification_dispatch_max_batches
         if max_batches is None

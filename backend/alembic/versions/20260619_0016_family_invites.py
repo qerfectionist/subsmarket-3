@@ -71,9 +71,7 @@ def upgrade() -> None:
         return
     op.execute("ALTER TABLE public.family_invites ENABLE ROW LEVEL SECURITY")
     if _has_role("anon") and _has_role("authenticated"):
-        op.execute(
-            "REVOKE ALL ON TABLE public.family_invites FROM anon, authenticated"
-        )
+        op.execute("REVOKE ALL ON TABLE public.family_invites FROM anon, authenticated")
         op.execute(
             """
             CREATE POLICY family_invites_deny_client_roles

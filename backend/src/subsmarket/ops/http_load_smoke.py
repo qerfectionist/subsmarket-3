@@ -88,9 +88,9 @@ def run_http_load(
         )
         for index in range(family_count)
     ]
-    created_telegram_ids = [
-        item.owner_telegram_id for item in items
-    ] + [item.candidate_telegram_id for item in items]
+    created_telegram_ids = [item.owner_telegram_id for item in items] + [
+        item.candidate_telegram_id for item in items
+    ]
     summaries: dict[str, object] = {}
     errors: dict[str, list[str]] = {}
 

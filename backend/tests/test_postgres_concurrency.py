@@ -600,9 +600,7 @@ def test_parallel_new_users_claim_different_public_names() -> None:
     finally:
         with session_factory() as db:
             db.execute(
-                delete(User).where(
-                    User.id.in_([user_id for user_id, _ in results])
-                )
+                delete(User).where(User.id.in_([user_id for user_id, _ in results]))
             )
             db.commit()
         engine.dispose()
@@ -1092,9 +1090,7 @@ def test_parallel_marketplace_accept_and_reject_have_one_winner() -> None:
 
     try:
         assert all(not thread.is_alive() for thread in threads)
-        winner_count = sum(
-            result in {"accepted", "rejected"} for result in results
-        )
+        winner_count = sum(result in {"accepted", "rejected"} for result in results)
         assert winner_count == 1, results
         assert results.count("MARKETPLACE_REQUEST_STATUS_CONFLICT") == 1
         assert not any(result.startswith("database-error") for result in results)
@@ -1234,9 +1230,7 @@ def test_parallel_marketplace_cancel_and_close_have_one_winner() -> None:
 
     try:
         assert all(not thread.is_alive() for thread in threads)
-        winner_count = sum(
-            result in {"cancelled", "closed"} for result in results
-        )
+        winner_count = sum(result in {"cancelled", "closed"} for result in results)
         assert winner_count == 1, results
         assert results.count("MARKETPLACE_REQUEST_STATUS_CONFLICT") == 1
         assert not any(result.startswith("database-error") for result in results)
@@ -1416,9 +1410,7 @@ def test_parallel_account_accepts_keep_listing_active() -> None:
                 price_kzt=2500,
             ),
         )
-        requests = [
-            create_account_request(db, buyer, listing.id) for buyer in buyers
-        ]
+        requests = [create_account_request(db, buyer, listing.id) for buyer in buyers]
         db.commit()
         request_ids = [request.id for request in requests]
         listing_id = listing.id

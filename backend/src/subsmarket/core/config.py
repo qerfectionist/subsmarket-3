@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     telegram_webhook_drop_pending_updates: bool = Field(
         default=False, alias="TELEGRAM_WEBHOOK_DROP_PENDING_UPDATES"
     )
+    telegram_admin_ids: str = Field(default="", alias="TELEGRAM_ADMIN_IDS")
     payment_requisite_secret: str = Field(
         default=DEFAULT_PAYMENT_REQUISITE_SECRET,
         alias="PAYMENT_REQUISITE_SECRET",
@@ -155,12 +156,12 @@ class Settings(BaseSettings):
         alias="MARKETPLACE_LISTING_EXPIRY_REMINDER_DAYS",
     )
     marketplace_request_reminder_delay_seconds: int = Field(
-        default=7200,
+        default=3600,
         ge=60,
         alias="MARKETPLACE_REQUEST_REMINDER_DELAY_SECONDS",
     )
     marketplace_request_reminder_cooldown_seconds: int = Field(
-        default=7200,
+        default=3600,
         ge=60,
         alias="MARKETPLACE_REQUEST_REMINDER_COOLDOWN_SECONDS",
     )
@@ -210,6 +211,17 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.app_env == "development"
+
+    @property
+    def admin_telegram_ids(self) -> set[int]:
+        if not self.telegram_admin_ids:
+            return set()
+        ids: set[int] = set()
+        for chunk in self.telegram_admin_ids.split(","):
+            val = chunk.strip()
+            if val.isdigit():
+                ids.add(int(val))
+        return ids
 
     @property
     def cors_origins(self) -> list[str]:
