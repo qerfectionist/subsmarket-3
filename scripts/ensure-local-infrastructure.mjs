@@ -36,10 +36,13 @@ function usesLocalPostgres(databaseUrl) {
 function dockerIsReady() {
   const result = spawnSync(dockerCommand, ["info", "--format", "{{.ServerVersion}}"], {
     cwd: repoRoot,
-    stdio: "ignore",
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
     windowsHide: true
   });
-  return result.status === 0;
+  if (result.status !== 0 || !result.stdout) return false;
+  const output = result.stdout.trim();
+  return output.length > 0 && !output.toLowerCase().includes("error");
 }
 
 function startDockerDesktop() {

@@ -11,7 +11,7 @@ export default defineConfig({
       host: "127.0.0.1",
       clientPort: 5173
     },
-    allowedHosts: ["sampling-action-castle-ware.trycloudflare.com"],
+    allowedHosts: true,
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8002",
