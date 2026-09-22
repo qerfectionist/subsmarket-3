@@ -16,7 +16,7 @@ family_period = monthly | yearly
 family_member_role = owner | member
 family_member_status =
   awaiting_access | awaiting_confirmation | payment_due | active |
-  removal_pending | left | removed | cancelled_before_access
+  left | removed | cancelled_before_access
 
 family_request_status = pending | approved | rejected | cancelled | expired
 family_request_cancel_reason =
@@ -186,9 +186,6 @@ family_members (
   joined_at timestamptz not null,
   access_provided_at timestamptz,
   access_confirmed_at timestamptz,
-  removal_scheduled_at timestamptz,
-  removal_acknowledged_at timestamptz,
-  removal_cancel_requested_at timestamptz,
   removal_reason text,
   left_at timestamptz,
   removed_at timestamptz,
@@ -212,8 +209,7 @@ create unique index family_active_member_unique_idx
     'awaiting_access',
     'awaiting_confirmation',
     'payment_due',
-    'active',
-    'removal_pending'
+    'active'
   );
 
 create index family_members_user_idx
@@ -394,9 +390,6 @@ create index family_payments_reported_paid_reminder_idx
 - причина хранится в `family_members.removal_reason`;
 - допустимые причины: `no_payment`, `no_response`, `access_issue`,
   `mutual_agreement`, `other`;
-- `removal_scheduled_at`, `removal_acknowledged_at` и
-  `removal_cancel_requested_at` сохранены только для совместимости со старыми
-  записями `removal_pending`;
 - подтверждение предупреждения о закрытии хранится в
   `family_members.closing_acknowledged_at`;
 - `closes_at` соответствует концу выбранного владельцем календарного дня;
