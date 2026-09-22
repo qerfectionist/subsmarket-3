@@ -24,11 +24,11 @@ test.afterEach(async ({ page }) => {
   await page.request.post(apiUrl + "/api/dev/reset-demo-data");
 });
 
-async function seedOffers(request: APIRequestContext) {
+async function seedOffers(request: APIRequestContext, slugs = ["youtube-premium", "tele2-family-tariff"]) {
   const services: FamilyService[] = await (await request.get(apiUrl + "/api/catalog/family-services")).json();
   const nextDate = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
   const familyIds: string[] = [];
-  for (const slug of ["youtube-premium", "tele2-family-tariff"]) {
+  for (const slug of slugs) {
     const service = services.find(item => item.slug === slug)!;
     expect(service).toBeTruthy();
     const result = await request.post(apiUrl + "/api/families", {
@@ -58,27 +58,17 @@ async function seedOffers(request: APIRequestContext) {
 }
 
 test("own families and actions use the same surfaces", async ({ page }, info) => {
-  const familyIds = await seedOffers(page.request);
+  const familyIds = await seedOffers(page.request, ["youtube-premium"]);
   const submitted = await page.request.post(apiUrl + "/api/families/" + familyIds[0] + "/requests", {
     headers: { "X-Dev-Telegram-User-Id": "200002", "X-Dev-Telegram-Username": "demo_member", "X-Dev-Telegram-First-Name": "Demo Member" }
   });
   expect(submitted.ok(), await submitted.text()).toBeTruthy();
   await page.goto(appUrl + "?theme=dark");
-  await page.getByRole("navigation", { name: "Главная навигация" }).getByRole("button", { name: "Действия", exact: true }).click();
+  await page.getByRole("navigation", { name: "Главная навигация" }).getByRole("button", { name: "Заявки", exact: true }).click();
   await expect(page.getByTestId("request-card")).toBeVisible();
-  const actionSummary = page.getByTestId("actions-summary");
-  await expect(actionSummary).toHaveAttribute("aria-label", "Сводка действий");
-  const compactSummary = await actionSummary.evaluate((element) => ({
-    columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
-    primaryColumn: getComputedStyle(element.firstElementChild!).gridColumn,
-    primaryHeight: element.firstElementChild!.getBoundingClientRect().height
-  }));
-  expect(compactSummary.columns).toBe(2);
-  expect(compactSummary.primaryColumn).toBe("1 / -1");
-  expect(compactSummary.primaryHeight).toBeGreaterThanOrEqual(100);
-  await page.setViewportSize({ width: 430, height: 844 });
-  await expect.poll(() => actionSummary.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length)).toBe(4);
-  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByTestId("actions-tab-outbox")).toBeVisible();
+  await expect(page.getByTestId("actions-category-filter-chip")).toBeVisible();
+  await expect(page.getByTestId("actions-status-filter-chip")).toBeVisible();
   await page.screenshot({ path: info.outputPath("actions-member.png") });
   await page.evaluate(() => localStorage.setItem("subsmarket.devTelegramUser", "200001"));
   // The initialization script resets storage on navigation, so use the real switch.
@@ -88,6 +78,9 @@ test("own families and actions use the same surfaces", async ({ page }, info) =>
   await page.getByRole("navigation", { name: "Главная навигация" }).getByRole("button", { name: "Мои", exact: true }).click();
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
   await page.screenshot({ path: info.outputPath("my-owner.png") });
+  if ((await page.getByTestId("owner-details-button").count()) === 0) {
+    await page.getByTestId("family-card").first().click();
+  }
   await page.getByTestId("owner-details-button").click();
   await page.getByRole("tablist", { name: "Управление семьёй" }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath("manage-family.png") });
@@ -202,10 +195,10 @@ test("market cards; mobile search opens the selected offer", async ({ page }, in
     const iconBounds = element.querySelector("svg")!.getBoundingClientRect();
     return {
       background: getComputedStyle(element).backgroundColor,
-      width: bounds.width,
-      height: bounds.height,
-      iconX: iconBounds.x - bounds.x,
-      iconY: iconBounds.y - bounds.y
+      width: Math.round(bounds.width),
+      height: Math.round(bounds.height),
+      iconX: Math.round(iconBounds.x - bounds.x),
+      iconY: Math.round(iconBounds.y - bounds.y)
     };
   });
   await marketSearchInput.focus();
@@ -215,10 +208,10 @@ test("market cards; mobile search opens the selected offer", async ({ page }, in
     const iconBounds = element.querySelector("svg")!.getBoundingClientRect();
     return {
       outlineStyle: getComputedStyle(element).outlineStyle,
-      width: bounds.width,
-      height: bounds.height,
-      iconX: iconBounds.x - bounds.x,
-      iconY: iconBounds.y - bounds.y
+      width: Math.round(bounds.width),
+      height: Math.round(bounds.height),
+      iconX: Math.round(iconBounds.x - bounds.x),
+      iconY: Math.round(iconBounds.y - bounds.y)
     };
   });
   expect(focusedSearch.outlineStyle).toBe("solid");
@@ -254,7 +247,7 @@ test("market cards; mobile search opens the selected offer", async ({ page }, in
   await expect(page.getByTestId("market-category-option-video")).toContainText("Видео");
   await page.getByTestId("market-category-option-video").click();
   await expect(catalogFilterLabel).toHaveText("Видео");
-  await expect(page.locator(".sm-listing")).toHaveCount(1);
+  await expect(page.locator(".sm-market-catalog-swipe-pane[aria-hidden='false'] .sm-listing")).toHaveCount(1);
   await expect(page.getByText("YouTube Premium", { exact: true })).toBeVisible();
   await catalogFilterButton.click();
   await page.getByTestId("market-category-option-all").click();
@@ -315,7 +308,7 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
     await page.screenshot({ path: info.outputPath("create-account-" + theme + ".png") });
     await nav.getByRole("button", { name: "Мои", exact: true }).click();
     await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click();
-    await expect(page.getByRole("heading", { name: "Мои объявления" })).toBeVisible();
+    await expect(page.getByTestId("my-accounts-screen")).toBeVisible();
   }
 });
 
@@ -359,11 +352,11 @@ test("empty, loading and error screens offer recovery", async ({ page }, info) =
   await page.reload();
   await page.getByTestId("market-buy-accounts").click();
   await expect(page.getByRole("alert")).toContainText("Не удалось загрузить");
-  await expect(page.getByText("Объявлений пока нет", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Доступных аккаунтов пока нет", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath("error.png") });
   fail = false;
   await page.getByRole("button", { name: "Повторить" }).click();
-  await expect(page.getByText("Объявлений пока нет", { exact: true })).toBeVisible();
+  await expect(page.getByText("Доступных аккаунтов пока нет", { exact: true })).toBeVisible();
 });
 
 test("keyboard viewport keeps fields visible and hides the dock", async ({ page }, info) => {

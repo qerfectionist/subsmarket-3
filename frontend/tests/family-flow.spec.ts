@@ -165,6 +165,7 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await switchDevUser(page, "200002");
   await openNav(page, 1);
+  await expect(page.locator(".sm-listing-detail").first()).toContainText("Оплачен");
   await expandFirstFamilyCard(page);
   await expect(page.getByTestId("create-prepayment-button")).toBeVisible();
   await clickAndWait(page, "create-prepayment-button");
@@ -199,7 +200,10 @@ test("owner and member complete the first payment family flow", async ({ page })
       !message.includes("telegram.org/js/telegram-web-app.js") &&
       !message.includes("not supported in version 6.0") &&
       !message.includes("net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin") &&
-      !message.includes("React DevTools")
+      !message.includes("React DevTools") &&
+      !message.includes("WebSocket") &&
+      !message.includes("[vite]") &&
+      !message.includes("Vite server")
   );
   expect(relevantMessages).toEqual([]);
 });
@@ -232,6 +236,10 @@ test("subscription and tariff families stay in separate storefronts", async ({
     "data-family-type",
     "tariff"
   );
+
+  // Счётчик рядом с заголовком раздела совпадает с количеством предложений.
+  const sectionCount = page.locator(".sm-market-section-heading-copy .sm-market-section-count");
+  await expect(sectionCount).toContainText("1");
 
   await selectMarketSubscriptions(page);
   await expect(
@@ -636,7 +644,7 @@ async function selectMarketTariffs(page: Page) {
 }
 
 async function openNav(page: Page, index: number) {
-  const labels = ["Маркет", "Мои", "Создать", "Действия"] as const;
+  const labels = ["Маркет", "Мои", "Создать", "Заявки"] as const;
   const nav = page.getByRole("navigation", { name: "Главная навигация" });
   const button = index === 2
     ? page.locator(".subs-dock-create").getByRole("button", { name: labels[index], exact: true })

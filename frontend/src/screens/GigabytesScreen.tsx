@@ -1,45 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
+import { useFeedSnap } from "../hooks/useFeedSnap";
 import { Button as AppButton } from "../components/ui";
 import { ListingAuthor } from "../components/ListingAuthor";
 import { ServiceLogo } from "../components/branding";
 import { GigabytesListingCard as ListingRow } from "../components/ListingCard";
 import { AsyncContent } from "../components/AsyncContent";
+import { FilterMenu, type FilterMenuOption } from "../components/FilterMenu";
 import { SystemSymbol } from "../components/SystemSymbol";
 import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 
 import { formatDate, formatError, normalizeText } from "../format";
 import {
-  useAcceptMarketplaceRequest,
   useArchiveMarketplaceListing,
-  useCancelMarketplaceRequest,
-  useCloseMarketplaceRequest,
   useCreateMarketplaceListing,
   useCreateMarketplaceRequest,
   useMarketplaceListing,
   useMarketplaceListings,
   useMarketplaceOperators,
   useMarketplacePriceInsight,
-  useMarketplaceRequests,
   useMyMarketplaceListings,
   usePauseMarketplaceListing,
-  useRejectMarketplaceRequest,
-  useRemindMarketplaceRequest,
   useRenewMarketplaceListing,
   useResumeMarketplaceListing,
   useUpdateMarketplaceListing
 } from "../hooks/useApi";
-import { openTelegramUser, showTelegramConfirm } from "../telegram";
+import { openTelegramUser, showTelegramAlert, showTelegramConfirm, triggerTelegramImpact } from "../telegram";
 import type {
   MarketplaceListing,
   MarketplaceListingCreate,
-  MarketplaceListingRequest,
   MarketplaceOperator,
   MarketplacePriceInsight,
-  MarketplaceRequestRole,
   MarketplaceSort
 } from "../types";
 
-type ScreenMode = "catalog" | "detail" | "create" | "mine" | "requests";
+type ScreenMode = "catalog" | "detail" | "create" | "mine";
 const MINIMUM_GB_ORDER = 1;
 
 const emptyForm: MarketplaceListingCreate = {
@@ -48,22 +42,27 @@ const emptyForm: MarketplaceListingCreate = {
   description: null
 };
 
+const sortOptions: FilterMenuOption[] = [
+  { value: "all", label: "По умолчанию" },
+  { value: "recent", label: "Новое" },
+  { value: "price_asc", label: "Дешевле" }
+];
+
 export function GigabytesScreen({
   onBack,
   initialMode = "catalog",
-  initialRequestRole = "buyer",
   initialListingId
 }: {
   onBack: () => void;
-  initialMode?: "catalog" | "requests" | "mine" | "create";
-  initialRequestRole?: MarketplaceRequestRole;
+  initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
   const [mode, setMode] = useState<ScreenMode>(initialListingId ? "detail" : initialMode);
   const [selectedId, setSelectedId] = useState<string | null>(initialListingId ?? null);
   const [operator, setOperator] = useState<string | null>(null);
-  const [sort, setSort] = useState<MarketplaceSort>("recent");
-  const [requestRole, setRequestRole] = useState<MarketplaceRequestRole>(initialRequestRole);
+  const [sort, setSort] = useState<MarketplaceSort | "all">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<MarketplaceListingCreate>(emptyForm);
   const [busy, setBusy] = useState<string | null>(null);
@@ -72,10 +71,9 @@ export function GigabytesScreen({
   const originMode: ScreenMode = initialListingId ? "catalog" : initialMode;
 
   const operatorsQuery = useMarketplaceOperators();
-  const listingsQuery = useMarketplaceListings(operator, sort);
+  const listingsQuery = useMarketplaceListings(operator, sort === "all" ? "recent" : sort);
   const myListingsQuery = useMyMarketplaceListings();
   const listingQuery = useMarketplaceListing(mode === "detail" ? selectedId : null);
-  const requestsQuery = useMarketplaceRequests(requestRole);
   const priceInsightQuery = useMarketplacePriceInsight(
     form.operator_slug,
     mode === "create"
@@ -87,16 +85,10 @@ export function GigabytesScreen({
   const renewListingMutation = useRenewMarketplaceListing();
   const archiveListingMutation = useArchiveMarketplaceListing();
   const createRequestMutation = useCreateMarketplaceRequest();
-  const acceptRequestMutation = useAcceptMarketplaceRequest();
-  const rejectRequestMutation = useRejectMarketplaceRequest();
-  const cancelRequestMutation = useCancelMarketplaceRequest();
-  const closeRequestMutation = useCloseMarketplaceRequest();
-  const remindRequestMutation = useRemindMarketplaceRequest();
 
   const operators = operatorsQuery.data ?? [];
   const listings = listingsQuery.data ?? [];
   const myListings = myListingsQuery.data ?? [];
-  const requests = requestsQuery.data ?? [];
   const selectedListing = listingQuery.data ?? null;
   const activeOperator = useMemo(
     () => operators.find((item) => item.slug === form.operator_slug) ?? null,
@@ -183,139 +175,168 @@ export function GigabytesScreen({
   }, [mode, selectedId]);
 
   return (
-    <div className="gb-screen" data-testid="gigabytes-screen">
-      <header className="gb-header">
-        <button type="button" className="gb-back" aria-label="Назад" onClick={goBack}>
-          <SystemSymbol name="arrow.left" size={20} />
-        </button>
-        <div>
-          <h1>{screenTitle(mode)}</h1>
-        </div>
-      </header>
+    <div
+      className={`gb-screen sm-market-screen ${mode === "catalog" ? "sm-market-screen-catalog" : "subs-screen-scroll"}`}
+      data-testid="gigabytes-screen"
+    >
+      {mode === "catalog" ? (
+        <>
+          <header className="sm-market-catalog-header">
+            <h1>Гигабайты</h1>
+            <button
+              type="button"
+              className={`sm-market-catalog-info${isInfoOpen ? " is-active" : ""}`}
+              aria-label="О сделках"
+              aria-expanded={isInfoOpen}
+              aria-controls="gigabytes-safety-disclosure"
+              data-testid="gigabytes-safety-note"
+              onClick={() => {
+                triggerTelegramImpact("light");
+                setIsInfoOpen((prev) => !prev);
+              }}
+            >
+              <SystemSymbol name="info.circle" size={20} />
+            </button>
+          </header>
+          <div
+            id="gigabytes-safety-disclosure"
+            className={`sm-market-info-disclosure${isInfoOpen ? " is-open" : ""}`}
+            aria-hidden={!isInfoOpen}
+            inert={!isInfoOpen}
+          >
+            <div className="sm-market-info-disclosure-content">
+              <div className="sm-market-alert-disclosure" data-testid="gigabytes-safety-alert">
+                <div className="sm-market-alert-content">
+                  <p>
+                    Передача происходит напрямую между номерами. SubsMarket не принимает оплату, не хранит реквизиты и не несёт ответственности за сделки.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="sm-market-alert-close"
+                  aria-label="Закрыть памятку"
+                  onClick={() => {
+                    triggerTelegramImpact("light");
+                    setIsInfoOpen(false);
+                  }}
+                >
+                  <SystemSymbol name="xmark" size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <header className="gb-header">
+          <button type="button" className="gb-back" aria-label="Назад" onClick={goBack}>
+            <SystemSymbol name="chevron.backward" size={20} />
+          </button>
+          <div className="gb-header-title-wrap">
+            {mode === "detail" ? (
+              <span className="gb-header-eyebrow">
+                {selectedListing?.operator.name ?? "ГИГАБАЙТЫ"}
+              </span>
+            ) : null}
+            <h1>{screenTitle(mode)}</h1>
+          </div>
+        </header>
+      )}
 
       {error ? <div className="inline-error" role="alert">{error}</div> : null}
       {notice ? <div className="gb-notice" role="status">{notice}</div> : null}
 
-      <AsyncContent query={mode === "catalog" ? listingsQuery : mode === "detail" ? listingQuery : mode === "mine" ? myListingsQuery : mode === "requests" ? requestsQuery : operatorsQuery}>
+      <AsyncContent
+        query={
+          mode === "catalog"
+            ? listingsQuery
+            : mode === "detail"
+              ? listingQuery
+              : mode === "mine"
+                ? myListingsQuery
+                : operatorsQuery
+        }
+      >
+        {mode === "catalog" ? (
+          <CatalogView
+            operators={operators}
+            listings={listings}
+            searchTerm={searchTerm}
+            onSearchTerm={setSearchTerm}
+            operator={operator}
+            sort={sort}
+            loading={listingsQuery.isLoading}
+            loadingMore={listingsQuery.isFetchingNextPage}
+            hasMore={Boolean(listingsQuery.hasNextPage)}
+            onOperator={setOperator}
+            onSort={setSort}
+            onListing={openListing}
+            onLoadMore={() => listingsQuery.fetchNextPage()}
+            onCreate={startCreate}
+            onRefresh={() => void listingsQuery.refetch()}
+          />
+        ) : null}
 
-      {mode === "catalog" ? (
-        <CatalogView
-          operators={operators}
-          listings={listings}
-          operator={operator}
-          sort={sort}
-          loading={listingsQuery.isLoading}
-          loadingMore={listingsQuery.isFetchingNextPage}
-          hasMore={Boolean(listingsQuery.hasNextPage)}
-          onOperator={setOperator}
-          onSort={setSort}
-          onListing={openListing}
-          onLoadMore={() => listingsQuery.fetchNextPage()}
-          onCreate={startCreate}
-        />
-      ) : null}
+        {mode === "detail" ? (
+          <ListingDetails
+            listing={selectedListing}
+            loading={listingQuery.isLoading}
+            busy={busy}
+            onBuy={(id, amountGb) =>
+              run(
+                "create-request",
+                () => createRequestMutation.mutateAsync({ listingId: id, amountGb }),
+                "Заявка отправлена продавцу"
+              )
+            }
+            onEdit={startEdit}
+            onPause={(id) =>
+              run("pause-listing", () => pauseListingMutation.mutateAsync(id), "Объявление скрыто")
+            }
+            onResume={(id) =>
+              run("resume-listing", () => resumeListingMutation.mutateAsync(id), "Объявление снова видно")
+            }
+            onRenew={(id) =>
+              run("renew-listing", () => renewListingMutation.mutateAsync(id), "Срок продлён на 7 дней")
+            }
+            onArchive={async (id) => {
+              const confirmed = await showTelegramConfirm(
+                "Убрать объявление окончательно? Неотвеченные заявки закроются."
+              );
+              if (!confirmed) return;
+              await run(
+                "archive-listing",
+                () => archiveListingMutation.mutateAsync(id),
+                "Объявление убрано"
+              );
+              setMode("mine");
+            }}
+          />
+        ) : null}
 
-      {mode === "detail" ? (
-        <ListingDetails
-          listing={selectedListing}
-          loading={listingQuery.isLoading}
-          busy={busy}
-          onBuy={(id, amountGb) =>
-            run(
-              "create-request",
-              () => createRequestMutation.mutateAsync({ listingId: id, amountGb }),
-              "Заявка отправлена продавцу"
-            )
-          }
-          onEdit={startEdit}
-          onPause={(id) =>
-            run("pause-listing", () => pauseListingMutation.mutateAsync(id), "Объявление скрыто")
-          }
-          onResume={(id) =>
-            run("resume-listing", () => resumeListingMutation.mutateAsync(id), "Объявление снова видно")
-          }
-          onRenew={(id) =>
-            run("renew-listing", () => renewListingMutation.mutateAsync(id), "Срок продлён на 7 дней")
-          }
-          onArchive={async (id) => {
-            const confirmed = await showTelegramConfirm(
-              "Убрать объявление окончательно? Неотвеченные заявки закроются."
-            );
-            if (!confirmed) return;
-            await run(
-              "archive-listing",
-              () => archiveListingMutation.mutateAsync(id),
-              "Объявление убрано"
-            );
-            setMode("mine");
-          }}
-        />
-      ) : null}
+        {mode === "create" ? (
+          <ListingForm
+            form={form}
+            operator={activeOperator}
+            operators={operators}
+            editing={Boolean(editingId)}
+            busy={busy !== null}
+            priceInsight={priceInsightQuery.data ?? null}
+            onChange={setForm}
+            onSubmit={submitListing}
+          />
+        ) : null}
 
-      {mode === "create" ? (
-        <ListingForm
-          form={form}
-          operator={activeOperator}
-          operators={operators}
-          editing={Boolean(editingId)}
-          busy={busy !== null}
-          priceInsight={priceInsightQuery.data ?? null}
-          onChange={setForm}
-          onSubmit={submitListing}
-        />
-      ) : null}
-
-      {mode === "mine" ? (
-        <MyListingsView
-          listings={myListings}
-          loading={myListingsQuery.isLoading}
-          loadingMore={myListingsQuery.isFetchingNextPage}
-          hasMore={Boolean(myListingsQuery.hasNextPage)}
-          onCreate={startCreate}
-          onOpen={openListing}
-          onLoadMore={() => myListingsQuery.fetchNextPage()}
-        />
-      ) : null}
-
-      {mode === "requests" ? (
-        <RequestsView
-          role={requestRole}
-          requests={requests}
-          loading={requestsQuery.isLoading}
-          loadingMore={requestsQuery.isFetchingNextPage}
-          hasMore={Boolean(requestsQuery.hasNextPage)}
-          busy={busy}
-          onRole={setRequestRole}
-          onLoadMore={() => requestsQuery.fetchNextPage()}
-          onAccept={(id) =>
-            run("accept-request", () => acceptRequestMutation.mutateAsync(id), "Заявка принята")
-          }
-          onReject={(id) =>
-            run(
-              "reject-request",
-              () => rejectRequestMutation.mutateAsync({ id }),
-              "Заявка отклонена"
-            )
-          }
-          onCancel={(id) =>
-            run(
-              "cancel-request",
-              () => cancelRequestMutation.mutateAsync({ id }),
-              "Заявка отменена"
-            )
-          }
-          onClose={(id, outcome) =>
-            run(
-              "close-request",
-              () => closeRequestMutation.mutateAsync({ id, outcome }),
-              "Контакт убран из активных"
-            )
-          }
-          onRemind={(id) =>
-            run("remind-request", () => remindRequestMutation.mutateAsync(id), "Напоминание отправлено")
-          }
-        />
-      ) : null}
+        {mode === "mine" ? (
+          <MyListingsView
+            listings={myListings}
+            loading={myListingsQuery.isLoading}
+            loadingMore={myListingsQuery.isFetchingNextPage}
+            hasMore={Boolean(myListingsQuery.hasNextPage)}
+            onCreate={startCreate}
+            onOpen={openListing}
+            onLoadMore={() => myListingsQuery.fetchNextPage()}
+          />
+        ) : null}
       </AsyncContent>
     </div>
   );
@@ -324,6 +345,8 @@ export function GigabytesScreen({
 function CatalogView({
   operators,
   listings,
+  searchTerm,
+  onSearchTerm,
   operator,
   sort,
   loading,
@@ -333,64 +356,221 @@ function CatalogView({
   onSort,
   onListing,
   onLoadMore,
-  onCreate
+  onCreate,
+  onRefresh
 }: {
   operators: MarketplaceOperator[] | undefined;
   listings: MarketplaceListing[];
+  searchTerm: string;
+  onSearchTerm: (value: string) => void;
   operator: string | null;
-  sort: MarketplaceSort;
+  sort: MarketplaceSort | "all";
   loading: boolean;
   loadingMore: boolean;
   hasMore: boolean;
   onOperator: (value: string | null) => void;
-  onSort: (value: MarketplaceSort) => void;
+  onSort: (value: MarketplaceSort | "all") => void;
   onListing: (id: string) => void;
   onLoadMore: () => unknown;
   onCreate: () => void;
+  onRefresh?: () => void;
 }) {
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [isOperatorMenuOpen, setIsOperatorMenuOpen] = useState(false);
+  const activeSortOption = useMemo(
+    () => sortOptions.find((opt) => opt.value === sort) ?? sortOptions[0],
+    [sort]
+  );
+
+  const operatorOptions: FilterMenuOption[] = useMemo(() => {
+    return [
+      { value: "all", label: "Все операторы", count: listings.length },
+      ...(operators ?? []).map((item) => ({
+        value: item.slug,
+        label: item.name,
+        count: listings.filter((l) => l.operator.slug === item.slug).length
+      }))
+    ];
+  }, [listings, operators]);
+
+  const activeOperatorOption = useMemo(
+    () =>
+      operatorOptions.find((opt) =>
+        operator === null ? opt.value === "all" : opt.value === operator
+      ) ?? operatorOptions[0],
+    [operator, operatorOptions]
+  );
+
+  const displayedListings = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return listings;
+    return listings.filter(
+      (item) =>
+        item.operator.name.toLowerCase().includes(term) ||
+        (item.description && item.description.toLowerCase().includes(term))
+    );
+  }, [listings, searchTerm]);
+
+  const feedSnap = useFeedSnap({
+    enabled: true,
+    itemCount: displayedListings.length
+  });
+
   return (
-    <section className="gb-stack">
-      <div className="gb-toolbar">
-        <div className="gb-chip-row">
-          <button className={!operator ? "active" : ""} onClick={() => onOperator(null)} type="button">
-            Все
+    <section className="gb-stack sm-market-catalog-stack">
+      <label className="sm-market-search">
+        <SystemSymbol name="magnifyingglass" size={20} />
+        <input
+          type="search"
+          aria-label="Поиск гигабайтов"
+          data-testid="gigabytes-search-input"
+          placeholder="Оператор или описание"
+          value={searchTerm}
+          onChange={(e) => onSearchTerm(e.target.value)}
+        />
+        {searchTerm ? (
+          <button
+            type="button"
+            className="sm-market-search-clear"
+            aria-label="Очистить поиск"
+            onClick={() => onSearchTerm("")}
+          >
+            <SystemSymbol name="xmark" size={18} />
           </button>
-          {(operators ?? []).map((item) => (
-            <button
-              key={item.slug}
-              className={operator === item.slug ? "active" : ""}
-              onClick={() => onOperator(item.slug)}
-              type="button"
-            >
-              {item.name}
-            </button>
-          ))}
+        ) : null}
+      </label>
+
+      <div className="sm-market-section-heading sm-market-section-heading-catalog">
+        <div className="sm-market-section-heading-copy">
+          <h2>{searchTerm ? "Результаты поиска" : "Доступные"}</h2>
+          {!searchTerm && listings.length > 0 ? (
+            <span className="sm-market-section-count">{listings.length}</span>
+          ) : null}
         </div>
-        <select aria-label="Сортировка объявлений" value={sort} onChange={(event) => onSort(event.target.value as MarketplaceSort)}>
-          <option value="recent">Сначала новые</option>
-          <option value="price_asc">Цена: ниже</option>
-          <option value="price_desc">Цена: выше</option>
-        </select>
+        <div className="sm-market-filter-actions">
+          <button
+            type="button"
+            data-testid="gigabytes-operator-filter-button"
+            className={`sm-market-filter-chip${operator !== null ? " is-active" : ""}`}
+            aria-haspopup="menu"
+            aria-expanded={isOperatorMenuOpen}
+            aria-label={`Фильтр операторов: ${activeOperatorOption.label}`}
+            onClick={() => {
+              setIsSortMenuOpen(false);
+              setIsOperatorMenuOpen((prev) => !prev);
+            }}
+          >
+            <SystemSymbol name="sort" size={14} />
+            <span>{operator ? activeOperatorOption.label : "Все"}</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="gigabytes-sort-button"
+            aria-label="Сортировка объявлений"
+            aria-haspopup="menu"
+            aria-expanded={isSortMenuOpen}
+            className={`sm-market-filter-chip${sort !== "all" ? " is-active" : ""}`}
+            onClick={() => {
+              setIsOperatorMenuOpen(false);
+              setIsSortMenuOpen((prev) => !prev);
+            }}
+          >
+            <SystemSymbol name="round-sort-vertical" size={14} className="sm-market-filter-icon-price" />
+            <span>{activeSortOption.label}</span>
+          </button>
+
+          {isOperatorMenuOpen ? (
+            <FilterMenu
+              id="gigabytes-operator-menu"
+              label="Оператор"
+              options={operatorOptions}
+              selectedValue={operator ?? "all"}
+              testIdPrefix="gigabytes-operator-option"
+              onSelect={(value) => {
+                onOperator(value === "all" ? null : value);
+                setIsOperatorMenuOpen(false);
+              }}
+              onClose={() => setIsOperatorMenuOpen(false)}
+            />
+          ) : null}
+
+          {isSortMenuOpen ? (
+            <FilterMenu
+              id="gigabytes-sort-menu"
+              label="Сортировка объявлений"
+              options={sortOptions}
+              selectedValue={sort}
+              testIdPrefix="gigabytes-sort-option"
+              onSelect={(value) => {
+                onSort(value as MarketplaceSort | "all");
+                setIsSortMenuOpen(false);
+              }}
+              onClose={() => setIsSortMenuOpen(false)}
+            />
+          ) : null}
+        </div>
       </div>
-      {loading ? <div className="gb-empty">Загружаем объявления...</div> : null}
-      {!loading && listings.length === 0 ? (
-        <div className="gb-empty">
-          <strong>Активных объявлений пока нет</strong>
-          <span>Можно опубликовать первое предложение.</span>
-          <AppButton type="button" onClick={onCreate}>Продать ГБ</AppButton>
-        </div>
-      ) : (
-        <div className="sm-market-family-list">
-          {listings.map((listing) => (
-            <ListingRow key={listing.id} listing={listing} onClick={() => onListing(listing.id)} />
-          ))}
-        </div>
-      )}
-      {hasMore ? (
-        <AppButton type="button" variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>
-          {loadingMore ? "Загружаем..." : "Показать ещё"}
-        </AppButton>
-      ) : null}
+
+      <div
+        className="sm-market-catalog-feed-scroll"
+        ref={feedSnap.containerRef}
+        {...feedSnap.scrollHandlers}
+      >
+        {loading ? (
+          <div className="sm-market-family-list" aria-label="Загружаем объявления" role="status">
+            {[0, 1, 2].map((n) => (
+              <div key={n} className="sm-listing-skeleton" aria-hidden>
+                <span />
+                <div />
+                <span />
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && displayedListings.length === 0 ? (
+          <div className="sm-market-empty" data-testid="gigabytes-catalog-empty">
+            <SystemSymbol name="magnifyingglass" size={28} />
+            <h3>{searchTerm ? "Ничего не найдено" : "Доступных гигабайтов пока нет"}</h3>
+            <p>
+              {searchTerm
+                ? "Попробуйте изменить поисковый запрос или сбросить фильтры."
+                : "Можно опубликовать первое предложение или вернуться позже."}
+            </p>
+            <div className="sm-market-empty-actions">
+              <button
+                type="button"
+                className="sm-market-button sm-market-button-secondary"
+                onClick={() => (searchTerm ? onSearchTerm("") : void onRefresh?.())}
+              >
+                {searchTerm ? "Сбросить поиск" : "Обновить"}
+              </button>
+              {!searchTerm ? (
+                <button
+                  type="button"
+                  className="sm-market-button sm-market-button-primary"
+                  onClick={onCreate}
+                >
+                  Продать ГБ
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="sm-market-family-list">
+            {displayedListings.map((listing) => (
+              <ListingRow key={listing.id} listing={listing} onClick={() => onListing(listing.id)} />
+            ))}
+          </div>
+        )}
+
+        {hasMore ? (
+          <AppButton type="button" variant="tertiary" fullWidth disabled={loadingMore} onClick={onLoadMore}>
+            {loadingMore ? "Загружаем…" : "Показать ещё"}
+          </AppButton>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -418,7 +598,15 @@ function ListingDetails({
 }) {
   const [amountGb, setAmountGb] = useState("5");
   useEffect(() => setAmountGb("5"), [listing?.id]);
-  if (loading || !listing) return <div className="gb-empty">Открываем объявление...</div>;
+  if (loading || !listing) {
+    return (
+      <div className="gb-empty sm-market-empty">
+        <SystemSymbol name="clock" size={28} />
+        <h3>Открываем объявление...</h3>
+      </div>
+    );
+  }
+
   const minimumAmount = Math.max(
     MINIMUM_GB_ORDER,
     Number(listing.operator.min_lot_gb ?? 0)
@@ -427,29 +615,58 @@ function ListingDetails({
   const totalPrice = Math.round(
     Number(selectedAmount) * listing.price_per_gb_kzt
   );
+
   return (
     <section className="gb-stack">
-      <article className="gb-detail-card">
-        <ServiceLogo serviceSlug={listing.operator.slug + "-family-tariff"} serviceName={listing.operator.name} size={48} />
-        <span>{listing.operator.name}</span>
-        <h2>{formatKzt(listing.price_per_gb_kzt)} за 1 ГБ</h2>
-        {listing.description ? <p>{listing.description}</p> : null}
+      <article className="gb-detail-card family-overview-card" data-testid="gigabytes-detail-card">
+        <div className="gb-detail-head family-overview-head">
+          <ServiceLogo
+            serviceSlug={listing.operator.slug + "-family-tariff"}
+            serviceName={listing.operator.name}
+            size={48}
+          />
+          <div className="gb-detail-title-block">
+            <span className="gb-detail-service-name">{listing.operator.name}</span>
+            <h2 className="gb-detail-price">{formatKzt(listing.price_per_gb_kzt)} за 1 ГБ</h2>
+          </div>
+        </div>
+
+        {listing.description ? (
+          <div className="gb-detail-description">
+            <p>{listing.description}</p>
+          </div>
+        ) : null}
+
         <ListingAuthor className="gb-detail-author" owner={listing.owner} />
       </article>
+
       <article className="gb-info-card">
-        <div><SystemSymbol name="calendar" size={19} /><span>Объявление до {formatDate(listing.expires_at)}</span></div>
+        <div className="gb-info-row">
+          <SystemSymbol name="calendar" size={17} />
+          <span>Объявление до {formatDate(listing.expires_at)}</span>
+        </div>
         {listing.operator.validity_days ? (
-          <div><SystemSymbol name="info.circle" size={19} /><span>Переданные ГБ действуют {listing.operator.validity_days} дней</span></div>
+          <div className="gb-info-row">
+            <SystemSymbol name="info.circle" size={17} />
+            <span>Переданные ГБ действуют {listing.operator.validity_days} дней</span>
+          </div>
         ) : null}
-        {listing.operator.conditions ? <p>{listing.operator.conditions}</p> : null}
-        {listing.operator.fee_note ? <p>{listing.operator.fee_note}</p> : null}
+        {listing.operator.conditions ? (
+          <div className="gb-info-note">
+            <p>{listing.operator.conditions}</p>
+          </div>
+        ) : null}
+        {listing.operator.fee_note ? (
+          <div className="gb-info-note">
+            <p>{listing.operator.fee_note}</p>
+          </div>
+        ) : null}
       </article>
+
       {!listing.is_owner ? (
-        <div
-          className="gb-buy-box"
-        >
-          <label>
-            Сколько ГБ
+        <div className="gb-buy-box">
+          <label className="ui-field">
+            <span>Сколько ГБ</span>
             <input
               type="text"
               inputMode="numeric"
@@ -466,6 +683,7 @@ function ListingDetails({
               }}
             />
           </label>
+
           <div className="gb-amount-presets" aria-label="Быстрый выбор количества">
             {[3, 5, 10].map((amount) => (
               <button
@@ -478,7 +696,11 @@ function ListingDetails({
               </button>
             ))}
           </div>
-          <strong>Итого: {formatKzt(totalPrice)}</strong>
+
+          <div className="gb-total-price">
+            <strong>Итого: {formatKzt(totalPrice)}</strong>
+          </div>
+
           <button
             className="gb-primary-button"
             data-testid="marketplace-submit-request"
@@ -499,27 +721,51 @@ function ListingDetails({
           </button>
         </div>
       ) : (
-        <>
-          <div className="gb-owner-actions">
-            <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onEdit(listing)}><SystemSymbol name="pencil" size={18} />Изменить</AppButton>
-            {listing.status === "active" ? (
-              <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onPause(listing.id)}><SystemSymbol name="pause.circle" size={18} />Скрыть</AppButton>
-            ) : listing.status === "paused" ? (
-              <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onResume(listing.id)}><SystemSymbol name="checkmark" size={18} />Показать</AppButton>
-            ) : null}
-            {listing.can_renew ? (
-              <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onRenew(listing.id)}><SystemSymbol name="arrow.clockwise" size={18} />Продлить</AppButton>
-            ) : null}
-            <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onArchive(listing.id)}><SystemSymbol name="xmark" size={18} />Убрать</AppButton>
-          </div>
-        </>
+        <div className="gb-owner-actions">
+          <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onEdit(listing)}>
+            <SystemSymbol name="pencil" size={18} />
+            Изменить
+          </AppButton>
+          {listing.status === "active" ? (
+            <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onPause(listing.id)}>
+              <SystemSymbol name="pause.circle" size={18} />
+              Скрыть
+            </AppButton>
+          ) : listing.status === "paused" ? (
+            <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onResume(listing.id)}>
+              <SystemSymbol name="checkmark" size={18} />
+              Показать
+            </AppButton>
+          ) : null}
+          {listing.can_renew ? (
+            <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onRenew(listing.id)}>
+              <SystemSymbol name="arrow.clockwise" size={18} />
+              Продлить
+            </AppButton>
+          ) : null}
+          <AppButton variant="tertiary" disabled={busy !== null} onClick={() => onArchive(listing.id)}>
+            <SystemSymbol name="xmark" size={18} />
+            Убрать
+          </AppButton>
+        </div>
       )}
-      <p className="gb-safety-note">SubsMarket не принимает оплату и не подтверждает перевод ГБ. После принятия заявки продавец пишет покупателю в Telegram.</p>
+      <p className="gb-safety-note">
+        SubsMarket не принимает оплату и не подтверждает перевод ГБ. После принятия заявки продавец пишет покупателю в Telegram.
+      </p>
     </section>
   );
 }
 
-function ListingForm({ form, operator, operators, editing, busy, priceInsight, onChange, onSubmit }: {
+function ListingForm({
+  form,
+  operator,
+  operators,
+  editing,
+  busy,
+  priceInsight,
+  onChange,
+  onSubmit
+}: {
   form: MarketplaceListingCreate;
   operator: MarketplaceOperator | null;
   operators: MarketplaceOperator[];
@@ -531,18 +777,68 @@ function ListingForm({ form, operator, operators, editing, busy, priceInsight, o
 }) {
   return (
     <form className="gb-form" onSubmit={onSubmit}>
-      <label>Оператор<select disabled={editing} value={form.operator_slug} onChange={(event) => onChange({ ...form, operator_slug: event.target.value })}>{operators.map((item) => <option value={item.slug} key={item.slug}>{item.name}</option>)}</select></label>
-      <label>Цена за 1 ГБ, ₸<input type="number" min="1" max="1000000" value={form.price_per_gb_kzt} onChange={(event) => onChange({ ...form, price_per_gb_kzt: Number(event.target.value) })} required /></label>
+      <label className="ui-field">
+        <span>Оператор</span>
+        <select
+          disabled={editing}
+          value={form.operator_slug}
+          onChange={(event) => onChange({ ...form, operator_slug: event.target.value })}
+        >
+          {operators.map((item) => (
+            <option value={item.slug} key={item.slug}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="ui-field">
+        <span>Цена за 1 ГБ, ₸</span>
+        <input
+          type="number"
+          min="1"
+          max="1000000"
+          value={form.price_per_gb_kzt}
+          onChange={(event) =>
+            onChange({ ...form, price_per_gb_kzt: Number(event.target.value) })
+          }
+          required
+        />
+      </label>
+
       <PriceInsight insight={priceInsight} price={form.price_per_gb_kzt} />
-      <label>Описание<textarea maxLength={300} rows={3} value={form.description ?? ""} placeholder="Необязательно" onChange={(event) => onChange({ ...form, description: event.target.value })} /></label>
-      {operator ? <div className="gb-operator-hint">Один перевод: от {formatGb(Math.max(MINIMUM_GB_ORDER, Number(operator.min_lot_gb ?? 0)))} до {formatGb(operator.max_lot_gb)} ГБ, только целое количество.</div> : null}
-      <AppButton fullWidth type="submit" disabled={busy}>{busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 7 дней"}</AppButton>
-      <p className="gb-safety-note">Номер телефона, карту и банковские реквизиты здесь указывать нельзя.</p>
+
+      <label className="ui-field">
+        <span>Описание</span>
+        <textarea
+          maxLength={300}
+          rows={3}
+          value={form.description ?? ""}
+          placeholder="Необязательно"
+          onChange={(event) => onChange({ ...form, description: event.target.value })}
+        />
+      </label>
+
+      {operator ? (
+        <div className="gb-operator-hint">
+          Один перевод: от {formatGb(Math.max(MINIMUM_GB_ORDER, Number(operator.min_lot_gb ?? 0)))} до {formatGb(operator.max_lot_gb)} ГБ, только целое количество.
+        </div>
+      ) : null}
+
+      <AppButton fullWidth type="submit" disabled={busy}>
+        {busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 7 дней"}
+      </AppButton>
+      <p className="gb-safety-note">
+        Номер телефона, карту и банковские реквизиты здесь указывать нельзя.
+      </p>
     </form>
   );
 }
 
-function PriceInsight({ insight, price }: {
+function PriceInsight({
+  insight,
+  price
+}: {
   insight: MarketplacePriceInsight | null;
   price: number;
 }) {
@@ -557,11 +853,12 @@ function PriceInsight({ insight, price }: {
       </div>
     );
   }
-  const verdict = price < minimum
-    ? "Цена ниже обычной"
-    : price > maximum
-      ? "Цена выше обычной"
-      : "Цена в обычном диапазоне";
+  const verdict =
+    price < minimum
+      ? "Цена ниже обычной"
+      : price > maximum
+        ? "Цена выше обычной"
+        : "Цена в обычном диапазоне";
   return (
     <div className="gb-price-insight">
       <strong>{verdict}</strong>
@@ -572,7 +869,15 @@ function PriceInsight({ insight, price }: {
   );
 }
 
-function MyListingsView({ listings, loading, loadingMore, hasMore, onCreate, onOpen, onLoadMore }: {
+function MyListingsView({
+  listings,
+  loading,
+  loadingMore,
+  hasMore,
+  onCreate,
+  onOpen,
+  onLoadMore
+}: {
   listings: MarketplaceListing[];
   loading: boolean;
   loadingMore: boolean;
@@ -581,90 +886,55 @@ function MyListingsView({ listings, loading, loadingMore, hasMore, onCreate, onO
   onOpen: (id: string) => void;
   onLoadMore: () => unknown;
 }) {
-  return <section className="gb-stack"><AppButton fullWidth onClick={onCreate}><SystemSymbol name="plus" size={18} />Продать ГБ</AppButton>{loading ? <div className="gb-empty">Загружаем...</div> : listings.length === 0 ? <div className="gb-empty"><strong>Объявлений пока нет</strong></div> : <div className="sm-market-family-list">{listings.map((item) => <ListingRow key={item.id} listing={item} onClick={() => onOpen(item.id)} showStatus />)}</div>}{hasMore ? <AppButton variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Загружаем..." : "Показать ещё"}</AppButton> : null}</section>;
-}
-
-function RequestsView({ role, requests, loading, loadingMore, hasMore, busy, onRole, onLoadMore, onAccept, onReject, onCancel, onClose, onRemind }: {
-  role: MarketplaceRequestRole;
-  requests: MarketplaceListingRequest[];
-  loading: boolean;
-  loadingMore: boolean;
-  hasMore: boolean;
-  busy: string | null;
-  onRole: (role: MarketplaceRequestRole) => void;
-  onLoadMore: () => unknown;
-  onAccept: (id: string) => void;
-  onReject: (id: string) => void;
-  onCancel: (id: string) => void;
-  onClose: (id: string, outcome: "sold" | "not_sold") => void;
-  onRemind: (id: string) => void;
-}) {
   return (
     <section className="gb-stack">
-      <div className="gb-role-switch">
-        <button
-          className={role === "buyer" ? "active" : ""}
-          data-testid="marketplace-purchases-role"
-          onClick={() => onRole("buyer")}
-          type="button"
-        >Покупки</button>
-        <button
-          className={role === "seller" ? "active" : ""}
-          data-testid="marketplace-sales-role"
-          onClick={() => onRole("seller")}
-          type="button"
-        >Продажи</button>
-      </div>
-      {loading ? <div className="gb-empty">Загружаем заявки...</div> : requests.length === 0 ? <div className="gb-empty"><strong>Заявок пока нет</strong></div> : (
-        <div className="gb-request-list">
-          {requests.map((item) => <RequestCard key={item.id} request={item} busy={busy !== null} onAccept={onAccept} onReject={onReject} onCancel={onCancel} onClose={onClose} onRemind={onRemind} />)}
+      <AppButton fullWidth onClick={onCreate}>
+        <SystemSymbol name="plus" size={18} />
+        Продать ГБ
+      </AppButton>
+      {loading ? (
+        <div className="sm-market-family-list" aria-label="Загружаем" role="status">
+          {[0, 1].map((n) => (
+            <div key={n} className="sm-listing-skeleton" aria-hidden>
+              <span />
+              <div />
+              <span />
+            </div>
+          ))}
+        </div>
+      ) : listings.length === 0 ? (
+        <div className="gb-empty sm-market-empty">
+          <SystemSymbol name="clipboard.list" size={28} />
+          <h3>Объявлений пока нет</h3>
+          <p>Ваши предложения появятся здесь.</p>
+        </div>
+      ) : (
+        <div className="sm-market-family-list">
+          {listings.map((item) => (
+            <ListingRow key={item.id} listing={item} onClick={() => onOpen(item.id)} showStatus />
+          ))}
         </div>
       )}
-      {hasMore ? <AppButton variant="tertiary" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Загружаем..." : "Показать ещё"}</AppButton> : null}
+      {hasMore ? (
+        <AppButton variant="tertiary" fullWidth disabled={loadingMore} onClick={onLoadMore}>
+          {loadingMore ? "Загружаем…" : "Показать ещё"}
+        </AppButton>
+      ) : null}
     </section>
-  );
-}
-
-function RequestCard({ request, busy, onAccept, onReject, onCancel, onClose, onRemind }: {
-  request: MarketplaceListingRequest;
-  busy: boolean;
-  onAccept: (id: string) => void;
-  onReject: (id: string) => void;
-  onCancel: (id: string) => void;
-  onClose: (id: string, outcome: "sold" | "not_sold") => void;
-  onRemind: (id: string) => void;
-}) {
-  return (
-    <article className="gb-request-card">
-      <div className="gb-request-head">
-        <div><strong>{request.operator_name} · {formatGb(request.amount_gb)} ГБ</strong><span>{formatKzt(request.total_price_kzt)}</span></div>
-        <em>{requestStatus(request.status)}</em>
-      </div>
-      {request.counterparty_username ? <p>@{request.counterparty_username}</p> : null}
-      <div className="gb-request-actions">
-        {request.role === "seller" && request.status === "pending" ? <><button disabled={busy} onClick={() => onAccept(request.id)} type="button"><SystemSymbol name="checkmark" size={17} />Принять</button><button disabled={busy} onClick={() => onReject(request.id)} type="button"><SystemSymbol name="xmark" size={17} />Отклонить</button></> : null}
-        {request.role === "buyer" && request.status === "pending" ? <><button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить</button><button disabled={busy || !request.can_remind} onClick={() => onRemind(request.id)} type="button"><SystemSymbol name="arrow.clockwise" size={17} />Напомнить</button></> : null}
-        {request.role === "buyer" && request.status === "accepted" ? <button disabled={busy} onClick={() => onCancel(request.id)} type="button">Отменить заявку</button> : null}
-        {request.status === "accepted" && request.counterparty_username ? <button type="button" onClick={() => openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined)}><SystemSymbol name="message" size={17} />Открыть Telegram</button> : null}
-        {request.role === "seller" && request.status === "accepted" ? <><button disabled={busy} type="button" onClick={() => onClose(request.id, "sold")}><SystemSymbol name="checkmark" size={17} />Продано</button><button disabled={busy} type="button" onClick={() => onClose(request.id, "not_sold")}><SystemSymbol name="xmark" size={17} />Не состоялось</button></> : null}
-      </div>
-    </article>
   );
 }
 
 function screenTitle(mode: ScreenMode) {
   if (mode === "create") return "Продать гигабайты";
   if (mode === "mine") return "Мои объявления";
-  if (mode === "requests") return "Заявки";
   return "Купить гигабайты";
 }
 
-function formatGb(value: string | number | null | undefined) {
-  if (value === null || value === undefined || value === "") return "—";
-  return Number(value).toLocaleString("ru-KZ", { maximumFractionDigits: 0 });
+function formatKzt(value: number) {
+  return `${value.toLocaleString("ru-KZ")} ₸`;
 }
-function formatKzt(value: string | number) { return `${Number(value).toLocaleString("ru-KZ")} ₸`; }
-function listingStatus(listing: MarketplaceListing) {
-  return ({ active: "В каталоге", paused: "Скрыто", expired: "Срок закончился", archived: "Убрано" } as const)[listing.status];
+
+function formatGb(value: number | string | null | undefined) {
+  if (value == null) return "0";
+  return `${Number(value).toLocaleString("ru-KZ")}`;
 }
-function requestStatus(status: MarketplaceListingRequest["status"]) { return ({ pending: "Ждёт ответа", accepted: "Можно написать", rejected: "Отклонена", cancelled: "Отменена", closed: "Закрыта", expired: "Срок истёк" } as const)[status]; }

@@ -119,7 +119,7 @@ const emptyCreateForm: FamilyCreate = {
   description: "",
   owner_rules: "",
   payment_bank: "kaspi",
-  payment_phone: ""
+  payment_phone: "",
 };
 
 type MutationOutcome = "success" | "cancelled" | "error";
@@ -166,15 +166,12 @@ export function App() {
     meQuery.isSuccess && Boolean(meQuery.data?.ok)
   );
 
-  const [gigabytesEntryMode, setGigabytesEntryMode] = useState<"catalog" | "requests" | "create" | "mine">(
+  const [gigabytesEntryMode, setGigabytesEntryMode] = useState<"catalog" | "create" | "mine">(
     "catalog"
   );
-  const [gigabytesEntryRequestRole, setGigabytesEntryRequestRole] =
-    useState<"buyer" | "seller">("buyer");
   const [accountsEntryMode, setAccountsEntryMode] =
-    useState<"catalog" | "requests" | "create" | "mine">("catalog");
-  const [accountsEntryRequestRole, setAccountsEntryRequestRole] =
-    useState<"buyer" | "seller">("buyer");
+    useState<"catalog" | "create" | "mine">("catalog");
+  const [actionsTab, setActionsTab] = useState<"inbox" | "outbox" | null>(null);
   const [marketResetToken, setMarketResetToken] = useState(0);
   const [ownerDetails, setOwnerDetails] = useState<
     Record<string, OwnerFamilyDetails>
@@ -468,7 +465,7 @@ export function App() {
       left: 0,
       behavior: "auto"
     });
-  }, [selectedFamilyId, tab]);
+  }, [selectedFamilyId, tab, myProductScope, accountEntryId, gigabytesEntryId]);
 
   const createFormDirty = Boolean(
     tab === "create" &&
@@ -563,7 +560,8 @@ export function App() {
 
   const user = me?.ok ? me.user : null;
   const service = selectedService();
-  const isMarket = tab === "home" || tab === "search";
+  const isMarket =
+    tab === "home" || tab === "search" || tab === "gigabytes" || tab === "accounts";
   const bottomNavTab: Tab =
     tab === "mine" ? "mine" :
     tab === "requests" ? "requests" :
@@ -573,7 +571,7 @@ export function App() {
     tab === "search" ? (familyType === "tariff" ? "Семейные тарифы" : "Семейные подписки") :
     tab === "create" ? "Создать семью" :
     tab === "mine" ? "Мои" :
-    tab === "requests" ? "Действия" :
+    tab === "requests" ? "Заявки" :
     tab === "family" ? "Семья" :
     tab === "gigabytes" ? "Гигабайты" :
     tab === "accounts" ? "Аккаунты" :
@@ -633,19 +631,22 @@ export function App() {
           accountSalesActionCount={accountSalesActionCount}
           accountPurchaseActionCount={accountPurchaseActionCount}
           onOpenMine={() => setTab("mine")}
-          onOpenActions={() => setTab("requests")}
+          onOpenActions={(targetTab) => {
+            if (targetTab) {
+              setActionsTab(targetTab);
+            }
+            setTab("requests");
+          }}
           onOpenGigabytes={(id) => {
             setGigabytesEntryId(id ?? null);
             setGigabytesBackTab("home");
             setGigabytesEntryMode("catalog");
-            setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
           }}
           onOpenAccounts={(id) => {
             setAccountEntryId(id ?? null);
             setAccountsBackTab("home");
             setAccountsEntryMode("catalog");
-            setAccountsEntryRequestRole("buyer");
             setTab("accounts");
           }}
           onOpenFamily={(familyId) => openFamily(familyId, tab)}
@@ -682,6 +683,7 @@ export function App() {
           loadError={myFamiliesQuery.isError || myRequestsQuery.isError || (tab === "requests" && marketplaceActionSummaryQuery.isError)}
           onRetry={() => { void myFamiliesQuery.refetch(); void myRequestsQuery.refetch(); void marketplaceActionSummaryQuery.refetch(); }}
           mode={tab === "requests" ? "actions" : "mine"}
+          initialActionsTab={actionsTab ?? undefined}
           myProductScope={myProductScope}
           families={myFamilies}
           ownerDetails={ownerDetails}
@@ -692,56 +694,44 @@ export function App() {
           accountSalesActionCount={accountSalesActionCount}
           accountPurchaseActionCount={accountPurchaseActionCount}
           onOpenMarketplaceSalesActions={() => {
-            setGigabytesBackTab("requests");
-            setGigabytesEntryMode("requests");
-            setGigabytesEntryRequestRole("seller");
-            setTab("gigabytes");
+            setActionsTab("inbox");
+            setTab("requests");
           }}
           onOpenMarketplacePurchaseActions={() => {
-            setGigabytesBackTab("requests");
-            setGigabytesEntryMode("requests");
-            setGigabytesEntryRequestRole("buyer");
-            setTab("gigabytes");
+            setActionsTab("outbox");
+            setTab("requests");
           }}
           onOpenAccountSalesActions={() => {
-            setAccountsBackTab("requests");
-            setAccountsEntryMode("requests");
-            setAccountsEntryRequestRole("seller");
-            setTab("accounts");
+            setActionsTab("inbox");
+            setTab("requests");
           }}
           onOpenAccountPurchaseActions={() => {
-            setAccountsBackTab("requests");
-            setAccountsEntryMode("requests");
-            setAccountsEntryRequestRole("buyer");
-            setTab("accounts");
+            setActionsTab("outbox");
+            setTab("requests");
           }}
           onChangeProductScope={setMyProductScope}
           onOpenAccountListing={(listingId) => {
             setAccountEntryId(listingId);
             setAccountsBackTab("mine");
             setAccountsEntryMode("mine");
-            setAccountsEntryRequestRole("buyer");
             setTab("accounts");
           }}
           onCreateAccountListing={() => {
             setAccountEntryId(null);
             setAccountsBackTab("mine");
             setAccountsEntryMode("create");
-            setAccountsEntryRequestRole("buyer");
             setTab("accounts");
           }}
           onOpenGigabytesListing={(listingId) => {
             setGigabytesEntryId(listingId);
             setGigabytesBackTab("mine");
             setGigabytesEntryMode("mine");
-            setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
           }}
           onCreateGigabytesListing={() => {
             setGigabytesEntryId(null);
             setGigabytesBackTab("mine");
             setGigabytesEntryMode("create");
-            setGigabytesEntryRequestRole("buyer");
             setTab("gigabytes");
           }}
           onOpenMarket={() => setTab("home")}
@@ -998,7 +988,6 @@ export function App() {
         <GigabytesScreen
           initialListingId={gigabytesEntryId}
           initialMode={gigabytesEntryMode}
-          initialRequestRole={gigabytesEntryRequestRole}
           onBack={() => setTab(gigabytesBackTab)}
         />
       )}
@@ -1007,16 +996,25 @@ export function App() {
         <AccountsScreen
           initialListingId={accountEntryId}
           initialMode={accountsEntryMode}
-          initialRequestRole={accountsEntryRequestRole}
           onBack={() => setTab(accountsBackTab)}
         />
       )}
 
       <BottomNav
         active={bottomNavTab}
-        onChange={setTab}
+        onChange={(nextTab) => {
+          if (nextTab === "home") {
+            try { window.sessionStorage.removeItem("subsmarket.marketViewState.v1"); } catch {}
+            setMarketResetToken((current) => current + 1);
+          }
+          if (nextTab === "requests") {
+            setActionsTab(null);
+          }
+          setTab(nextTab);
+        }}
         onReselect={(selectedTab) => {
           if (selectedTab === "home") {
+            try { window.sessionStorage.removeItem("subsmarket.marketViewState.v1"); } catch {}
             if (tab !== "home") setTab("home");
             setMarketResetToken((current) => current + 1);
           }

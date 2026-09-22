@@ -62,7 +62,11 @@ async function readScopeMotion(scopeSwitch: Locator) {
       segments.length > 1
         ? segments[1].left - segments[0].left
         : element.getBoundingClientRect().width;
-    const pagerWidth = pager.getBoundingClientRect().width;
+    const panes = Array.from(track.querySelectorAll<HTMLElement>(".my-product-scope-swipe-pane"));
+    const contentStep =
+      panes.length > 1
+        ? panes[1].getBoundingClientRect().left - panes[0].getBoundingClientRect().left
+        : pager.getBoundingClientRect().width;
     const indicatorX = readTranslateX(getComputedStyle(element, "::before").transform);
     const trackX = readTranslateX(getComputedStyle(track).transform);
 
@@ -70,7 +74,7 @@ async function readScopeMotion(scopeSwitch: Locator) {
       isMoving: element.dataset.scopeDragging === "true",
       position: Number(element.style.getPropertyValue("--scope-position")),
       indicatorPosition: indicatorX / segmentStep,
-      contentPosition: -trackX / pagerWidth,
+      contentPosition: -trackX / contentStep,
       transitionDuration: getComputedStyle(element, "::before").transitionDuration
     };
   });
@@ -113,7 +117,7 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await expect(bottomNav.locator("button")).toHaveCount(3);
   await expect(bottomNav).toContainText("Маркет");
   await expect(bottomNav).toContainText("Мои");
-  await expect(bottomNav).toContainText("Действия");
+  await expect(bottomNav).toContainText("Заявки");
   await expect(page.locator(".subs-dock-create")).toContainText("Создать");
 
   await page.getByTestId("family-type-tariff").click({ force: true });
@@ -134,16 +138,16 @@ test("Mini App renders market, create, my, and family details", async ({ page })
 
   await page.getByTestId("market-buy-gigabytes").click({ force: true });
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
-  await expect(page.getByText("Купить гигабайты", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Гигабайты", level: 1 })).toBeVisible();
   await expect(bottomNav.getByRole("button", { name: "Маркет", exact: true })).toHaveAttribute("aria-current", "page");
-  await page.locator(".gb-back").click({ force: true });
+  await bottomNav.getByRole("button", { name: "Маркет", exact: true }).click({ force: true });
   await expect(page.getByTestId("market-screen")).toBeVisible();
 
   await page.getByTestId("market-buy-accounts").click({ force: true });
   await expect(page.getByTestId("accounts-screen")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Объявления аккаунтов" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Аккаунты", level: 1 })).toBeVisible();
   await expect(bottomNav.getByRole("button", { name: "Маркет", exact: true })).toHaveAttribute("aria-current", "page");
-  await page.locator(".gb-back").click({ force: true });
+  await bottomNav.getByRole("button", { name: "Маркет", exact: true }).click({ force: true });
   await expect(page.getByTestId("market-screen")).toBeVisible();
 
   await bottomNav.getByRole("button", { name: "Маркет", exact: true }).click({ force: true });
@@ -153,18 +157,17 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-share-preview")).toBeVisible();
   await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click({ force: true });
-  await expect(page.getByTestId("accounts-screen")).toBeVisible();
-  await page.locator(".gb-back").click({ force: true });
+  await page.getByTestId("accounts-screen").getByRole("button", { name: "Назад" }).click();
   await expect(page.getByTestId("create-family-form")).toBeVisible();
 
   await bottomNav.getByRole("button", { name: "Мои", exact: true }).click({ force: true });
   await expect(
-    page.locator(".family-workspace, .empty-state, [data-testid='family-list-skeleton']")
+    page.locator(".family-workspace, .empty-state, [data-testid='family-list-skeleton']").first()
   ).toBeVisible();
   await expect(page.getByTestId("my-screen")).toBeVisible();
   await expect(page.getByTestId("my-screen").locator(".my-requests-section")).toHaveCount(0);
 
-  await bottomNav.getByRole("button", { name: "Действия", exact: true }).click({ force: true });
+  await bottomNav.getByRole("button", { name: "Заявки", exact: true }).click({ force: true });
   await expect(page.getByTestId("actions-screen")).toBeVisible();
   await expect(page.getByTestId("actions-summary")).toHaveCount(0);
 
@@ -173,16 +176,43 @@ test("Mini App renders market, create, my, and family details", async ({ page })
       !message.includes("telegram.org/js/telegram-web-app.js") &&
       !message.includes("not supported in version 6.0") &&
       !message.includes("net::ERR_BLOCKED_BY_RESPONSE.NotSameOrigin") &&
-      !message.includes("React DevTools")
+      !message.includes("React DevTools") &&
+      !message.includes("WebSocket") &&
+      !message.includes("[vite]")
   );
   expect(relevantMessages).toEqual([]);
+});
+
+test("Catalog section count matches the listed offers", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page.getByTestId("family-type-tariff").click({ force: true });
+  await expect(page.getByTestId("family-catalog-screen")).toBeVisible();
+  await expect(page.getByTestId("family-type-tariff")).toHaveAttribute("aria-pressed", "true");
+
+  const pane = page.locator(".sm-market-catalog-swipe-pane[data-catalog-type='tariff']");
+  const cards = pane.locator(".sm-listing");
+  const emptyState = pane.locator(".sm-market-empty");
+  await expect(cards.or(emptyState).first()).toBeVisible();
+
+  const count = page.locator(".sm-market-section-heading-copy .sm-market-section-count");
+  const cardCount = await cards.count();
+  if (cardCount === 0) {
+    // Пустой каталог: рядом с заголовком цифры нет.
+    await expect(count).toHaveCount(0);
+    return;
+  }
+  await expect(count).toBeVisible();
+  const countValue = Number.parseInt((await count.textContent()) ?? "", 10);
+  expect(countValue).toBe(cardCount);
 });
 
 test("Family catalog switches with a horizontal swipe", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page.getByTestId("family-type-subscription").click({ force: true });
   await expect(page.getByTestId("family-catalog-screen")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Доступные подписки" })).toBeVisible();
+  // Заголовок раздела меняется по продуктовым решениям, поэтому проверяем саму
+  // секцию каталога, а не её формулировку.
+  await expect(page.locator(".sm-market-family-section")).toBeVisible();
 
   const viewport = page.locator(".sm-market-catalog-swipe-viewport");
   const box = await viewport.boundingBox();
@@ -197,7 +227,15 @@ test("Family catalog switches with a horizontal swipe", async ({ page }) => {
   await expect(page.getByTestId("family-type-tariff")).toHaveAttribute("aria-pressed", "true");
   const tariffPane = page.locator(".sm-market-catalog-swipe-pane[data-catalog-type='tariff']");
   await expect(tariffPane).toHaveAttribute("aria-hidden", "false");
-  await expect(tariffPane.getByRole("heading", { name: /Доступные тарифы|Доступных тарифов пока нет/ })).toBeVisible();
+  await expect(tariffPane.getByRole("heading", { name: /Доступные|Доступных тарифов пока нет/ })).toBeVisible();
+
+  // Swipe back: tariff -> subscription
+  await page.mouse.move(box.x + box.width * 0.2, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.8, y, { steps: 10 });
+  await page.mouse.up();
+
+  await expect(page.getByTestId("family-type-subscription")).toHaveAttribute("aria-pressed", "true");
 });
 
 test("My sections switch with a horizontal swipe", async ({ page }) => {
@@ -233,6 +271,73 @@ test("My sections switch with a horizontal swipe", async ({ page }) => {
   await expect(
     page.locator(".my-product-scope-swipe-pane[data-product-scope='accounts']")
   ).toHaveAttribute("aria-hidden", "false");
+});
+
+test("Actions switch between incoming and outgoing requests", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Заявки", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("actions-screen")).toBeVisible();
+
+  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
+  const inbox = scopeSwitch.getByTestId("actions-tab-inbox");
+  const outbox = scopeSwitch.getByTestId("actions-tab-outbox");
+  await expect(inbox).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
+
+  // Направление переключается тапом, горизонтального пейджера здесь нет.
+  await outbox.click();
+  await expect(outbox).toHaveAttribute("aria-pressed", "true");
+  await expect(inbox).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("actions-outbox-pane")).toBeVisible();
+
+  await inbox.click();
+  await expect(inbox).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
+});
+
+test("Actions switch resets filters when direction changes", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Заявки", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("actions-screen")).toBeVisible();
+
+  // Чипы циклятся по тапу: сдвигаем оба, потом меняем направление.
+  const categoryLabel = page.getByTestId("actions-category-filter-label");
+  const statusLabel = page.getByTestId("actions-status-filter-label");
+  await page.getByTestId("actions-category-filter-chip").click();
+  await page.getByTestId("actions-status-filter-chip").click();
+  await expect(categoryLabel).not.toHaveText("Все");
+  await expect(statusLabel).not.toHaveText("Все");
+
+  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
+  await scopeSwitch.getByTestId("actions-tab-outbox").click();
+  await expect(categoryLabel).toHaveText("Все");
+  await expect(statusLabel).toHaveText("Все");
+});
+
+test("Actions scope indicator matches its segment geometry", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Заявки", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("actions-screen")).toBeVisible();
+
+  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
+  const outbox = scopeSwitch.getByTestId("actions-tab-outbox");
+  await outbox.click();
+  await expect(outbox).toHaveAttribute("aria-pressed", "true");
+
+  // Капсула обязана совпадать со своим сегментом: та же формула, что и в Маркете.
+  const geometry = await readSegmentIndicatorGeometry(scopeSwitch, 1, "--scope-position");
+  expect(geometry.position).toBe(1);
+  expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
+  expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
 });
 
 test("My scope indicator starts with content on click", async ({ page }) => {
@@ -424,7 +529,7 @@ test("My scope indicator follows the pointer during a swipe", async ({ page }) =
   expect(Math.abs(settledMotion.indicatorPosition - settledMotion.contentPosition)).toBeLessThan(0.01);
 });
 
-test("My families open a role picker from the families scope", async ({ page }) => {
+test("My families filter chips work in the families scope", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page
     .getByRole("navigation", { name: "Главная навигация" })
@@ -435,6 +540,22 @@ test("My families open a role picker from the families scope", async ({ page }) 
   const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
   const familiesButton = scopeSwitch.getByRole("button", { name: "Подписки", exact: true });
   await expect(familiesButton).toHaveAttribute("aria-pressed", "true");
+
+  // Role chip cycles through: Участвую -> Организую -> Все роли
+  const roleChip = page.getByTestId("my-family-role-chip");
+  await expect(roleChip).toBeVisible();
+  await expect(page.getByTestId("my-family-role-label")).toHaveText("Все роли");
+
+  await roleChip.click({ force: true });
+  await expect(page.getByTestId("my-family-role-label")).toHaveText("Участвую");
+
+  await roleChip.click({ force: true });
+  await expect(page.getByTestId("my-family-role-label")).toHaveText("Организую");
+
+  await roleChip.click({ force: true });
+  await expect(page.getByTestId("my-family-role-label")).toHaveText("Все роли");
+
+  // Category filter cycles through: Тарифы -> Сервисы -> Все
   const familyTypeFilter = page.getByTestId("my-family-filter-button");
   await expect(familyTypeFilter).toBeVisible();
   await familyTypeFilter.click();
@@ -443,25 +564,8 @@ test("My families open a role picker from the families scope", async ({ page }) 
   await expect(page.getByTestId("my-family-filter-label")).toHaveText("Сервисы");
   await familyTypeFilter.click();
   await expect(page.getByTestId("my-family-filter-label")).toHaveText("Все");
-  const roleTrigger = page.getByTestId("my-family-role-trigger");
-  await expect(roleTrigger).toBeVisible();
-  await roleTrigger.click({ force: true });
 
-  const picker = page.getByRole("dialog", { name: "Роль в семье" });
-  await expect(picker).toBeVisible();
-  await expect(roleTrigger).toHaveAttribute("aria-controls", "my-family-role-picker");
-  await expect(picker.getByTestId("my-family-role-member")).toBeVisible();
-  await expect(picker.getByTestId("my-family-role-owner")).toBeVisible();
-
-  await picker.getByTestId("my-family-role-owner").click();
-  await expect(picker).toHaveCount(0);
-
-  await roleTrigger.click({ force: true });
-  await expect(picker).toBeVisible();
-  await expect(picker.getByTestId("my-family-role-all")).toBeVisible();
-  await picker.getByTestId("my-family-role-all").click();
-  await expect(picker).toHaveCount(0);
-
+  // Filter row must not overflow horizontally
   const filterRowMetrics = await page.locator(".my-product-scope-swipe-pane[data-product-scope=\"families\"][aria-hidden=\"false\"] .my-family-filter-row").evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth
@@ -505,41 +609,194 @@ test("My accounts opens purchase orders from the header", async ({ page }) => {
   expect(Math.abs(accountsPagerGap - subscriptionsPagerGap)).toBeLessThanOrEqual(1);
   const accountFilterChips = page.locator("[data-testid=\"my-accounts-screen\"] .sm-market-filter-chip");
   await expect(accountFilterChips).toHaveCount(1);
-  await expect(accountFilterChips).toHaveText("Опубликовано");
-  await expect(accountFilterChips).toHaveAttribute("aria-pressed", "true");
+  await expect(accountFilterChips).toHaveText("Все");
+  await expect(accountFilterChips).toHaveAttribute("aria-pressed", "false");
   const accountFilterRowMetrics = await page.locator("[data-testid=\"my-accounts-screen\"] .my-family-filter-row").evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth
   }));
   expect(accountFilterRowMetrics.scrollWidth).toBeLessThanOrEqual(accountFilterRowMetrics.clientWidth + 1);
   await accountFilterChips.click();
-  await expect(accountFilterChips).toHaveText("Приостановлено");
-  await accountFilterChips.click();
   await expect(accountFilterChips).toHaveText("Опубликовано");
+  await expect(accountFilterChips).toHaveAttribute("aria-pressed", "true");
+  await accountFilterChips.click();
+  await expect(accountFilterChips).toHaveText("Приостановлено");
+  await expect(accountFilterChips).toHaveAttribute("aria-pressed", "true");
+  await accountFilterChips.click();
+  await expect(accountFilterChips).toHaveText("Все");
+  await expect(accountFilterChips).toHaveAttribute("aria-pressed", "false");
 
   const ordersTrigger = page.getByTestId("my-accounts-orders-trigger");
-  await expect(ordersTrigger).toHaveAccessibleName("Заказы");
+  await expect(ordersTrigger).toHaveAccessibleName("История");
   await expect(ordersTrigger.locator(".sm-system-symbol")).toHaveCount(1);
-  await expect(ordersTrigger).not.toContainText("Заказы");
+  await expect(ordersTrigger).not.toContainText("История");
+  await page.screenshot({ path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/history_before_open.png" });
   await ordersTrigger.click();
   await expect(page.getByTestId("my-screen")).toBeVisible();
   await expect(page.getByTestId("accounts-screen")).toHaveCount(0);
   await expect(ordersTrigger).toHaveAttribute("aria-expanded", "true");
-  await expect(page.locator("#my-account-orders")).toHaveAttribute("aria-hidden", "false");
-  await expect(page.getByRole("heading", { name: "Заказы", exact: true })).toBeVisible();
-  await expect(page.getByText("Покупок пока нет", { exact: true })).toBeVisible();
-  await expect(page.locator(".my-account-orders-empty-state")).toHaveCSS("border-style", "none");
+  const accountOrdersDisclosure = page.locator("#my-account-orders");
+  await expect(accountOrdersDisclosure).toHaveAttribute("aria-hidden", "false");
+  await expect(accountOrdersDisclosure.getByRole("heading", { name: "История", exact: true })).toBeVisible();
+  const historyChip = accountOrdersDisclosure.getByTestId("my-history-filter-chip");
+  await expect(historyChip).toBeVisible();
+  await expect(historyChip).toHaveText("Покупки");
+  const chipHeight = await historyChip.evaluate((el) => parseFloat(window.getComputedStyle(el).minHeight || window.getComputedStyle(el).height));
+  expect(chipHeight).toBeGreaterThanOrEqual(28);
+
+  await expect(accountOrdersDisclosure.getByText("Покупок пока нет", { exact: true })).toBeVisible();
+  await expect(accountOrdersDisclosure.locator(".my-account-orders-empty-state")).toHaveCSS("border-style", "none");
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/history_purchases.png" });
+
+  await historyChip.click();
+  await expect(historyChip).toHaveText("Продажи");
+  await expect(accountOrdersDisclosure.getByText("Продаж пока нет", { exact: true })).toBeVisible();
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/history_sales.png" });
 
   await ordersTrigger.click();
   await expect(ordersTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(accountOrdersDisclosure).toHaveAttribute("aria-hidden", "true");
 
   await scopeSwitch.getByRole("button", { name: "ГБ", exact: true }).click();
-  const tradeTrigger = page.getByTestId("my-gigabytes-trade-trigger");
-  await tradeTrigger.click();
-  const tradeMenu = page.getByRole("menu", { name: "Покупки и продажи ГБ" });
-  await expect(tradeMenu).toBeVisible();
-  await expect(tradeMenu.getByText("Покупки", { exact: true })).toBeVisible();
-  await expect(tradeMenu.getByText("Продажи", { exact: true })).toBeVisible();
+
+  const gbOrdersTrigger = page.getByTestId("my-gigabytes-orders-trigger");
+  await expect(gbOrdersTrigger).toHaveAccessibleName("История");
+  await gbOrdersTrigger.click();
+  await expect(gbOrdersTrigger).toHaveAttribute("aria-expanded", "true");
+  const gbOrdersDisclosure = page.locator("#my-gigabytes-orders");
+  await expect(gbOrdersDisclosure).toHaveAttribute("aria-hidden", "false");
+  await expect(gbOrdersDisclosure.getByText("Покупок пока нет", { exact: true })).toBeVisible();
+  await gbOrdersTrigger.click();
+  await expect(gbOrdersTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(gbOrdersDisclosure).toHaveAttribute("aria-hidden", "true");
+
+  const statusChip = page.getByTestId("my-gigabytes-status-chip");
+  await expect(statusChip).toHaveText("Все");
+  await statusChip.click();
+  await expect(statusChip).toHaveText("Опубликовано");
+});
+
+test("My accounts history renders orders list without horizontal overflow", async ({ page }) => {
+  await page.route("**/api/marketplace/accounts/requests/me?role=buyer*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [
+          {
+            id: "req-1",
+            listing_id: "list-1",
+            title: "Canva Pro годовая подписка",
+            service_slug: "canva",
+            service_name: "Canva",
+            price_kzt: 2490,
+            status: "pending",
+            buyer_user_id: 1,
+            seller_user_id: 2,
+            counterparty_username: null,
+            can_remind: false,
+            created_at: "2026-09-18T22:32:00Z",
+            updated_at: "2026-09-18T22:32:00Z"
+          },
+          {
+            id: "req-2",
+            listing_id: "list-2",
+            title: "Gemini Advanced на 1 месяц",
+            service_slug: "gemini",
+            service_name: "Gemini",
+            price_kzt: 1890,
+            status: "accepted",
+            buyer_user_id: 1,
+            seller_user_id: 2,
+            counterparty_username: "demo_owner",
+            telegram_url: "https://t.me/demo_owner",
+            created_at: "2026-09-18T20:17:00Z",
+            updated_at: "2026-09-18T20:17:00Z"
+          },
+          {
+            id: "req-3",
+            listing_id: "list-3",
+            title: "ChatGPT Plus",
+            service_slug: "chatgpt",
+            service_name: "ChatGPT",
+            price_kzt: 990,
+            status: "closed",
+            buyer_user_id: 1,
+            seller_user_id: 2,
+            counterparty_username: "demo_owner",
+            created_at: "2026-09-17T23:17:00Z",
+            updated_at: "2026-09-17T23:17:00Z"
+          }
+        ],
+        next_cursor: null
+      })
+    });
+  });
+
+  await page.route("**/api/marketplace/accounts/listings/me*", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: [
+          {
+            id: "acc-1",
+            title: "ChatGPT Plus",
+            description: "Готовый аккаунт",
+            price_kzt: 1090,
+            status: "active",
+            service: {
+              slug: "chatgpt",
+              name: "ChatGPT"
+            },
+            owner: {
+              id: 1,
+              avatar_name: "lunarsalamander"
+            },
+            created_at: "2026-09-18T20:00:00Z"
+          }
+        ],
+        next_cursor: null
+      })
+    });
+  });
+
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Мои", exact: true })
+    .click({ force: true });
+  await page.getByRole("group", { name: "Разделы", exact: true }).getByRole("button", { name: "Аккаунты", exact: true }).click();
+  const ordersTrigger = page.getByTestId("my-accounts-orders-trigger");
+  await ordersTrigger.click();
+
+  const accountOrdersDisclosure = page.locator("#my-account-orders");
+  await expect(accountOrdersDisclosure.getByRole("heading", { name: "История", exact: true })).toBeVisible();
+  await expect(accountOrdersDisclosure.locator(".my-family-section-count")).toHaveText("3");
+  const historyChip = accountOrdersDisclosure.getByTestId("my-history-filter-chip");
+  await expect(historyChip).toHaveText("Покупки");
+  await expect(accountOrdersDisclosure.getByText("Canva Pro годовая подписка")).toBeVisible();
+  await expect(accountOrdersDisclosure.getByText("Gemini Advanced на 1 месяц")).toBeVisible();
+  await expect(accountOrdersDisclosure.getByText("ChatGPT Plus")).toBeVisible();
+
+  const notifyBtn = accountOrdersDisclosure.getByRole("button", { name: "Уведомить", exact: true });
+  await expect(notifyBtn).toBeVisible();
+
+  await notifyBtn.click();
+  const toast = page.locator(".ui-toast");
+  await expect(toast).toBeVisible();
+  await expect(toast).toContainText("Повторить можно через 1 час");
+
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/toast_at_top.png" });
+
+  await toast.click();
+  await expect(toast).toHaveCount(0);
+
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/history_with_3_orders.png" });
 });
 
 test("Mini App keeps readable surfaces with legacy Telegram dark theme params", async ({

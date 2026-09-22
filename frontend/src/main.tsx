@@ -15,7 +15,7 @@ import "./styles/hig-review.css";
 
 const ios27LayoutEnabled = new URLSearchParams(window.location.search).get("ios27") !== "off";
 document.documentElement.dataset.ios27Layout = ios27LayoutEnabled ? "on" : "off";
-document.documentElement.dataset.higReview = new URLSearchParams(window.location.search).get("hig") === "off" ? "off" : "on";
+document.documentElement.dataset.higReview = new URLSearchParams(window.location.search).get("hig") === "on" ? "on" : "off";
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -71,7 +71,8 @@
 :root[data-hig-review="on"] .sm-market-action-banner-dots button::before { opacity: .8; }
 :root[data-hig-review="on"] .sm-market-service-tile strong { font-size: 1rem; line-height: 1.35; }
 :root[data-hig-review="on"] .sm-market-service-tile svg { width: 26px; height: 26px; }
-:root[data-hig-review="on"] .sm-market-filter-chip {
+:root[data-hig-review="on"] .sm-market-filter-chip,
+:root[data-hig-review="on"] .sm-history-filter-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -83,7 +84,8 @@
   font-size: .875rem;
   flex-shrink: 0;
 }
-:root[data-hig-review="on"] .sm-market-filter-chip > svg { width: 20px; height: 20px; flex-basis: 20px; }
+:root[data-hig-review="on"] .sm-market-filter-chip > svg,
+:root[data-hig-review="on"] .sm-history-filter-chip > svg { width: 20px; height: 20px; flex-basis: 20px; }
 :root[data-hig-review="on"] .sm-market-section-heading { flex-wrap: wrap; }
 :root[data-hig-review="on"] .sm-market-action-banner-button :is(strong, small, .sm-market-action-banner-detail-main, .sm-market-action-banner-detail-note) {
   white-space: normal;

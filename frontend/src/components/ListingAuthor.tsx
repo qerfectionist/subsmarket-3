@@ -23,9 +23,10 @@ export function getListingPresence(name: string): ListingPresence | undefined {
   return checksum % 2 === 0 ? "online" : "offline";
 }
 
-export function ListingAuthor({ owner, className = "" }: {
+export function ListingAuthor({ owner, className = "", isOwner = false }: {
   owner: ListingAuthorOwner;
   className?: string;
+  isOwner?: boolean;
 }) {
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
   const initial = owner.avatar_name.trim().slice(0, 1).toUpperCase() || "?";
@@ -46,7 +47,9 @@ export function ListingAuthor({ owner, className = "" }: {
         ) : null}
       </span>
       <span className="sm-market-family-avatar-name">
-        <span className="sm-market-family-avatar-label">{owner.avatar_name}</span>
+        <span className="sm-market-family-avatar-label">
+          {isOwner ? "Вы организатор" : owner.avatar_name}
+        </span>
       </span>
     </span>
   );

@@ -10,7 +10,7 @@ type Author = Pick<PublicOwner, "avatar_name"> & { photo_url?: string | null };
 
 export function ListingCard({
   title, subtitle, price, unit, serviceSlug, serviceName, owner, detail,
-  onClick, testId, familyId, familyType, label
+  onClick, testId, familyId, familyType, label, isOwner
 }: {
   title: string;
   subtitle?: string;
@@ -25,6 +25,7 @@ export function ListingCard({
   familyId?: string;
   familyType?: string;
   label?: string;
+  isOwner?: boolean;
 }) {
   return (
     <button
@@ -39,7 +40,7 @@ export function ListingCard({
       <span className="sm-listing-main">
         <ServiceLogo serviceSlug={serviceSlug} serviceName={serviceName} size={40} />
         <span className="sm-listing-copy">
-          <strong>{title}</strong>
+          <strong title={title}>{title}</strong>
           {subtitle ? <span>{subtitle}</span> : null}
         </span>
         <span className="sm-listing-price">
@@ -47,19 +48,24 @@ export function ListingCard({
           {unit ? <span>{unit}</span> : null}
         </span>
       </span>
-      <span className="sm-listing-footer">
-        <ListingAuthor owner={owner} />
-        {detail ? <span className="sm-listing-detail">{detail}</span> : null}
+      <span className={`sm-listing-footer${isOwner ? " is-owner" : ""}`}>
+        <ListingAuthor owner={owner} isOwner={isOwner} />
+        {detail ? (
+          <span className="sm-listing-detail" title={typeof detail === "string" ? detail : undefined}>
+            {detail}
+          </span>
+        ) : null}
       </span>
     </button>
   );
 }
 
 export function FamilyListingCard({
-  family, status, onClick, testId = "family-card"
+  family, status, isOwner, onClick, testId = "family-card"
 }: {
   family: Family;
   status?: string | null;
+  isOwner?: boolean;
   onClick: () => void;
   testId?: string;
 }) {
@@ -80,17 +86,13 @@ export function FamilyListingCard({
       serviceSlug={family.service_slug}
       serviceName={family.service_name}
       owner={family.owner}
+      isOwner={isOwner}
       onClick={onClick}
       testId={testId}
       familyId={family.id}
       familyType={family.family_type}
       label={`Открыть ${kind.toLowerCase()} ${title}, ${family.member_share_kzt} ₸ ${unit}, владелец ${family.owner.avatar_name}, ${capacityLabel}${status ? ", " + status : ""}`}
-      detail={status === "Вы владелец" ? (
-        <span className="sm-owner-status">
-          <SystemSymbol name="crown" size="sm" />
-          <span>Вы владелец</span>
-        </span>
-      ) : status || (
+      detail={status || (
         <span className="sm-capacity" role="img" aria-label={capacityLabel} title={capacityLabel}>
           {capacity > 8 ? <small>{free}/{capacity}</small> : Array.from({ length: capacity }, (_, index) => (
             <span key={index} className={index >= capacity - free ? "is-free" : ""} />
@@ -103,7 +105,13 @@ export function FamilyListingCard({
 
 const listingStatus = { active: "Опубликовано", paused: "Скрыто", expired: "Срок истёк", archived: "В архиве" };
 
-export function AccountListingCard({ listing, onClick, showStatus = false, testId = "account-listing-card", formatLabel = "Готовый аккаунт" }: {
+export function AccountListingCard({
+  listing,
+  onClick,
+  showStatus = false,
+  testId = "account-listing-card",
+  formatLabel = "Готовый аккаунт"
+}: {
   listing: AccountListing;
   onClick: () => void;
   showStatus?: boolean;
@@ -131,7 +139,12 @@ export function AccountListingCard({ listing, onClick, showStatus = false, testI
   );
 }
 
-export function GigabytesListingCard({ listing, onClick, showStatus = false, testId = "gigabytes-listing-card" }: {
+export function GigabytesListingCard({
+  listing,
+  onClick,
+  showStatus = false,
+  testId = "gigabytes-listing-card"
+}: {
   listing: MarketplaceListing;
   onClick: () => void;
   showStatus?: boolean;
