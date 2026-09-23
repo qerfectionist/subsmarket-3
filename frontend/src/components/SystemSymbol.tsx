@@ -1,6 +1,7 @@
 import { Icon, type IconProps } from "@iconify/react";
 import addDuotone from "@iconify-icons/solar/add-bold-duotone";
 import altArrowLeftDuotone from "@iconify-icons/solar/alt-arrow-left-bold-duotone";
+import altArrowUpDuotone from "@iconify-icons/solar/alt-arrow-up-bold-duotone";
 import arrowLeftDuotone from "@iconify-icons/solar/arrow-left-bold-duotone";
 import bellRingDuotone from "@iconify-icons/solar/bell-ring-bold-duotone";
 import bookDuotone from "@iconify-icons/solar/book-bold-duotone";
@@ -35,11 +36,18 @@ import userPlusDuotone from "@iconify-icons/solar/user-plus-bold-duotone";
 import usersGroupTwoRoundedDuotone from "@iconify-icons/solar/users-group-two-rounded-bold-duotone";
 import widget2Duotone from "@iconify-icons/solar/widget-2-bold-duotone";
 import clockCircleDuotone from "@iconify-icons/solar/clock-circle-bold-duotone";
+import crownMinimalisticDuotone from "@iconify-icons/solar/crown-minimalistic-bold-duotone";
+import shieldUserDuotone from "@iconify-icons/solar/shield-user-bold-duotone";
+import verifiedCheckDuotone from "@iconify-icons/solar/verified-check-bold-duotone";
+import archiveDuotone from "@iconify-icons/solar/archive-bold-duotone";
 
 const SYSTEM_SYMBOLS = {
+  archive: archiveDuotone,
+  archivebox: archiveDuotone,
   "antenna.radiowaves.left.and.right": radioDuotone,
   "arrow.clockwise": refreshDuotone,
   "arrow.left": arrowLeftDuotone,
+  bell: bellRingDuotone,
   "bell.badge": bellRingDuotone,
   book: bookDuotone,
   calendar: calendarDuotone,
@@ -49,9 +57,13 @@ const SYSTEM_SYMBOLS = {
   checklist: checklistDuotone,
   "clipboard.list": clipboardListDuotone,
   "chevron.backward": altArrowLeftDuotone,
+  "chevron.up": altArrowUpDuotone,
   clock: clockCircleDuotone,
   cloud: cloudDuotone,
   crown: crownDuotone,
+  "crown.minimalistic": crownMinimalisticDuotone,
+  "shield.user": shieldUserDuotone,
+  "verified.check": verifiedCheckDuotone,
   "exclamationmark.circle": dangerCircleDuotone,
   globe: globalDuotone,
   "info.circle": infoCircleDuotone,

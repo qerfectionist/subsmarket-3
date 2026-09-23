@@ -22,7 +22,8 @@
   align-items: center;
 }
 
-:root[data-ios27-layout="on"] .sm-market-filter-chip {
+:root[data-ios27-layout="on"] .sm-market-filter-chip,
+:root[data-ios27-layout="on"] .sm-history-filter-chip {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
@@ -818,10 +819,6 @@
 :root[data-ios27-layout="on"] .sm-market-category-hub {
   gap: 10px;
   overflow: visible;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
 }
 
 :root[data-ios27-layout="on"] .sm-market-category-family-group {

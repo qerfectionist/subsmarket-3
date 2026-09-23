@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from sqlalchemy.orm import Session
+
 from subsmarket.notifications.dispatcher import TelegramBotSender
 
 START_MESSAGE = (
@@ -18,6 +20,7 @@ class BotUpdateResult(dict[str, Any]):
 def handle_telegram_update(
     update: dict[str, Any],
     *,
+    db: Session | None = None,
     sender: TelegramBotSender | None = None,
 ) -> BotUpdateResult:
     message = update.get("message")

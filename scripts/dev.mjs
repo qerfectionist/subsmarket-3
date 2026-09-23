@@ -98,11 +98,29 @@ function shutdown(code = 0) {
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
+function openBrowser(url) {
+  try {
+    if (process.platform === "win32") {
+      spawn("cmd.exe", ["/c", "start", "", url], { detached: true, stdio: "ignore" });
+    } else if (process.platform === "darwin") {
+      spawn("open", [url], { detached: true, stdio: "ignore" });
+    } else {
+      spawn("xdg-open", [url], { detached: true, stdio: "ignore" });
+    }
+  } catch {
+    // ignore browser launch failures
+  }
+}
+
 async function main() {
+  const shouldOpen = process.argv.includes("--open");
   await ensureLocalInfrastructure();
 
   const status = await preflight();
   if (status.backend && status.frontend) {
+    if (shouldOpen) {
+      openBrowser("http://localhost:5173/");
+    }
     process.exit(0);
   }
 
@@ -131,6 +149,19 @@ async function main() {
   if (!status.frontend) {
     console.log("Starting frontend on http://127.0.0.1:5173");
     start("frontend", npmCmd, ["run", "dev"], { cwd: frontendDir, shell: true });
+    if (shouldOpen) {
+      console.log("Waiting for frontend readiness...");
+      await waitUntilUp("http://127.0.0.1:5173/");
+    }
+  }
+
+  if (shouldOpen) {
+    console.log("\n========================================================");
+    console.log("  SubsMarket 3.0 запущен и готов к работе!");
+    console.log("  Frontend: http://localhost:5173/");
+    console.log("  Backend:  http://127.0.0.1:8002/");
+    console.log("========================================================\n");
+    openBrowser("http://localhost:5173/");
   }
 }
 

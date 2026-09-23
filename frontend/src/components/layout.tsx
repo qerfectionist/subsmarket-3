@@ -1,4 +1,4 @@
-import { useId, type CSSProperties, type ReactNode } from "react";
+import { forwardRef, useId, type CSSProperties, type ReactNode } from "react";
 
 import {
   Button as AppButton,
@@ -151,50 +151,85 @@ export function FamilyTypeSwitch({
   );
 }
 
-export function ProductScopeSwitch({
-  value = "families",
-  onChange,
-  familiesLabel = "Семьи",
-  dragPosition
-}: {
+export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
   value?: "families" | "accounts" | "gigabytes";
   onChange?: (value: "families" | "accounts" | "gigabytes") => void;
   familiesLabel?: string;
+  badges?: Partial<Record<"families" | "accounts" | "gigabytes", number>>;
   dragPosition?: number;
-}) {
+  activateOnPointerDown?: boolean;
+  /**
+   * Капсулой управляет внешний контроллер (свайп-пейджер), поэтому React не
+   * пишет --scope-position: иначе ре-рендер во время анимации затирает её, и
+   * капсула на кадр прыгает в начало.
+   */
+  imperativePosition?: boolean;
+}>(function ProductScopeSwitch({
+  value = "families",
+  onChange,
+  familiesLabel = "Семьи",
+  badges,
+  dragPosition,
+  activateOnPointerDown = false,
+  imperativePosition = false
+}, ref) {
   const position = dragPosition ?? ["families", "accounts", "gigabytes"].indexOf(value);
+  const handlePointerDown = (nextValue: "families" | "accounts" | "gigabytes") => {
+    if (activateOnPointerDown && nextValue !== value) onChange?.(nextValue);
+  };
+  const handleClick = (nextValue: "families" | "accounts" | "gigabytes") => {
+    if (activateOnPointerDown && nextValue === value) return;
+    onChange?.(nextValue);
+  };
+  const style = imperativePosition ? undefined : ({ "--scope-position": position } as CSSProperties);
+
   return (
-    <div className="product-scope-switch" role="group" aria-label="Разделы" style={{ "--scope-position": position } as CSSProperties}>
+    <div ref={ref} className="product-scope-switch" role="group" aria-label="Разделы" style={style}>
       <AppButton
         type="button"
         size="sm"
+        data-testid="product-scope-families"
         aria-pressed={value === "families"}
         variant={value === "families" ? "primary" : "tertiary"}
-        onClick={() => onChange?.("families")}
+        onPointerDown={() => handlePointerDown("families")}
+        onClick={() => handleClick("families")}
       >
         {familiesLabel}
+        {badges?.families ? (
+          <span className="actions-tab-badge">{badges.families}</span>
+        ) : null}
       </AppButton>
       <AppButton
         type="button"
         size="sm"
+        data-testid="product-scope-accounts"
         aria-pressed={value === "accounts"}
         variant={value === "accounts" ? "primary" : "tertiary"}
-        onClick={() => onChange?.("accounts")}
+        onPointerDown={() => handlePointerDown("accounts")}
+        onClick={() => handleClick("accounts")}
       >
         Аккаунты
+        {badges?.accounts ? (
+          <span className="actions-tab-badge">{badges.accounts}</span>
+        ) : null}
       </AppButton>
       <AppButton
         type="button"
         size="sm"
+        data-testid="product-scope-gigabytes"
         aria-pressed={value === "gigabytes"}
         variant={value === "gigabytes" ? "primary" : "tertiary"}
-        onClick={() => onChange?.("gigabytes")}
+        onPointerDown={() => handlePointerDown("gigabytes")}
+        onClick={() => handleClick("gigabytes")}
       >
         ГБ
+        {badges?.gigabytes ? (
+          <span className="actions-tab-badge">{badges.gigabytes}</span>
+        ) : null}
       </AppButton>
     </div>
   );
-}
+});
 
 export function BottomNav({
   active, onChange, onReselect, badges
@@ -213,7 +248,7 @@ export function BottomNav({
         <MarketNavItem value="mine" icon="mine" label="Мои"
           badge={badges?.mine} active={active === "mine"}
           onChange={onChange} onReselect={onReselect} />
-        <MarketNavItem value="requests" icon="requests" label="Действия"
+        <MarketNavItem value="requests" icon="requests" label="Заявки"
           badge={badges?.requests} active={active === "requests"}
           onChange={onChange} onReselect={onReselect} />
       </nav>

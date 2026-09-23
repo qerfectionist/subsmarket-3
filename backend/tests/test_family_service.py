@@ -316,9 +316,7 @@ def test_family_list_helpers_apply_server_side_limits(
 
     assert list_my_join_requests(db, first_candidate, limit=1) == [first_request]
     assert list_my_join_requests(db, first_candidate, limit=1, offset=1) == []
-    assert list_owner_family_requests(db, owner, family.id, limit=1) == [
-        first_request
-    ]
+    assert list_owner_family_requests(db, owner, family.id, limit=1) == [first_request]
     assert list_owner_family_requests(db, owner, family.id, limit=1, offset=1) == [
         second_request
     ]
@@ -361,14 +359,17 @@ def test_member_and_family_payment_lists_apply_limits(
 
     assert len(payments_by_member_id[first_member.id]) == 2
     assert len(payments_by_member_id[second_member.id]) == 2
-    assert list_family_member_payments(
-        db,
-        owner,
-        family.id,
-        limit_per_member=2,
-        member_limit=1,
-        member_offset=1,
-    )[0][0] == first_member.id
+    assert (
+        list_family_member_payments(
+            db,
+            owner,
+            family.id,
+            limit_per_member=2,
+            member_limit=1,
+            member_offset=1,
+        )[0][0]
+        == first_member.id
+    )
 
 
 def test_my_families_limits_embedded_payments_per_family(
@@ -414,9 +415,7 @@ def test_search_hides_own_pending_member_and_restricted_families(
     rejected_request = create_join_request(db, candidate, rejected_family.id)
     reject_join_request(db, rejected_owner, rejected_request.id)
 
-    family_ids = {
-        family.id for family in list_searchable_families(db, candidate)
-    }
+    family_ids = {family.id for family in list_searchable_families(db, candidate)}
 
     assert visible_family.id in family_ids
     assert second_visible_family.id in family_ids
@@ -714,9 +713,7 @@ def test_audit_log_is_written_for_family_creation(
 
     actions = list(
         db.scalars(
-            select(FamilyAuditLog.action).where(
-                FamilyAuditLog.family_id == family.id
-            )
+            select(FamilyAuditLog.action).where(FamilyAuditLog.family_id == family.id)
         ).all()
     )
 
@@ -1306,8 +1303,7 @@ def test_family_closing_cancels_pending_requests_without_restriction(
     notification = db.scalar(
         select(NotificationJob).where(
             NotificationJob.recipient_user_id == candidate.id,
-            NotificationJob.event_type
-            == "family_request_cancelled_family_closing",
+            NotificationJob.event_type == "family_request_cancelled_family_closing",
         )
     )
     assert request.status == "cancelled"
@@ -1368,7 +1364,6 @@ def test_member_removal_is_immediate_and_idempotent(
     assert removed_member.status == "removed"
     assert removed_member.removal_reason == "no_response"
     assert removed_member.removed_at is not None
-    assert removed_member.removal_scheduled_at is None
     assert repeated_removal.id == removed_member.id
     assert family.active_members_count == 1
     audit_log = db.scalar(
@@ -1413,3 +1408,32 @@ def test_member_removal_rejects_unknown_reason(
 
     assert exc.value.status_code == 422
     assert exc.value.detail == "INVALID_MEMBER_REMOVAL_REASON"
+
+
+def test_owner_always_occupies_one_family_slot(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 120)
+    candidate = make_user(db, 121)
+    family = make_family(db, owner, subscription_service, max_members=2)
+
+    assert family.active_members_count == 1
+    assert to_family_out(family).free_slots == 1
+
+    request = create_join_request(db, candidate, family.id)
+    approve_join_request(db, owner, request.id)
+    db.refresh(family)
+    assert family.active_members_count == 2
+    assert family.status == "full"
+
+    member = db.scalar(
+        select(FamilyMember).where(
+            FamilyMember.family_id == family.id,
+            FamilyMember.user_id == candidate.id,
+        )
+    )
+    assert member is not None
+    leave_family(db, candidate, member.id)
+    db.refresh(family)
+    assert family.active_members_count == 1
+    assert family.status == "active"

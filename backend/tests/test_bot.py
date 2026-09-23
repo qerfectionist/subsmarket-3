@@ -1,15 +1,36 @@
-from __future__ import annotations
+from collections.abc import Iterator
 
 import httpx
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from subsmarket.bot.api import verify_webhook_secret
 from subsmarket.bot.service import START_MESSAGE, handle_telegram_update
 from subsmarket.bot.set_webhook import build_set_webhook_payload, set_webhook
 from subsmarket.core.config import settings
+from subsmarket.core.database import Base
 from subsmarket.main import app
+from subsmarket.models import import_models
+
+
+@pytest.fixture()
+def db() -> Iterator[Session]:
+    import_models()
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    with session_factory() as session:
+        yield session
+    Base.metadata.drop_all(engine)
+    engine.dispose()
 
 
 class FakeSender:
@@ -165,7 +186,7 @@ def test_webhook_endpoint_calls_handler(
 ) -> None:
     called: list[dict] = []
 
-    def fake_handler(update: dict) -> dict:
+    def fake_handler(update: dict, **kwargs: object) -> dict:
         called.append(update)
         return {"ok": True, "handled": True}
 

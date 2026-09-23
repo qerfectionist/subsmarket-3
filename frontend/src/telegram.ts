@@ -154,47 +154,52 @@ function applyTelegramTheme() {
   const previewTheme = import.meta.env.DEV
     ? new URLSearchParams(window.location.search).get("theme")
     : null;
-  const isDark =
-    previewTheme === "dark" ||
-    (previewTheme !== "light" &&
-      (app?.colorScheme === "dark" ||
-        (!app && window.matchMedia?.("(prefers-color-scheme: dark)").matches === true)));
+
+  // Force dark mode always, unless explicitly testing light mode in dev
+  const isDark = previewTheme !== "light";
+
   const root = document.documentElement;
   root.classList.remove("tma-light", "tma-dark", "light", "dark");
   root.classList.add(isDark ? "tma-dark" : "tma-light", isDark ? "dark" : "light");
   root.dataset.theme = isDark ? "dark" : "light";
 
   const theme = app?.themeParams ?? {};
-  const themeTokens: Array<[string, keyof TelegramThemeParams]> = [
-    ["--app-bg", "bg_color"],
-    ["--app-surface", "section_bg_color"],
-    ["--app-secondary-bg", "secondary_bg_color"],
-    ["--app-text", "text_color"],
-    ["--app-muted", "subtitle_text_color"],
-    ["--app-placeholder", "hint_color"],
-    ["--app-accent", "button_color"],
-    ["--app-accent-text", "button_text_color"],
-    ["--app-link", "link_color"],
-    ["--app-border", "section_separator_color"],
-    ["--app-header-bg", "header_bg_color"],
-    ["--app-bottom-bar-bg", "bottom_bar_bg_color"],
-    ["--app-section-header", "section_header_text_color"]
-  ];
-  for (const [token, source] of themeTokens) {
-    const value = theme[source];
-    if (value) setCssVar(token, value);
-  }
-  if (!theme.subtitle_text_color && theme.hint_color) {
-    setCssVar("--app-muted", theme.hint_color);
-  }
-  if (!theme.link_color && theme.button_color) {
-    setCssVar("--app-link", theme.button_color);
-  }
-  if (theme.bg_color) setCssVar("--app-surface-inset", theme.bg_color);
-  if (theme.button_color) setCssVar("--app-focus", theme.button_color);
-  if (theme.section_bg_color || theme.bottom_bar_bg_color) {
-    const glassColor = theme.bottom_bar_bg_color ?? theme.section_bg_color;
-    setCssVar("--app-glass", `color-mix(in srgb, ${glassColor} 88%, transparent)`);
+  const isTelegramDark = app?.colorScheme === "dark";
+
+  // Only apply Telegram theme colors if Telegram matches our forced dark mode,
+  // otherwise we use our own dark tokens from tokens.css
+  if (isTelegramDark && isDark) {
+    const themeTokens: Array<[string, keyof TelegramThemeParams]> = [
+      ["--app-bg", "bg_color"],
+      ["--app-surface", "section_bg_color"],
+      ["--app-secondary-bg", "secondary_bg_color"],
+      ["--app-text", "text_color"],
+      ["--app-muted", "subtitle_text_color"],
+      ["--app-placeholder", "hint_color"],
+      ["--app-accent", "button_color"],
+      ["--app-accent-text", "button_text_color"],
+      ["--app-link", "link_color"],
+      ["--app-border", "section_separator_color"],
+      ["--app-header-bg", "header_bg_color"],
+      ["--app-bottom-bar-bg", "bottom_bar_bg_color"],
+      ["--app-section-header", "section_header_text_color"]
+    ];
+    for (const [token, source] of themeTokens) {
+      const value = theme[source];
+      if (value) setCssVar(token, value);
+    }
+    if (!theme.subtitle_text_color && theme.hint_color) {
+      setCssVar("--app-muted", theme.hint_color);
+    }
+    if (!theme.link_color && theme.button_color) {
+      setCssVar("--app-link", theme.button_color);
+    }
+    if (theme.bg_color) setCssVar("--app-surface-inset", theme.bg_color);
+    if (theme.button_color) setCssVar("--app-focus", theme.button_color);
+    if (theme.section_bg_color || theme.bottom_bar_bg_color) {
+      const glassColor = theme.bottom_bar_bg_color ?? theme.section_bg_color;
+      setCssVar("--app-glass", `color-mix(in srgb, ${glassColor} 88%, transparent)`);
+    }
   }
 
   // The app palette owns the surfaces; Telegram follows the selected theme.
@@ -251,8 +256,10 @@ export function initTelegramShell() {
 
   app?.ready?.();
   app?.expand?.();
-  if (supportsWebAppVersion("7.7")) {
+  try {
     app?.disableVerticalSwipes?.();
+  } catch (e) {
+    // Ignore if not supported
   }
 
   const handleTheme = () => applyTelegramTheme();
@@ -291,8 +298,10 @@ export function initTelegramShell() {
     app?.offEvent?.("viewportChanged", handleViewport);
     app?.offEvent?.("safeAreaChanged", handleViewport);
     app?.offEvent?.("contentSafeAreaChanged", handleViewport);
-    if (supportsWebAppVersion("7.7")) {
+    try {
       app?.enableVerticalSwipes?.();
+    } catch (e) {
+      // Ignore
     }
     if (supportsWebAppVersion("6.2")) {
       app?.disableClosingConfirmation?.();

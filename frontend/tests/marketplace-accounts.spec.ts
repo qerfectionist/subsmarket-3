@@ -54,10 +54,6 @@ test("seller publishes an account offer and accepts a buyer", async ({ page }) =
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   await page.getByTestId("market-notifications").click({ force: true });
   await expect(page.getByTestId("account-sales-actions-card")).toBeVisible();
-  await page.getByTestId("account-sales-actions-card")
-    .getByRole("button", { name: "Открыть" })
-    .click({ force: true });
-  await expect(page.getByTestId("accounts-screen")).toBeVisible();
   await page.getByRole("button", { name: "Принять" }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByText("@demo_member", { exact: true })).toBeVisible();
@@ -66,7 +62,9 @@ test("seller publishes an account offer and accepts a buyer", async ({ page }) =
     force: true
   });
   await waitForNetworkQuiet(page);
-  await expect(page.getByText("закрыта", { exact: true })).toBeVisible();
+  await expect(
+    page.getByTestId("account-sales-actions-card").getByText("Закрыта", { exact: true })
+  ).toBeVisible();
   await page.getByRole("navigation", { name: "Главная навигация" })
     .getByRole("button", { name: "Мои", exact: true })
     .click({ force: true });

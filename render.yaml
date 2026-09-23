@@ -77,9 +77,9 @@ services:
       - key: MARKETPLACE_LISTING_EXPIRY_REMINDER_DAYS
         value: 1
       - key: MARKETPLACE_REQUEST_REMINDER_DELAY_SECONDS
-        value: 7200
+        value: 3600
       - key: MARKETPLACE_REQUEST_REMINDER_COOLDOWN_SECONDS
-        value: 7200
+        value: 3600
       - key: JOB_BATCH_SIZE
         value: 200
       - key: JOB_MAX_BATCHES_PER_STEP

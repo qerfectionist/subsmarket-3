@@ -54,4 +54,3 @@ def downgrade() -> None:
         "family_members_user_status_joined_desc_idx",
         table_name="family_members",
     )
-

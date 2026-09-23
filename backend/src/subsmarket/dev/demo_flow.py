@@ -61,9 +61,7 @@ EXPECTED_AUDIT_ACTIONS = {
 def cleanup_demo_data() -> None:
     with SessionLocal() as db:
         demo_users = list(
-            db.scalars(
-                select(User).where(User.telegram_user_id.in_([200001, 200002]))
-            )
+            db.scalars(select(User).where(User.telegram_user_id.in_([200001, 200002])))
         )
         demo_user_ids = [user.id for user in demo_users]
         if not demo_user_ids:
@@ -73,9 +71,15 @@ def cleanup_demo_data() -> None:
             db.scalars(select(Family.id).where(Family.owner_user_id.in_(demo_user_ids)))
         )
         if family_ids:
-            db.execute(delete(FamilyPayment).where(FamilyPayment.family_id.in_(family_ids)))
-            db.execute(delete(FamilyMember).where(FamilyMember.family_id.in_(family_ids)))
-            db.execute(delete(FamilyRequest).where(FamilyRequest.family_id.in_(family_ids)))
+            db.execute(
+                delete(FamilyPayment).where(FamilyPayment.family_id.in_(family_ids))
+            )
+            db.execute(
+                delete(FamilyMember).where(FamilyMember.family_id.in_(family_ids))
+            )
+            db.execute(
+                delete(FamilyRequest).where(FamilyRequest.family_id.in_(family_ids))
+            )
             db.execute(
                 delete(FamilyRequestRestriction).where(
                     FamilyRequestRestriction.family_id.in_(family_ids)

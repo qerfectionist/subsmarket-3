@@ -140,14 +140,20 @@ def test_rate_limit_ignores_spoofed_leftmost_forwarded_address() -> None:
 
     client = TestClient(app)
 
-    assert client.get(
-        "/limited",
-        headers={"x-forwarded-for": "1.1.1.1, 203.0.113.7"},
-    ).status_code == 200
-    assert client.get(
-        "/limited",
-        headers={"x-forwarded-for": "2.2.2.2, 203.0.113.7"},
-    ).status_code == 429
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "1.1.1.1, 203.0.113.7"},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "2.2.2.2, 203.0.113.7"},
+        ).status_code
+        == 429
+    )
 
 
 def test_rate_limit_supports_multiple_trusted_proxy_hops() -> None:
@@ -167,18 +173,20 @@ def test_rate_limit_supports_multiple_trusted_proxy_hops() -> None:
 
     client = TestClient(app)
 
-    assert client.get(
-        "/limited",
-        headers={
-            "x-forwarded-for": "1.1.1.1, 203.0.113.7, 198.51.100.4"
-        },
-    ).status_code == 200
-    assert client.get(
-        "/limited",
-        headers={
-            "x-forwarded-for": "2.2.2.2, 203.0.113.7, 198.51.100.5"
-        },
-    ).status_code == 429
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "1.1.1.1, 203.0.113.7, 198.51.100.4"},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "2.2.2.2, 203.0.113.7, 198.51.100.5"},
+        ).status_code
+        == 429
+    )
 
 
 def test_rate_limit_falls_back_to_peer_when_proxy_chain_is_too_short() -> None:
@@ -198,14 +206,20 @@ def test_rate_limit_falls_back_to_peer_when_proxy_chain_is_too_short() -> None:
 
     client = TestClient(app)
 
-    assert client.get(
-        "/limited",
-        headers={"x-forwarded-for": "1.1.1.1"},
-    ).status_code == 200
-    assert client.get(
-        "/limited",
-        headers={"x-forwarded-for": "2.2.2.2"},
-    ).status_code == 429
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "1.1.1.1"},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "2.2.2.2"},
+        ).status_code
+        == 429
+    )
 
 
 def test_rate_limit_ignores_forwarded_chain_when_no_proxy_is_trusted() -> None:
@@ -225,14 +239,20 @@ def test_rate_limit_ignores_forwarded_chain_when_no_proxy_is_trusted() -> None:
 
     client = TestClient(app)
 
-    assert client.get(
-        "/limited",
-        headers={"x-forwarded-for": "1.1.1.1"},
-    ).status_code == 200
-    assert client.get(
-        "/limited",
-        headers={"x-forwarded-for": "2.2.2.2"},
-    ).status_code == 429
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "1.1.1.1"},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/limited",
+            headers={"x-forwarded-for": "2.2.2.2"},
+        ).status_code
+        == 429
+    )
 
 
 def test_invite_lookup_rate_limit_covers_invalid_code_shapes() -> None:
@@ -357,10 +377,13 @@ def test_marketplace_reminder_rate_limit_is_stricter_than_other_actions(
     request_id = "00000000-0000-0000-0000-000000000001"
 
     for _ in range(10):
-        assert client.post(
-            f"/api/marketplace/requests/{request_id}/remind",
-            headers=headers,
-        ).status_code == 200
+        assert (
+            client.post(
+                f"/api/marketplace/requests/{request_id}/remind",
+                headers=headers,
+            ).status_code
+            == 200
+        )
 
     blocked = client.post(
         f"/api/marketplace/requests/{request_id}/remind",
@@ -433,10 +456,13 @@ def test_account_reminder_rate_limit_is_stricter_than_other_actions(
     request_id = "00000000-0000-0000-0000-000000000001"
 
     for _ in range(10):
-        assert client.post(
-            f"/api/marketplace/accounts/requests/{request_id}/remind",
-            headers=headers,
-        ).status_code == 200
+        assert (
+            client.post(
+                f"/api/marketplace/accounts/requests/{request_id}/remind",
+                headers=headers,
+            ).status_code
+            == 200
+        )
 
     blocked = client.post(
         f"/api/marketplace/accounts/requests/{request_id}/remind",
@@ -586,17 +612,23 @@ def test_telegram_limit_uses_ip_for_missing_and_invalid_identity() -> None:
     client = TestClient(app)
     shared_proxy_address = "203.0.113.9"
 
-    assert client.post(
-        "/limited",
-        headers={"x-forwarded-for": shared_proxy_address},
-    ).status_code == 200
-    assert client.post(
-        "/limited",
-        headers={
-            "x-forwarded-for": shared_proxy_address,
-            "x-telegram-init-data": "user=%7B%22id%22%3A2002%7D",
-        },
-    ).status_code == 429
+    assert (
+        client.post(
+            "/limited",
+            headers={"x-forwarded-for": shared_proxy_address},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/limited",
+            headers={
+                "x-forwarded-for": shared_proxy_address,
+                "x-telegram-init-data": "user=%7B%22id%22%3A2002%7D",
+            },
+        ).status_code
+        == 429
+    )
 
 
 def test_telegram_scoped_limit_reads_development_user_header(monkeypatch) -> None:
@@ -623,16 +655,25 @@ def test_telegram_scoped_limit_reads_development_user_header(monkeypatch) -> Non
     client = TestClient(app)
     shared_ip = {"x-forwarded-for": "10.0.0.1"}
 
-    assert client.post(
-        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "3001"}
-    ).status_code == 200
-    assert client.post(
-        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "3002"}
-    ).status_code == 200
-    assert client.post(
-        "/limited",
-        headers={"x-forwarded-for": "10.0.0.2", "x-dev-telegram-user-id": "3001"},
-    ).status_code == 429
+    assert (
+        client.post(
+            "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "3001"}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "3002"}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/limited",
+            headers={"x-forwarded-for": "10.0.0.2", "x-dev-telegram-user-id": "3001"},
+        ).status_code
+        == 429
+    )
 
 
 def test_production_limit_ignores_development_header(monkeypatch) -> None:
@@ -658,12 +699,18 @@ def test_production_limit_ignores_development_header(monkeypatch) -> None:
 
     client = TestClient(app)
     shared_ip = {"x-forwarded-for": "10.0.0.1"}
-    assert client.post(
-        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "4001"}
-    ).status_code == 200
-    assert client.post(
-        "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "4002"}
-    ).status_code == 429
+    assert (
+        client.post(
+            "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "4001"}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/limited", headers={**shared_ip, "x-dev-telegram-user-id": "4002"}
+        ).status_code
+        == 429
+    )
 
 
 def test_redis_rate_limiter_shares_counts_between_instances() -> None:
@@ -716,12 +763,11 @@ def test_redis_rate_limiter_logs_outage_and_recovery_once(caplog) -> None:
         asyncio.run(run())
 
     messages = [record.getMessage() for record in caplog.records]
-    assert messages.count(
-        "Redis rate limiter unavailable; using process-local fallback"
-    ) == 1
-    assert messages.count(
-        "Redis rate limiter recovered; shared limits restored"
-    ) == 1
+    assert (
+        messages.count("Redis rate limiter unavailable; using process-local fallback")
+        == 1
+    )
+    assert messages.count("Redis rate limiter recovered; shared limits restored") == 1
 
 
 def test_rate_limit_backend_status_reports_redis_and_fallback(

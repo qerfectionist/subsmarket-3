@@ -29,9 +29,7 @@ from subsmarket.notifications.service import enqueue_notification
 
 
 def _get_joinable_family(db: Session, family_id: UUID) -> Family:
-    family = db.scalar(
-        select(Family).where(Family.id == family_id).with_for_update()
-    )
+    family = db.scalar(select(Family).where(Family.id == family_id).with_for_update())
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     if family.status != "active" or family.active_members_count >= family.max_members:
@@ -61,9 +59,7 @@ def create_join_request(
             raise RuntimeError("Idempotent family request was not found")
         return request
 
-    locked_user = db.scalar(
-        select(User).where(User.id == user_id).with_for_update()
-    )
+    locked_user = db.scalar(select(User).where(User.id == user_id).with_for_update())
     if locked_user is None:
         raise RuntimeError("Family candidate disappeared during request creation")
 
@@ -218,9 +214,7 @@ def cancel_join_request(
 
 def reject_join_request(db: Session, user: User, request_id: UUID) -> FamilyRequest:
     request = db.scalar(
-        select(FamilyRequest)
-        .where(FamilyRequest.id == request_id)
-        .with_for_update()
+        select(FamilyRequest).where(FamilyRequest.id == request_id).with_for_update()
     )
     if request is None:
         raise HTTPException(status_code=404, detail="FAMILY_REQUEST_NOT_FOUND")
@@ -281,17 +275,11 @@ def approve_join_request(db: Session, user: User, request_id: UUID) -> FamilyReq
     )
     if family_id is None:
         raise HTTPException(status_code=404, detail="FAMILY_REQUEST_NOT_FOUND")
-    family = db.scalar(
-        select(Family)
-        .where(Family.id == family_id)
-        .with_for_update()
-    )
+    family = db.scalar(select(Family).where(Family.id == family_id).with_for_update())
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     request = db.scalar(
-        select(FamilyRequest)
-        .where(FamilyRequest.id == request_id)
-        .with_for_update()
+        select(FamilyRequest).where(FamilyRequest.id == request_id).with_for_update()
     )
     if request is None:
         raise HTTPException(status_code=404, detail="FAMILY_REQUEST_NOT_FOUND")
@@ -403,8 +391,7 @@ def _cancel_pending_requests_for_full_family(
                 "family_id": str(family_id),
                 "request_id": str(request.id),
                 "message": (
-                    "Заявка закрыта: семья уже заполнена. "
-                    "Это не считается отказом."
+                    "Заявка закрыта: семья уже заполнена. Это не считается отказом."
                 ),
             },
         )

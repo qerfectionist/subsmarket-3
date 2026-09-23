@@ -136,7 +136,6 @@ def test_run_due_returns_503_when_any_step_fails(
         regular_payment_reminders_sent=0,
         owner_payment_confirmation_reminders_sent=0,
         closing_acknowledgement_reminders_sent=0,
-        executed_member_removals=0,
         closed_families=0,
         marketplace_listing_expiry_reminders_sent=0,
         expired_marketplace_listings=0,

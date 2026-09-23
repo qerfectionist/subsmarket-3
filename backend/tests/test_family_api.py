@@ -80,8 +80,7 @@ def auth_headers(user_id: int, username: str, first_name: str) -> dict[str, str]
         "X-Dev-Telegram-Username": username,
         "X-Dev-Telegram-First-Name": first_name,
         "X-Forwarded-For": (
-            f"10.{(user_id // 65536) % 256}."
-            f"{(user_id // 256) % 256}.{user_id % 256}"
+            f"10.{(user_id // 65536) % 256}.{(user_id // 256) % 256}.{user_id % 256}"
         ),
     }
 
@@ -148,9 +147,7 @@ def approve_member_via_api(
     )
     assert members_response.status_code == 200
     return str(
-        next(item for item in members_response.json() if item["role"] == "member")[
-            "id"
-        ]
+        next(item for item in members_response.json() if item["role"] == "member")["id"]
     )
 
 
@@ -657,9 +654,7 @@ def test_wrong_roles_cannot_mutate_family_request_access_or_prepayments(
             headers=outsider_headers,
             json={
                 "payment_day": 20,
-                "next_payment_date": (
-                    date.today() + timedelta(days=40)
-                ).isoformat(),
+                "next_payment_date": (date.today() + timedelta(days=40)).isoformat(),
             },
         ),
         client.patch(
@@ -917,9 +912,7 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
         f"/api/families/{family_id}/members",
         headers=owner_headers,
     )
-    member = next(
-        item for item in members_response.json() if item["role"] == "member"
-    )
+    member = next(item for item in members_response.json() if item["role"] == "member")
     member_id = member["id"]
 
     hidden_requisite = client.get(
@@ -1338,7 +1331,6 @@ def test_member_leave_and_removal_flow_permissions(
     assert owner_remove.json()["status"] == "removed"
     assert owner_remove.json()["removal_reason"] == "no_response"
     assert owner_remove.json()["removed_at"] is not None
-    assert owner_remove.json()["removal_scheduled_at"] is None
     assert repeated_remove.status_code == 409
     assert repeated_remove.json()["detail"] == "MEMBER_NOT_REMOVABLE"
     assert member_leave.status_code == 409

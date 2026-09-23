@@ -75,9 +75,7 @@ def upgrade() -> None:
             "description is null or length(description) <= 500",
             name="marketplace_account_listing_description_length_ck",
         ),
-        sa.ForeignKeyConstraint(
-            ["seller_user_id"], ["users.id"], ondelete="RESTRICT"
-        ),
+        sa.ForeignKeyConstraint(["seller_user_id"], ["users.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(
             ["service_id"], ["marketplace_account_services.id"], ondelete="RESTRICT"
         ),
@@ -142,9 +140,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["listing_id"], ["marketplace_account_listings.id"], ondelete="RESTRICT"
         ),
-        sa.ForeignKeyConstraint(
-            ["buyer_user_id"], ["users.id"], ondelete="RESTRICT"
-        ),
+        sa.ForeignKeyConstraint(["buyer_user_id"], ["users.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -246,9 +242,7 @@ def _harden_public_tables() -> None:
         op.execute(sa.text(f"ALTER TABLE {table_name} ENABLE ROW LEVEL SECURITY"))
         if has_supabase_roles:
             op.execute(
-                sa.text(
-                    f"REVOKE ALL ON TABLE {table_name} FROM anon, authenticated"
-                )
+                sa.text(f"REVOKE ALL ON TABLE {table_name} FROM anon, authenticated")
             )
 
 

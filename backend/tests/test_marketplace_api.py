@@ -184,11 +184,14 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
         "accepted_account_purchase_requests": 0,
     }
 
-    assert client.post(
-        f"/api/marketplace/requests/{request_id}/close",
-        headers=buyer,
-        json={"outcome": "sold"},
-    ).status_code == 403
+    assert (
+        client.post(
+            f"/api/marketplace/requests/{request_id}/close",
+            headers=buyer,
+            json={"outcome": "sold"},
+        ).status_code
+        == 403
+    )
     closed = client.post(
         f"/api/marketplace/requests/{request_id}/close",
         headers={**seller, "Idempotency-Key": "request-close-001"},
@@ -212,9 +215,12 @@ def test_marketplace_full_request_flow_hides_contact_until_acceptance(
         "accepted_account_sales_requests": 0,
         "accepted_account_purchase_requests": 0,
     }
-    assert client.get(
-        f"/api/marketplace/listings/{listing['id']}", headers=buyer
-    ).status_code == 200
+    assert (
+        client.get(
+            f"/api/marketplace/listings/{listing['id']}", headers=buyer
+        ).status_code
+        == 200
+    )
     event_types = set(db.scalars(select(NotificationJob.event_type)).all())
     assert {
         "marketplace_request_created",
@@ -249,15 +255,21 @@ def test_marketplace_rejects_foreign_listing_and_request_actions(
     assert created.status_code == 201
     request_id = str(created.json()["id"])
 
-    assert client.post(
-        f"/api/marketplace/requests/{request_id}/accept",
-        headers=stranger,
-    ).status_code == 403
-    assert client.post(
-        f"/api/marketplace/requests/{request_id}/close",
-        headers=stranger,
-        json={"outcome": "sold"},
-    ).status_code == 403
+    assert (
+        client.post(
+            f"/api/marketplace/requests/{request_id}/accept",
+            headers=stranger,
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            f"/api/marketplace/requests/{request_id}/close",
+            headers=stranger,
+            json={"outcome": "sold"},
+        ).status_code
+        == 403
+    )
 
     stranger_requests = client.get(
         "/api/marketplace/requests/me?role=buyer",
@@ -333,12 +345,18 @@ def test_seller_has_one_managed_listing_per_operator(
     )
     assert duplicate.status_code == 409
     assert duplicate.json()["detail"] == "MARKETPLACE_OPERATOR_LISTING_EXISTS"
-    assert client.post(
-        f"/api/marketplace/listings/{first['id']}/archive", headers=seller
-    ).status_code == 200
-    assert client.post(
-        "/api/marketplace/listings", headers=seller, json=listing_payload()
-    ).status_code == 201
+    assert (
+        client.post(
+            f"/api/marketplace/listings/{first['id']}/archive", headers=seller
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/api/marketplace/listings", headers=seller, json=listing_payload()
+        ).status_code
+        == 201
+    )
 
 
 def test_published_listing_operator_cannot_change(
@@ -413,12 +431,16 @@ def test_validation_pagination_and_listing_lifecycle(
 
     listing_id = str(listings[0]["id"])
     owner = auth_headers(710030, "catalog_seller_0")
-    assert client.post(
-        f"/api/marketplace/listings/{listing_id}/pause", headers=owner
-    ).status_code == 200
-    assert client.get(
-        f"/api/marketplace/listings/{listing_id}", headers=buyer
-    ).status_code == 404
+    assert (
+        client.post(
+            f"/api/marketplace/listings/{listing_id}/pause", headers=owner
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(f"/api/marketplace/listings/{listing_id}", headers=buyer).status_code
+        == 404
+    )
     stored = db.get(MarketplaceListing, UUID(listing_id))
     assert stored is not None
     stored.status = "expired"
@@ -441,11 +463,14 @@ def test_request_guards_reminder_and_listing_expiry(
     second_buyer = auth_headers(710043, "guard_buyer_two")
     listing = create_listing(client, seller)
     listing_id = str(listing["id"])
-    assert client.post(
-        f"/api/marketplace/listings/{listing_id}/requests",
-        headers=seller,
-        json={"amount_gb": "5"},
-    ).status_code == 409
+    assert (
+        client.post(
+            f"/api/marketplace/listings/{listing_id}/requests",
+            headers=seller,
+            json={"amount_gb": "5"},
+        ).status_code
+        == 409
+    )
 
     request = client.post(
         f"/api/marketplace/listings/{listing_id}/requests",
@@ -453,30 +478,42 @@ def test_request_guards_reminder_and_listing_expiry(
         json={"amount_gb": "5"},
     )
     request_id = str(request.json()["id"])
-    assert client.post(
-        f"/api/marketplace/listings/{listing_id}/requests",
-        headers=buyer,
-        json={"amount_gb": "5"},
-    ).status_code == 409
-    assert client.post(
-        f"/api/marketplace/requests/{request_id}/remind", headers=buyer
-    ).status_code == 409
+    assert (
+        client.post(
+            f"/api/marketplace/listings/{listing_id}/requests",
+            headers=buyer,
+            json={"amount_gb": "5"},
+        ).status_code
+        == 409
+    )
+    assert (
+        client.post(
+            f"/api/marketplace/requests/{request_id}/remind", headers=buyer
+        ).status_code
+        == 409
+    )
     stored_request = db.get(MarketplaceListingRequest, UUID(request_id))
     assert stored_request is not None
     stored_request.created_at = utcnow() - timedelta(hours=3)
     db.commit()
-    assert client.post(
-        f"/api/marketplace/requests/{request_id}/remind", headers=buyer
-    ).status_code == 200
+    assert (
+        client.post(
+            f"/api/marketplace/requests/{request_id}/remind", headers=buyer
+        ).status_code
+        == 200
+    )
 
     accepted = client.post(
         f"/api/marketplace/listings/{listing_id}/requests",
         headers=second_buyer,
         json={"amount_gb": "5"},
     )
-    assert client.post(
-        f"/api/marketplace/requests/{accepted.json()['id']}/accept", headers=seller
-    ).status_code == 200
+    assert (
+        client.post(
+            f"/api/marketplace/requests/{accepted.json()['id']}/accept", headers=seller
+        ).status_code
+        == 200
+    )
     stored_listing = db.get(MarketplaceListing, UUID(listing_id))
     assert stored_listing is not None
     stored_listing.expires_at = utcnow() - timedelta(minutes=1)
@@ -487,9 +524,10 @@ def test_request_guards_reminder_and_listing_expiry(
     assert notification_count == 2
     db.expire_all()
     assert db.get(MarketplaceListingRequest, UUID(request_id)).status == "expired"
-    assert db.get(
-        MarketplaceListingRequest, UUID(str(accepted.json()["id"]))
-    ).status == "accepted"
+    assert (
+        db.get(MarketplaceListingRequest, UUID(str(accepted.json()["id"]))).status
+        == "accepted"
+    )
 
 
 def test_paused_listing_keeps_existing_request_actionable_and_buyer_can_cancel(
@@ -509,10 +547,13 @@ def test_paused_listing_keeps_existing_request_actionable_and_buyer_can_cancel(
     assert request.status_code == 201
     request_id = str(request.json()["id"])
 
-    assert client.post(
-        f"/api/marketplace/listings/{listing_id}/pause",
-        headers=seller,
-    ).status_code == 200
+    assert (
+        client.post(
+            f"/api/marketplace/listings/{listing_id}/pause",
+            headers=seller,
+        ).status_code
+        == 200
+    )
     unavailable = client.post(
         f"/api/marketplace/listings/{listing_id}/requests",
         headers=second_buyer,
@@ -689,9 +730,7 @@ def test_listing_lives_seven_days_edits_do_not_bump_and_renewal_republishes(
     assert stored is not None
     stored.expires_at = utcnow() + timedelta(hours=12)
     db.commit()
-    renewable = client.get(
-        f"/api/marketplace/listings/{listing['id']}", headers=seller
-    )
+    renewable = client.get(f"/api/marketplace/listings/{listing['id']}", headers=seller)
     assert renewable.status_code == 200
     assert renewable.json()["can_renew"] is True
 

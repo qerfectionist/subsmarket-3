@@ -63,10 +63,7 @@ def create_marketplace_request(
             status_code=409, detail="MARKETPLACE_SELF_REQUEST_FORBIDDEN"
         )
     now = utcnow()
-    if (
-        listing.status != "active"
-        or as_utc(listing.expires_at) <= now
-    ):
+    if listing.status != "active" or as_utc(listing.expires_at) <= now:
         raise HTTPException(status_code=409, detail="MARKETPLACE_LISTING_UNAVAILABLE")
     if not listing.operator.is_active:
         raise HTTPException(status_code=409, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
@@ -372,8 +369,7 @@ def _decide_request(
         )
     now = utcnow()
     if target_status == "accepted" and (
-        listing.status not in {"active", "paused"}
-        or as_utc(listing.expires_at) <= now
+        listing.status not in {"active", "paused"} or as_utc(listing.expires_at) <= now
     ):
         raise HTTPException(status_code=409, detail="MARKETPLACE_LISTING_UNAVAILABLE")
 

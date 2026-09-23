@@ -77,9 +77,6 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(notificationsButton).toBeVisible();
   await notificationsButton.click({ force: true });
   await expect(page.getByTestId("marketplace-actions-card")).toBeVisible();
-  await page.getByTestId("open-marketplace-actions").click({ force: true });
-  await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
-  await expect(page.getByTestId("marketplace-sales-role")).toHaveClass(/active/);
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Ждёт ответа", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Принять" }).click({ force: true });
@@ -94,14 +91,11 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(buyerNotificationsButton).toBeVisible();
   await buyerNotificationsButton.click({ force: true });
   await expect(page.getByTestId("marketplace-purchase-actions-card")).toBeVisible();
-  await page.getByTestId("open-marketplace-purchase-actions").click({ force: true });
-  await expect(page.getByTestId("marketplace-purchases-role")).toHaveClass(/active/);
   await expect(page.getByText("@demo_owner", { exact: true })).toBeVisible();
 
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   await page.getByTestId("market-notifications").click({ force: true });
-  await page.getByTestId("open-marketplace-actions").click({ force: true });
   await page.getByRole("button", { name: "Продано" }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Закрыта", { exact: true })).toBeVisible();

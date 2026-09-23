@@ -116,9 +116,8 @@ def check_production_config() -> list[ConfigCheck]:
             maximum=3650,
         ),
     ]
-    if (
-        settings.telegram_webhook_url
-        and not settings.telegram_webhook_url.endswith("/api/telegram/webhook")
+    if settings.telegram_webhook_url and not settings.telegram_webhook_url.endswith(
+        "/api/telegram/webhook"
     ):
         checks.append(
             ConfigCheck(

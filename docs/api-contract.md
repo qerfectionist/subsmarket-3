@@ -587,18 +587,8 @@ Backend:
 
 ### POST /api/families/members/{member_id}/acknowledge-removal
 
-Legacy endpoint только для старых записей `removal_pending`. Новый MVP-поток
-его не использует.
-
-### POST /api/families/members/{member_id}/request-removal-cancellation
-
-Legacy endpoint только для старых записей `removal_pending`. Новый MVP-поток
-его не использует.
-
-### POST /api/families/members/{member_id}/revoke-removal
-
-Legacy endpoint только для старых записей `removal_pending`. Новый MVP-поток
-его не использует.
+Эндпоинт удален вместе с отложенным удалением: участник удаляется сразу
+(см. `mvp-spec.md`, «Выход и закрытие семьи»).
 
 ## Payments
 

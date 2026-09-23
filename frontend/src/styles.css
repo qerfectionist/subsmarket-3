@@ -148,16 +148,14 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.gb-list,
-.gb-request-list {
+.gb-list {
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: var(--app-radius-lg);
   overflow: hidden;
 }
 
-.gb-list > *:not(:last-child),
-.gb-request-list > *:not(:last-child) {
+.gb-list > *:not(:last-child) {
   border-bottom: 1px solid var(--app-border);
 }
 

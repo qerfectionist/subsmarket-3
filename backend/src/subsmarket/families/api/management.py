@@ -49,9 +49,7 @@ def post_family(
         payload,
         idempotency_key=idempotency_key,
     )
-    return FamilyCreateResult(
-        family=to_family_out(family, include_owner_photo=True)
-    )
+    return FamilyCreateResult(family=to_family_out(family, include_owner_photo=True))
 
 
 def patch_family_description(

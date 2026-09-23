@@ -62,9 +62,7 @@ def client(db: Session) -> Iterator[TestClient]:
 
 @pytest.fixture()
 def chatgpt(db: Session) -> MarketplaceAccountService:
-    service = MarketplaceAccountService(
-        slug="chatgpt", name="ChatGPT", is_active=True
-    )
+    service = MarketplaceAccountService(slug="chatgpt", name="ChatGPT", is_active=True)
     db.add(service)
     db.commit()
     db.refresh(service)
@@ -102,9 +100,11 @@ def test_account_request_flow_keeps_listing_active_for_multiple_buyers(
     buyer_one = auth_headers(810002, "account_buyer_one")
     buyer_two = auth_headers(810003, "account_buyer_two")
     listing = create_listing(client, seller)
-    assert 29 <= (
-        _parse_iso(listing["expires_at"]) - _parse_iso(listing["created_at"])
-    ).days <= 30
+    assert (
+        29
+        <= (_parse_iso(listing["expires_at"]) - _parse_iso(listing["created_at"])).days
+        <= 30
+    )
 
     first = client.post(
         f"/api/marketplace/accounts/listings/{listing['id']}/requests",
@@ -125,9 +125,12 @@ def test_account_request_flow_keeps_listing_active_for_multiple_buyers(
     assert accepted.status_code == 200
     assert accepted.json()["counterparty_username"] == "account_buyer_one"
     assert "ChatGPT Plus на месяц" in accepted.json()["telegram_draft"]
-    assert client.get(
-        f"/api/marketplace/accounts/listings/{listing['id']}", headers=buyer_two
-    ).status_code == 200
+    assert (
+        client.get(
+            f"/api/marketplace/accounts/listings/{listing['id']}", headers=buyer_two
+        ).status_code
+        == 200
+    )
 
     summary = client.get("/api/marketplace/actions/me", headers=seller).json()
     assert summary["pending_account_sales_requests"] == 1
@@ -154,10 +157,13 @@ def test_paused_account_listing_blocks_new_requests_but_allows_decision(
         f"/api/marketplace/accounts/listings/{listing['id']}/requests",
         headers=buyer_one,
     ).json()
-    assert client.post(
-        f"/api/marketplace/accounts/listings/{listing['id']}/pause",
-        headers=seller,
-    ).status_code == 200
+    assert (
+        client.post(
+            f"/api/marketplace/accounts/listings/{listing['id']}/pause",
+            headers=seller,
+        ).status_code
+        == 200
+    )
     blocked = client.post(
         f"/api/marketplace/accounts/listings/{listing['id']}/requests",
         headers=buyer_two,
@@ -192,9 +198,9 @@ def test_account_listing_expiry_closes_only_pending_requests(
     assert expired_count == 1
     assert notifications == 2
     assert listing.status == "expired"
-    assert db.get(
-        MarketplaceAccountRequest, UUID(request_json["id"])
-    ).status == "expired"
+    assert (
+        db.get(MarketplaceAccountRequest, UUID(request_json["id"])).status == "expired"
+    )
     event_types = set(db.scalars(select(NotificationJob.event_type)).all())
     assert {
         "account_listing_expiry_reminder",

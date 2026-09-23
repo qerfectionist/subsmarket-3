@@ -46,9 +46,7 @@ def upgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name != "postgresql":
         return
-    op.execute(
-        "ALTER TABLE public.idempotency_records ENABLE ROW LEVEL SECURITY"
-    )
+    op.execute("ALTER TABLE public.idempotency_records ENABLE ROW LEVEL SECURITY")
     if _has_role("anon") and _has_role("authenticated"):
         op.execute(
             "REVOKE ALL ON TABLE public.idempotency_records FROM anon, authenticated"

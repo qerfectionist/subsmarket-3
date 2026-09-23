@@ -24,8 +24,7 @@ def main() -> None:
         db.commit()
 
     print(
-        f"Added {inserted} public names; target free pool size is "
-        f"{args.target_free}."
+        f"Added {inserted} public names; target free pool size is {args.target_free}."
     )
 
 

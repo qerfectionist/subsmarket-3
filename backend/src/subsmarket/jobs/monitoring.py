@@ -184,17 +184,10 @@ def _due_backlog_status(
                         "awaiting_confirmation",
                         "payment_due",
                         "active",
-                        "removal_pending",
                     }
                 )
             )
             .where(FamilyMember.closing_acknowledged_at.is_(None)),
-        ),
-        member_removals_due=_count(
-            db,
-            select(FamilyMember.id)
-            .where(FamilyMember.status == "removal_pending")
-            .where(FamilyMember.removal_scheduled_at <= now),
         ),
         family_closures_due=_count(
             db,
@@ -256,7 +249,6 @@ def _status_warnings(
         "regular_payments_overdue",
         "owner_payment_confirmations_waiting",
         "closing_acknowledgements_due",
-        "member_removals_due",
         "family_closures_due",
         "marketplace_listings_due",
     ):

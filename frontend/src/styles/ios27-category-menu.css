@@ -48,7 +48,24 @@
   outline-offset: 2px;
 }
 
-/* Monochrome category icons */
+/* Category Accent Colors */
+.sm-ios27-pod-tariff {
+  --category-accent: var(--app-category-tariff, #64d2ff);
+}
+
+.sm-ios27-pod-subscription {
+  --category-accent: var(--app-category-subscription, #bf5af2);
+}
+
+.sm-ios27-pod-gigabytes {
+  --category-accent: var(--app-category-gigabytes, #30d158);
+}
+
+.sm-ios27-pod-accounts {
+  --category-accent: var(--app-category-accounts, #ff9f0a);
+}
+
+/* Category icons with clean color accent */
 .sm-ios27-pod-icon {
   display: grid;
   place-items: center;
@@ -57,7 +74,7 @@
   border-radius: 0;
   background: transparent;
   border: 0;
-  color: #ffffff;
+  color: var(--category-accent, #ffffff);
   flex-shrink: 0;
   box-shadow: none;
 }
@@ -101,16 +118,43 @@
 
 /* Light Theme support */
 :root:not([data-theme="dark"]) .theme-light .sm-ios27-pod,
-[data-theme="light"] .sm-ios27-pod {
+[data-theme="light"] .sm-ios27-pod,
+:root.tma-light .sm-ios27-pod {
   background: rgba(255, 255, 255, 0.75);
   border-color: transparent;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
+:root:not([data-theme="dark"]) .theme-light .sm-ios27-pod-tariff,
+[data-theme="light"] .sm-ios27-pod-tariff,
+:root.tma-light .sm-ios27-pod-tariff {
+  --category-accent: var(--app-category-tariff, #007aff);
+}
+
+:root:not([data-theme="dark"]) .theme-light .sm-ios27-pod-subscription,
+[data-theme="light"] .sm-ios27-pod-subscription,
+:root.tma-light .sm-ios27-pod-subscription {
+  --category-accent: var(--app-category-subscription, #af52de);
+}
+
+:root:not([data-theme="dark"]) .theme-light .sm-ios27-pod-gigabytes,
+[data-theme="light"] .sm-ios27-pod-gigabytes,
+:root.tma-light .sm-ios27-pod-gigabytes {
+  --category-accent: var(--app-category-gigabytes, #248a3d);
+}
+
+:root:not([data-theme="dark"]) .theme-light .sm-ios27-pod-accounts,
+[data-theme="light"] .sm-ios27-pod-accounts,
+:root.tma-light .sm-ios27-pod-accounts {
+  --category-accent: var(--app-category-accounts, #c93400);
+}
+
 :root:not([data-theme="dark"]) .theme-light .sm-ios27-pod-icon,
-[data-theme="light"] .sm-ios27-pod-icon {
+[data-theme="light"] .sm-ios27-pod-icon,
+:root.tma-light .sm-ios27-pod-icon {
   background: transparent;
   border-color: transparent;
-  color: var(--app-text);
+  color: var(--category-accent);
   box-shadow: none;
+  filter: none;
 }

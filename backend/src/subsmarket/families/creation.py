@@ -13,6 +13,7 @@ from subsmarket.families._internal import (
     ACTIVE_OWNER_FAMILY_STATUSES,
     ALLOWED_PERIODS,
     FAMILY_AVAILABILITY_TTL,
+    OWNER_ACTIVE_FAMILY_LIMIT,
     _enqueue_family_members_notification,
     _get_owned_family_for_update,
     calculate_member_share,
@@ -80,9 +81,7 @@ def create_family(
         data.total_price_kzt, data.max_members
     )
 
-    locked_user = db.scalar(
-        select(User).where(User.id == user_id).with_for_update()
-    )
+    locked_user = db.scalar(select(User).where(User.id == user_id).with_for_update())
     if locked_user is None:
         raise RuntimeError("Family owner disappeared during creation")
 
@@ -91,7 +90,7 @@ def create_family(
         .where(Family.owner_user_id == user_id)
         .where(Family.status.in_(ACTIVE_OWNER_FAMILY_STATUSES))
     )
-    if active_owned_count and active_owned_count >= 2:
+    if active_owned_count and active_owned_count >= OWNER_ACTIVE_FAMILY_LIMIT:
         raise HTTPException(status_code=409, detail="OWNER_ACTIVE_FAMILY_LIMIT_REACHED")
 
     now = utcnow()

@@ -31,8 +31,11 @@ def create_account_request(
 ) -> AccountRequestOut:
     _require_username(user)
     claim = claim_idempotency(
-        db, user_id=user.id, operation="account_request.create",
-        idempotency_key=idempotency_key, payload={"listing_id": str(listing_id)},
+        db,
+        user_id=user.id,
+        operation="account_request.create",
+        idempotency_key=idempotency_key,
+        payload={"listing_id": str(listing_id)},
         resource_type="account_request",
     )
     if claim.is_replay:
@@ -84,16 +87,16 @@ def create_account_request(
             status_code=409, detail="ACCOUNT_ACTIVE_REQUEST_EXISTS"
         ) from exc
     enqueue_notification(
-        db, recipient_user_id=listing.seller_user_id,
+        db,
+        recipient_user_id=listing.seller_user_id,
         event_type="account_request_created",
         payload={
-            "listing_id": str(listing.id), "request_id": str(request.id),
+            "listing_id": str(listing.id),
+            "request_id": str(request.id),
             "message": f"Новая заявка на покупку {listing.title}.",
         },
     )
-    complete_idempotency(
-        claim, resource_type="account_request", resource_id=request.id
-    )
+    complete_idempotency(claim, resource_type="account_request", resource_id=request.id)
     db.flush()
     return to_account_request_out(request, user)
 
@@ -102,23 +105,39 @@ def accept_account_request(
     db: Session, user: User, request_id: UUID, *, idempotency_key: str | None = None
 ) -> AccountRequestOut:
     return _decide_request(
-        db, user, request_id, target_status="accepted", reason=None,
+        db,
+        user,
+        request_id,
+        target_status="accepted",
+        reason=None,
         idempotency_key=idempotency_key,
     )
 
 
 def reject_account_request(
-    db: Session, user: User, request_id: UUID, *, reason: str | None,
+    db: Session,
+    user: User,
+    request_id: UUID,
+    *,
+    reason: str | None,
     idempotency_key: str | None = None,
 ) -> AccountRequestOut:
     return _decide_request(
-        db, user, request_id, target_status="rejected",
-        reason=_normalize_reason(reason), idempotency_key=idempotency_key,
+        db,
+        user,
+        request_id,
+        target_status="rejected",
+        reason=_normalize_reason(reason),
+        idempotency_key=idempotency_key,
     )
 
 
 def cancel_account_request(
-    db: Session, user: User, request_id: UUID, *, reason: str | None,
+    db: Session,
+    user: User,
+    request_id: UUID,
+    *,
+    reason: str | None,
     idempotency_key: str | None = None,
 ) -> AccountRequestOut:
     claim = _claim_request_action(
@@ -136,13 +155,16 @@ def cancel_account_request(
     request.reason = _normalize_reason(reason)
     request.cancelled_at = utcnow()
     enqueue_notification(
-        db, recipient_user_id=request.listing.seller_user_id,
+        db,
+        recipient_user_id=request.listing.seller_user_id,
         event_type="account_request_cancelled",
         payload={
-            "listing_id": str(request.listing_id), "request_id": str(request.id),
+            "listing_id": str(request.listing_id),
+            "request_id": str(request.id),
             "message": (
                 "Покупатель отменил принятую заявку на аккаунт."
-                if was_accepted else "Покупатель отменил заявку на аккаунт."
+                if was_accepted
+                else "Покупатель отменил заявку на аккаунт."
             ),
         },
     )
@@ -152,12 +174,22 @@ def cancel_account_request(
 
 
 def close_account_request(
-    db: Session, user: User, request_id: UUID, *, outcome: str, reason: str | None,
+    db: Session,
+    user: User,
+    request_id: UUID,
+    *,
+    outcome: str,
+    reason: str | None,
     idempotency_key: str | None = None,
 ) -> AccountRequestOut:
     claim = _claim_request_action(
-        db, user, "close", request_id, idempotency_key,
-        outcome=outcome, reason=reason,
+        db,
+        user,
+        "close",
+        request_id,
+        idempotency_key,
+        outcome=outcome,
+        reason=reason,
     )
     if claim.is_replay:
         return to_account_request_out(_get_request(db, claim.resource_id), user)
@@ -173,11 +205,14 @@ def close_account_request(
     request.reason = _normalize_reason(reason)
     request.closed_at = utcnow()
     enqueue_notification(
-        db, recipient_user_id=request.buyer_user_id,
+        db,
+        recipient_user_id=request.buyer_user_id,
         event_type="account_request_closed",
         payload={
-            "listing_id": str(request.listing_id), "request_id": str(request.id),
-            "outcome": outcome, "message": "Заявка на аккаунт убрана из активных.",
+            "listing_id": str(request.listing_id),
+            "request_id": str(request.id),
+            "outcome": outcome,
+            "message": "Заявка на аккаунт убрана из активных.",
         },
     )
     complete_idempotency(claim, resource_type="account_request", resource_id=request.id)
@@ -211,10 +246,12 @@ def remind_account_request(
     request.last_reminded_at = now
     request.reminder_count += 1
     enqueue_notification(
-        db, recipient_user_id=request.listing.seller_user_id,
+        db,
+        recipient_user_id=request.listing.seller_user_id,
         event_type="account_request_reminder",
         payload={
-            "listing_id": str(request.listing_id), "request_id": str(request.id),
+            "listing_id": str(request.listing_id),
+            "request_id": str(request.id),
             "reminder_count": request.reminder_count,
             "message": "Покупатель напоминает о заявке на аккаунт.",
         },
@@ -225,8 +262,13 @@ def remind_account_request(
 
 
 def _decide_request(
-    db: Session, user: User, request_id: UUID, *, target_status: str,
-    reason: str | None, idempotency_key: str | None,
+    db: Session,
+    user: User,
+    request_id: UUID,
+    *,
+    target_status: str,
+    reason: str | None,
+    idempotency_key: str | None,
 ) -> AccountRequestOut:
     claim = _claim_request_action(
         db, user, target_status, request_id, idempotency_key, reason=reason
@@ -247,10 +289,12 @@ def _decide_request(
     request.reason = reason
     request.decided_at = utcnow()
     enqueue_notification(
-        db, recipient_user_id=request.buyer_user_id,
+        db,
+        recipient_user_id=request.buyer_user_id,
         event_type=f"account_request_{target_status}",
         payload={
-            "listing_id": str(request.listing_id), "request_id": str(request.id),
+            "listing_id": str(request.listing_id),
+            "request_id": str(request.id),
             "message": (
                 "Продавец принял вашу заявку. Ожидайте сообщение в Telegram."
                 if target_status == "accepted"
@@ -264,11 +308,17 @@ def _decide_request(
 
 
 def _claim_request_action(
-    db: Session, user: User, action: str, request_id: UUID,
-    idempotency_key: str | None, **payload,
+    db: Session,
+    user: User,
+    action: str,
+    request_id: UUID,
+    idempotency_key: str | None,
+    **payload,
 ):
     return claim_idempotency(
-        db, user_id=user.id, operation=f"account_request.{action}",
+        db,
+        user_id=user.id,
+        operation=f"account_request.{action}",
         idempotency_key=idempotency_key,
         payload={"request_id": str(request_id), **payload},
         resource_type="account_request",

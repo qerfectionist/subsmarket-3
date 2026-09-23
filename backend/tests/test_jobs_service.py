@@ -458,6 +458,8 @@ def test_regular_payment_batch_selects_only_actionable_family_periods(
         )
         is not None
     )
+
+
 def test_regular_payment_moves_through_schedule_due_and_overdue(db: Session) -> None:
     service = make_service(db)
     owner = make_user(db, 5)

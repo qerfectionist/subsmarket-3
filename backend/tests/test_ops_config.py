@@ -210,9 +210,7 @@ def test_production_config_checker_rejects_invalid_optional_redis_url(
     checks = check_production_config()
     failed = {check.key: check.problem for check in checks if not check.ok}
 
-    assert failed["RATE_LIMIT_REDIS_URL"] == (
-        "must start with redis:// or rediss://"
-    )
+    assert failed["RATE_LIMIT_REDIS_URL"] == ("must start with redis:// or rediss://")
 
 
 def test_production_config_checker_requires_redis_in_production(

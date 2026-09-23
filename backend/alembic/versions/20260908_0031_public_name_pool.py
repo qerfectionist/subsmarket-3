@@ -116,9 +116,7 @@ def _seed_pool() -> None:
         "users",
         sa.column("public_name", sa.Text()),
     )
-    existing_names = set(
-        bind.execute(sa.select(users.c.public_name)).scalars()
-    )
+    existing_names = set(bind.execute(sa.select(users.c.public_name)).scalars())
     candidates = generate_public_name_candidates(
         existing_names,
         limit=PUBLIC_NAME_POOL_TARGET,
@@ -160,9 +158,7 @@ def _harden_public_name_pool() -> None:
     op.execute(sa.text(f"ALTER TABLE {table_name} ENABLE ROW LEVEL SECURITY"))
     if _has_role("anon") and _has_role("authenticated"):
         op.execute(
-            sa.text(
-                f"REVOKE ALL ON TABLE {table_name} FROM anon, authenticated"
-            )
+            sa.text(f"REVOKE ALL ON TABLE {table_name} FROM anon, authenticated")
         )
 
 

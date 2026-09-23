@@ -10,10 +10,7 @@ from fastapi import HTTPException
 
 
 def encode_cursor(values: dict[str, Any]) -> str:
-    payload = {
-        key: _serialize_value(value)
-        for key, value in values.items()
-    }
+    payload = {key: _serialize_value(value) for key, value in values.items()}
     raw = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
     return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
 

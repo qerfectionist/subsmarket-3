@@ -21,7 +21,6 @@ class RunDueJobsResult(BaseModel):
     regular_payment_reminders_sent: int
     owner_payment_confirmation_reminders_sent: int
     closing_acknowledgement_reminders_sent: int
-    executed_member_removals: int
     closed_families: int
     marketplace_listing_expiry_reminders_sent: int
     expired_marketplace_listings: int
@@ -61,7 +60,6 @@ class DueBacklogStatus(BaseModel):
     regular_payments_overdue: int
     owner_payment_confirmations_waiting: int
     closing_acknowledgements_due: int
-    member_removals_due: int
     family_closures_due: int
     marketplace_listings_due: int
     per_step_capacity: int

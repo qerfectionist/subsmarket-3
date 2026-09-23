@@ -94,12 +94,7 @@ export const errorLabels: Record<string, string> = {
   OWNER_MUST_CLOSE_FAMILY: "Владелец не может просто выйти. Сначала нужно закрыть семью.",
   OWNER_CANNOT_REMOVE_SELF: "Владелец не может удалить себя из семьи.",
   ONLY_OWNER_CAN_REMOVE_MEMBER: "Удалить участника может только владелец семьи.",
-  ONLY_OWNER_CAN_REVOKE_REMOVAL: "Отменить удаление может только владелец семьи.",
   MEMBER_NOT_REMOVABLE: "Этого участника сейчас нельзя поставить на удаление.",
-  MEMBER_REMOVAL_NOT_PENDING: "Удаление участника сейчас не запланировано.",
-  ONLY_MEMBER_CAN_ACK_REMOVAL: "Подтвердить предупреждение об удалении может только сам участник.",
-  ONLY_MEMBER_CAN_REQUEST_REMOVAL_CANCELLATION:
-    "Попросить отменить удаление может только сам участник.",
   FAMILY_ALREADY_CLOSED: "Семья уже закрыта.",
   FAMILY_CLOSE_DATE_IN_PAST: "Дата закрытия не может быть в прошлом.",
   FAMILY_NOT_CLOSING: "Семья сейчас не находится в процессе закрытия.",

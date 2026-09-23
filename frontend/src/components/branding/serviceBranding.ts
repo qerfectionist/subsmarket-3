@@ -83,10 +83,26 @@ const BRAND_BY_SLUG: Record<string, ServiceBrand> = {
     logoPath: "/brand-assets/openai.svg",
     category: "cloud_productivity",
     monogram: "AI"
+  },
+  canva: {
+    color: "#00C4CC",
+    iconSlug: null,
+    logoPath: "/brand-assets/canva.svg",
+    category: "cloud_productivity",
+    monogram: "C"
+  },
+  gemini: {
+    color: "#4E82EE",
+    iconSlug: null,
+    logoPath: "/brand-assets/gemini.svg",
+    category: "cloud_productivity",
+    monogram: "G"
   }
 };
 
 const NAME_TO_SLUG: Record<string, string> = {
+  Canva: "canva",
+  Gemini: "gemini",
   Netflix: "netflix-premium",
   "YouTube Premium": "youtube-premium",
   "HBO Max": "hbo-max",

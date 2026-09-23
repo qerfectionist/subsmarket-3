@@ -1,5 +1,5 @@
 import { errorLabels, statusLabels } from "./labels";
-import type { Family, FamilyRequest, FamilyService } from "./types";
+import type { Family, FamilyRequest, FamilyService, MyFamily } from "./types";
 
 export function serviceTitle(service: FamilyService) {
   return `${service.name}${service.variant ? ` ${service.variant}` : ""}`;
@@ -19,6 +19,66 @@ export function familyTitle(
 
 export function statusText(status: string) {
   return statusLabels[status] ?? status;
+}
+
+export function getDaysUntil(dateStr: string): number {
+  const parts = dateStr.slice(0, 10).split("-").map(Number);
+  if (parts.length < 3 || parts.some(isNaN)) return 999;
+  const target = new Date(parts[0], parts[1] - 1, parts[2]);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffMs = target.getTime() - today.getTime();
+  return Math.round(diffMs / (1000 * 60 * 60 * 24));
+}
+
+export function formatDaysUntilPayment(days: number): string {
+  if (days <= 0) return "Оплата сегодня";
+  if (days === 1) return "1 день до оплаты";
+  if (days >= 2 && days <= 4) return `${days} дня до оплаты`;
+  return `${days} дней до оплаты`;
+}
+
+export function memberCardStatus(item: MyFamily): string {
+  if (item.membership.status !== "active") {
+    return statusText(item.membership.status);
+  }
+
+  const openPayment = item.payments?.find((p) =>
+    ["due", "payment_due", "overdue", "payment_reported"].includes(p.status)
+  );
+  if (openPayment) {
+    if (openPayment.status === "payment_reported") {
+      return "На проверке";
+    }
+    if (openPayment.status === "overdue") {
+      return "Просрочено";
+    }
+    return "Ждет оплату";
+  }
+
+  const paidPayments = (item.payments || []).filter(
+    (p) => p.status === "paid" && p.period_end
+  );
+  const latestPaidEnd = paidPayments
+    .map((p) => p.period_end)
+    .sort()
+    .reverse()[0];
+
+  const targetDate =
+    latestPaidEnd && latestPaidEnd > item.family.next_payment_date
+      ? latestPaidEnd
+      : item.family.next_payment_date;
+
+  if (!targetDate) {
+    return "Оплачен";
+  }
+
+  const days = getDaysUntil(targetDate);
+  if (days <= 3) {
+    return formatDaysUntilPayment(days);
+  }
+
+  return "Оплачен";
 }
 
 export function normalizeText(value: string | null | undefined) {

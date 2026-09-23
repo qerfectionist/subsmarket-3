@@ -11,7 +11,6 @@ from subsmarket.core.config import normalize_sqlalchemy_database_url
 from subsmarket.core.idempotency import cleanup_expired_idempotency_records
 from subsmarket.jobs.service import (
     activate_regular_payments,
-    execute_member_removals,
     expire_family_requests,
     mark_overdue_first_payments,
     mark_overdue_regular_payments,
@@ -29,9 +28,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-POSTGRES_LOCKING_JOBS: tuple[
-    Callable[[Session], int | tuple[int, int]], ...
-] = (
+POSTGRES_LOCKING_JOBS: tuple[Callable[[Session], int | tuple[int, int]], ...] = (
     cleanup_expired_idempotency_records,
     expire_family_requests,
     send_access_confirmation_reminders,
@@ -41,7 +38,6 @@ POSTGRES_LOCKING_JOBS: tuple[
     send_regular_payment_reminders,
     send_owner_payment_confirmation_reminders,
     send_closing_acknowledgement_reminders,
-    execute_member_removals,
 )
 
 

@@ -84,10 +84,7 @@ def upgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         op.execute(
-            text(
-                'ALTER TABLE public."family_owner_metrics" '
-                "ENABLE ROW LEVEL SECURITY"
-            )
+            text('ALTER TABLE public."family_owner_metrics" ENABLE ROW LEVEL SECURITY')
         )
         if _has_role("anon") and _has_role("authenticated"):
             op.execute(
@@ -102,10 +99,7 @@ def downgrade() -> None:
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
         op.execute(
-            text(
-                'ALTER TABLE public."family_owner_metrics" '
-                "DISABLE ROW LEVEL SECURITY"
-            )
+            text('ALTER TABLE public."family_owner_metrics" DISABLE ROW LEVEL SECURITY')
         )
     op.drop_index(
         "family_owner_metrics_owner_user_id_idx",

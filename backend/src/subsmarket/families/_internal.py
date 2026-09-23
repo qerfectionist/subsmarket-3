@@ -25,6 +25,7 @@ from subsmarket.identity.models import User
 from subsmarket.notifications.service import enqueue_notification
 
 ACTIVE_OWNER_FAMILY_STATUSES = {"active", "full", "closing"}
+OWNER_ACTIVE_FAMILY_LIMIT = 2
 ALLOWED_PERIODS = {"monthly", "yearly"}
 ACTIVE_REQUEST_STATUS = "pending"
 ACTIVE_MEMBER_STATUSES = {
@@ -32,7 +33,6 @@ ACTIVE_MEMBER_STATUSES = {
     "awaiting_confirmation",
     "payment_due",
     "active",
-    "removal_pending",
 }
 MEMBER_REMOVAL_REASONS = {
     "no_payment",

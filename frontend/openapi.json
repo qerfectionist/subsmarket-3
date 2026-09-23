@@ -10933,6 +10933,31 @@
           }
         }
       }
+    },
+    "/api/dev/seed-account-orders": {
+      "post": {
+        "tags": [
+          "dev"
+        ],
+        "summary": "Seed Account Orders",
+        "operationId": "seed_account_orders_api_dev_seed_account_orders_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object",
+                  "title": "Response Seed Account Orders Api Dev Seed Account Orders Post"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -11530,10 +11555,6 @@
             "type": "integer",
             "title": "Closing Acknowledgements Due"
           },
-          "member_removals_due": {
-            "type": "integer",
-            "title": "Member Removals Due"
-          },
           "family_closures_due": {
             "type": "integer",
             "title": "Family Closures Due"
@@ -11557,7 +11578,6 @@
           "regular_payments_overdue",
           "owner_payment_confirmations_waiting",
           "closing_acknowledgements_due",
-          "member_removals_due",
           "family_closures_due",
           "marketplace_listings_due",
           "per_step_capacity"
@@ -11939,42 +11959,6 @@
               }
             ],
             "title": "Access Confirmed At"
-          },
-          "removal_scheduled_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Removal Scheduled At"
-          },
-          "removal_acknowledged_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Removal Acknowledged At"
-          },
-          "removal_cancel_requested_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Removal Cancel Requested At"
           },
           "removal_reason": {
             "anyOf": [
@@ -14228,10 +14212,6 @@
             "type": "integer",
             "title": "Closing Acknowledgement Reminders Sent"
           },
-          "executed_member_removals": {
-            "type": "integer",
-            "title": "Executed Member Removals"
-          },
           "closed_families": {
             "type": "integer",
             "title": "Closed Families"
@@ -14271,7 +14251,6 @@
           "regular_payment_reminders_sent",
           "owner_payment_confirmation_reminders_sent",
           "closing_acknowledgement_reminders_sent",
-          "executed_member_removals",
           "closed_families",
           "marketplace_listing_expiry_reminders_sent",
           "expired_marketplace_listings",

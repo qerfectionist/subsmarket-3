@@ -60,9 +60,7 @@ def make_init_data(
         "query_id": "demo-query",
         "user": json.dumps(user, separators=(",", ":")),
     }
-    data_check_string = "\n".join(
-        f"{key}={values[key]}" for key in sorted(values)
-    )
+    data_check_string = "\n".join(f"{key}={values[key]}" for key in sorted(values))
     secret_key = hmac.new(
         b"WebAppData", bot_token.encode("utf-8"), hashlib.sha256
     ).digest()
@@ -103,9 +101,12 @@ def test_verified_telegram_user_id_requires_valid_signature(
     monkeypatch.setattr(settings, "telegram_bot_token", bot_token)
 
     assert verified_telegram_user_id(make_init_data(bot_token)) == "777001"
-    assert verified_telegram_user_id(
-        "user=%7B%22id%22%3A999999%7D&auth_date=1&hash=invalid"
-    ) is None
+    assert (
+        verified_telegram_user_id(
+            "user=%7B%22id%22%3A999999%7D&auth_date=1&hash=invalid"
+        )
+        is None
+    )
 
 
 def test_create_app_rate_limit_uses_verified_telegram_identity(

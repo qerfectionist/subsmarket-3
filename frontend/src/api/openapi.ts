@@ -1541,6 +1541,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/dev/seed-account-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Seed Account Orders */
+        post: operations["seed_account_orders_api_dev_seed_account_orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1754,8 +1771,6 @@ export interface components {
             owner_payment_confirmations_waiting: number;
             /** Closing Acknowledgements Due */
             closing_acknowledgements_due: number;
-            /** Member Removals Due */
-            member_removals_due: number;
             /** Family Closures Due */
             family_closures_due: number;
             /** Marketplace Listings Due */
@@ -1901,12 +1916,6 @@ export interface components {
             access_provided_at: string | null;
             /** Access Confirmed At */
             access_confirmed_at: string | null;
-            /** Removal Scheduled At */
-            removal_scheduled_at?: string | null;
-            /** Removal Acknowledged At */
-            removal_acknowledged_at?: string | null;
-            /** Removal Cancel Requested At */
-            removal_cancel_requested_at?: string | null;
             /** Removal Reason */
             removal_reason?: string | null;
             /** Left At */
@@ -2649,8 +2658,6 @@ export interface components {
             owner_payment_confirmation_reminders_sent: number;
             /** Closing Acknowledgement Reminders Sent */
             closing_acknowledgement_reminders_sent: number;
-            /** Executed Member Removals */
-            executed_member_removals: number;
             /** Closed Families */
             closed_families: number;
             /** Marketplace Listing Expiry Reminders Sent */
@@ -6240,6 +6247,28 @@ export interface operations {
         };
     };
     reset_demo_data_api_dev_reset_demo_data_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+        };
+    };
+    seed_account_orders_api_dev_seed_account_orders_post: {
         parameters: {
             query?: never;
             header?: never;

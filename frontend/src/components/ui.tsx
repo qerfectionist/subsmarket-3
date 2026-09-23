@@ -1,7 +1,9 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ChangeEventHandler,
   type ComponentPropsWithoutRef,
@@ -13,6 +15,8 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes
 } from "react";
+import { gsap } from "gsap";
+import { SystemSymbol } from "./SystemSymbol";
 
 type ButtonVariant = "primary" | "secondary" | "tertiary";
 type ButtonSize = "md" | "sm" | "icon";
@@ -283,10 +287,15 @@ export function ListItem({
   );
 }
 
-type ToastState = { title: string; tone: "success" | "error" } | null;
+let toastIdCounter = 0;
+
+export type ToastTone = "success" | "error" | "warning" | "info";
+type ToastState = { id: number; title: string; tone: ToastTone } | null;
 type ToastController = {
   success: (input: { title: string }) => void;
   error: (input: { title: string }) => void;
+  warning: (input: { title: string }) => void;
+  info: (input: { title: string }) => void;
 };
 type ToastApi = {
   toast: ToastController;
@@ -300,8 +309,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState>(null);
   const api: ToastApi = {
     toast: {
-      success: ({ title }) => setToast({ title, tone: "success" }),
-      error: ({ title }) => setToast({ title, tone: "error" })
+      success: ({ title }) => setToast({ id: ++toastIdCounter, title, tone: "success" }),
+      error: ({ title }) => setToast({ id: ++toastIdCounter, title, tone: "error" }),
+      warning: ({ title }) => setToast({ id: ++toastIdCounter, title, tone: "warning" }),
+      info: ({ title }) => setToast({ id: ++toastIdCounter, title, tone: "info" })
     },
     current: toast,
     dismiss: () => setToast(null)
@@ -318,19 +329,137 @@ export function useToast() {
   return context;
 }
 
+function getToastSymbol(tone: ToastTone) {
+  switch (tone) {
+    case "success":
+      return <SystemSymbol name="checkmark" size={13} />;
+    case "warning":
+      return <SystemSymbol name="clock" size={13} />;
+    case "info":
+      return <SystemSymbol name="info.circle" size={13} />;
+    case "error":
+    default:
+      return <SystemSymbol name="exclamationmark.circle" size={13} />;
+  }
+}
+
 export function Toaster({ duration = 3000 }: { duration?: number }) {
   const { current: toast, dismiss } = useToast();
+  const [activeToast, setActiveToast] = useState<ToastState>(null);
+  const toastRef = useRef<HTMLDivElement | null>(null);
+  const isExitingRef = useRef(false);
+  const timerRef = useRef<number | null>(null);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const handleExit = useCallback(() => {
+    if (isExitingRef.current) return;
+    isExitingRef.current = true;
+    clearTimer();
+
+    const el = toastRef.current;
+    if (!el) {
+      setActiveToast(null);
+      isExitingRef.current = false;
+      dismiss();
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      setActiveToast(null);
+      isExitingRef.current = false;
+      dismiss();
+      return;
+    }
+
+    gsap.to(el, {
+      xPercent: -50,
+      y: -24,
+      scale: 0.88,
+      opacity: 0,
+      duration: 0.24,
+      ease: "power2.in",
+      overwrite: "auto",
+      onComplete: () => {
+        setActiveToast(null);
+        isExitingRef.current = false;
+        dismiss();
+      }
+    });
+  }, [clearTimer, dismiss]);
 
   useEffect(() => {
-    if (!toast) return;
-    const timeout = window.setTimeout(dismiss, duration);
-    return () => window.clearTimeout(timeout);
-  }, [dismiss, duration, toast]);
+    if (!toast) {
+      if (activeToast && !isExitingRef.current) {
+        handleExit();
+      }
+      return;
+    }
 
-  if (!toast) return null;
+    isExitingRef.current = false;
+    setActiveToast(toast);
+    clearTimer();
+
+    timerRef.current = window.setTimeout(() => {
+      handleExit();
+    }, duration);
+
+    return () => {
+      clearTimer();
+    };
+  }, [toast, duration, handleExit, clearTimer, activeToast]);
+
+  useEffect(() => {
+    if (!activeToast || isExitingRef.current) return;
+    const el = toastRef.current;
+    if (!el) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      gsap.set(el, { xPercent: -50, y: 0, scale: 1, opacity: 1 });
+      return;
+    }
+
+    gsap.fromTo(
+      el,
+      {
+        xPercent: -50,
+        y: -28,
+        scale: 0.86,
+        opacity: 0
+      },
+      {
+        xPercent: -50,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        duration: 0.38,
+        ease: "back.out(1.5)",
+        overwrite: "auto"
+      }
+    );
+  }, [activeToast?.id]);
+
+  if (!activeToast) return null;
+
   return (
-    <div className={`ui-toast ui-toast-${toast.tone}`} role="status" aria-live="polite">
-      {toast.title}
+    <div
+      ref={toastRef}
+      className={`ui-toast ui-toast-${activeToast.tone}`}
+      role="status"
+      aria-live="polite"
+      onClick={handleExit}
+    >
+      <span className="ui-toast-badge" aria-hidden="true">
+        {getToastSymbol(activeToast.tone)}
+      </span>
+      <span className="ui-toast-label">{activeToast.title}</span>
     </div>
   );
 }

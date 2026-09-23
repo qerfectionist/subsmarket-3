@@ -130,7 +130,6 @@ Marketplace, рейтинги, споры и админка не должны п
 - `access_confirmed_at`;
 - `left_at`;
 - `removed_at`;
-- `removal_scheduled_at`.
 - `removal_reason`.
 
 Роли:
@@ -144,7 +143,6 @@ Marketplace, рейтинги, споры и админка не должны п
 - `awaiting_confirmation` - владелец отметил выдачу доступа, участник проверяет;
 - `payment_due` - доступ подтвержден, реквизиты открыты, первый платеж ожидается;
 - `active` - участник активен;
-- `removal_pending` - legacy-статус старого отложенного удаления;
 - `left` - участник вышел сам;
 - `removed` - участник удален владельцем;
 - `cancelled_before_access` - вступление отменено до выдачи доступа.

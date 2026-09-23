@@ -66,10 +66,7 @@ def get_listing_view(
     now = utcnow()
     if listing is None or (
         listing.seller_user_id != user.id
-        and (
-            listing.status != "active"
-            or as_utc(listing.expires_at) <= now
-        )
+        and (listing.status != "active" or as_utc(listing.expires_at) <= now)
     ):
         raise HTTPException(status_code=404, detail="MARKETPLACE_LISTING_NOT_FOUND")
     return to_listing_out(listing, user.id)

@@ -134,8 +134,7 @@ def confirm_access_received(
             "member_id": str(member.id),
             "payment_id": str(payment.id),
             "message": (
-                f"{user.first_name} подтвердил доступ. "
-                "Теперь ожидается первый платеж."
+                f"{user.first_name} подтвердил доступ. Теперь ожидается первый платеж."
             ),
         },
     )
@@ -209,9 +208,7 @@ def get_open_payment_requisite(
     )
 
 
-def create_member_prepayment(
-    db: Session, user: User, member_id: UUID
-) -> FamilyPayment:
+def create_member_prepayment(db: Session, user: User, member_id: UUID) -> FamilyPayment:
     member = _get_member_for_update(db, member_id)
     if member.user_id != user.id:
         raise HTTPException(status_code=403, detail="ONLY_MEMBER_CAN_PREPAY")
@@ -420,8 +417,7 @@ def report_payment_paid(
             "member_id": str(member.id),
             "payment_id": str(payment.id),
             "message": (
-                f"{user.first_name} отметил оплату. "
-                "Проверьте перевод и подтвердите."
+                f"{user.first_name} отметил оплату. Проверьте перевод и подтвердите."
             ),
         },
     )
@@ -642,9 +638,7 @@ def _has_other_open_payment(
     return payment is not None
 
 
-def cancel_pending_payment_notifications(
-    db: Session, payment: FamilyPayment
-) -> int:
+def cancel_pending_payment_notifications(db: Session, payment: FamilyPayment) -> int:
     family = db.get(Family, payment.family_id)
     member = db.get(FamilyMember, payment.member_id)
     if family is None or member is None:
