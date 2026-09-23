@@ -18,13 +18,13 @@ export function useFeedSnap({
     if (!container || !enabled) return;
     const cards = container.querySelectorAll<HTMLElement>(".sm-listing");
     if (cards.length === 0) {
-      container.style.paddingBottom = "";
-      container.style.overflowY = "auto";
+      container.style.paddingBottom = "0px";
+      container.style.overflowY = "hidden";
       return;
     }
-    const firstCard = cards[0];
-    const lastCard = cards[cards.length - 1];
-    const totalContentHeight = (lastCard.offsetTop + lastCard.offsetHeight) - firstCard.offsetTop;
+    const firstCardRect = cards[0].getBoundingClientRect();
+    const lastCardRect = cards[cards.length - 1].getBoundingClientRect();
+    const totalContentHeight = lastCardRect.bottom - firstCardRect.top;
     if (cards.length <= 3) {
       if (totalContentHeight <= container.clientHeight - 76) {
         container.style.paddingBottom = "0px";
@@ -36,8 +36,8 @@ export function useFeedSnap({
       return;
     }
     container.style.overflowY = "auto";
-    const last3Card = cards[cards.length - 3];
-    const last3Height = (lastCard.offsetTop + lastCard.offsetHeight) - last3Card.offsetTop;
+    const last3CardRect = cards[cards.length - 3].getBoundingClientRect();
+    const last3Height = lastCardRect.bottom - last3CardRect.top;
     const diff = container.clientHeight - last3Height;
     const targetPadding = Math.max(76, diff);
     container.style.paddingBottom = `${Math.round(targetPadding)}px`;
@@ -92,6 +92,9 @@ export function useFeedSnap({
         updatePadding();
       });
       observer.observe(container);
+      if (container.firstElementChild) {
+        observer.observe(container.firstElementChild);
+      }
     }
     window.addEventListener("resize", updatePadding);
     return () => {

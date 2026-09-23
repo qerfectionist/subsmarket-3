@@ -6,6 +6,7 @@ import { CalendarDate } from "@internationalized/date";
 import { ServiceLogo } from "../branding";
 import { SystemSymbol } from "../SystemSymbol";
 import { familyTitle } from "../../format";
+import { triggerTelegramImpact } from "../../telegram";
 import type { MyFamily } from "../../types";
 
 export type PaymentCalendarEvent = {
@@ -111,6 +112,7 @@ export function PaymentCalendar({ families }: { families: MyFamily[] }) {
   });
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [isSelectionOpen, setIsSelectionOpen] = useState(false);
+  const [displayEvents, setDisplayEvents] = useState<PaymentCalendarEvent[]>([]);
   const selectionListRef = useRef<HTMLDivElement | null>(null);
   const events = getPaymentCalendarEvents(families, visibleMonth);
   const eventsByDate = new Map<string, PaymentCalendarEvent[]>();
@@ -128,27 +130,26 @@ export function PaymentCalendar({ families }: { families: MyFamily[] }) {
 
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
-  const selectedEvents = selectedDateKey ? eventsByDate.get(selectedDateKey) ?? [] : [];
   const total = events.reduce((sum, event) => sum + event.family.family.member_share_kzt, 0);
   const today = new Date();
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
   useEffect(() => {
-    if (!selectedEvents.length || !isSelectionOpen) return;
+    if (!displayEvents.length || !isSelectionOpen) return;
     const el = selectionListRef.current;
     if (!el) return;
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
-    const items = el.querySelectorAll(".my-payment-calendar-selection-item");
+    const items = el.querySelectorAll(".cal-week-event-card");
     if (items.length) {
       gsap.fromTo(
         items,
-        { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.24, stagger: 0.04, ease: "power2.out", overwrite: "auto" }
+        { opacity: 0, y: 10, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.28, stagger: 0.04, ease: "power2.out", overwrite: "auto" }
       );
     }
-  }, [selectedDateKey, isSelectionOpen, selectedEvents.length]);
+  }, [selectedDateKey, isSelectionOpen, displayEvents.length]);
 
   function handleCalendarFocusChange(value: CalendarDate) {
     setFocusedValue(value);
@@ -160,12 +161,15 @@ export function PaymentCalendar({ families }: { families: MyFamily[] }) {
 
   function handleCalendarDayClick(value: CalendarDate) {
     const dateKey = calendarDateKeyFromValue(value);
-    if (!eventsByDate.has(dateKey)) return;
+    const dayEvents = eventsByDate.get(dateKey);
+    if (!dayEvents || dayEvents.length === 0) return;
+    triggerTelegramImpact("light");
     if (selectedDateKey === dateKey && isSelectionOpen) {
-      setSelectedDateKey(null);
       setIsSelectionOpen(false);
+      setSelectedDateKey(null);
       return;
     }
+    setDisplayEvents(dayEvents);
     setSelectedDateKey(dateKey);
     setIsSelectionOpen(true);
   }
@@ -174,10 +178,16 @@ export function PaymentCalendar({ families }: { families: MyFamily[] }) {
     const current = new Date();
     setFocusedValue(new CalendarDate(current.getFullYear(), current.getMonth() + 1, current.getDate()));
     setVisibleMonth(calendarMonthStart(current));
+    setIsSelectionOpen(false);
+    setSelectedDateKey(null);
   }
 
   return (
-    <section className="my-payment-calendar" data-testid="my-payment-calendar" aria-label="Календарь платежей">
+    <section
+      className={`my-payment-calendar${isSelectionOpen ? " is-week-mode" : ""}`}
+      data-testid="my-payment-calendar"
+      aria-label="Календарь платежей"
+    >
       <I18nProvider locale="ru-KZ">
         <Calendar
           className="my-payment-calendar-hero"
@@ -278,10 +288,11 @@ export function PaymentCalendar({ families }: { families: MyFamily[] }) {
                       : calendarDayLabel(dateKey);
                     const eventDescriptionId = `my-payment-calendar-date-${dateKey}`;
 
+                    const isSelected = selectedDateKey === dateKey;
                     return (
                       <Calendar.Cell
                         date={date}
-                        className={`my-payment-calendar-hero-cell${dayEvents.length ? " has-event" : ""}`}
+                        className={`my-payment-calendar-hero-cell${dayEvents.length ? " has-event" : ""}${isSelected ? " is-active-day" : ""}`}
                         aria-label={dayLabel}
                         aria-describedby={dayEvents.length ? eventDescriptionId : undefined}
                         onClick={() => handleCalendarDayClick(date)}
@@ -321,31 +332,30 @@ export function PaymentCalendar({ families }: { families: MyFamily[] }) {
       </I18nProvider>
 
       <div
-        className={`my-payment-calendar-selection-wrap${isSelectionOpen && selectedEvents.length ? " is-open" : ""}`}
-        aria-hidden={!isSelectionOpen || selectedEvents.length === 0}
+        className={`cal-week-events-wrap${isSelectionOpen && displayEvents.length > 0 ? " is-open" : ""}`}
+        aria-hidden={!isSelectionOpen || displayEvents.length === 0}
       >
-        <div className="my-payment-calendar-selection" aria-live="polite">
-          {selectedEvents.length > 0 ? (
-            <>
-              <div className="my-payment-calendar-selection-heading">
-                {selectedDateKey ? calendarDayLabel(selectedDateKey) : ""}
+        <div className="cal-week-events-inner" ref={selectionListRef}>
+          {displayEvents.map((event) => (
+            <div className="cal-week-event-card" key={event.family.family.id}>
+              <ServiceLogo
+                serviceSlug={event.family.family.service_slug}
+                serviceName={event.family.family.service_name}
+                familyType={event.family.family.family_type}
+                size={36}
+              />
+              <div className="cal-week-event-info">
+                <div className="cal-week-event-title">{familyTitle(event.family.family)}</div>
+                <div className="cal-week-event-kind">
+                  {event.family.family.family_type === "tariff" ? "Семейный тариф" : "Семейная подписка"}
+                </div>
               </div>
-              <div className="my-payment-calendar-selection-list" ref={selectionListRef}>
-                {selectedEvents.map((event) => (
-                  <div className="my-payment-calendar-selection-item" key={event.family.family.id}>
-                    <ServiceLogo
-                      serviceSlug={event.family.family.service_slug}
-                      serviceName={event.family.family.service_name}
-                      familyType={event.family.family.family_type}
-                      size={24}
-                    />
-                    <strong>{familyTitle(event.family.family)}</strong>
-                    <span>{event.family.family.member_share_kzt.toLocaleString("ru-KZ")} ₸</span>
-                  </div>
-                ))}
+              <div className="cal-week-event-price">
+                <strong>{event.family.family.member_share_kzt.toLocaleString("ru-KZ")} ₸</strong>
+                <span>в месяц</span>
               </div>
-            </>
-          ) : null}
+            </div>
+          ))}
         </div>
       </div>
     </section>

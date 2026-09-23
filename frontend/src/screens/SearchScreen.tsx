@@ -1,16 +1,45 @@
-import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { gsap } from "gsap";
-import { AccountListingCard, FamilyListingCard, GigabytesListingCard } from "../components/ListingCard";
-import { Ios27CategoryMenu } from "../components/Ios27CategoryMenu";
-import { getListingPresence } from "../components/ListingAuthor";
-import { resolveServiceBrand, ServiceLogo } from "../components/branding";
-import { SystemSymbol } from "../components/SystemSymbol";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { formatDate } from "../format";
 import { triggerTelegramSelection } from "../telegram";
 import type { AccountListing, Family, FamilyRequest, FamilyType, MarketplaceListing, MyFamily } from "../types";
-
-const FIRST_RUN_BANNER_KEY = "subsmarket.firstRunBannerSeen.v1";
-const MAX_MARKET_BANNERS = 5;
+import {
+  FIRST_RUN_BANNER_KEY,
+  MAX_MARKET_BANNERS,
+  marketFilterOptions,
+  priceSortOptions,
+  subscriptionCategoryOptions,
+  tariffOperatorOptions,
+  type Offer,
+  type MarketFilter,
+  type PriceSort,
+  type CatalogFilter,
+  type FilterMenuOption,
+  type MarketBanner,
+  type ScreenPulse,
+  type ScreenPulseHandle,
+  type MarketViewState,
+  readMarketViewState,
+  writeMarketViewState,
+  clearMarketViewState,
+  offerPrice,
+  offerResponsePriority,
+  offerCreatedAt,
+  matchesCatalogFilter,
+  familyLabel,
+  formatKzt,
+  pluralRu,
+  DEV_BANNER_ITEMS,
+  MarketHomeView,
+  MarketCatalogView
+} from "../components/market";
+import { useTypingPlaceholder } from "../hooks/useTypingPlaceholder";
 
 type Props = {
   view?: "market" | "family-catalog";
@@ -48,483 +77,58 @@ type Props = {
   onOpenAccounts: (id?: string) => void;
 };
 
-type Offer =
-  | { kind: "family"; item: Family }
-  | { kind: "gigabytes"; item: MarketplaceListing }
-  | { kind: "account"; item: AccountListing };
-
-type MarketFilter = "all" | "families" | "gigabytes" | "accounts";
-type PriceSort = "fast" | "asc" | "all" | "recent";
-type SubscriptionCategoryFilter = "all" | "video" | "ai" | "music" | "other";
-type TariffOperatorFilter = "all" | "tele2" | "activ" | "beeline" | "altel" | "other";
-type CatalogFilter = SubscriptionCategoryFilter | TariffOperatorFilter;
-type FilterMenuKey = "catalog" | "price";
-
-type FilterMenuOption = {
-  value: string;
-  label: string;
-  count?: number;
-  disabled?: boolean;
-};
-
-type MarketBanner = {
-  id: string;
-  priority: 0 | 1 | 2 | 3;
-  title: string;
-  detail: string;
-  detailNote: string;
-  meta?: string;
-  serviceName?: string;
-  serviceSlug?: string | null;
-  icon: "alert" | "clock" | "shield" | "payment" | "request" | "message" | "send";
-  tone: "danger" | "warning" | "info" | "success" | "raspberry";
-  pulse?: "notification" | "error" | "new-request" | "accepted";
-  targetTab?: "inbox" | "outbox";
-};
-
-type ScreenPulse = {
-  kind: NonNullable<MarketBanner["pulse"]>;
-  tone: MarketBanner["tone"];
-};
-
-type BannerPointerState = {
-  pointerId: number;
-  startX: number;
-  startY: number;
-  originPosition: number;
-  lastX: number;
-  lastTime: number;
-  velocityX: number;
-  isDragging: boolean;
-  cancelled: boolean;
-};
-
-type CatalogPointerState = {
-  pointerId: number;
-  startX: number;
-  startY: number;
-  originPosition: number;
-  lastX: number;
-  lastTime: number;
-  velocityX: number;
-  isDragging: boolean;
-  cancelled: boolean;
-};
-
-const marketFilterOptions: { value: MarketFilter; label: string }[] = [
-  { value: "all", label: "Все" },
-  { value: "families", label: "Семьи" },
-  { value: "gigabytes", label: "Гигабайты" },
-  { value: "accounts", label: "Аккаунты" }
-];
-
-const priceSortOptions: { value: PriceSort; label: string }[] = [
-  { value: "fast", label: "Быстро" },
-  { value: "asc", label: "Дешевле" },
-  { value: "all", label: "Все" }
-];
-
-const subscriptionCategoryOptions: { value: SubscriptionCategoryFilter; label: string }[] = [
-  { value: "all", label: "Все" },
-  { value: "video", label: "Видео" },
-  { value: "ai", label: "AI" },
-  { value: "music", label: "Музыка" },
-  { value: "other", label: "Другое" }
-];
-
-const tariffOperatorOptions: { value: TariffOperatorFilter; label: string }[] = [
-  { value: "all", label: "Все" },
-  { value: "tele2", label: "Tele2" },
-  { value: "activ", label: "activ" },
-  { value: "beeline", label: "Beeline" },
-  { value: "altel", label: "Altel" },
-  { value: "other", label: "Другие" }
-];
-
-const MARKET_VIEW_STATE_KEY = "subsmarket.marketViewState.v1";
-
-type MarketViewState = {
-  searchTerm: string;
-  marketFilter: MarketFilter;
-  scrollTop: number;
-};
-
-function readMarketViewState(): MarketViewState | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.sessionStorage.getItem(MARKET_VIEW_STATE_KEY);
-    if (!raw) return null;
-    const value = JSON.parse(raw) as Partial<MarketViewState>;
-    if (typeof value.searchTerm !== "string") return null;
-    const marketFilter = marketFilterOptions.some(option => option.value === value.marketFilter)
-      ? value.marketFilter as MarketFilter
-      : "all";
-    const scrollTop = typeof value.scrollTop === "number" && Number.isFinite(value.scrollTop)
-      ? Math.max(0, value.scrollTop)
-      : 0;
-    return { searchTerm: value.searchTerm, marketFilter, scrollTop };
-  } catch {
-    return null;
-  }
-}
-
-function writeMarketViewState(state: MarketViewState) {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(MARKET_VIEW_STATE_KEY, JSON.stringify(state));
-  } catch {
-    // Storage can be unavailable in private or embedded browser contexts.
-  }
-}
-
-function clearMarketViewState() {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.removeItem(MARKET_VIEW_STATE_KEY);
-  } catch {
-    // Storage can be unavailable in private or embedded browser contexts.
-  }
-}
-
-function offerPrice(offer: Offer) {
-  if (offer.kind === "family") return offer.item.member_share_kzt;
-  if (offer.kind === "gigabytes") return offer.item.price_per_gb_kzt;
-  return offer.item.price_kzt;
-}
-
-function offerResponsePriority(offer: Offer) {
-  return getListingPresence(offer.item.owner.avatar_name) === "online" ? 1 : 0;
-}
-
-function offerCreatedAt(offer: Offer): number {
-  const item = offer.item as { created_at?: string; published_at?: string };
-  const dateStr = item.published_at || item.created_at;
-  return dateStr ? new Date(dateStr).getTime() : 0;
-}
-
-function offerServiceCategory(offer: Offer): Exclude<SubscriptionCategoryFilter, "all"> {
-  const input = offer.kind === "family"
-    ? {
-        serviceSlug: offer.item.service_slug,
-        serviceName: offer.item.service_name,
-        familyType: offer.item.family_type
-      }
-    : offer.kind === "gigabytes"
-      ? { serviceSlug: offer.item.operator.slug, serviceName: offer.item.operator.name }
-      : { serviceSlug: offer.item.service.slug, serviceName: offer.item.service.name };
-  const slug = input.serviceSlug?.toLocaleLowerCase("en-US") ?? "";
-  const name = input.serviceName?.toLocaleLowerCase("ru-RU") ?? "";
-
-  if (
-    slug === "chatgpt" ||
-    name.includes("chatgpt") ||
-    slug === "gemini" ||
-    name.includes("gemini") ||
-    slug === "grok" ||
-    name.includes("grok") ||
-    slug === "claude" ||
-    name.includes("claude") ||
-    slug.includes("ai") ||
-    name.includes("ai")
-  ) {
-    return "ai";
-  }
-
-  switch (resolveServiceBrand(input).category) {
-    case "video_streaming":
-      return "video";
-    case "music_audio":
-      return "music";
-    default:
-      return "other";
-  }
-}
-
-function offerTariffOperator(offer: Offer): Exclude<TariffOperatorFilter, "all"> {
-  if (offer.kind !== "family") return "other";
-  const slug = offer.item.service_slug?.toLocaleLowerCase("en-US") ?? "";
-  const name = offer.item.service_name?.toLocaleLowerCase("ru-RU") ?? "";
-  if (slug.includes("tele2") || name.includes("tele2") || name.includes("теле2")) return "tele2";
-  if (slug.includes("activ") || name.includes("activ") || name.includes("актив")) return "activ";
-  if (slug.includes("beeline") || name.includes("beeline") || name.includes("билайн")) return "beeline";
-  if (slug.includes("altel") || name.includes("altel") || name.includes("алтел")) return "altel";
-  return "other";
-}
-
-function matchesCatalogFilter(offer: Offer, filter: CatalogFilter, familyType: FamilyType) {
-  if (filter === "all") return true;
-  return familyType === "tariff"
-    ? offerTariffOperator(offer) === filter
-    : offerServiceCategory(offer) === filter;
-}
-
-const SEARCH_PLACEHOLDER_MESSAGES = [
-  "Теле2 5 ГБ",
-  "Active семья",
-  "Tele2 семья",
-  "Beeline семья",
-  "ChatGPT Plus",
-  "Яндекс Плюс",
-  "YouTube Premium",
-  "Spotify Premium"
-] as const;
-
-const SEARCH_PLACEHOLDER_START_DELAY = 220;
-const SEARCH_PLACEHOLDER_TYPE_INTERVAL = 55;
-const SEARCH_PLACEHOLDER_DELETE_INTERVAL = 34;
-const SEARCH_PLACEHOLDER_HOLD_DELAY = 1700;
-const SEARCH_PLACEHOLDER_NEXT_DELAY = 420;
-
-function useTypingPlaceholder(
-  inputRef: { current: HTMLInputElement | null },
-  enabled: boolean,
-  fallback: string
-) {
-  useEffect(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    const searchInput = input;
-
-    searchInput.placeholder = fallback;
-    if (!enabled) return;
-
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motionQuery.matches) return;
-
-    let messageIndex = 0;
-    let characterIndex = 0;
-    let deleting = false;
-    let timeoutId: number | null = null;
-
-    const clearScheduledStep = () => {
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
-      timeoutId = null;
-    };
-
-    const scheduleStep = (delay: number) => {
-      timeoutId = window.setTimeout(step, delay);
-    };
-
-    function step() {
-      timeoutId = null;
-      const message = SEARCH_PLACEHOLDER_MESSAGES[messageIndex];
-
-      if (!deleting) {
-        characterIndex += 1;
-        searchInput.placeholder = message.slice(0, characterIndex);
-        if (characterIndex === message.length) {
-          deleting = true;
-          scheduleStep(SEARCH_PLACEHOLDER_HOLD_DELAY);
-        } else {
-          scheduleStep(SEARCH_PLACEHOLDER_TYPE_INTERVAL);
-        }
-        return;
-      }
-
-      characterIndex -= 1;
-      searchInput.placeholder = message.slice(0, characterIndex);
-      if (characterIndex === 0) {
-        deleting = false;
-        messageIndex = (messageIndex + 1) % SEARCH_PLACEHOLDER_MESSAGES.length;
-        scheduleStep(SEARCH_PLACEHOLDER_NEXT_DELAY);
-      } else {
-        scheduleStep(SEARCH_PLACEHOLDER_DELETE_INTERVAL);
-      }
-    }
-
-    searchInput.placeholder = "";
-    scheduleStep(SEARCH_PLACEHOLDER_START_DELAY);
-
-    const handleMotionChange = () => {
-      if (!motionQuery.matches) return;
-      clearScheduledStep();
-      searchInput.placeholder = fallback;
-    };
-    motionQuery.addEventListener("change", handleMotionChange);
-
-    return () => {
-      clearScheduledStep();
-      motionQuery.removeEventListener("change", handleMotionChange);
-      searchInput.placeholder = fallback;
-    };
-  }, [enabled, fallback, inputRef]);
-}
-
-const DEV_BANNER_ITEMS: MarketBanner[] = [
-  {
-    id: "test-raspberry-banner",
-    priority: 3,
-    title: "Тест: действие требуется",
-    detail: "Проверьте заявку",
-    detailNote: "Без этого продолжить нельзя",
-    meta: "Важно",
-    icon: "alert",
-    tone: "raspberry"
-  },
-  {
-    id: "test-status-banner",
-    priority: 3,
-    title: "Тест: короткий статус",
-    detail: "Состояние уведомления",
-    detailNote: "Ожидает обновления",
-    meta: "Ожидает",
-    icon: "clock",
-    tone: "warning",
-    pulse: "notification"
-  },
-  {
-    id: "test-long-banner",
-    priority: 3,
-    title: "Тест: длинный текст",
-    detail: "Адаптивная типографика",
-    detailNote: "Для разных экранов",
-    meta: "Тест",
-    icon: "message",
-    tone: "success"
-  }
-];
-
-type ScreenPulseHandle = {
-  trigger: (kind: ScreenPulse["kind"], tone: ScreenPulse["tone"]) => void;
-};
-
-const SCREEN_PULSE_EDGES = ["top", "right", "bottom", "left"] as const;
-
-const SCREEN_PULSE_KEYFRAMES: Keyframe[] = [
-  { opacity: 0, offset: 0 },
-  { opacity: 0.38, offset: 0.12 },
-  { opacity: 0.72, offset: 0.24 },
-  { opacity: 0.93, offset: 0.36 },
-  { opacity: 1, offset: 0.48 },
-  { opacity: 0.88, offset: 0.6 },
-  { opacity: 0.68, offset: 0.72 },
-  { opacity: 0.34, offset: 0.84 },
-  { opacity: 0, offset: 1 }
-];
-
-const SCREEN_PULSE_ANIMATION_OPTIONS: KeyframeAnimationOptions = {
-  duration: 1350,
-  easing: "linear",
-  fill: "both"
-};
-
-const ScreenEventPulse = memo(forwardRef<ScreenPulseHandle, object>(function ScreenEventPulse(_, ref) {
-  const edgeRefs = useRef<HTMLSpanElement[]>([]);
-  const animationsRef = useRef<Animation[]>([]);
-  const timeoutRef = useRef<number | null>(null);
-  const activationFrameRef = useRef<number | null>(null);
-
-  const clearPulse = useCallback(() => {
-    if (activationFrameRef.current !== null) {
-      window.cancelAnimationFrame(activationFrameRef.current);
-      activationFrameRef.current = null;
-    }
-    animationsRef.current.forEach(animation => animation.cancel());
-    animationsRef.current = [];
-    edgeRefs.current.forEach(edge => {
-      edge.dataset.active = "false";
-      edge.style.opacity = "";
-    });
-  }, []);
-
-  useImperativeHandle(ref, () => ({
-    trigger(kind, tone) {
-      clearPulse();
-      const edges = edgeRefs.current;
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      edges.forEach(edge => {
-        edge.dataset.active = "true";
-        edge.dataset.event = kind;
-        edge.dataset.tone = tone;
-      });
-
-      if (reducedMotion) {
-        edges.forEach(edge => { edge.style.opacity = ".75"; });
-      } else {
-        // Start the compositor animation on the next frame without re-rendering the screen.
-        const keyframes = SCREEN_PULSE_KEYFRAMES;
-        activationFrameRef.current = window.requestAnimationFrame(() => {
-          activationFrameRef.current = null;
-          animationsRef.current = edges.map(edge => edge.animate(keyframes, SCREEN_PULSE_ANIMATION_OPTIONS));
-        });
-      }
-
-      if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = window.setTimeout(() => {
-        timeoutRef.current = null;
-        clearPulse();
-      }, 1400);
-    }
-  }), [clearPulse]);
-
-  useEffect(() => () => {
-    if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current);
-    clearPulse();
-  }, [clearPulse]);
-
-  return (
-    <>
-      {SCREEN_PULSE_EDGES.map(edge => (
-        <span
-          key={edge}
-          ref={element => {
-            if (element) edgeRefs.current[SCREEN_PULSE_EDGES.indexOf(edge)] = element;
-          }}
-          className={`sm-market-screen-event-pulse sm-market-screen-event-pulse-${edge}`}
-          data-active="false"
-          data-tone="info"
-          aria-hidden="true"
-        />
-      ))}
-    </>
-  );
-}));
-
 export function SearchScreen({
-  view = "market", userName, firstName, familyType, filteredFamilies,
-  subscriptionFamilies, tariffFamilies, marketplaceListings, accountListings,
-  familyLoading, myFamilies, myRequests, isLoading = false, error, hasMoreFamilies,
-  isLoadingMoreFamilies, onOpenFamilyCatalog, onBack, onRefresh, onLoadMoreFamilies,
-  onOpenFamily, onOpenInvite, onCreateFamily, resetToken, pendingActionsCount = 0,
-  marketplaceSalesActionCount = 0, marketplacePurchaseActionCount = 0,
-  accountSalesActionCount = 0, accountPurchaseActionCount = 0,
-  onOpenMine, onOpenActions, onOpenGigabytes, onOpenAccounts
+  view = "market",
+  userName,
+  firstName,
+  familyType,
+  filteredFamilies,
+  subscriptionFamilies,
+  tariffFamilies,
+  marketplaceListings,
+  accountListings,
+  familyLoading,
+  myFamilies,
+  myRequests,
+  isLoading = false,
+  error,
+  hasMoreFamilies,
+  isLoadingMoreFamilies,
+  onOpenFamilyCatalog,
+  onBack,
+  onRefresh,
+  onLoadMoreFamilies,
+  onOpenFamily,
+  onOpenInvite,
+  onCreateFamily,
+  resetToken,
+  pendingActionsCount = 0,
+  marketplaceSalesActionCount = 0,
+  marketplacePurchaseActionCount = 0,
+  accountSalesActionCount = 0,
+  accountPurchaseActionCount = 0,
+  onOpenMine,
+  onOpenActions,
+  onOpenGigabytes,
+  onOpenAccounts
 }: Props) {
   const [savedMarketViewState] = useState<MarketViewState | null>(
-    () => view === "market" ? readMarketViewState() : null
+    () => (view === "market" ? readMarketViewState() : null)
   );
   const [searchTerm, setSearchTerm] = useState(savedMarketViewState?.searchTerm ?? "");
   const [marketFilter, setMarketFilter] = useState<MarketFilter>(savedMarketViewState?.marketFilter ?? "all");
   const [priceSort, setPriceSort] = useState<PriceSort>("fast");
   const [catalogFilter, setCatalogFilter] = useState<CatalogFilter>("all");
-  const [openFilterMenu, setOpenFilterMenu] = useState<FilterMenuKey | null>(null);
-  const [menuVariant, setMenuVariant] = useState<"classic" | "ios27">(() => {
+  const [menuVariant] = useState<"classic" | "ios27">(() => {
     const param = new URLSearchParams(window.location.search).get("menu");
     if (param === "ios27") return "ios27";
     if (param === "classic") return "classic";
     return localStorage.getItem("subsmarket.menuVariant") === "classic" ? "classic" : "ios27";
   });
   const [showIntro, setShowIntro] = useState(() => localStorage.getItem(FIRST_RUN_BANNER_KEY) !== "true");
-  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const bannerViewportRef = useRef<HTMLDivElement | null>(null);
-  const bannerTrackRef = useRef<HTMLDivElement | null>(null);
-  const bannerDotsRef = useRef<HTMLDivElement | null>(null);
-  const bannerPositionRef = useRef(0);
-  const bannerPointerRef = useRef<BannerPointerState | null>(null);
-  const bannerAnimationFrame = useRef<number | null>(null);
-  const bannerWasSwiped = useRef(false);
-  const catalogViewportRef = useRef<HTMLDivElement | null>(null);
-  const catalogTrackRef = useRef<HTMLDivElement | null>(null);
-  const catalogPositionRef = useRef(familyType === "tariff" ? 1 : 0);
-  const catalogPointerRef = useRef<CatalogPointerState | null>(null);
-  const catalogAnimationFrame = useRef<number | null>(null);
-  const catalogAnimationTargetRef = useRef<number | null>(null);
-  const familyTypeSwitchRef = useRef<HTMLElement | null>(null);
-  const catalogWasSwiped = useRef(false);
-  const wasCatalogRef = useRef(view === "family-catalog");
   const screenPulseRef = useRef<ScreenPulseHandle | null>(null);
-  const filterMenuRef = useRef<HTMLDivElement | null>(null);
   const marketScrollRef = useRef<HTMLDivElement | null>(null);
   const marketScrollTopRef = useRef(savedMarketViewState?.scrollTop ?? 0);
   const searchTermRef = useRef(searchTerm);
@@ -535,226 +139,12 @@ export function SearchScreen({
   const isInitialContextRef = useRef(true);
   const previousContextRef = useRef({ familyType, resetToken, view });
   const previousScreenPulseSignatureRef = useRef<string | null>(null);
-  const previousBannerItemsRef = useRef<MarketBanner[] | null>(null);
-  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
-  const [isFeedScrolled, setIsFeedScrolled] = useState(false);
+
   const isCatalog = view === "family-catalog";
   const term = searchTerm.trim().toLocaleLowerCase("ru-RU");
   const isInvite = /^\d{8}$/.test(term);
   const isSearching = Boolean(term) && !isInvite;
-  const isFeedScrolledRef = useRef(false);
-  const pinnedTouchStartY = useRef<number | null>(null);
-  const pinnedTouchStartX = useRef<number | null>(null);
-  const feedTouchStartY = useRef<number | null>(null);
-  const feedTouchStartX = useRef<number | null>(null);
-  const isFeedDraggingRef = useRef(false);
-  const snapTimeoutRef = useRef<number | null>(null);
-  const isHeaderCollapsedRef = useRef(isHeaderCollapsed);
-  isHeaderCollapsedRef.current = isHeaderCollapsed;
-
-  const handlePinnedTouchStart = (e: React.TouchEvent) => {
-    pinnedTouchStartY.current = e.touches[0].clientY;
-    pinnedTouchStartX.current = e.touches[0].clientX;
-  };
-
-  const handlePinnedTouchMove = (e: React.TouchEvent) => {
-    if (pinnedTouchStartY.current === null || pinnedTouchStartX.current === null) return;
-    const deltaY = e.touches[0].clientY - pinnedTouchStartY.current;
-    const deltaX = e.touches[0].clientX - pinnedTouchStartX.current;
-    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 15) {
-      if (deltaY > 20 && isHeaderCollapsed) {
-        setIsHeaderCollapsed(false);
-        setIsFeedScrolled(false);
-        isFeedScrolledRef.current = false;
-        if (marketScrollRef.current) {
-          marketScrollRef.current.scrollTop = 0;
-        }
-      } else if (deltaY < -15 && !isHeaderCollapsed) {
-        setIsHeaderCollapsed(true);
-        if (marketScrollRef.current) {
-          marketScrollRef.current.scrollTop = 0;
-        }
-      }
-    }
-  };
-
-  const handlePinnedTouchEnd = () => {
-    pinnedTouchStartY.current = null;
-    pinnedTouchStartX.current = null;
-  };
-
-  const handlePinnedWheel = (e: React.WheelEvent) => {
-    if (e.deltaY > 15 && !isHeaderCollapsed) {
-      setIsHeaderCollapsed(true);
-      if (marketScrollRef.current) {
-        marketScrollRef.current.scrollTop = 0;
-      }
-    } else if (e.deltaY < -15 && isHeaderCollapsed) {
-      setIsHeaderCollapsed(false);
-      setIsFeedScrolled(false);
-      isFeedScrolledRef.current = false;
-      if (marketScrollRef.current) {
-        marketScrollRef.current.scrollTop = 0;
-      }
-    }
-  };
-
-  const updateFeedPadding = useCallback(() => {
-    const updateElementPadding = (container: HTMLElement | null) => {
-      if (!container) return;
-      const cards = container.querySelectorAll<HTMLElement>(".sm-listing");
-      if (cards.length === 0) {
-        container.style.paddingBottom = "";
-        return;
-      }
-      const firstCard = cards[0];
-      const lastCard = cards[cards.length - 1];
-      const totalContentHeight = (lastCard.offsetTop + lastCard.offsetHeight) - firstCard.offsetTop;
-      if (cards.length <= 3) {
-        if (totalContentHeight <= container.clientHeight - 76) {
-          container.style.paddingBottom = "0px";
-        } else {
-          container.style.paddingBottom = "76px";
-        }
-        return;
-      }
-      const last3Card = cards[cards.length - 3];
-      const last3Height = (lastCard.offsetTop + lastCard.offsetHeight) - last3Card.offsetTop;
-      const diff = container.clientHeight - last3Height;
-      const targetPadding = Math.max(76, diff);
-      container.style.paddingBottom = `${Math.round(targetPadding)}px`;
-    };
-
-    if (isCatalog) {
-      const panes = document.querySelectorAll<HTMLElement>(".sm-market-catalog-swipe-pane");
-      if (panes.length > 0) {
-        panes.forEach(pane => updateElementPadding(pane));
-      } else {
-        updateElementPadding(marketScrollRef.current);
-      }
-    } else if (view === "market") {
-      updateElementPadding(marketScrollRef.current);
-    }
-  }, [view, isCatalog]);
-
-
-  const snapToNearestCard = useCallback(() => {
-    const container = marketScrollRef.current;
-    if (!container || isFeedDraggingRef.current) return;
-    if (view === "market" && !isSearching && !isHeaderCollapsedRef.current) return;
-    if (view !== "market" && !isCatalog) return;
-
-    updateFeedPadding();
-
-    const currentScrollTop = container.scrollTop;
-
-    if (currentScrollTop > 0 && currentScrollTop < 35) {
-      container.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    const containerRect = container.getBoundingClientRect();
-    const cards = container.querySelectorAll<HTMLElement>(".sm-listing");
-    if (!cards.length) return;
-
-    // Minimum 3 cards must remain visible on screen at the end of the feed
-    const maxSnapCardIndex = Math.max(0, cards.length - 3);
-
-    let closestTargetScrollTop = currentScrollTop;
-    let minDistance = Infinity;
-
-    cards.forEach((card, index) => {
-      if (cards.length >= 3 && index > maxSnapCardIndex) return;
-
-      const cardRect = card.getBoundingClientRect();
-      const distance = cardRect.top - containerRect.top;
-      if (Math.abs(distance) < Math.abs(minDistance)) {
-        minDistance = distance;
-        closestTargetScrollTop = currentScrollTop + distance;
-      }
-    });
-
-    if (Math.abs(minDistance) >= 2 && Math.abs(minDistance) < 120) {
-      const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
-      const target = Math.min(maxScrollTop, Math.max(0, Math.round(closestTargetScrollTop)));
-      container.scrollTo({ top: target, behavior: "smooth" });
-    }
-  }, [view, isCatalog, isSearching, updateFeedPadding]);
-
-  useEffect(() => {
-    return () => {
-      if (snapTimeoutRef.current) {
-        window.clearTimeout(snapTimeoutRef.current);
-        snapTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
-  const handleFeedTouchStart = (e: React.TouchEvent) => {
-    isFeedDraggingRef.current = true;
-    if (snapTimeoutRef.current) {
-      window.clearTimeout(snapTimeoutRef.current);
-      snapTimeoutRef.current = null;
-    }
-    feedTouchStartY.current = e.touches[0].clientY;
-    feedTouchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleFeedTouchMove = (e: React.TouchEvent) => {
-    if (view !== "market") return;
-    if (feedTouchStartY.current === null || feedTouchStartX.current === null) return;
-    const deltaY = e.touches[0].clientY - feedTouchStartY.current;
-    const deltaX = e.touches[0].clientX - feedTouchStartX.current;
-    if (Math.abs(deltaY) > Math.abs(deltaX)) {
-      if (deltaY < -15 && !isHeaderCollapsed) {
-        setIsHeaderCollapsed(true);
-        if (marketScrollRef.current) {
-          marketScrollRef.current.scrollTop = 0;
-        }
-      } else if (deltaY > 25 && isHeaderCollapsed) {
-        if (marketScrollRef.current && marketScrollRef.current.scrollTop <= 2) {
-          setIsHeaderCollapsed(false);
-          setIsFeedScrolled(false);
-          isFeedScrolledRef.current = false;
-          if (marketScrollRef.current) {
-            marketScrollRef.current.scrollTop = 0;
-          }
-        }
-      }
-    }
-  };
-
-  const handleFeedTouchEnd = () => {
-    feedTouchStartY.current = null;
-    feedTouchStartX.current = null;
-    isFeedDraggingRef.current = false;
-    if (snapTimeoutRef.current) {
-      window.clearTimeout(snapTimeoutRef.current);
-    }
-    snapTimeoutRef.current = window.setTimeout(snapToNearestCard, 140);
-  };
-
-  const handleFeedWheel = (e: React.WheelEvent) => {
-    if (view === "market") {
-      if (e.deltaY > 15 && !isHeaderCollapsed) {
-        setIsHeaderCollapsed(true);
-        if (marketScrollRef.current) {
-          marketScrollRef.current.scrollTop = 0;
-        }
-      } else if (e.deltaY < -15 && isHeaderCollapsed && marketScrollRef.current && marketScrollRef.current.scrollTop <= 2) {
-        setIsHeaderCollapsed(false);
-        setIsFeedScrolled(false);
-        isFeedScrolledRef.current = false;
-        if (marketScrollRef.current) {
-          marketScrollRef.current.scrollTop = 0;
-        }
-      }
-    }
-    if (snapTimeoutRef.current) {
-      window.clearTimeout(snapTimeoutRef.current);
-    }
-    snapTimeoutRef.current = window.setTimeout(snapToNearestCard, 150);
-  };
+  const isHome = !isCatalog && !isSearching;
 
   function persistMarketViewState(overrides: Partial<MarketViewState> = {}) {
     if (view !== "market") return;
@@ -779,9 +169,6 @@ export function SearchScreen({
     }
     if (view === "market" && marketScrollRef.current) {
       marketScrollRef.current.scrollTop = 0;
-      setIsHeaderCollapsed(false);
-      setIsFeedScrolled(false);
-      isFeedScrolledRef.current = false;
     }
   }, [marketFilter, view]);
 
@@ -789,9 +176,6 @@ export function SearchScreen({
     marketFilterRef.current = value;
     setMarketFilter(value);
     persistMarketViewState({ marketFilter: value, scrollTop: 0 });
-    setIsHeaderCollapsed(false);
-    setIsFeedScrolled(false);
-    isFeedScrolledRef.current = false;
     if (marketScrollRef.current) {
       marketScrollRef.current.scrollTop = 0;
     }
@@ -802,12 +186,6 @@ export function SearchScreen({
     const currentIndex = marketFilterOptions.findIndex(option => option.value === marketFilterRef.current);
     const nextIndex = (currentIndex + 1) % marketFilterOptions.length;
     updateMarketFilter(marketFilterOptions[nextIndex].value);
-    setOpenFilterMenu(null);
-  }
-
-  function toggleFilterMenu(menu: FilterMenuKey) {
-    triggerTelegramSelection();
-    setOpenFilterMenu(current => current === menu ? null : menu);
   }
 
   function scheduleMarketScrollPersistence(scrollTop: number) {
@@ -827,13 +205,8 @@ export function SearchScreen({
       return;
     }
     if (previous.familyType === familyType && previous.resetToken === resetToken && previous.view === view) return;
-    if (bannerAnimationFrame.current !== null) cancelAnimationFrame(bannerAnimationFrame.current);
-    bannerAnimationFrame.current = null;
-    bannerPointerRef.current = null;
-    bannerPositionRef.current = 0;
-    bannerWasSwiped.current = false;
-    const shouldClearSavedState = previous.resetToken !== resetToken ||
-      (view === "market" && previous.familyType !== familyType);
+    const shouldClearSavedState =
+      previous.resetToken !== resetToken || (view === "market" && previous.familyType !== familyType);
     if (shouldClearSavedState) {
       clearMarketViewState();
       pendingMarketViewStateRef.current = null;
@@ -863,15 +236,12 @@ export function SearchScreen({
     }
     setCatalogFilter("all");
     setPriceSort("fast");
-    setOpenFilterMenu(null);
-    setActiveBannerIndex(0);
-    setIsHeaderCollapsed(false);
-    setIsFeedScrolled(false);
     if (marketScrollRef.current) {
       marketScrollRef.current.style.paddingBottom = "";
       marketScrollRef.current.scrollTo({ top: 0, behavior: "auto" });
     }
   }, [familyType, resetToken, view]);
+
   useEffect(() => {
     if (view !== "market") return;
     return () => {
@@ -887,39 +257,24 @@ export function SearchScreen({
       });
     };
   }, [view]);
-  useEffect(() => () => {
-    if (bannerAnimationFrame.current !== null) cancelAnimationFrame(bannerAnimationFrame.current);
-  }, []);
+
   const showPriceSort = isCatalog || isSearching;
   useTypingPlaceholder(searchInputRef, view === "market" && searchTerm.length === 0, "Сервис, оператор или аккаунт");
+
   useEffect(() => {
     if (!isCatalog) setCatalogFilter("all");
     if (!isSearching || isCatalog) setPriceSort("fast");
   }, [familyType, isCatalog, isSearching]);
-  useEffect(() => {
-    if (!openFilterMenu) return;
-    const closeOnPointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (target instanceof Node && !filterMenuRef.current?.contains(target)) setOpenFilterMenu(null);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpenFilterMenu(null);
-    };
-    document.addEventListener("pointerdown", closeOnPointerDown);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnPointerDown);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [openFilterMenu]);
+
   const matches = (...values: (string | null | undefined)[]) =>
     !isSearching || values.filter(Boolean).join(" ").toLocaleLowerCase("ru-RU").includes(term);
+
   const joined = new Set(myFamilies.map(item => item.family.id));
   const pending = new Set(myRequests.filter(item => item.status === "pending").map(item => item.family_id));
   const catalogTitle = familyType === "tariff" ? "Семейные тарифы" : "Семейные подписки";
   const catalogSectionTitle = "Доступные";
   const catalogSearchPlaceholder = familyType === "tariff" ? "Оператор или тариф" : "Сервис или подписка";
-  const catalogEmptyTitle = familyType === "tariff" ? "Тарифов пока нет" : "Подписок пока нет";
+
   const activeMarketFilterIndex = marketFilterOptions.findIndex(option => option.value === marketFilter);
   const activeMarketFilter = marketFilterOptions[activeMarketFilterIndex] ?? marketFilterOptions[0];
   const activePriceSortIndex = priceSortOptions.findIndex(option => option.value === priceSort);
@@ -928,6 +283,7 @@ export function SearchScreen({
   const activeCatalogFilterIndex = catalogFilterOptions.findIndex(option => option.value === catalogFilter);
   const activeCatalogFilter = catalogFilterOptions[activeCatalogFilterIndex] ?? catalogFilterOptions[0];
   const effectiveCatalogFilter = activeCatalogFilter.value;
+
   const approvedFamilyRequests = useMemo(
     () =>
       myRequests.filter(request => {
@@ -940,6 +296,7 @@ export function SearchScreen({
       }),
     [myFamilies, myRequests]
   );
+
   const marketSubscriptionFamilies = useMemo(() => {
     const youtubeFamily = subscriptionFamilies.find(item => item.service_slug === "youtube-premium");
     if (!youtubeFamily) return subscriptionFamilies;
@@ -962,62 +319,67 @@ export function SearchScreen({
 
   const offers: Offer[] = isCatalog
     ? filteredFamilies.map(item => ({ kind: "family", item }))
-    : allOffers.filter(offer =>
-      marketFilter === "all" ||
-      (marketFilter === "families" && offer.kind === "family") ||
-      (marketFilter === "gigabytes" && offer.kind === "gigabytes") ||
-      (marketFilter === "accounts" && offer.kind === "account")
-    );
+    : allOffers.filter(
+        offer =>
+          marketFilter === "all" ||
+          (marketFilter === "families" && offer.kind === "family") ||
+          (marketFilter === "gigabytes" && offer.kind === "gigabytes") ||
+          (marketFilter === "accounts" && offer.kind === "account")
+      );
+
   const visible = offers.filter(offer => {
     if (offer.kind === "family") {
       const f = offer.item;
       return matches(f.service_name, f.service_variant, f.plan_name, f.owner.avatar_name);
     }
-    if (offer.kind === "gigabytes") return matches(offer.item.operator.name, "Гигабайты", offer.item.description, offer.item.owner.avatar_name);
+    if (offer.kind === "gigabytes") {
+      return matches(offer.item.operator.name, "Гигабайты", offer.item.description, offer.item.owner.avatar_name);
+    }
     return matches(offer.item.title, offer.item.service.name, offer.item.description, offer.item.owner.avatar_name);
   });
-  const categoryVisible = isCatalog && effectiveCatalogFilter !== "all"
-    ? visible.filter(offer => matchesCatalogFilter(offer, effectiveCatalogFilter, familyType))
-    : visible;
+
+  const categoryVisible =
+    isCatalog && effectiveCatalogFilter !== "all"
+      ? visible.filter(offer => matchesCatalogFilter(offer, effectiveCatalogFilter, familyType))
+      : visible;
+
   const catalogFilterMenuOptions: FilterMenuOption[] = catalogFilterOptions.map(option => {
-    const count = option.value === "all"
-      ? visible.length
-      : visible.filter(offer => matchesCatalogFilter(offer, option.value, familyType)).length;
+    const count =
+      option.value === "all"
+        ? visible.length
+        : visible.filter(offer => matchesCatalogFilter(offer, option.value, familyType)).length;
     return {
       ...option,
       count,
       disabled: option.value !== "all" && count === 0 && option.value !== effectiveCatalogFilter
     };
   });
+
   const sortedVisible = showPriceSort
     ? [...categoryVisible].sort((left, right) => {
-      if (priceSort === "fast") {
-        return offerResponsePriority(right) - offerResponsePriority(left);
-      }
-      if (priceSort === "recent") {
-        return offerCreatedAt(right) - offerCreatedAt(left);
-      }
-      if (priceSort === "asc") {
-        return offerPrice(left) - offerPrice(right);
-      }
-      return 0;
-    })
+        if (priceSort === "fast") {
+          return offerResponsePriority(right) - offerResponsePriority(left);
+        }
+        if (priceSort === "recent") {
+          return offerCreatedAt(right) - offerCreatedAt(left);
+        }
+        if (priceSort === "asc") {
+          return offerPrice(left) - offerPrice(right);
+        }
+        return 0;
+      })
     : categoryVisible;
-  const displayed = isCatalog || isSearching ? sortedVisible : sortedVisible.filter(offer =>
-    offer.kind === "family" ? offer.item.status === "active" && offer.item.free_slots > 0 : offer.item.status === "active"
-  ).slice(0, 8);
 
-  useEffect(() => {
-    updateFeedPadding();
-    const frame = requestAnimationFrame(() => {
-      updateFeedPadding();
-    });
-    window.addEventListener("resize", updateFeedPadding);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("resize", updateFeedPadding);
-    };
-  }, [displayed.length, familyType, view, catalogFilter, updateFeedPadding]);
+  const displayed =
+    isCatalog || isSearching
+      ? sortedVisible
+      : sortedVisible
+          .filter(offer =>
+            offer.kind === "family"
+              ? offer.item.status === "active" && offer.item.free_slots > 0
+              : offer.item.status === "active"
+          )
+          .slice(0, 8);
 
   const catalogDisplayedByType = useMemo<Record<FamilyType, Offer[]>>(() => {
     const buildAdjacentCatalog = (type: FamilyType) => {
@@ -1027,11 +389,14 @@ export function SearchScreen({
         .map(item => ({ kind: "family" as const, item }))
         .filter(offer => {
           const f = offer.item;
-          return !isSearching || [f.service_name, f.service_variant, f.plan_name, f.owner.avatar_name]
-            .filter(Boolean)
-            .join(" ")
-            .toLocaleLowerCase("ru-RU")
-            .includes(term);
+          return (
+            !isSearching ||
+            [f.service_name, f.service_variant, f.plan_name, f.owner.avatar_name]
+              .filter(Boolean)
+              .join(" ")
+              .toLocaleLowerCase("ru-RU")
+              .includes(term)
+          );
         });
       return [...adjacentVisible].sort((left, right) => {
         if (priceSort === "fast") return offerResponsePriority(right) - offerResponsePriority(left);
@@ -1075,12 +440,16 @@ export function SearchScreen({
         item.membership.status === "awaiting_access" &&
         !approvedFamilyRequests.some(request => request.family_id === item.family.id)
     );
-    const openPayments = myFamilies.flatMap(item => item.payments
-      .filter(payment => ["due", "overdue"].includes(payment.status))
-      .map(payment => ({ family: item.family, payment })));
-    const reportedPayments = myFamilies.flatMap(item => item.payments
-      .filter(payment => payment.status === "payment_reported")
-      .map(payment => ({ family: item.family, payment })));
+    const openPayments = myFamilies.flatMap(item =>
+      item.payments
+        .filter(payment => ["due", "overdue"].includes(payment.status))
+        .map(payment => ({ family: item.family, payment }))
+    );
+    const reportedPayments = myFamilies.flatMap(item =>
+      item.payments
+        .filter(payment => payment.status === "payment_reported")
+        .map(payment => ({ family: item.family, payment }))
+    );
     const overduePayment = openPayments.find(item => item.payment.status === "overdue");
     const duePayment = overduePayment ?? openPayments[0];
     const sellerActionCount = marketplaceSalesActionCount + accountSalesActionCount;
@@ -1174,7 +543,9 @@ export function SearchScreen({
       const details = [
         marketplaceSalesActionCount > 0 ? `Гигабайты: ${marketplaceSalesActionCount}` : null,
         accountSalesActionCount > 0 ? `Аккаунты: ${accountSalesActionCount}` : null
-      ].filter(Boolean).join(" · ");
+      ]
+        .filter(Boolean)
+        .join(" · ");
       items.push({
         id: "marketplace-sales",
         priority: 1,
@@ -1192,7 +563,9 @@ export function SearchScreen({
       const details = [
         marketplacePurchaseActionCount > 0 ? `Гигабайты: ${marketplacePurchaseActionCount}` : null,
         accountPurchaseActionCount > 0 ? `Аккаунты: ${accountPurchaseActionCount}` : null
-      ].filter(Boolean).join(" · ");
+      ]
+        .filter(Boolean)
+        .join(" · ");
       items.push({
         id: "marketplace-purchases",
         priority: 3,
@@ -1244,23 +617,31 @@ export function SearchScreen({
       .sort((left, right) => left.item.priority - right.item.priority || left.index - right.index)
       .slice(0, MAX_MARKET_BANNERS)
       .map(({ item }) => item);
-  }, [accountPurchaseActionCount, accountSalesActionCount, approvedFamilyRequests, marketplacePurchaseActionCount, marketplaceSalesActionCount, myFamilies, myRequests]);
-  const screenPulseBanner = bannerItems.find(item => item.pulse === "error")
-    ?? bannerItems.find(item => item.pulse === "accepted")
-    ?? bannerItems.find(item => item.pulse === "new-request")
-    ?? bannerItems.find(item => item.pulse);
+  }, [
+    accountPurchaseActionCount,
+    accountSalesActionCount,
+    approvedFamilyRequests,
+    marketplacePurchaseActionCount,
+    marketplaceSalesActionCount,
+    myFamilies,
+    myRequests
+  ]);
+
+  const screenPulseBanner =
+    bannerItems.find(item => item.pulse === "error") ??
+    bannerItems.find(item => item.pulse === "accepted") ??
+    bannerItems.find(item => item.pulse === "new-request") ??
+    bannerItems.find(item => item.pulse);
   const screenPulseKind: NonNullable<MarketBanner["pulse"]> | undefined = error
     ? "error"
     : screenPulseBanner?.pulse;
-  const screenPulseTone: MarketBanner["tone"] | undefined = error
-    ? "danger"
-    : screenPulseBanner?.tone;
+  const screenPulseTone: MarketBanner["tone"] | undefined = error ? "danger" : screenPulseBanner?.tone;
   const screenPulseSignature = error
     ? `error:${error}`
     : bannerItems
-      .filter(item => item.pulse)
-      .map(item => `${item.id}:${item.pulse}:${item.title}:${item.detail}:${item.meta ?? ""}`)
-      .join("|");
+        .filter(item => item.pulse)
+        .map(item => `${item.id}:${item.pulse}:${item.title}:${item.detail}:${item.meta ?? ""}`)
+        .join("|");
 
   const triggerScreenPulse = useCallback((kind: ScreenPulse["kind"], tone: ScreenPulse["tone"]) => {
     screenPulseRef.current?.trigger(kind, tone);
@@ -1276,1250 +657,94 @@ export function SearchScreen({
     triggerScreenPulse(screenPulseKind, screenPulseTone);
   }, [screenPulseKind, screenPulseSignature, screenPulseTone, triggerScreenPulse, view]);
 
-  useEffect(() => {
-    const previousBannerItems = previousBannerItemsRef.current;
-    previousBannerItemsRef.current = bannerItems;
-    if (view !== "market" || !bannerItems.length) return;
-
-    const signature = (item: MarketBanner) => [
-      item.id,
-      item.priority,
-      item.title,
-      item.detail,
-      item.detailNote,
-      item.meta ?? "",
-      item.serviceName ?? "",
-      item.serviceSlug ?? "",
-      item.icon,
-      item.tone,
-      item.pulse ?? ""
-    ].join("|");
-    const changedBannerIndexes = bannerItems.reduce<number[]>((indexes, item, index) => {
-      const previous = previousBannerItems?.find(previousItem => previousItem.id === item.id);
-      if (!previous || signature(previous) !== signature(item)) indexes.push(index);
-      return indexes;
-    }, []);
-    const highPriorityChangedIndex = changedBannerIndexes.find(index => bannerItems[index].pulse === "error")
-      ?? changedBannerIndexes.find(index => bannerItems[index].pulse === "accepted")
-      ?? changedBannerIndexes.find(index => bannerItems[index].pulse === "new-request");
-    const fallbackChangedIndex = changedBannerIndexes.find(index => !bannerItems[index].id.startsWith("test-"))
-      ?? (previousBannerItems === null ? undefined : changedBannerIndexes[0]);
-    const previousActiveIndex = previousBannerItems
-      ? Math.min(Math.max(Math.round(bannerPositionRef.current), 0), previousBannerItems.length - 1)
-      : -1;
-    const previousActiveBanner = previousBannerItems?.[previousActiveIndex];
-    const currentPreviousActiveBannerIndex = previousActiveBanner
-      ? bannerItems.findIndex(item => item.id === previousActiveBanner.id)
-      : -1;
-    const keepCurrentImportantBanner = highPriorityChangedIndex === undefined &&
-      currentPreviousActiveBannerIndex >= 0 &&
-      ["error", "accepted", "new-request"].includes(previousActiveBanner?.pulse ?? "");
-    const changedBannerIndex = highPriorityChangedIndex
-      ?? (keepCurrentImportantBanner ? undefined : fallbackChangedIndex);
-    if (changedBannerIndex === undefined) return;
-
-    stopBannerAnimation();
-    bannerPointerRef.current = null;
-    bannerWasSwiped.current = false;
-    bannerPositionRef.current = changedBannerIndex;
-    setActiveBannerIndex(changedBannerIndex);
-  }, [bannerItems, view]);
-
-  const safeBannerIndex = Math.min(activeBannerIndex, Math.max(0, bannerItems.length - 1));
-  const activeBanner = bannerItems[safeBannerIndex];
-  const activeBannerDetail = activeBanner ? [activeBanner.detail, activeBanner.detailNote].filter(Boolean).join(" · ") : "";
-  const activeBannerAnnouncement = activeBanner
-    ? [activeBanner.title, activeBannerDetail, activeBanner.meta].filter(Boolean).join(". ")
-    : "";
-
-  function setBannerPosition(position: number) {
-    bannerPositionRef.current = position;
-    const track = bannerTrackRef.current;
-    if (track) track.style.transform = `translate3d(${-position * 100}%, 0, 0)`;
-
-    const dots = bannerDotsRef.current;
-    if (dots && bannerItems.length > 1) {
-      const boundedPosition = Math.min(Math.max(position, 0), bannerItems.length - 1);
-      const dotSpacing = document.documentElement.dataset.higReview === "on" ? 44 : 28;
-      const centerOffset = (boundedPosition - (bannerItems.length - 1) / 2) * dotSpacing;
-      dots.style.setProperty("--sm-banner-dot-offset", `${centerOffset}px`);
-    }
-  }
-
-  function stopBannerAnimation() {
-    if (bannerAnimationFrame.current !== null) {
-      cancelAnimationFrame(bannerAnimationFrame.current);
-      bannerAnimationFrame.current = null;
-    }
-  }
-
-  function animateBannerTo(
-    nextIndex: number,
-    initialVelocity = 0,
-    interaction: "gesture" | "auto" = "gesture"
-  ) {
-    if (bannerItems.length < 1) return;
-    stopBannerAnimation();
-    const target = Math.min(Math.max(nextIndex, 0), bannerItems.length - 1);
-    const start = bannerPositionRef.current;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || Math.abs(target - start) < 0.001) {
-      setBannerPosition(target);
-      setActiveBannerIndex(target);
-      return;
-    }
-
-    let position = start;
-    let velocity = Math.max(-4, Math.min(4, initialVelocity));
-    const stiffness = interaction === "auto" ? 320 : 260;
-    const damping = interaction === "auto" ? 36 : 32;
-    let previousTime = performance.now();
-    const step = (time: number) => {
-      const deltaTime = Math.min((time - previousTime) / 1000, 0.032);
-      previousTime = time;
-      const acceleration = (target - position) * stiffness - velocity * damping;
-      velocity += acceleration * deltaTime;
-      position += velocity * deltaTime;
-      setBannerPosition(position);
-
-      if (Math.abs(target - position) < 0.001 && Math.abs(velocity) < 0.01) {
-        setBannerPosition(target);
-        bannerAnimationFrame.current = null;
-        setActiveBannerIndex(target);
-        return;
-      }
-      bannerAnimationFrame.current = requestAnimationFrame(step);
-    };
-    bannerAnimationFrame.current = requestAnimationFrame(step);
-  }
-
-  function handleBannerPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-    if (bannerItems.length < 2 || (event.pointerType === "mouse" && event.button !== 0)) return;
-    stopBannerAnimation();
-    bannerWasSwiped.current = false;
-    bannerPointerRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      originPosition: bannerPositionRef.current,
-      lastX: event.clientX,
-      lastTime: performance.now(),
-      velocityX: 0,
-      isDragging: false,
-      cancelled: false
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function handleBannerPointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
-    const pointer = bannerPointerRef.current;
-    if (!pointer || pointer.pointerId !== event.pointerId || pointer.cancelled) return;
-    const deltaX = event.clientX - pointer.startX;
-    const deltaY = event.clientY - pointer.startY;
-    if (!pointer.isDragging) {
-      if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) return;
-      if (Math.abs(deltaY) > Math.abs(deltaX)) {
-        pointer.cancelled = true;
-        bannerPointerRef.current = null;
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-        return;
-      }
-      pointer.isDragging = true;
-      bannerWasSwiped.current = true;
-    }
-
-    const now = performance.now();
-    const elapsed = Math.max(1, now - pointer.lastTime);
-    pointer.velocityX = ((event.clientX - pointer.lastX) / elapsed) * 1000;
-    pointer.lastX = event.clientX;
-    pointer.lastTime = now;
-    const width = bannerViewportRef.current?.clientWidth || event.currentTarget.clientWidth || 1;
-    const rawPosition = pointer.originPosition - deltaX / width;
-    const maxPosition = bannerItems.length - 1;
-    const position = rawPosition < 0
-      ? rawPosition * 0.25
-      : rawPosition > maxPosition
-        ? maxPosition + (rawPosition - maxPosition) * 0.25
-        : rawPosition;
-    setBannerPosition(position);
-  }
-
-  function handleBannerPointerEnd(event: ReactPointerEvent<HTMLButtonElement>, cancelled = false) {
-    const pointer = bannerPointerRef.current;
-    if (!pointer || pointer.pointerId !== event.pointerId) return;
-    bannerPointerRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    if (pointer.cancelled) return;
-    if (cancelled) {
-      animateBannerTo(Math.round(bannerPositionRef.current));
-      return;
-    }
-    if (!pointer.isDragging) return;
-
-    const deltaX = event.clientX - pointer.startX;
-    const width = bannerViewportRef.current?.clientWidth || event.currentTarget.clientWidth || 1;
-    const passedDistance = Math.abs(deltaX) >= width * 0.18;
-    const passedVelocity = Math.abs(pointer.velocityX) >= 450;
-    let target = Math.round(bannerPositionRef.current);
-    if (passedDistance || passedVelocity) {
-      const direction = deltaX < 0 || pointer.velocityX < 0 ? 1 : -1;
-      target = Math.round(pointer.originPosition) + direction;
-    }
-    target = Math.min(Math.max(target, 0), bannerItems.length - 1);
-    animateBannerTo(target, -pointer.velocityX / width, "gesture");
-  }
-
-  const CATALOG_SWIPE_GAP = 16;
-
-  function setCatalogPosition(position: number) {
-    catalogPositionRef.current = position;
-    const track = catalogTrackRef.current;
-    if (track) {
-      const width = catalogViewportRef.current?.clientWidth || 0;
-      if (width > 0) {
-        track.style.transform = `translate3d(${-position * (width + CATALOG_SWIPE_GAP)}px, 0, 0)`;
-      } else {
-        track.style.transform = `translate3d(calc(${-position * 50}% - ${position * 8}px), 0, 0)`;
-      }
-    }
-    const switchEl = familyTypeSwitchRef.current || document.querySelector<HTMLElement>(".sm-market-family-type-switch");
-    const clampedPosition = Math.min(Math.max(position, 0), 1);
-    switchEl?.style.setProperty("--catalog-type-position", String(clampedPosition));
-  }
-
-  function stopCatalogAnimation() {
-    if (catalogAnimationFrame.current !== null) {
-      cancelAnimationFrame(catalogAnimationFrame.current);
-      catalogAnimationFrame.current = null;
-    }
-    catalogTrackRef.current?.classList.remove("is-swiping");
-  }
-
-  function animateCatalogTo(
-    nextPosition: number,
-    initialVelocity = 0,
-    interaction: "gesture" | "click" = "gesture"
-  ) {
-    const target = Math.min(Math.max(nextPosition, 0), 1);
-    stopCatalogAnimation();
-    catalogAnimationTargetRef.current = target;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setCatalogPosition(target);
-      catalogAnimationTargetRef.current = null;
-      catalogTrackRef.current?.classList.remove("is-swiping");
-      return;
-    }
-
-    let position = catalogPositionRef.current;
-    if (Math.abs(target - position) < 0.001 && Math.abs(initialVelocity) < 0.01) {
-      setCatalogPosition(target);
-      catalogAnimationTargetRef.current = null;
-      catalogTrackRef.current?.classList.remove("is-swiping");
-      return;
-    }
-
-    catalogTrackRef.current?.classList.add("is-swiping");
-    let velocity = Math.max(-4, Math.min(4, initialVelocity));
-    const stiffness = 260;
-    const damping = 32;
-    let previousTime = performance.now();
-    const step = (time: number) => {
-      const deltaTime = Math.min((time - previousTime) / 1000, 0.032);
-      previousTime = time;
-      const acceleration = (target - position) * stiffness - velocity * damping;
-      velocity += acceleration * deltaTime;
-      position += velocity * deltaTime;
-      setCatalogPosition(position);
-
-      if (Math.abs(target - position) < 0.001 && Math.abs(velocity) < 0.01) {
-        setCatalogPosition(target);
-        catalogAnimationTargetRef.current = null;
-        catalogAnimationFrame.current = null;
-        catalogTrackRef.current?.classList.remove("is-swiping");
-        return;
-      }
-      catalogAnimationFrame.current = requestAnimationFrame(step);
-    };
-    catalogAnimationFrame.current = requestAnimationFrame(step);
-  }
-
-  function handleCatalogPointerDown(event: ReactPointerEvent<HTMLElement>) {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    stopCatalogAnimation();
-    catalogAnimationTargetRef.current = null;
-    catalogWasSwiped.current = false;
-    catalogPointerRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      originPosition: catalogPositionRef.current,
-      lastX: event.clientX,
-      lastTime: performance.now(),
-      velocityX: 0,
-      isDragging: false,
-      cancelled: false
-    };
-  }
-
-  function handleCatalogPointerMove(event: ReactPointerEvent<HTMLElement>) {
-    const pointer = catalogPointerRef.current;
-    if (!pointer || pointer.pointerId !== event.pointerId || pointer.cancelled) return;
-    const deltaX = event.clientX - pointer.startX;
-    const deltaY = event.clientY - pointer.startY;
-    if (!pointer.isDragging) {
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
-      if (absX < 8 && absY < 8) return;
-
-      if (absY >= 14 && absY > absX * 1.4) {
-        pointer.cancelled = true;
-        catalogPointerRef.current = null;
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-        catalogTrackRef.current?.classList.remove("is-swiping");
-        const target = familyType === "tariff" ? 1 : 0;
-        animateCatalogTo(target, 0, "gesture");
-        return;
-      }
-      if (absX >= 8 && absX * 1.4 >= absY) {
-        pointer.isDragging = true;
-        catalogWasSwiped.current = true;
-        catalogTrackRef.current?.classList.add("is-swiping");
-        try {
-          event.currentTarget.setPointerCapture(event.pointerId);
-        } catch {}
-      } else {
-        return;
-      }
-    }
-
-    const now = performance.now();
-    const elapsed = Math.max(1, now - pointer.lastTime);
-    pointer.velocityX = ((event.clientX - pointer.lastX) / elapsed) * 1000;
-    pointer.lastX = event.clientX;
-    pointer.lastTime = now;
-    const width = catalogViewportRef.current?.clientWidth || 1;
-    const stepSize = width + CATALOG_SWIPE_GAP;
-    const rawPosition = pointer.originPosition - deltaX / stepSize;
-    const position = rawPosition < 0
-      ? rawPosition * 0.25
-      : rawPosition > 1
-        ? 1 + (rawPosition - 1) * 0.25
-        : rawPosition;
-    setCatalogPosition(position);
-  }
-
-  function handleCatalogPointerEnd(event: ReactPointerEvent<HTMLElement>, cancelled = false) {
-    const pointer = catalogPointerRef.current;
-    if (!pointer || pointer.pointerId !== event.pointerId) return;
-    catalogPointerRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    const defaultTarget = familyType === "tariff" ? 1 : 0;
-    if (pointer.cancelled || cancelled || !pointer.isDragging) {
-      catalogTrackRef.current?.classList.remove("is-swiping");
-      animateCatalogTo(defaultTarget, 0, "gesture");
-      return;
-    }
-
-    const deltaX = event.clientX - pointer.startX;
-    const width = catalogViewportRef.current?.clientWidth || 1;
-    const stepSize = width + CATALOG_SWIPE_GAP;
-    const passedDistance = Math.abs(deltaX) >= width * 0.18;
-    const passedVelocity = Math.abs(pointer.velocityX) >= 450;
-    let target = Math.round(catalogPositionRef.current);
-    if (passedDistance || passedVelocity) {
-      const direction = passedVelocity
-        ? (pointer.velocityX < 0 ? 1 : -1)
-        : (deltaX < 0 ? 1 : -1);
-      target = Math.round(pointer.originPosition) + direction;
-    }
-    target = Math.min(Math.max(target, 0), 1);
-    animateCatalogTo(target, -pointer.velocityX / stepSize, "gesture");
-
-    const nextType: FamilyType = target === 1 ? "tariff" : "subscription";
-    if (nextType !== familyType) {
-      triggerTelegramSelection();
-      setCatalogFilter("all");
-      onOpenFamilyCatalog(nextType);
-    }
-  }
-
-  useEffect(() => () => {
-    stopCatalogAnimation();
-    stopBannerAnimation();
-  }, []);
-  useEffect(() => {
-    const wasCatalog = wasCatalogRef.current;
-    wasCatalogRef.current = isCatalog;
-    if (!isCatalog) {
-      catalogPositionRef.current = familyType === "tariff" ? 1 : 0;
-      return;
-    }
-    marketScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
-    const target = familyType === "tariff" ? 1 : 0;
-    if (!wasCatalog) {
-      catalogPositionRef.current = target;
-      setCatalogPosition(target);
-      catalogAnimationTargetRef.current = null;
-      stopCatalogAnimation();
-      return;
-    }
-    if (catalogPointerRef.current) return;
-    if (catalogAnimationTargetRef.current === target) return;
-    if (Math.abs(catalogPositionRef.current - target) < 0.001) {
-      setCatalogPosition(target);
-      return;
-    }
-    animateCatalogTo(target, 0, "click");
-  }, [familyType, isCatalog]);
-
-  useEffect(() => {
-    if (bannerPointerRef.current || bannerAnimationFrame.current !== null) return;
-    setBannerPosition(safeBannerIndex);
-  }, [bannerItems.length, safeBannerIndex]);
-
-  function openInvite() { if (isInvite) onOpenInvite(term); }
-  const isHome = !isCatalog && !isSearching;
-
   if (isHome) {
     return (
-      <div
-        className="subs-screen-scroll sm-market-screen sm-market-screen-home"
-        data-testid="market-screen"
-      >
-        <ScreenEventPulse ref={screenPulseRef} />
-
-        <div
-          className={`sm-market-home-top-collapsible${isHeaderCollapsed ? " is-collapsed" : ""}`}
-          onTouchStart={handlePinnedTouchStart}
-          onTouchMove={handlePinnedTouchMove}
-          onTouchEnd={handlePinnedTouchEnd}
-        >
-          <div className="sm-market-home-top-collapsible-inner">
-            <header className="sm-market-header">
-              <div className="sm-market-heading-copy">
-                <h1>SubsMarket</h1>
-              </div>
-              <button type="button" className="sm-market-avatar-button" aria-label="Мой профиль" onClick={() => onOpenMine?.()}>
-                {(firstName || userName || "SM").slice(0, 2).toUpperCase()}
-              </button>
-            </header>
-
-            <label className="sm-market-search">
-              <SystemSymbol name="magnifyingglass" size={20} />
-              <input
-                ref={searchInputRef}
-                type="search"
-                aria-label="Поиск сервиса или семьи"
-                data-testid="market-search-input"
-                placeholder="Сервис, оператор или аккаунт"
-                value={searchTerm}
-                onChange={e => updateSearchTerm(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") openInvite(); }}
-              />
-              {searchTerm ? (
-                <button type="button" className="sm-market-search-clear" aria-label="Очистить поиск" onClick={() => updateSearchTerm("")}>
-                  <SystemSymbol name="xmark" size={18} />
-                </button>
-              ) : null}
-            </label>
-          </div>
-        </div>
-
-        {isInvite ? (
-          <button className="sm-market-button sm-market-button-primary" type="button" onClick={openInvite}>
-            Открыть семью по коду {term}
-          </button>
-        ) : null}
-
-        <div
-          className="sm-market-home-pinned-section"
-          onTouchStart={handlePinnedTouchStart}
-          onTouchMove={handlePinnedTouchMove}
-          onTouchEnd={handlePinnedTouchEnd}
-          onWheel={handlePinnedWheel}
-        >
-          {showIntro && pendingActionsCount === 0 ? (
-            <section className="sm-market-alert" data-testid="market-first-run-banner">
-              <div>
-                <span className="sm-market-alert-eyebrow">Для семейных подписок</span>
-                <strong>Сначала доступ, потом оплата</strong>
-                <p>Проверьте подписку перед переводом владельцу семьи.</p>
-              </div>
-              <button
-                className="sm-market-button sm-market-button-secondary"
-                type="button"
-                onClick={() => {
-                  localStorage.setItem(FIRST_RUN_BANNER_KEY, "true");
-                  setShowIntro(false);
-                }}
-              >
-                Понятно
-              </button>
-            </section>
-          ) : null}
-
-          {activeBanner ? (
-            <section className="sm-market-action-banner" aria-label="Действия и уведомления">
-              <span className="sr-only" aria-live="polite" aria-atomic="true" key={activeBanner.id}>
-                {activeBannerAnnouncement}
-              </span>
-              <div className="sm-market-action-banner-viewport" ref={bannerViewportRef}>
-                <div
-                  className="sm-market-action-banner-track"
-                  ref={bannerTrackRef}
-                  style={{ transform: `translate3d(${-bannerPositionRef.current * 100}%, 0, 0)` }}
-                >
-                  {bannerItems.map((banner, index) => {
-                    const isActive = index === safeBannerIndex;
-                    const bannerDetail = [banner.detail, banner.detailNote].filter(Boolean).join(" · ");
-                    return (
-                      <button
-                        key={banner.id}
-                        className={`sm-market-action-banner-button${banner.meta ? "" : " sm-market-action-banner-button-no-meta"}`}
-                        data-tone={banner.tone}
-                        type="button"
-                        data-testid={isActive ? "market-notifications" : undefined}
-                        aria-hidden={!isActive}
-                        tabIndex={isActive ? 0 : -1}
-                        aria-label={[banner.title, bannerDetail, banner.meta, "Открыть"].filter(Boolean).join(". ")}
-                        onClick={() => {
-                          if (bannerWasSwiped.current) {
-                            bannerWasSwiped.current = false;
-                            return;
-                          }
-                          onOpenActions?.(banner.targetTab);
-                        }}
-                        onKeyDown={event => {
-                          if (event.key === "ArrowRight") {
-                            event.preventDefault();
-                            if (bannerItems.length > 1) animateBannerTo((safeBannerIndex + 1) % bannerItems.length);
-                          } else if (event.key === "ArrowLeft") {
-                            event.preventDefault();
-                            if (bannerItems.length > 1) animateBannerTo((safeBannerIndex - 1 + bannerItems.length) % bannerItems.length);
-                          }
-                        }}
-                        onPointerDown={handleBannerPointerDown}
-                        onPointerMove={handleBannerPointerMove}
-                        onPointerUp={event => handleBannerPointerEnd(event)}
-                        onPointerCancel={event => handleBannerPointerEnd(event, true)}
-                      >
-                        <span className="sm-market-action-banner-icon" data-tone={banner.tone} aria-hidden>
-                          {!banner.meta ? (
-                            <SystemSymbol name="info.circle" size={22} />
-                          ) : banner.serviceName ? (
-                            <ServiceLogo
-                              serviceSlug={banner.serviceSlug}
-                              serviceName={banner.serviceName}
-                              size={32}
-                            />
-                          ) : (
-                            <BannerIcon icon={banner.icon} />
-                          )}
-                        </span>
-                        <span className="sm-market-action-banner-copy">
-                          <strong>{banner.title}</strong>
-                          <small>
-                            <span className="sm-market-action-banner-detail-main">{banner.detail}</span>
-                            {banner.detailNote ? <span className="sm-market-action-banner-detail-note">{banner.detailNote}</span> : null}
-                          </small>
-                        </span>
-                        {banner.meta ? (
-                          <span className="sm-market-action-banner-meta">
-                            <span data-tone={banner.tone} data-status={banner.id}>
-                              <span>{banner.meta}</span>
-                            </span>
-                          </span>
-                        ) : null}
-                        {!banner.meta ? (
-                          <span className="sm-market-action-banner-indicator sm-market-action-banner-service-indicator" aria-hidden="true">
-                            {banner.serviceName ? (
-                              <ServiceLogo
-                                serviceSlug={banner.serviceSlug}
-                                serviceName={banner.serviceName}
-                                size={32}
-                              />
-                            ) : (
-                              <SystemSymbol name="info.circle" size={20} />
-                            )}
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              {bannerItems.length > 1 ? (
-                <div
-                  className={`sm-market-action-banner-dots sm-market-action-banner-notification-dots sm-market-action-banner-dots-count-${Math.min(bannerItems.length, 5)}`}
-                  ref={bannerDotsRef}
-                  role="group"
-                  aria-label={`Уведомления, слайд ${safeBannerIndex + 1} из ${bannerItems.length}`}
-                >
-                  {bannerItems.map((banner, index) => (
-                    <button
-                      key={banner.id}
-                      type="button"
-                      className={index === safeBannerIndex ? "is-active" : undefined}
-                      aria-label={`Показать уведомление: ${banner.title}`}
-                      aria-current={index === safeBannerIndex ? "page" : undefined}
-                      onClick={() => animateBannerTo(index)}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          {menuVariant === "ios27" ? (
-            <Ios27CategoryMenu
-              onOpenFamilyCatalog={onOpenFamilyCatalog}
-              onOpenGigabytes={onOpenGigabytes}
-              onOpenAccounts={onOpenAccounts}
-            />
-          ) : (
-            <section className="sm-market-service-grid sm-market-category-hub" aria-label="Категории">
-              <CategoryIconGradientDefs />
-              <div className="sm-market-category-heading">
-                <div>
-                  <span>Каталог</span>
-                  <strong>Выберите направление</strong>
-                </div>
-                <small>4 раздела</small>
-              </div>
-              <div className="sm-market-category-family-group">
-                <div className="sm-market-category-family-heading">
-                  <span className="sm-market-category-family-icon" aria-hidden>
-                    <SystemSymbol name="person.2.badge.plus" size={22} />
-                  </span>
-                  <span className="sm-market-category-family-copy">
-                    <small>Семьи</small>
-                    <strong>Тарифы и подписки</strong>
-                  </span>
-                  <span className="sm-market-category-family-count">2 раздела</span>
-                </div>
-                <div className="sm-market-category-family-actions">
-                  <MarketTile
-                    category="tariff"
-                    title="Семейные тарифы"
-                    ariaLabel="Семейные тарифы"
-                    icon={<SystemSymbol name="antenna.radiowaves.left.and.right" />}
-                    testId="family-type-tariff"
-                    onClick={() => onOpenFamilyCatalog("tariff")}
-                  />
-                  <MarketTile
-                    category="subscription"
-                    title="Семейные подписки"
-                    ariaLabel="Семейные подписки"
-                    icon={<SystemSymbol name="person.2" />}
-                    testId="family-type-subscription"
-                    onClick={() => onOpenFamilyCatalog("subscription")}
-                  />
-                </div>
-              </div>
-              <div className="sm-market-category-direct-actions">
-                <MarketTile
-                  category="gigabytes"
-                  title="Гигабайты"
-                  icon={<SystemSymbol name="globe" />}
-                  testId="market-buy-gigabytes"
-                  onClick={() => onOpenGigabytes()}
-                />
-                <MarketTile
-                  category="accounts"
-                  title="Аккаунты"
-                  icon={<SystemSymbol name="key" />}
-                  testId="market-buy-accounts"
-                  onClick={() => onOpenAccounts()}
-                />
-              </div>
-            </section>
-          )}
-
-          <div className="sm-market-section-heading">
-            <div className="sm-market-section-heading-copy">
-              <h2>Популярное сейчас</h2>
-            </div>
-            <div className="sm-market-filter-actions">
-              <button
-                type="button"
-                data-testid="market-filter-button"
-                className={`sm-market-filter-chip${marketFilter !== "all" ? " is-active" : ""}`}
-                aria-label={`Фильтр объявлений: ${activeMarketFilter.label}`}
-                title="Сменить тип объявлений"
-                onClick={cycleMarketFilter}
-              >
-                <SystemSymbol name="sort" size={14} />
-                <span data-testid="market-filter-label">{activeMarketFilter.label}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="sm-market-home-feed-wrap">
-          <div
-            ref={marketScrollRef}
-            className={`sm-market-home-feed-scroll${!isHeaderCollapsed ? " is-locked" : ""}`}
-            onScroll={event => {
-              const top = event.currentTarget.scrollTop;
-              const isScrolled = top > 2;
-              if (isScrolled !== isFeedScrolledRef.current) {
-                isFeedScrolledRef.current = isScrolled;
-                setIsFeedScrolled(isScrolled);
-              }
-              scheduleMarketScrollPersistence(top);
-              if (top > 12 && !isHeaderCollapsed) {
-                setIsHeaderCollapsed(true);
-              }
-              if (!isFeedDraggingRef.current) {
-                if (snapTimeoutRef.current) {
-                  window.clearTimeout(snapTimeoutRef.current);
-                }
-                snapTimeoutRef.current = window.setTimeout(snapToNearestCard, 140);
-              }
-            }}
-            onTouchStart={handleFeedTouchStart}
-            onTouchMove={handleFeedTouchMove}
-            onTouchEnd={handleFeedTouchEnd}
-            onTouchCancel={handleFeedTouchEnd}
-            onWheel={handleFeedWheel}
-          >
-            <section className="sm-market-family-section" aria-label="Популярные предложения">
-              {error ? (
-                <div className="sm-market-empty" role="alert">
-                  <h3>Не удалось загрузить предложения</h3>
-                  <p>{error}</p>
-                  <button className="sm-market-button sm-market-button-secondary" type="button" onClick={onRefresh}>
-                    Повторить
-                  </button>
-                </div>
-              ) : isLoading && displayed.length === 0 ? (
-                <div className="sm-market-family-list" aria-label="Загружаем предложения" role="status">
-                  {[0, 1, 2].map(n => (
-                    <div key={n} className="sm-listing-skeleton" aria-hidden>
-                      <span />
-                      <div />
-                      <span />
-                    </div>
-                  ))}
-                </div>
-              ) : displayed.length === 0 ? (
-                <div className="sm-market-empty" data-testid="market-empty-state">
-                  <SystemSymbol name="magnifyingglass" size={28} />
-                  <h3>Предложений пока нет</h3>
-                  <p>Можно создать своё предложение или вернуться позже.</p>
-                  <div className="sm-market-empty-actions">
-                    <button type="button" className="sm-market-button sm-market-button-secondary" onClick={() => onRefresh?.()}>
-                      Обновить
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="sm-market-family-list">
-                  {displayed.map(offer => {
-                    if (offer.kind === "family") {
-                      const f = offer.item;
-                      const status = pending.has(f.id) ? "Заявка отправлена" : joined.has(f.id) ? "Вы в семье" : f.free_slots <= 0 ? "Мест нет" : null;
-                      return <FamilyListingCard key={f.id} family={f} status={status} onClick={() => onOpenFamily(f.id)} />;
-                    }
-                    if (offer.kind === "gigabytes") return <GigabytesListingCard key={offer.item.id} listing={offer.item} testId="market-popular-gigabytes" onClick={() => onOpenGigabytes(offer.item.id)} />;
-                    return <AccountListingCard key={offer.item.id} listing={offer.item} testId="market-popular-account" onClick={() => onOpenAccounts(offer.item.id)} />;
-                  })}
-                </div>
-              )}
-              {hasMoreFamilies ? (
-                <button className="sm-market-button sm-market-button-secondary sm-market-button-full" type="button" disabled={isLoadingMoreFamilies} onClick={onLoadMoreFamilies}>
-                  {isLoadingMoreFamilies ? "Загружаем…" : "Показать ещё"}
-                </button>
-              ) : null}
-            </section>
-          </div>
-        </div>
-      </div>
+      <MarketHomeView
+        userName={userName}
+        firstName={firstName}
+        searchTerm={searchTerm}
+        onSearchTermChange={updateSearchTerm}
+        isInvite={isInvite}
+        onOpenInvite={onOpenInvite}
+        searchInputRef={searchInputRef}
+        scrollRef={marketScrollRef}
+        onScroll={scheduleMarketScrollPersistence}
+        showIntro={showIntro}
+        onDismissIntro={() => {
+          localStorage.setItem(FIRST_RUN_BANNER_KEY, "true");
+          setShowIntro(false);
+        }}
+        pendingActionsCount={pendingActionsCount}
+        bannerItems={bannerItems}
+        menuVariant={menuVariant}
+        marketFilter={marketFilter}
+        activeMarketFilterLabel={activeMarketFilter.label}
+        onCycleMarketFilter={cycleMarketFilter}
+        displayed={displayed}
+        isLoading={isLoading}
+        error={error}
+        pending={pending}
+        joined={joined}
+        hasMoreFamilies={hasMoreFamilies}
+        isLoadingMoreFamilies={isLoadingMoreFamilies}
+        onRefresh={onRefresh}
+        onLoadMoreFamilies={onLoadMoreFamilies}
+        onOpenFamily={onOpenFamily}
+        onOpenFamilyCatalog={onOpenFamilyCatalog}
+        onOpenGigabytes={onOpenGigabytes}
+        onOpenAccounts={onOpenAccounts}
+        onOpenMine={onOpenMine}
+        onOpenActions={onOpenActions}
+        resetToken={resetToken}
+        screenPulseRef={screenPulseRef}
+      />
     );
   }
 
   return (
-    <div
-      ref={isCatalog || isSearching ? undefined : marketScrollRef}
-      onScroll={isCatalog || isSearching ? undefined : event => scheduleMarketScrollPersistence(event.currentTarget.scrollTop)}
-      className={`sm-market-screen ${isCatalog || isSearching ? "sm-market-screen-catalog is-searching" : "subs-screen-scroll"}`}
-      data-testid={isCatalog ? "family-catalog-screen" : "market-screen"}
-    >
-      <ScreenEventPulse ref={screenPulseRef} />
-      {isCatalog ? (
-        <header className="sm-market-catalog-header">
-          <h1>{catalogTitle}</h1>
-        </header>
-      ) : (
-        <header className="sm-market-header">
-          <div className="sm-market-heading-copy">
-            <h1>SubsMarket</h1>
-          </div>
-          <button type="button" className="sm-market-avatar-button" aria-label="Мой профиль" onClick={() => onOpenMine?.()}>
-            {(firstName || userName || "SM").slice(0, 2).toUpperCase()}
-          </button>
-        </header>
-      )}
-
-      <label className="sm-market-search">
-        <SystemSymbol name="magnifyingglass" size={20} />
-        <input
-          ref={searchInputRef}
-          type="search"
-          aria-label={isCatalog ? `Поиск: ${catalogTitle.toLowerCase()}` : "Поиск сервиса или семьи"}
-          data-testid={isCatalog ? "family-catalog-search-input" : "market-search-input"}
-          placeholder={isCatalog ? catalogSearchPlaceholder : "Сервис, оператор или аккаунт"}
-          value={searchTerm}
-          onChange={e => updateSearchTerm(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") openInvite(); }}
-        />
-        {searchTerm ? <button type="button" className="sm-market-search-clear" aria-label="Очистить поиск" onClick={() => updateSearchTerm("")}><SystemSymbol name="xmark" size={18} /></button> : null}
-      </label>
-
-      {isCatalog ? (
-        <nav
-          ref={familyTypeSwitchRef}
-          className="sm-market-family-type-switch"
-          aria-label="Тип семейных предложений"
-          style={catalogPointerRef.current !== null || catalogAnimationFrame.current !== null ? undefined : ({ "--catalog-type-position": familyType === "tariff" ? 1 : 0 } as React.CSSProperties)}
-          onPointerDown={handleCatalogPointerDown}
-          onPointerMove={handleCatalogPointerMove}
-          onPointerUp={event => handleCatalogPointerEnd(event)}
-          onPointerCancel={event => handleCatalogPointerEnd(event, true)}
-          onClickCapture={event => {
-            if (!catalogWasSwiped.current) return;
-            event.preventDefault();
-            event.stopPropagation();
-            catalogWasSwiped.current = false;
-          }}
-        >
-          <button
-            type="button"
-            data-testid="family-type-subscription"
-            aria-pressed={familyType === "subscription"}
-            className={familyType === "subscription" ? "is-active" : undefined}
-            onClick={() => { triggerTelegramSelection(); onOpenFamilyCatalog("subscription"); }}
-          >
-            Подписки
-          </button>
-          <button
-            type="button"
-            data-testid="family-type-tariff"
-            aria-pressed={familyType === "tariff"}
-            className={familyType === "tariff" ? "is-active" : undefined}
-            onClick={() => { triggerTelegramSelection(); onOpenFamilyCatalog("tariff"); }}
-          >
-            Тарифы
-          </button>
-        </nav>
-      ) : null}
-
-      <section className="sm-market-family-section" aria-label={isSearching ? "Результаты поиска" : isCatalog ? catalogSectionTitle : "Популярные предложения"}>
-        {isCatalog || isSearching ? (
-          <div className={`sm-market-section-heading${isCatalog ? " sm-market-section-heading-catalog" : ""}`}>
-            <div className="sm-market-section-heading-copy">
-              <h2>{isSearching ? "Результаты поиска" : catalogSectionTitle}</h2>
-              {isCatalog && catalogSectionCount > 0 ? (
-                <span className="sm-market-section-count">
-                  {catalogSectionCount}{hasMoreFamilies ? "+" : ""}
-                  <span className="sr-only"> предложений</span>
-                </span>
-              ) : null}
-            </div>
-            <div className="sm-market-filter-actions" ref={filterMenuRef}>
-              {isCatalog ? (
-                <button
-                  type="button"
-                  data-testid="market-category-filter-button"
-                  className={`sm-market-filter-chip${effectiveCatalogFilter !== "all" ? " is-active" : ""}`}
-                  aria-haspopup="menu"
-                  aria-expanded={openFilterMenu === "catalog"}
-                  aria-controls="market-category-filter-menu"
-                  aria-label={`Фильтр каталога: ${activeCatalogFilter.label}`}
-                  title="Выбрать категорию"
-                  onClick={() => toggleFilterMenu("catalog")}
-                >
-                  <SystemSymbol name="sort" size={14} />
-                  <span data-testid="market-category-filter-label">{activeCatalogFilter.label}</span>
-                </button>
-              ) : null}
-              {showPriceSort ? (
-                <button
-                  type="button"
-                  data-testid="market-price-sort-button"
-                  className={`sm-market-filter-chip${priceSort !== "fast" ? " is-active" : ""}`}
-                  aria-haspopup="menu"
-                  aria-expanded={openFilterMenu === "price"}
-                  aria-controls="market-price-sort-menu"
-                  aria-label={`Сортировка: ${activePriceSort.label}`}
-                  title="Выбрать сортировку"
-                  onClick={() => toggleFilterMenu("price")}
-                >
-                  <SystemSymbol name="round-sort-vertical" size={14} className="sm-market-filter-icon-price" />
-                  <span data-testid="market-price-sort-label">{activePriceSort.label}</span>
-                </button>
-              ) : null}
-              {openFilterMenu === "catalog" ? (
-                <FilterMenu
-                  id="market-category-filter-menu"
-                  label={familyType === "tariff" ? "Оператор" : "Категория сервиса"}
-                  options={catalogFilterMenuOptions}
-                  selectedValue={effectiveCatalogFilter}
-                  testIdPrefix="market-category-option"
-                  onSelect={value => { setCatalogFilter(value as CatalogFilter); setOpenFilterMenu(null); marketScrollRef.current?.scrollTo({ top: 0, behavior: "auto" }); }}
-                />
-              ) : null}
-              {openFilterMenu === "price" ? (
-                <FilterMenu
-                  id="market-price-sort-menu"
-                  label="Порядок объявлений"
-                  options={priceSortOptions}
-                  selectedValue={priceSort}
-                  testIdPrefix="market-price-option"
-                  onSelect={value => { setPriceSort(value as PriceSort); setOpenFilterMenu(null); marketScrollRef.current?.scrollTo({ top: 0, behavior: "auto" }); }}
-                />
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-        {isCatalog ? (
-          <div
-            className="sm-market-catalog-swipe-viewport"
-            ref={catalogViewportRef}
-            role="group"
-            aria-label="Каталоги подписок и тарифов"
-            onPointerDown={handleCatalogPointerDown}
-            onPointerMove={handleCatalogPointerMove}
-            onPointerUp={event => handleCatalogPointerEnd(event)}
-            onPointerCancel={event => handleCatalogPointerEnd(event, true)}
-            onClickCapture={event => {
-              if (!catalogWasSwiped.current) return;
-              event.preventDefault();
-              event.stopPropagation();
-              catalogWasSwiped.current = false;
-            }}
-          >
-            <div
-              className="sm-market-catalog-swipe-track"
-              ref={catalogTrackRef}
-              style={{
-                transform: `translate3d(calc(${-(catalogPointerRef.current !== null || catalogAnimationFrame.current !== null ? catalogPositionRef.current : (familyType === "tariff" ? 1 : 0)) * 50}% - ${(catalogPointerRef.current !== null || catalogAnimationFrame.current !== null ? catalogPositionRef.current : (familyType === "tariff" ? 1 : 0)) * 8}px), 0, 0)`
-              }}
-            >
-              {(["subscription", "tariff"] as const).map(paneType => (
-                <div
-                  key={paneType}
-                  ref={paneType === familyType ? marketScrollRef : undefined}
-                  onScroll={paneType === familyType ? event => {
-                    scheduleMarketScrollPersistence(event.currentTarget.scrollTop);
-                    if (!isFeedDraggingRef.current) {
-                      if (snapTimeoutRef.current) {
-                        window.clearTimeout(snapTimeoutRef.current);
-                      }
-                      snapTimeoutRef.current = window.setTimeout(snapToNearestCard, 140);
-                    }
-                  } : undefined}
-                  onTouchStart={paneType === familyType ? handleFeedTouchStart : undefined}
-                  onTouchMove={paneType === familyType ? handleFeedTouchMove : undefined}
-                  onTouchEnd={paneType === familyType ? handleFeedTouchEnd : undefined}
-                  onTouchCancel={paneType === familyType ? handleFeedTouchEnd : undefined}
-                  onWheel={paneType === familyType ? handleFeedWheel : undefined}
-                  className="sm-market-catalog-swipe-pane"
-                  aria-hidden={paneType !== familyType}
-                  data-catalog-type={paneType}
-                >
-                  <CatalogResultsPane
-                    displayed={catalogDisplayedByType[paneType]}
-                    isActive={paneType === familyType}
-                    isLoading={Boolean(familyLoading?.[paneType] ?? (paneType === familyType && isLoading))}
-                    error={paneType === familyType ? error : undefined}
-                    isSearching={isSearching}
-                    emptyTitle={paneType === "tariff" ? "Доступных тарифов пока нет" : "Доступных подписок пока нет"}
-                    pending={pending}
-                    joined={joined}
-                    showTestIds={paneType === familyType}
-                    hasMoreFamilies={paneType === familyType && Boolean(hasMoreFamilies)}
-                    isLoadingMoreFamilies={Boolean(isLoadingMoreFamilies)}
-                    onRefresh={onRefresh}
-                    onResetSearch={() => setSearchTerm("")}
-                    onCreateFamily={() => onCreateFamily(paneType)}
-                    onLoadMoreFamilies={onLoadMoreFamilies}
-                    onOpenFamily={onOpenFamily}
-                    onOpenGigabytes={onOpenGigabytes}
-                    onOpenAccounts={onOpenAccounts}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div
-            className="sm-market-catalog-feed-scroll"
-            ref={marketScrollRef}
-            onScroll={event => {
-              scheduleMarketScrollPersistence(event.currentTarget.scrollTop);
-              if (!isFeedDraggingRef.current) {
-                if (snapTimeoutRef.current) {
-                  window.clearTimeout(snapTimeoutRef.current);
-                }
-                snapTimeoutRef.current = window.setTimeout(snapToNearestCard, 140);
-              }
-            }}
-            onTouchStart={handleFeedTouchStart}
-            onTouchMove={handleFeedTouchMove}
-            onTouchEnd={handleFeedTouchEnd}
-            onTouchCancel={handleFeedTouchEnd}
-            onWheel={handleFeedWheel}
-          >
-            {error ? (
-              <div className="sm-market-empty" role="alert">
-                <h3>Не удалось загрузить предложения</h3>
-                <p>{error}</p>
-                <button className="sm-market-button sm-market-button-secondary" type="button" onClick={onRefresh}>
-                  Повторить
-                </button>
-              </div>
-            ) : isLoading && displayed.length === 0 ? (
-              <div className="sm-market-family-list" aria-label="Загружаем предложения" role="status">
-                {[0, 1, 2].map(n => (
-                  <div key={n} className="sm-listing-skeleton" aria-hidden>
-                    <span />
-                    <div />
-                    <span />
-                  </div>
-                ))}
-              </div>
-            ) : displayed.length === 0 ? (
-              <div className="sm-market-empty" data-testid="market-empty-state">
-                <SystemSymbol name="magnifyingglass" size={28} />
-                <h3>Ничего не найдено</h3>
-                <p>Попробуйте другое название сервиса или оператора.</p>
-                <div className="sm-market-empty-actions">
-                  <button type="button" className="sm-market-button sm-market-button-secondary" onClick={() => setSearchTerm("")}>
-                    Сбросить поиск
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="sm-market-family-list">
-                {displayed.map(offer => {
-                  if (offer.kind === "family") {
-                    const f = offer.item;
-                    const status = pending.has(f.id) ? "Заявка отправлена" : joined.has(f.id) ? "Вы в семье" : f.free_slots <= 0 ? "Мест нет" : null;
-                    return <FamilyListingCard key={f.id} family={f} status={status} onClick={() => onOpenFamily(f.id)} />;
-                  }
-                  if (offer.kind === "gigabytes") return <GigabytesListingCard key={offer.item.id} listing={offer.item} testId="market-popular-gigabytes" onClick={() => onOpenGigabytes(offer.item.id)} />;
-                  return <AccountListingCard key={offer.item.id} listing={offer.item} testId="market-popular-account" onClick={() => onOpenAccounts(offer.item.id)} />;
-                })}
-              </div>
-            )}
-            {!isCatalog && hasMoreFamilies ? (
-              <button className="sm-market-button sm-market-button-secondary sm-market-button-full" type="button" disabled={isLoadingMoreFamilies} onClick={onLoadMoreFamilies}>
-                {isLoadingMoreFamilies ? "Загружаем…" : "Показать ещё"}
-              </button>
-            ) : null}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function FilterMenu({
-  id,
-  label,
-  options,
-  selectedValue,
-  testIdPrefix,
-  onSelect
-}: {
-  id: string;
-  label: string;
-  options: FilterMenuOption[];
-  selectedValue: string;
-  testIdPrefix: string;
-  onSelect: (value: string) => void;
-}) {
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const el = menuRef.current;
-    if (!el) return;
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) return;
-
-    gsap.fromTo(
-      el,
-      {
-        opacity: 0,
-        scale: 0.95,
-        y: -4,
-        transformOrigin: "top right"
-      },
-      {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        duration: 0.16,
-        ease: "power2.out"
-      }
-    );
-  }, []);
-
-  const handleSelect = (value: string) => {
-    triggerTelegramSelection();
-    onSelect(value);
-  };
-
-  return (
-    <div ref={menuRef} id={id} className="sm-market-filter-menu" role="menu" aria-label={label}>
-      {options.map(option => (
-        <button
-          key={option.value}
-          type="button"
-          role="menuitemradio"
-          aria-checked={option.value === selectedValue}
-          data-testid={`${testIdPrefix}-${option.value}`}
-          disabled={option.disabled}
-          onClick={() => handleSelect(option.value)}
-        >
-          <span className="sm-market-filter-menu-label">{option.label}</span>
-          {typeof option.count === "number" ? <span className="sm-market-filter-menu-count">{option.count}</span> : null}
-          {option.value === selectedValue ? <SystemSymbol name="checkmark" size={16} /> : null}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function CatalogResultsPane({
-  displayed,
-  isActive,
-  isLoading,
-  error,
-  isSearching,
-  emptyTitle,
-  pending,
-  joined,
-  showTestIds,
-  hasMoreFamilies,
-  isLoadingMoreFamilies,
-  onRefresh,
-  onResetSearch,
-  onCreateFamily,
-  onLoadMoreFamilies,
-  onOpenFamily,
-  onOpenGigabytes,
-  onOpenAccounts
-}: {
-  displayed: Offer[];
-  isActive: boolean;
-  isLoading: boolean;
-  error?: string;
-  isSearching: boolean;
-  emptyTitle: string;
-  pending: Set<string>;
-  joined: Set<string>;
-  showTestIds: boolean;
-  hasMoreFamilies: boolean;
-  isLoadingMoreFamilies: boolean;
-  onRefresh?: () => void;
-  onResetSearch: () => void;
-  onCreateFamily: () => void;
-  onLoadMoreFamilies?: () => void;
-  onOpenFamily: (id: string) => void;
-  onOpenGigabytes: (id?: string) => void;
-  onOpenAccounts: (id?: string) => void;
-}) {
-  return (
-    <div className="sm-market-catalog-results" aria-live={isActive ? "polite" : undefined}>
-      {error ? (
-        <div className="sm-market-empty" role="alert"><h3>Не удалось загрузить предложения</h3><p>{error}</p><button className="sm-market-button sm-market-button-secondary" type="button" onClick={onRefresh}>Повторить</button></div>
-      ) : isLoading && displayed.length === 0 ? (
-        <div className="sm-market-family-list" aria-label="Загружаем предложения" role="status">
-          {[0, 1, 2].map(n => <div key={n} className="sm-listing-skeleton" aria-hidden><span /><div /><span /></div>)}
-        </div>
-      ) : displayed.length === 0 ? (
-        <div className="sm-market-empty" data-testid={showTestIds ? "market-empty-state" : undefined}>
-          <SystemSymbol name="magnifyingglass" size={28} />
-          <h3>{isSearching ? "Ничего не найдено" : emptyTitle}</h3>
-          <p>{isSearching ? "Попробуйте другое название сервиса или оператора." : "Можно создать свою семью или вернуться позже."}</p>
-          <div className="sm-market-empty-actions">
-            <button type="button" className="sm-market-button sm-market-button-secondary" onClick={() => isSearching ? onResetSearch() : onRefresh?.()}>{isSearching ? "Сбросить поиск" : "Обновить"}</button>
-            {!isSearching ? <button type="button" data-testid={showTestIds ? "empty-create-family-button" : undefined} className="sm-market-button sm-market-button-primary" onClick={onCreateFamily}>Создать семью</button> : null}
-          </div>
-        </div>
-      ) : (
-        <div className="sm-market-family-list">
-          {displayed.map(offer => {
-            if (offer.kind === "family") {
-              const f = offer.item;
-              const status = pending.has(f.id) ? "Заявка отправлена" : joined.has(f.id) ? "Вы в семье" : f.free_slots <= 0 ? "Мест нет" : null;
-              return <FamilyListingCard key={f.id} family={f} status={status} testId={showTestIds ? "family-card" : ""} onClick={() => onOpenFamily(f.id)} />;
-            }
-            if (offer.kind === "gigabytes") return <GigabytesListingCard key={offer.item.id} listing={offer.item} testId={showTestIds ? "market-popular-gigabytes" : undefined} onClick={() => onOpenGigabytes(offer.item.id)} />;
-            return <AccountListingCard key={offer.item.id} listing={offer.item} testId={showTestIds ? "market-popular-account" : undefined} onClick={() => onOpenAccounts(offer.item.id)} />;
-          })}
-        </div>
-      )}
-      {hasMoreFamilies ? <button className="sm-market-button sm-market-button-secondary sm-market-button-full" type="button" disabled={isLoadingMoreFamilies} onClick={onLoadMoreFamilies}>{isLoadingMoreFamilies ? "Загружаем…" : "Показать ещё"}</button> : null}
-    </div>
-  );
-}
-
-function familyLabel(family: MyFamily["family"]) {
-  return [family.service_name, family.service_variant ?? family.plan_name].filter(Boolean).join(" · ");
-}
-
-function formatKzt(value: number) {
-  return `${value.toLocaleString("ru-KZ")} ₸`;
-}
-
-function pluralRu(value: number, one: string, few: string, many: string) {
-  const mod10 = value % 10;
-  const mod100 = value % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
-  return many;
-}
-
-function BannerIcon({ icon }: { icon: MarketBanner["icon"] }) {
-  const props = { size: 22, strokeWidth: 1.9 };
-  if (icon === "alert") return <SystemSymbol name="exclamationmark.circle" {...props} />;
-  if (icon === "clock") return <SystemSymbol name="clock" {...props} />;
-  if (icon === "shield") return <SystemSymbol name="checkmark.shield" {...props} />;
-  if (icon === "payment") return <SystemSymbol name="checkmark.circle" {...props} />;
-  if (icon === "request") return <SystemSymbol name="person.2.badge.plus" {...props} />;
-  if (icon === "message") return <SystemSymbol name="message" {...props} />;
-  return <SystemSymbol name="paperplane" {...props} />;
-}
-
-function CategoryIconGradientDefs() {
-  return (
-    <svg aria-hidden="true" className="sm-category-icon-defs" focusable="false">
-      <defs>
-        <linearGradient id="sm-category-icon-gradient" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="var(--app-category-icon-gradient-start)" />
-          <stop offset="52%" stopColor="var(--app-category-icon-gradient-mid)" />
-          <stop offset="100%" stopColor="var(--app-category-icon-gradient-end)" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-function IconButton({ label, testId, onClick, children }: { label: string; testId?: string; onClick: () => void; children: ReactNode }) {
-  return <button aria-label={label} data-testid={testId} className="sm-market-icon-button" type="button" onClick={onClick}>{children}</button>;
-}
-
-function MarketTile({ category, title, subtitle, ariaLabel, icon, onClick, testId }: { category: "tariff" | "subscription" | "gigabytes" | "accounts"; title: string; subtitle?: string; ariaLabel?: string; icon: ReactNode; onClick: () => void; testId: string }) {
-  return (
-    <button className={`sm-market-service-tile sm-market-service-tile-${category}`} type="button" aria-label={ariaLabel} data-testid={testId} onClick={() => { triggerTelegramSelection(); onClick(); }}>
-      <span className="sm-market-service-icon" aria-hidden>{icon}</span>
-      <span className="sm-market-service-copy">
-        <strong>{title}</strong>
-        {subtitle ? <small>{subtitle}</small> : null}
-      </span>
-      <span className="sm-market-service-chevron" aria-hidden>›</span>
-    </button>
+    <MarketCatalogView
+      userName={userName}
+      firstName={firstName}
+      familyType={familyType}
+      isCatalog={isCatalog}
+      isSearching={isSearching}
+      searchTerm={searchTerm}
+      onSearchTermChange={updateSearchTerm}
+      isInvite={isInvite}
+      onOpenInvite={onOpenInvite}
+      searchInputRef={searchInputRef}
+      scrollRef={marketScrollRef}
+      onScroll={scheduleMarketScrollPersistence}
+      onOpenFamilyCatalog={onOpenFamilyCatalog}
+      catalogTitle={catalogTitle}
+      catalogSectionTitle={catalogSectionTitle}
+      catalogSearchPlaceholder={catalogSearchPlaceholder}
+      catalogSectionCount={catalogSectionCount}
+      hasMoreFamilies={hasMoreFamilies}
+      isLoadingMoreFamilies={isLoadingMoreFamilies}
+      catalogFilterMenuOptions={catalogFilterMenuOptions}
+      effectiveCatalogFilter={effectiveCatalogFilter}
+      onSelectCatalogFilter={setCatalogFilter}
+      priceSort={priceSort}
+      onSelectPriceSort={setPriceSort}
+      activeCatalogFilter={activeCatalogFilter}
+      activePriceSort={activePriceSort}
+      showPriceSort={showPriceSort}
+      catalogDisplayedByType={catalogDisplayedByType}
+      familyLoading={familyLoading}
+      isLoading={isLoading}
+      error={error}
+      displayed={displayed}
+      pending={pending}
+      joined={joined}
+      onRefresh={onRefresh}
+      onLoadMoreFamilies={onLoadMoreFamilies}
+      onCreateFamily={onCreateFamily}
+      onOpenFamily={onOpenFamily}
+      onOpenGigabytes={onOpenGigabytes}
+      onOpenAccounts={onOpenAccounts}
+      onOpenMine={onOpenMine}
+      screenPulseRef={screenPulseRef}
+    />
   );
 }

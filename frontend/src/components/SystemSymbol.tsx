@@ -39,8 +39,11 @@ import clockCircleDuotone from "@iconify-icons/solar/clock-circle-bold-duotone";
 import crownMinimalisticDuotone from "@iconify-icons/solar/crown-minimalistic-bold-duotone";
 import shieldUserDuotone from "@iconify-icons/solar/shield-user-bold-duotone";
 import verifiedCheckDuotone from "@iconify-icons/solar/verified-check-bold-duotone";
+import archiveDuotone from "@iconify-icons/solar/archive-bold-duotone";
 
 const SYSTEM_SYMBOLS = {
+  archive: archiveDuotone,
+  archivebox: archiveDuotone,
   "antenna.radiowaves.left.and.right": radioDuotone,
   "arrow.clockwise": refreshDuotone,
   "arrow.left": arrowLeftDuotone,

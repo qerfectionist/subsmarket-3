@@ -287,13 +287,50 @@ test("Actions switch between incoming and outgoing requests", async ({ page }) =
   await expect(inbox).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
 
-  // Направление переключается тапом, горизонтального пейджера здесь нет.
+  // Направление переключается тапом или горизонтальным свайпом.
   await outbox.click();
   await expect(outbox).toHaveAttribute("aria-pressed", "true");
   await expect(inbox).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("actions-outbox-pane")).toBeVisible();
 
   await inbox.click();
+  await expect(inbox).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
+});
+
+test("Actions scope indicator and pane follow swipe gesture", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Заявки", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("actions-screen")).toBeVisible();
+
+  const pager = page.getByTestId("actions-scope-swipe-viewport");
+  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
+  const box = await pager.boundingBox();
+  if (!box) throw new Error("Actions scope pager is not measurable");
+
+  const y = box.y + Math.min(box.height / 2, 180);
+  // Swipe left: from 80% to 20% width
+  await page.mouse.move(box.x + box.width * 0.8, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.2, y, { steps: 5 });
+  await page.mouse.up();
+
+  // Swiped to outbox
+  const outbox = scopeSwitch.getByTestId("actions-tab-outbox");
+  await expect(outbox).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("actions-outbox-pane")).toBeVisible();
+
+  // Swipe right: from 20% to 80% width
+  await page.mouse.move(box.x + box.width * 0.2, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.8, y, { steps: 5 });
+  await page.mouse.up();
+
+  // Swiped back to inbox
+  const inbox = scopeSwitch.getByTestId("actions-tab-inbox");
   await expect(inbox).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
 });
@@ -338,6 +375,33 @@ test("Actions scope indicator matches its segment geometry", async ({ page }) =>
   expect(geometry.position).toBe(1);
   expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
   expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
+});
+
+test("Actions archive disclosure opens and closes via top-right header action", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await page
+    .getByRole("navigation", { name: "Главная навигация" })
+    .getByRole("button", { name: "Заявки", exact: true })
+    .click({ force: true });
+  await expect(page.getByTestId("actions-screen")).toBeVisible();
+
+  const archiveTrigger = page.getByTestId("actions-archive-trigger");
+  await expect(archiveTrigger).toBeVisible();
+  await expect(archiveTrigger).toHaveAttribute("aria-expanded", "false");
+
+  const disclosure = page.locator("#actions-archive-disclosure");
+  await expect(disclosure).not.toHaveClass(/is-open/);
+
+  // Click to open archive
+  await archiveTrigger.click();
+  await expect(archiveTrigger).toHaveAttribute("aria-expanded", "true");
+  await expect(disclosure).toHaveClass(/is-open/);
+  await expect(disclosure.getByRole("heading", { name: "Архив заявок" })).toBeVisible();
+
+  // Click to close archive
+  await archiveTrigger.click();
+  await expect(archiveTrigger).toHaveAttribute("aria-expanded", "false");
+  await expect(disclosure).not.toHaveClass(/is-open/);
 });
 
 test("My scope indicator starts with content on click", async ({ page }) => {

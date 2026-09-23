@@ -7,6 +7,7 @@ import { AsyncContent } from "../AsyncContent";
 import { SystemSymbol, type SystemSymbolName } from "../SystemSymbol";
 import { Badge, EmptyState } from "../layout";
 import { FamilyListSkeleton } from "../skeleton";
+import { useFeedSnap } from "../../hooks/useFeedSnap";
 import {
   useAccountRequests,
   useMarketplaceRequests,
@@ -396,6 +397,11 @@ export function MyAccountListingsSection({
   const activeIndex = myAccountStatusFilterOptions.findIndex((option) => option.value === statusFilter);
   const activeOption = myAccountStatusFilterOptions[activeIndex >= 0 ? activeIndex : 0];
 
+  const feedSnap = useFeedSnap({
+    enabled: true,
+    itemCount: filteredListings.length
+  });
+
   return (
     <AsyncContent query={query} label="Загружаем объявления...">
       <section className="my-account-listings">
@@ -436,7 +442,11 @@ export function MyAccountListingsSection({
             </div>
           </div>
         </div>
-        <div className="my-feed-scroll">
+        <div
+          className="my-feed-scroll"
+          ref={feedSnap.containerRef}
+          {...feedSnap.scrollHandlers}
+        >
           {listings.length === 0 ? (
             <EmptyState
               className="my-family-empty-state"
@@ -532,6 +542,11 @@ export function MyGigabytesSection({
   const activeStatusOption =
     myAccountStatusFilterOptions[activeStatusIndex >= 0 ? activeStatusIndex : 0];
 
+  const feedSnap = useFeedSnap({
+    enabled: true,
+    itemCount: filteredListings.length
+  });
+
   return (
     <AsyncContent query={listingsQuery} label="Загружаем объявления...">
       <section className="my-account-listings" data-testid="my-gigabytes-screen">
@@ -574,7 +589,11 @@ export function MyGigabytesSection({
           </div>
         </div>
 
-        <div className="my-feed-scroll">
+        <div
+          className="my-feed-scroll"
+          ref={feedSnap.containerRef}
+          {...feedSnap.scrollHandlers}
+        >
           {listings.length === 0 ? (
             <EmptyState
               className="my-family-empty-state"

@@ -3,6 +3,7 @@ html, body, #root {
   font-family: var(--app-font-family);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
 }
 body, #root { background: var(--app-bg); color: var(--app-text); }
 button, input, select, textarea { font-family: inherit; }
@@ -14,6 +15,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: var(--app-bg); color: var(--app-text);
   font-size: var(--app-size-body); line-height: var(--app-leading-body);
   letter-spacing: 0; scroll-padding-bottom: var(--app-nav-clearance);
+  overscroll-behavior-y: none;
 }
 .app-shell :where(button:not(.sm-listing):not(.subs-dock-item)) {
   min-height: 44px; border-radius: var(--app-radius-pill);
@@ -98,6 +100,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .family-workspace, .owner-details, .owner-settings-card, .family-overview-card { padding: 20px; gap: 16px; }
 .family-workspace .owner-details { padding: 0; }
 .family-workspace .family-card { padding: 0; }
+
+
 .family-card-offer div { background: var(--app-surface-inset); }
 .family-overview-title h2 { white-space: normal; overflow: visible; }
 .family-overview-facts { display: grid; grid-template-columns: 1fr; border: 0; margin: 0; gap: 0; }
@@ -267,21 +271,23 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   min-width: 0;
   opacity: 0;
   pointer-events: none;
-  margin-top: calc(-1 * var(--app-space-4));
-  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1), opacity 200ms ease, margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+  margin: 0;
+  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1), opacity 200ms ease, margin-bottom 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-history-disclosure:not(.is-open) {
+  margin-bottom: -10px;
 }
 .my-history-disclosure.is-open {
   grid-template-rows: 1fr;
   opacity: 1;
   pointer-events: auto;
-  margin-top: 0;
+  margin-bottom: 0;
 }
 .my-history-disclosure + * {
   margin-top: 0;
-  transition: margin-top 320ms cubic-bezier(.22, 1, .36, 1);
 }
 .my-history-disclosure:not(.is-open) + * {
-  margin-top: calc(-1 * var(--app-space-4));
+  margin-top: 0;
 }
 .my-history-disclosure-content {
   min-height: 0;
@@ -440,7 +446,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .my-trade-request-status.is-pending .my-trade-request-dot {
   background: var(--app-warning);
 }
-.my-trade-request-status.is-accepted .my-trade-request-dot {
+.my-trade-request-status.is-accepted .my-trade-request-dot,
+.my-trade-request-status.is-successful .my-trade-request-dot {
   background: var(--app-success);
 }
 .my-trade-request-status.is-closed .my-trade-request-dot {
@@ -613,11 +620,22 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .actions-tab-content {
   flex: 1 1 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding-bottom: calc(var(--app-nav-clearance, 76px) + 24px);
+}
+.my-feed-scroll {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 240ms ease,
+              transform 320ms cubic-bezier(.22, 1, .36, 1),
+              flex 320ms cubic-bezier(.22, 1, .36, 1),
+              max-height 320ms cubic-bezier(.22, 1, .36, 1),
+              margin-top 320ms cubic-bezier(.22, 1, .36, 1);
 }
 .my-feed-scroll::-webkit-scrollbar,
 .actions-tab-content::-webkit-scrollbar {
@@ -642,6 +660,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   justify-content: flex-start;
   min-height: 44px;
   flex-shrink: 0;
+  padding: 4px 4px 0;
+  box-sizing: border-box;
 }
 .my-family-filter-row button { min-height: 48px; padding-inline: 16px; }
 .my-account-filter-chips,
@@ -690,12 +710,29 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   min-width: 0;
   opacity: 0;
   margin-top: calc(-1 * var(--app-space-4));
-  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1), opacity 200ms ease, margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+  pointer-events: none;
+  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1),
+              opacity 240ms ease,
+              margin-top 320ms cubic-bezier(.22, 1, .36, 1);
 }
 .my-calendar-disclosure.is-open {
   grid-template-rows: 1fr;
   opacity: 1;
   margin-top: 0;
+  pointer-events: auto;
+  flex: 1 1 0;
+  min-height: 0;
+}
+.my-calendar-disclosure.is-open ~ .my-feed-scroll {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  flex: 0 0 0px;
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: -10px;
 }
 .my-calendar-disclosure + .stack {
   margin-top: 0;
@@ -707,6 +744,17 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .my-calendar-disclosure-content {
   min-height: 0;
   overflow: hidden;
+  padding-bottom: 0;
+  transition: padding-bottom 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-calendar-disclosure.is-open .my-calendar-disclosure-content {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--app-nav-clearance, 76px) + 16px);
+}
+.my-calendar-disclosure.is-open .my-calendar-disclosure-content::-webkit-scrollbar {
+  display: none;
 }
 .my-calendar-month-viewport {
   overflow: hidden;
@@ -777,6 +825,83 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 }
 .my-payment-calendar-selection-item strong { font-weight: var(--app-weight-medium); }
 .my-payment-calendar-selection-item > span { color: var(--app-muted); }
+
+/* 📅 Payment Calendar: Week Collapse Mode & Smooth Animations */
+.my-payment-calendar.is-week-mode table tbody.calendar__grid-body > tr:not(:has(.is-active-day)) {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  transform: scale(0.96) translateY(-4px);
+  pointer-events: none;
+}
+
+.cal-week-events-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: grid-template-rows 300ms cubic-bezier(.22, 1, .36, 1),
+              opacity 220ms ease,
+              transform 300ms cubic-bezier(.22, 1, .36, 1);
+}
+.cal-week-events-wrap.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+.cal-week-events-inner {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cal-week-event-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--app-surface-inset, rgba(255, 255, 255, 0.04));
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: background-color 180ms ease;
+}
+.cal-week-event-info {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-week-event-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--app-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-week-event-kind {
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.cal-week-event-price {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.cal-week-event-price strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+.cal-week-event-price span {
+  font-size: 11.5px;
+  color: var(--app-muted);
+}
 .my-family-role-control {
   position: relative;
   display: inline-flex;
@@ -983,10 +1108,15 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .my-product-scope-swipe-viewport,
 .my-product-scope-swipe-track,
 .my-product-scope-swipe-pane,
-.my-product-scope-swipe-pane * {
+.my-product-scope-swipe-pane *,
+.actions-scope-swipe-viewport,
+.actions-scope-swipe-track,
+.actions-scope-swipe-pane,
+.actions-scope-swipe-pane * {
   touch-action: pan-y;
 }
-.my-product-scope-swipe-viewport {
+.my-product-scope-swipe-viewport,
+.actions-scope-swipe-viewport {
   min-width: 0;
   flex: 1 1 0;
   min-height: 0;
@@ -995,7 +1125,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   user-select: none;
   -webkit-user-select: none;
 }
-.my-product-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll {
+.my-product-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll,
+.actions-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll {
   overflow-y: hidden !important;
   touch-action: none !important;
 }
@@ -1007,6 +1138,17 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   -webkit-user-select: none;
   transform: translate3d(0, 0, 0);
   width: calc(300% + 32px);
+  gap: 16px;
+  will-change: transform;
+}
+.actions-scope-swipe-track {
+  height: 100%;
+  align-items: stretch;
+  display: flex;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: translate3d(0, 0, 0);
+  width: calc(200% + 16px);
   gap: 16px;
   will-change: transform;
 }
@@ -1022,7 +1164,19 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   padding-inline: 0;
   overflow: hidden;
 }
-.my-product-scope-swipe-pane[aria-hidden="true"] { pointer-events: none; }
+.actions-scope-swipe-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 calc((100% - 16px) / 2);
+  width: calc((100% - 16px) / 2);
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding-inline: 0;
+  overflow: hidden;
+}
+.my-product-scope-swipe-pane[aria-hidden="true"],
+.actions-scope-swipe-pane[aria-hidden="true"] { pointer-events: none; }
 .my-screen .my-account-listings {
   display: flex;
   flex-direction: column;
@@ -1082,6 +1236,212 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .actions-screen .request-card-dates { display: grid; gap: 2px; }
 .actions-screen .request-card-pending .request-card-heading > .legacy-badge { background: var(--app-warning-soft); color: var(--app-warning); }
 .actions-screen .request-card-accepted .request-card-heading > .legacy-badge { background: var(--app-success-soft); color: var(--app-success); }
+
+/* Actions archive disclosure */
+.actions-archive-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  margin-top: calc(-1 * var(--app-space-4));
+  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1),
+              opacity 240ms ease,
+              margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.actions-archive-disclosure.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0;
+  pointer-events: auto;
+  flex: 1 1 0;
+  min-height: 0;
+}
+.actions-archive-disclosure.is-open ~ .my-family-filter-row,
+.actions-archive-disclosure.is-open ~ .actions-scope-swipe-viewport {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  flex: 0 0 0px;
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: -10px;
+  transition: max-height 320ms cubic-bezier(.22, 1, .36, 1),
+              opacity 200ms ease,
+              transform 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.actions-archive-disclosure-content {
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+  transition: padding-bottom 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.actions-archive-disclosure.is-open .actions-archive-disclosure-content {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--app-nav-clearance, 76px) + 16px);
+}
+.actions-archive-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-2, 8px);
+}
+.actions-archive-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* LAYER 1: Summary Cards matching SubsMarket metrics */
+.actions-archive-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.actions-archive-summary > div {
+  padding: 12px 14px;
+  background: var(--app-surface);
+  border-radius: var(--app-radius-md, 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--app-shadow-sm);
+}
+.actions-archive-summary span {
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  color: var(--app-muted);
+}
+.actions-archive-summary strong {
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+  font-weight: var(--app-weight-semibold);
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+.actions-archive-summary strong.is-positive {
+  color: var(--app-success, #30d158);
+}
+.actions-archive-summary strong.is-negative {
+  color: var(--app-danger, #ff453a);
+}
+
+/* LAYER 2: Week Day Filter Strip */
+.actions-archive-day-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.actions-archive-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+.actions-archive-month-title {
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-medium);
+  color: var(--app-muted);
+}
+.actions-archive-all-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-medium);
+  color: var(--app-accent, #3b82f6);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.actions-archive-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.actions-archive-day-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
+  padding: 6px 2px;
+  border-radius: var(--app-radius-md, 14px);
+  background: var(--app-surface);
+  border: 1.5px solid transparent;
+  box-shadow: var(--app-shadow-sm);
+  color: var(--app-muted);
+  cursor: pointer;
+  transition: background-color var(--app-duration-press, 120ms) ease, border-color var(--app-duration-press, 120ms) ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.actions-archive-day-chip.has-events .actions-archive-day-number {
+  color: var(--app-text);
+}
+.actions-archive-day-chip.is-selected {
+  background: var(--app-secondary-bg);
+  border-color: var(--app-accent, #3b82f6);
+  color: var(--app-text);
+}
+.actions-archive-day-name {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+.actions-archive-day-number {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+/* LAYER 3: Archive List & Groups */
+.actions-archive-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.actions-archive-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.actions-archive-date-header {
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-medium);
+  color: var(--app-muted);
+  padding: 2px 4px;
+}
+.actions-archive-reason-card {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--app-radius-md, 12px);
+  background: rgba(255, 69, 58, 0.08);
+  font-size: 13px;
+  color: var(--app-danger, #ff453a);
+  margin-bottom: 2px;
+}
+.actions-archive-reason-label {
+  font-weight: 500;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+.actions-archive-reason-text {
+  font-weight: 400;
+  color: var(--app-text);
+}
+.my-trade-request-body[role="button"] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 .my-screen .empty-state { background: var(--app-surface-inset); border: 0; box-shadow: none; }
 .my-screen .my-account-orders-empty-state { border: 0; }
 .my-screen .empty-state-body { display: grid; gap: var(--app-space-3); margin-top: 0; }
@@ -1508,11 +1868,18 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   .my-calendar-disclosure,
   .my-calendar-disclosure + .stack,
+  .my-calendar-disclosure.is-open ~ .my-feed-scroll,
+  .my-feed-scroll,
   .my-history-disclosure,
   .my-history-disclosure-content,
-  .my-history-disclosure + * { transition: none; }
+  .my-history-disclosure + *,
+  .actions-archive-disclosure,
+  .actions-archive-disclosure-content,
+  .actions-archive-disclosure.is-open ~ .my-family-filter-row,
+  .actions-archive-disclosure.is-open ~ .actions-scope-swipe-viewport { transition: none; }
   .app-shell button, .wizard-progress-bar { transition: none; transform: none !important; }
-  .my-product-scope-swipe-track { will-change: auto; }
+  .my-product-scope-swipe-track,
+  .actions-scope-swipe-track { will-change: auto; }
   .my-screen .product-scope-switch::before { transition: none; }
   .my-payment-calendar-selection-wrap { transition: none; transform: none; }
 }
@@ -1737,6 +2104,29 @@ body, #root {
 .my-payment-calendar-month-heading {
   position: relative;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.my-payment-calendar-hero .actions-archive-all-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--app-secondary-bg);
+  color: var(--app-accent, #3b82f6);
+  font-size: 11px;
+  font-weight: var(--app-weight-medium);
+  border: 1px solid rgb(255 255 255 / 8%);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+
+.my-payment-calendar-hero .actions-archive-all-btn:active {
+  opacity: 0.7;
 }
 
 .app-shell button.my-payment-calendar-month-button {
@@ -1795,14 +2185,43 @@ body, #root {
 }
 
 .my-payment-calendar-hero .calendar__nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: var(--app-touch-min);
   min-width: var(--app-touch-min);
   height: var(--app-touch-min);
   min-height: var(--app-touch-min);
+  padding: 0;
   border: 0;
   border-radius: 12px;
   background: transparent;
   color: var(--app-muted);
+  cursor: pointer;
+}
+
+.actions-archive-week-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.actions-archive-week-header {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.actions-archive-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+  will-change: transform;
 }
 
 .my-payment-calendar-hero .calendar__nav-button:hover,
@@ -1856,19 +2275,51 @@ body, #root {
 }
 
 .my-payment-calendar-hero .calendar__grid {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100%;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  column-gap: 4px;
-  row-gap: 8px;
+  border-collapse: collapse;
 }
 
-.my-payment-calendar-hero .calendar__grid-header,
-.my-payment-calendar-hero .calendar__grid-body,
-.my-payment-calendar-hero .calendar__grid-header > tr,
+.my-payment-calendar-hero .calendar__grid-header {
+  display: block;
+  width: 100%;
+}
+
+.my-payment-calendar-hero .calendar__grid-header > tr {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.my-payment-calendar-hero .calendar__grid-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
 .my-payment-calendar-hero .calendar__grid-body > tr {
-  display: contents;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+  max-height: 80px;
+  opacity: 1;
+  margin-bottom: 8px;
+  transform: scale(1) translateY(0);
+  transform-origin: center top;
+  transition: max-height 300ms cubic-bezier(.22, 1, .36, 1),
+              opacity 200ms ease,
+              transform 300ms cubic-bezier(.22, 1, .36, 1),
+              margin-bottom 300ms cubic-bezier(.22, 1, .36, 1);
+  overflow: hidden;
+}
+
+.my-payment-calendar-hero .calendar__grid-body > tr:last-child {
+  margin-bottom: 0;
 }
 
 .my-payment-calendar-hero .calendar__grid th,
@@ -1910,7 +2361,7 @@ body, #root {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   line-height: 14px;
-  transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 160ms cubic-bezier(.22, 1, .36, 1);
 }
 
 .my-payment-calendar-hero .calendar__cell.has-event {
@@ -1950,8 +2401,9 @@ body, #root {
   outline-offset: 2px;
 }
 
+.my-payment-calendar-hero .calendar__cell:active,
 .my-payment-calendar-hero .calendar__cell[data-pressed="true"] {
-  transform: scale(.97);
+  transform: scale(.93);
 }
 
 .my-payment-calendar-hero .calendar__cell:not(.has-event):not([data-outside-month="true"]):hover {
@@ -1996,8 +2448,10 @@ body, #root {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .my-payment-calendar-hero .calendar__cell {
-    transition: none;
+  .my-payment-calendar-hero .calendar__cell,
+  .my-payment-calendar-hero .calendar__grid-body > tr,
+  .cal-week-events-wrap {
+    transition: none !important;
     transform: none !important;
   }
 }

@@ -256,8 +256,10 @@ export function initTelegramShell() {
 
   app?.ready?.();
   app?.expand?.();
-  if (supportsWebAppVersion("7.7")) {
+  try {
     app?.disableVerticalSwipes?.();
+  } catch (e) {
+    // Ignore if not supported
   }
 
   const handleTheme = () => applyTelegramTheme();
@@ -296,8 +298,10 @@ export function initTelegramShell() {
     app?.offEvent?.("viewportChanged", handleViewport);
     app?.offEvent?.("safeAreaChanged", handleViewport);
     app?.offEvent?.("contentSafeAreaChanged", handleViewport);
-    if (supportsWebAppVersion("7.7")) {
+    try {
       app?.enableVerticalSwipes?.();
+    } catch (e) {
+      // Ignore
     }
     if (supportsWebAppVersion("6.2")) {
       app?.disableClosingConfirmation?.();

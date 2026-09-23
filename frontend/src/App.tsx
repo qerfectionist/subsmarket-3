@@ -63,6 +63,7 @@ import {
 } from "./hooks/useApi";
 import { CreateFamilyScreen } from "./screens/CreateFamilyScreen";
 import { AccountsScreen } from "./screens/AccountsScreen";
+import { ActionsScreen } from "./screens/ActionsScreen";
 import { FamilyDetailsScreen } from "./screens/FamilyDetailsScreen";
 import { GigabytesScreen } from "./screens/GigabytesScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
@@ -437,7 +438,43 @@ export function App() {
 
   useEffect(() => {
     const cleanupTelegram = initTelegramShell();
-    return cleanupTelegram;
+
+    // Ultimate iOS/TMA vertical rubber-banding preventer
+    let lastTouchY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      lastTouchY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const touchY = e.touches[0].clientY;
+      const deltaY = touchY - lastTouchY;
+      lastTouchY = touchY; // Update for continuous tracking
+
+      const scrollable = target.closest('.my-feed-scroll, .actions-tab-content, .sm-market-home-feed-scroll, .sm-market-catalog-feed-scroll, .subs-screen-scroll, .my-calendar-disclosure-content, .actions-archive-disclosure-content, .wizard-scroll, textarea');
+
+      if (!scrollable || scrollable.scrollHeight <= scrollable.clientHeight) {
+        if (e.cancelable) e.preventDefault();
+      } else {
+        const isAtTop = scrollable.scrollTop <= 0;
+        const isAtBottom = scrollable.scrollHeight - scrollable.scrollTop <= scrollable.clientHeight + 1;
+        if ((isAtTop && deltaY > 0) || (isAtBottom && deltaY < 0)) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+    return () => {
+      cleanupTelegram();
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
   }, []);
 
   useEffect(() => {
@@ -678,37 +715,167 @@ export function App() {
         </AsyncContent>
       )}
 
-      {(tab === "mine" || tab === "requests") && (
+      {tab === "mine" && (
         <MyFamiliesScreen
-          loadError={myFamiliesQuery.isError || myRequestsQuery.isError || (tab === "requests" && marketplaceActionSummaryQuery.isError)}
-          onRetry={() => { void myFamiliesQuery.refetch(); void myRequestsQuery.refetch(); void marketplaceActionSummaryQuery.refetch(); }}
-          mode={tab === "requests" ? "actions" : "mine"}
-          initialActionsTab={actionsTab ?? undefined}
+          loadError={myFamiliesQuery.isError}
+          onRetry={() => { void myFamiliesQuery.refetch(); }}
           myProductScope={myProductScope}
           families={myFamilies}
           ownerDetails={ownerDetails}
           requisites={requisites}
-          requests={myRequests}
-          marketplaceSalesActionCount={marketplaceSalesActionCount}
-          marketplacePurchaseActionCount={marketplacePurchaseActionCount}
-          accountSalesActionCount={accountSalesActionCount}
-          accountPurchaseActionCount={accountPurchaseActionCount}
-          onOpenMarketplaceSalesActions={() => {
-            setActionsTab("inbox");
-            setTab("requests");
+          busy={busy}
+          isLoading={myFamiliesQuery.isLoading}
+          hasMoreFamilies={myFamiliesQuery.hasNextPage}
+          isLoadingMoreFamilies={myFamiliesQuery.isFetchingNextPage}
+          onLoadMoreFamilies={() => void myFamiliesQuery.fetchNextPage()}
+          onOpenFamily={(familyId) => {
+            setSelectedFamilyId(familyId);
+            setFamilyBackTab("mine");
+            setTab("family");
           }}
-          onOpenMarketplacePurchaseActions={() => {
-            setActionsTab("outbox");
-            setTab("requests");
-          }}
-          onOpenAccountSalesActions={() => {
-            setActionsTab("inbox");
-            setTab("requests");
-          }}
-          onOpenAccountPurchaseActions={() => {
-            setActionsTab("outbox");
-            setTab("requests");
-          }}
+          onLoadOwnerDetails={loadOwnerDetails}
+          onUpdateDescription={(familyId, description) =>
+            void runMutation("update-description", () =>
+              updateDescriptionMutation.mutateAsync({ familyId, description })
+            )
+          }
+          onUpdatePrice={(familyId, totalPriceKzt) =>
+            void runMutation("update-price", () =>
+              updatePriceMutation.mutateAsync({ familyId, totalPriceKzt })
+            )
+          }
+          onUpdatePaymentDay={(familyId, paymentDay, nextPaymentDate) =>
+            void runMutation("update-payment-day", () =>
+              updatePaymentDayMutation.mutateAsync({ familyId, paymentDay, nextPaymentDate })
+            )
+          }
+          onCloseFamily={(familyId, closesOn) =>
+            void runMutation(
+              "close-family",
+              () => closeFamilyMutation.mutateAsync({ familyId, closesOn }),
+              () => showTelegramConfirm("Закрыть семью? Доступ для участников закроется в выбранную дату.")
+            )
+          }
+          onConfirmAvailability={(familyId) =>
+            void runMutation("confirm-availability", () =>
+              confirmAvailabilityMutation.mutateAsync(familyId)
+            )
+          }
+          onConfirmAccess={(memberId) =>
+            void runMutation("confirm-access", async () => {
+              const result = await confirmAccessMutation.mutateAsync(memberId);
+              setRequisites((current) => ({
+                ...current,
+                [memberId]: result.payment_requisite
+              }));
+            })
+          }
+          onGetRequisite={(memberId) =>
+            void runMutation("get-requisite", async () => {
+              const requisite = await getRequisiteMutation.mutateAsync(memberId);
+              setRequisites((current) => ({
+                ...current,
+                [memberId]: requisite
+              }));
+            })
+          }
+          onAcknowledgeClosing={(familyId) =>
+            void runMutation("ack-closing", () => ackClosingMutation.mutateAsync(familyId))
+          }
+          onLeaveFamily={(memberId) =>
+            void runMutation(
+              "leave-family",
+              () => actualLeaveMutation.mutateAsync(memberId),
+              () =>
+                showTelegramConfirm(
+                  "Покинуть семью? Будущие платежи отменятся, место освободится."
+                )
+            )
+          }
+          onCreatePrepayment={(memberId) =>
+            void runMutation("create-prepayment", () =>
+              createPrepaymentMutation.mutateAsync(memberId)
+            )
+          }
+          onReportPayment={(payment) =>
+            runMutation("report-paid", () => reportPaymentMutation.mutateAsync(payment.id))
+          }
+          onCancelPaymentReport={(payment) =>
+            runMutation("cancel-report", () => cancelReportMutation.mutateAsync(payment.id))
+          }
+          onApproveRequest={(familyId, request) =>
+            runMutation("approve-request", () =>
+              approveRequestMutation.mutateAsync({ familyId, requestId: request.id })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onRejectRequest={(familyId, request) =>
+            runMutation("reject-request", () =>
+              rejectRequestMutation.mutateAsync({ familyId, requestId: request.id })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onAccessProvided={(familyId, member) =>
+            runMutation("access-provided", () =>
+              markAccessMutation.mutateAsync({ familyId, memberId: member.id })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onRemindAccess={(familyId, member) =>
+            runMutation("remind-access", () =>
+              remindAccessMutation.mutateAsync({ familyId, memberId: member.id })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onCancelBeforeAccess={(familyId, member) =>
+            runMutation("cancel-before-access", () =>
+              cancelBeforeAccessMutation.mutateAsync({ familyId, memberId: member.id })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onRemoveMember={(familyId, member, reason: FamilyMemberRemovalReason) =>
+            runMutation(
+              "remove-member",
+              () =>
+                removeMemberMutation.mutateAsync({
+                  familyId,
+                  memberId: member.id,
+                  reason
+                }),
+              () =>
+                showTelegramConfirm(
+                  `Удалить @${member.user.username} из семьи? Причина: ${reason}.`
+                )
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onConfirmPayment={(familyId, payment) =>
+            runMutation("confirm-payment", () =>
+              confirmPaymentMutation.mutateAsync({ familyId, paymentId: payment.id })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onNotReceived={(familyId, payment) =>
+            runMutation("not-received", () =>
+              notReceivedMutation.mutateAsync({ familyId, paymentId: payment.id })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
+          onRecordPrepayment={(familyId, member, periods) =>
+            runMutation("record-prepayment", () =>
+              recordPrepaymentMutation.mutateAsync({ familyId, memberId: member.id, periods })
+            ).then((outcome) =>
+              outcome === "success" ? loadOwnerDetails(familyId) : undefined
+            )
+          }
           onChangeProductScope={setMyProductScope}
           onOpenAccountListing={(listingId) => {
             setAccountEntryId(listingId);
@@ -735,19 +902,30 @@ export function App() {
             setTab("gigabytes");
           }}
           onOpenMarket={() => setTab("home")}
+        />
+      )}
+
+      {tab === "requests" && (
+        <ActionsScreen
+          loadError={myFamiliesQuery.isError || myRequestsQuery.isError || marketplaceActionSummaryQuery.isError}
+          onRetry={() => { void myFamiliesQuery.refetch(); void myRequestsQuery.refetch(); void marketplaceActionSummaryQuery.refetch(); }}
+          initialActionsTab={actionsTab ?? undefined}
+          families={myFamilies}
+          ownerDetails={ownerDetails}
+          requisites={requisites}
+          requests={myRequests}
           busy={busy}
           isLoading={myFamiliesQuery.isLoading}
           requestsLoading={myRequestsQuery.isLoading}
-          hasMoreFamilies={Boolean(myFamiliesQuery.hasNextPage)}
-          isLoadingMoreFamilies={myFamiliesQuery.isFetchingNextPage}
-          hasMoreRequests={Boolean(myRequestsQuery.hasNextPage)}
+          hasMoreRequests={myRequestsQuery.hasNextPage}
           isLoadingMoreRequests={myRequestsQuery.isFetchingNextPage}
-          onLoadMoreFamilies={() => void myFamiliesQuery.fetchNextPage()}
           onLoadMoreRequests={() => void myRequestsQuery.fetchNextPage()}
-          onOpenFamily={(familyId) =>
-            openFamily(familyId, tab === "requests" ? "requests" : "mine")
-          }
-          onLoadOwnerDetails={(familyId) => void loadOwnerDetails(familyId)}
+          onOpenFamily={(familyId) => {
+            setSelectedFamilyId(familyId);
+            setFamilyBackTab("requests");
+            setTab("family");
+          }}
+          onLoadOwnerDetails={loadOwnerDetails}
           onUpdateDescription={(familyId, description) =>
             void runMutation("update-description", () =>
               updateDescriptionMutation.mutateAsync({ familyId, description })
@@ -767,10 +945,7 @@ export function App() {
             void runMutation(
               "close-family",
               () => closeFamilyMutation.mutateAsync({ familyId, closesOn }),
-              () =>
-                showTelegramConfirm(
-                  `Закрыть семью с ${closesOn}? Участники получат уведомление, новые заявки будут отменены.`
-                )
+              () => showTelegramConfirm("Закрыть семью? Доступ для участников закроется в выбранную дату.")
             )
           }
           onConfirmAvailability={(familyId) =>
@@ -896,6 +1071,26 @@ export function App() {
           onCancelRequest={(requestId) =>
             void runMutation("cancel-request", () => cancelRequestMutation.mutateAsync(requestId))
           }
+          marketplaceSalesActionCount={marketplaceSalesActionCount}
+          marketplacePurchaseActionCount={marketplacePurchaseActionCount}
+          accountSalesActionCount={accountSalesActionCount}
+          accountPurchaseActionCount={accountPurchaseActionCount}
+          onOpenMarketplaceSalesActions={() => {
+            setActionsTab("inbox");
+            setTab("requests");
+          }}
+          onOpenMarketplacePurchaseActions={() => {
+            setActionsTab("outbox");
+            setTab("requests");
+          }}
+          onOpenAccountSalesActions={() => {
+            setActionsTab("inbox");
+            setTab("requests");
+          }}
+          onOpenAccountPurchaseActions={() => {
+            setActionsTab("outbox");
+            setTab("requests");
+          }}
         />
       )}
 
