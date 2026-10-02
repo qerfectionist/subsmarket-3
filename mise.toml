@@ -7,6 +7,10 @@ run = "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
 description = "Run local development stack (Docker + Postgres + Backend + Frontend)"
 run = "npm run dev"
 
+[tasks.tunnel]
+description = "Expose local Mini App to real Telegram via free HTTPS Cloudflare tunnel"
+run = "npm run tunnel"
+
 [tasks.test]
 description = "Run backend tests"
 run = "npm run backend:test"

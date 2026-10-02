@@ -217,21 +217,63 @@ function applyTelegramTheme() {
 
 function applyTelegramViewport() {
   const app = webApp();
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const previewPlatform = import.meta.env.DEV
+    ? (searchParams?.get("platform") || window.localStorage?.getItem("subsmarket.devPlatform"))
+    : null;
+  const platform = previewPlatform || app?.platform || "unknown";
+  document.documentElement.dataset.platform = platform;
+
   setCssVar("--app-viewport-height", app?.viewportHeight);
   setCssVar("--app-viewport-stable-height", app?.viewportStableHeight);
 
   const safe = app?.safeAreaInset ?? {};
-  setCssVar("--app-safe-area-top", safe.top ?? 0);
-  setCssVar("--app-safe-area-right", safe.right ?? 0);
-  setCssVar("--app-safe-area-bottom", safe.bottom ?? 0);
-  setCssVar("--app-safe-area-left", safe.left ?? 0);
+  let safeTop = safe.top ?? 0;
+  let safeBottom = safe.bottom ?? 0;
+  let safeLeft = safe.left ?? 0;
+  let safeRight = safe.right ?? 0;
+
+  if (import.meta.env.DEV && !app?.safeAreaInset) {
+    if (platform === "ios") {
+      safeTop = 44;
+      safeBottom = 34;
+    } else if (platform === "android") {
+      safeTop = 24;
+      safeBottom = 0;
+    }
+  }
+
+  setCssVar("--app-safe-area-top", safeTop);
+  setCssVar("--app-safe-area-right", safeRight);
+  setCssVar("--app-safe-area-bottom", safeBottom);
+  setCssVar("--app-safe-area-left", safeLeft);
 
   const contentSafe = app?.contentSafeAreaInset ?? {};
-  setCssVar("--app-content-safe-area-top", contentSafe.top ?? 0);
-  setCssVar("--app-content-safe-area-right", contentSafe.right ?? 0);
-  setCssVar("--app-content-safe-area-bottom", contentSafe.bottom ?? 0);
-  setCssVar("--app-content-safe-area-left", contentSafe.left ?? 0);
+  setCssVar("--app-content-safe-area-top", contentSafe.top ?? safeTop);
+  setCssVar("--app-content-safe-area-right", contentSafe.right ?? safeRight);
+  setCssVar("--app-content-safe-area-bottom", contentSafe.bottom ?? safeBottom);
+  setCssVar("--app-content-safe-area-left", contentSafe.left ?? safeLeft);
 }
+
+export function getTelegramPlatform(): string {
+  if (typeof window === "undefined") return "unknown";
+  const searchParams = new URLSearchParams(window.location.search);
+  const previewPlatform = import.meta.env.DEV
+    ? (searchParams.get("platform") || window.localStorage?.getItem("subsmarket.devPlatform"))
+    : null;
+  return previewPlatform || webApp()?.platform || "unknown";
+}
+
+export function setDevPlatform(platform: "ios" | "android" | "tdesktop" | "default") {
+  if (!import.meta.env.DEV || typeof window === "undefined") return;
+  if (platform === "default") {
+    window.localStorage.removeItem("subsmarket.devPlatform");
+  } else {
+    window.localStorage.setItem("subsmarket.devPlatform", platform);
+  }
+  applyTelegramViewport();
+}
+
 
 export function getTelegramInitData() {
   return webApp()?.initData ?? "";

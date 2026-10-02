@@ -2,42 +2,16 @@ import { forwardRef, useId, type CSSProperties, type ReactNode } from "react";
 
 import {
   Button as AppButton,
-  Select,
   Typography
 } from "./ui";
 import { SystemSymbol } from "./SystemSymbol";
 
-import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import type { Tab } from "../appTypes";
 import { familyTypeLabels } from "../labels";
 import { triggerTelegramSelection } from "../telegram";
 import type { FamilyType } from "../types";
 
-export function DevUserSwitch({
-  value,
-  onChange
-}: {
-  value: DevTelegramUser;
-  onChange: (userId: string) => void;
-}) {
-  return (
-    <div className="dev-user-compact" aria-label="Dev user switch" data-testid="dev-user-switch">
-      <Typography as="span" variant="label" level={2}>
-        Dev: @{value.username}
-      </Typography>
-      <div data-testid="dev-user-select" data-value={String(value.id)}>
-        <Select
-          value={String(value.id)}
-          onChange={onChange}
-          options={DEV_TELEGRAM_USERS.map((user) => ({
-            value: String(user.id),
-            label: `${user.label} · @${user.username}`
-          }))}
-        />
-      </div>
-    </div>
-  );
-}
+export { DevUserSwitch } from "./DevControls";
 
 export function Panel({
   title,

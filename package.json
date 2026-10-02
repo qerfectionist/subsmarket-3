@@ -4,8 +4,10 @@
   "version": "0.1.0",
   "scripts": {
     "build": "npm --prefix frontend run build",
+    "build:analyze": "npm --prefix frontend run build:analyze",
     "test:ui": "npm --prefix frontend run test:ui",
     "dev": "node scripts/dev.mjs",
+    "tunnel": "cloudflared tunnel --url http://localhost:5173",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "node scripts/dev-backend.mjs",
     "backend:compile": "node scripts/run-python.mjs -m compileall -q backend/src backend/tests",

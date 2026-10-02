@@ -20,6 +20,16 @@
       },
       "disabled": false,
       "autoApprove": []
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://subsmarket:subsmarket@localhost:5432/subsmarket"
+      ],
+      "disabled": false,
+      "autoApprove": []
     }
   }
 }

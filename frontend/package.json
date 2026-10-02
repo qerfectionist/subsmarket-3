@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
+    "build:analyze": "tsc -b && vite build --mode analyze",
     "preview": "vite preview --host 0.0.0.0",
     "test:ui": "playwright test",
     "openapi:types": "openapi-typescript openapi.json -o src/api/openapi.ts"
@@ -31,6 +32,7 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^6.0.2",
     "openapi-typescript": "^7.13.0",
+    "rollup-plugin-visualizer": "^7.1.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.7.2",
     "vite": "^8.0.16"
