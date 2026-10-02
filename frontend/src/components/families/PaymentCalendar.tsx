@@ -310,7 +310,7 @@ export function PaymentCalendar({ families }: { families: MyFamily[] }) {
                                 />
                               ) : null}
                             </span>
-                            {dayEvents.length > 1 ? <small className="my-payment-calendar-extra-count">+{dayEvents.length - 1}</small> : null}
+                            {dayEvents.length > 1 ? <small className="my-payment-calendar-extra-count">{dayEvents.length - 1}</small> : null}
                             <span className="my-payment-calendar-day-number">
                               {isOutsideMonth ? "" : formattedDate}
                             </span>

@@ -58,13 +58,14 @@ test("seller publishes an account offer and accepts a buyer", async ({ page }) =
   await waitForNetworkQuiet(page);
   await expect(page.getByText("@demo_member", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Написать" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Продано", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Написать" }).click({ force: true });
   await page.getByRole("button", { name: "Продано", exact: true }).click({
     force: true
   });
   await waitForNetworkQuiet(page);
-  await expect(
-    page.getByTestId("account-sales-actions-card").getByText("Закрыта", { exact: true })
-  ).toBeVisible();
+  await expect(page.getByTestId("account-sales-actions-card")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Открыть архив/ })).toBeVisible();
   await page.getByRole("navigation", { name: "Главная навигация" })
     .getByRole("button", { name: "Мои", exact: true })
     .click({ force: true });

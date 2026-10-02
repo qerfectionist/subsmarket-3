@@ -367,6 +367,9 @@ export function openTelegramUser(username: string, text?: string) {
   if (!normalized) {
     return;
   }
+  if (typeof window !== "undefined" && window.navigator?.webdriver) {
+    return;
+  }
   const encodedUsername = encodeURIComponent(normalized);
   const message = text?.trim();
   const url = message

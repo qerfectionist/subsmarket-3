@@ -1,0 +1,415 @@
+﻿/* Card archiving exit animation - Variant 3: Dissolve Up & Fade (Fintech / Apple) */
+@keyframes tradeCardArchiveOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    border-color: var(--app-border, rgba(255, 255, 255, 0.08));
+    box-shadow: none;
+    max-height: 220px;
+    margin-bottom: 0;
+  }
+  20% {
+    opacity: 0.95;
+    transform: translateY(0) scale(1);
+    border-color: rgba(255, 69, 58, 0.35);
+    box-shadow: 0 0 10px rgba(255, 69, 58, 0.12);
+  }
+  50% {
+    opacity: 0.25;
+    transform: translateY(-8px) scale(0.97);
+    filter: blur(0.5px);
+    max-height: 220px;
+    margin-bottom: 0;
+  }
+  80% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.94);
+    filter: blur(1.5px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: -10px;
+    border-color: transparent;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.92);
+    filter: blur(2px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: -10px;
+    border-color: transparent;
+    pointer-events: none;
+    overflow: hidden;
+  }
+}
+
+.sm-listing.is-archiving-out {
+  animation: tradeCardArchiveOut 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sm-listing.is-archiving-out .my-trade-request-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+  pointer-events: none;
+}
+
+/* Archive button receiving indicator pulse */
+@keyframes archivePulseReceive {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.28);
+    color: var(--app-accent, #0a84ff);
+  }
+  70% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.my-screen-context-action.is-receiving-item {
+  animation: archivePulseReceive 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.my-trade-request-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.my-trade-request-btn-cancel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: color var(--app-duration-press, 120ms) ease, opacity var(--app-duration-press, 120ms) ease;
+}
+.my-trade-request-btn-cancel::before,
+.my-trade-request-btn-remind::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+.my-trade-request-btn-cancel:hover {
+  color: var(--app-text);
+}
+.my-trade-request-btn-cancel:active {
+  opacity: 0.7;
+}
+.my-trade-request-btn-cancel:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.my-trade-request-footer-actions-divider {
+  color: var(--app-divider, rgba(255, 255, 255, 0.15));
+  font-size: 13px;
+  line-height: 1;
+  user-select: none;
+}
+
+.my-trade-request-btn-remind {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: opacity var(--app-duration-press, 120ms) ease;
+}
+.my-trade-request-btn-remind:active {
+  opacity: 0.7;
+}
+.my-trade-request-btn-remind.is-disabled,
+.my-trade-request-btn-remind:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--app-muted);
+}
+.my-trade-request-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 16px;
+  min-height: 40px;
+  background: var(--app-surface-inset);
+  font-size: 13px;
+  color: var(--app-muted);
+  min-width: 0;
+  box-sizing: border-box;
+}
+.my-trade-request-seller {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.my-trade-request-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+.my-trade-request-username {
+  color: var(--app-text);
+  font-size: var(--app-size-label);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-family-filter-row .my-trade-request-footer button,
+.my-trade-request-chat-btn,
+.my-trade-request-notify-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px !important;
+  height: 24px;
+  padding: 0 !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity var(--app-duration-press);
+}
+.my-trade-request-chat-btn::before,
+.my-trade-request-notify-btn::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+.my-trade-request-chat-btn:active,
+.my-trade-request-notify-btn:active {
+  opacity: 0.7;
+}
+.my-trade-request-notify-btn.is-disabled,
+.my-trade-request-notify-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.my-trade-request-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 16px 14px;
+  background: var(--app-surface-inset);
+  border-top: 1px solid var(--app-divider, rgba(255, 255, 255, 0.06));
+}
+/* Prototype Styles */
+.timer-context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.timer-context-label {
+  font-size: 12px;
+  color: var(--app-muted);
+  white-space: nowrap;
+}
+.trade-timer-sub-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #f59e0b;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.trade-timer-sub-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  display: inline-block;
+}
+.actions-dev-prototype-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--app-radius-sm, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.actions-dev-prototype-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--app-muted);
+}
+.actions-dev-prototype-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.actions-dev-proto-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  background: var(--app-surface-inset);
+  color: var(--app-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  transition: all 120ms ease;
+}
+.actions-dev-proto-btn:active {
+  transform: scale(0.97);
+}
+.actions-dev-proto-btn.is-active {
+  background: var(--app-control-material, rgba(255, 255, 255, 0.16));
+  color: #fff;
+  border-color: var(--app-accent, #38bdf8);
+  font-weight: 600;
+}
+.app-shell .my-trade-request-actions button,
+.my-trade-request-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  min-height: 38px;
+  border-radius: var(--app-radius-pill, 9999px);
+  background: var(--app-control-material, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--app-control-border, rgba(255, 255, 255, 0.12));
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform var(--app-duration-press, 120ms) ease, opacity var(--app-duration-press, 120ms) ease;
+}
+.app-shell .my-trade-request-actions button[data-testid="trade-request-accept-btn"],
+.app-shell .my-trade-request-actions button[data-testid="trade-request-reject-btn"],
+.app-shell .my-trade-request-actions button[data-testid="trade-request-cancel-btn"],
+.app-shell .my-trade-request-actions button[data-testid="trade-request-remind-btn"],
+.my-trade-request-actions button[data-testid="trade-request-accept-btn"],
+.my-trade-request-actions button[data-testid="trade-request-reject-btn"],
+.my-trade-request-actions button[data-testid="trade-request-cancel-btn"],
+.my-trade-request-actions button[data-testid="trade-request-remind-btn"] {
+  flex: 1 1 0;
+  min-width: 110px;
+}
+.app-shell .my-trade-request-actions button:active:not(:disabled),
+.my-trade-request-actions button:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+.app-shell .my-trade-request-actions button.is-countdown:active,
+.my-trade-request-actions button.is-countdown:active {
+  transform: scale(0.98);
+  opacity: 1;
+}
+.app-shell .my-trade-request-actions button:disabled,
+.my-trade-request-actions button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.app-shell .my-trade-request-actions button.is-countdown,
+.my-trade-request-actions button.is-countdown {
+  position: relative;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform var(--app-duration-press, 120ms) ease;
+}
+.app-shell .my-trade-request-actions button.is-countdown.is-reject,
+.my-trade-request-actions button.is-countdown.is-reject {
+  background: rgba(239, 68, 68, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+}
+.app-shell .my-trade-request-actions button.is-countdown.is-accept,
+.my-trade-request-actions button.is-countdown.is-accept {
+  background: rgba(34, 197, 94, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #4ade80 !important;
+}
+[data-theme="light"] .app-shell .my-trade-request-actions button.is-countdown.is-reject,
+[data-theme="light"] .my-trade-request-actions button.is-countdown.is-reject {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #dc2626 !important;
+}
+[data-theme="light"] .app-shell .my-trade-request-actions button.is-countdown.is-accept,
+[data-theme="light"] .my-trade-request-actions button.is-countdown.is-accept {
+  background: rgba(34, 197, 94, 0.12) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+  color: #16a34a !important;
+}
+.action-countdown-svg {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.action-countdown-circle-progress {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  stroke-dasharray: 47.12;
+  stroke-dashoffset: 0;
+}

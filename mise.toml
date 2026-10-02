@@ -1,0 +1,20 @@
+# mise.toml - SubsMarket 3.0 developer tasks and environment
+[tasks.verify]
+description = "Fast deterministic quality & compile verification"
+run = "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify.ps1"
+
+[tasks.dev]
+description = "Run local development stack (Docker + Postgres + Backend + Frontend)"
+run = "npm run dev"
+
+[tasks.test]
+description = "Run backend tests"
+run = "npm run backend:test"
+
+[tasks.lint]
+description = "Run backend ruff linting"
+run = "npm run backend:lint"
+
+[tasks.typecheck]
+description = "Run frontend TypeScript compile check"
+run = "npm --prefix frontend run build"

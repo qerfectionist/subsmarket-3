@@ -1,0 +1,278 @@
+/* Actions archive disclosure & active view layout */
+.actions-screen .app-panel-body {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  overflow: hidden;
+  gap: 10px;
+}
+.actions-screen .actions-screen-filters {
+  grid-row: 1;
+  grid-column: 1;
+  z-index: 2;
+}
+.actions-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actions-dev-constructor {
+  background: var(--app-bg-card, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--app-radius-card, 16px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+  animation: slideDownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.actions-dev-constructor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.actions-dev-constructor-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.actions-dev-constructor-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--app-muted);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.actions-dev-constructor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.actions-dev-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: var(--app-text);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+.actions-dev-chip:active {
+  background: rgba(255, 255, 255, 0.14);
+  transform: scale(0.96);
+}
+
+.actions-dev-chip-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.actions-dev-constructor-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actions-dev-btn-all {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  background: var(--app-accent, #3390ec);
+  color: var(--app-accent-text, #000000);
+  border: 0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.actions-dev-btn-all:active {
+  opacity: 0.85;
+  transform: scale(0.97);
+}
+
+.actions-dev-btn-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 10px;
+  background: rgba(255, 59, 48, 0.12);
+  color: #ff453a;
+  border: 1px solid rgba(255, 59, 48, 0.25);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.actions-dev-btn-clear:disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+.actions-dev-btn-clear:active:not(:disabled) {
+  background: rgba(255, 59, 48, 0.22);
+  transform: scale(0.97);
+}
+
+.actions-archive-disclosure {
+  grid-row: 2;
+  grid-column: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-16px) scale(0.985);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 280ms cubic-bezier(.22, 1, .36, 1),
+              transform 320ms cubic-bezier(.22, 1, .36, 1),
+              visibility 320ms;
+  will-change: transform, opacity;
+}
+.actions-archive-disclosure.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 300ms cubic-bezier(.22, 1, .36, 1),
+              transform 340ms cubic-bezier(.22, 1, .36, 1),
+              visibility 0ms;
+}
+
+.actions-active-view {
+  grid-row: 2;
+  grid-column: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 300ms cubic-bezier(.22, 1, .36, 1),
+              transform 340ms cubic-bezier(.22, 1, .36, 1),
+              visibility 0ms;
+  will-change: transform, opacity;
+}
+.actions-active-view.is-hidden {
+  opacity: 0;
+  transform: translateY(16px) scale(0.985);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 240ms cubic-bezier(.22, 1, .36, 1),
+              transform 280ms cubic-bezier(.22, 1, .36, 1),
+              visibility 280ms;
+}
+.actions-archive-disclosure-content {
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+}
+.actions-archive-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-2, 8px);
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.actions-archive-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.actions-archive-content > .my-payment-calendar {
+  flex-shrink: 0;
+  transition: transform 340ms cubic-bezier(.22, 1, .36, 1), opacity 300ms cubic-bezier(.22, 1, .36, 1);
+  will-change: transform, opacity;
+}
+.actions-archive-disclosure:not(.is-open) .actions-archive-content > .my-payment-calendar {
+  transform: translateY(-8px);
+  opacity: 0.85;
+}
+.actions-archive-disclosure.is-open .actions-archive-content > .my-payment-calendar {
+  transform: translateY(0);
+  opacity: 1;
+}
+.actions-archive-content > .actions-scope-swipe-viewport {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+.actions-archive-content .actions-scope-swipe-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.actions-archive-feed-scroll {
+  flex: 1 1 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-width: none;
+  padding-bottom: calc(var(--app-nav-clearance, 76px) + 24px);
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 8px;
+}
+.actions-archive-feed-scroll::-webkit-scrollbar {
+  display: none;
+}
+.actions-archive-date-group {
+  scroll-snap-align: start;
+}
+/* ── LAYER 3: Actions Archive Card (Clean Native SubsMarket Listing) ── */

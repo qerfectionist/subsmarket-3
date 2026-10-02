@@ -78,7 +78,7 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await notificationsButton.click({ force: true });
   await expect(page.getByTestId("marketplace-actions-card")).toBeVisible();
   await waitForNetworkQuiet(page);
-  await expect(page.getByText("Ждёт ответа", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("circular-countdown-timer").or(page.getByText("Ждёт ответа"))).toBeVisible();
   await page.getByRole("button", { name: "Принять" }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Можно написать", { exact: true })).toBeVisible();
@@ -96,9 +96,12 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   await page.getByTestId("market-notifications").click({ force: true });
+  await expect(page.getByRole("button", { name: "Продано" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Открыть Telegram" }).click({ force: true });
   await page.getByRole("button", { name: "Продано" }).click({ force: true });
   await waitForNetworkQuiet(page);
-  await expect(page.getByText("Закрыта", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("marketplace-actions-card")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Открыть архив/ })).toBeVisible();
   await page.getByRole("navigation", { name: "Главная навигация" })
     .getByRole("button", { name: "Мои", exact: true })
     .click({ force: true });

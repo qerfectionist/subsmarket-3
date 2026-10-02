@@ -60,7 +60,7 @@
   --app-strong-control-bg: var(--app-accent);
   --app-strong-control-text: var(--app-accent-text);
 
-  --app-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --app-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", system-ui, sans-serif;
   --app-weight-regular: 400;
   --app-weight-medium: 500;
   --app-weight-semibold: 600;

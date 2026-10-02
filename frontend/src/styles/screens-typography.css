@@ -1,0 +1,622 @@
+/* Monochrome / negative logo contrast handling */
+[data-monochrome="true"] img,
+[data-monochrome-source="dark"] img {
+  filter: brightness(0) invert(1);
+}
+
+.tma-light [data-monochrome="true"] img,
+.tma-light [data-monochrome-source="dark"] img,
+.tma-light [data-monochrome-source="light"] img,
+[data-theme="light"] [data-monochrome="true"] img,
+[data-theme="light"] [data-monochrome-source="dark"] img,
+[data-theme="light"] [data-monochrome-source="light"] img {
+  filter: brightness(0);
+}
+@media (max-width: 360px) {
+  .app-shell .gb-header h1 { font-size: 1.5rem; }
+  .gb-detail-card, .gb-form, .gb-buy-box { padding: 20px; }
+  .app-shell .gb-nav button { padding-inline: 8px; font-size: var(--app-size-label); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .my-calendar-disclosure,
+  .my-calendar-disclosure + .stack,
+  .my-calendar-disclosure.is-open ~ .my-feed-scroll,
+  .my-feed-scroll,
+  .my-history-disclosure,
+  .my-history-disclosure-content,
+  .my-history-disclosure + *,
+  .actions-archive-disclosure,
+  .actions-archive-disclosure-content,
+  .actions-active-view,
+  .actions-archive-content > .my-payment-calendar { transition: none; transform: none !important; }
+  .app-shell button, .wizard-progress-bar { transition: none; transform: none !important; }
+  .my-product-scope-swipe-track,
+  .actions-scope-swipe-track { will-change: auto; }
+  .my-screen .product-scope-switch::before { transition: none; }
+  .my-payment-calendar-selection-wrap { transition: none; transform: none; }
+}
+
+/* HIG pass: hierarchy, legibility and system accessibility settings. */
+html {
+  font-size: 100%;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body, #root {
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+.app-shell :is(h1, h2, h3, h4, p, label, button, input, select, textarea) {
+  text-wrap: pretty;
+}
+
+.app-shell h1, .app-shell .app-panel-head h1, .app-shell .family-detail-heading h1, .app-shell .gb-header h1 {
+  font-weight: var(--app-weight-semibold);
+}
+
+.app-shell h2, .app-shell h3, .app-shell h4,
+.app-shell .ui-typography-heading, .app-shell .ui-typography-subtitle {
+  font-weight: var(--app-weight-semibold);
+}
+
+.app-shell .ui-typography-label,
+.app-shell .ui-typography-body,
+.app-shell .field-helper,
+.app-shell .field-error {
+  font-weight: var(--app-weight-regular);
+}
+
+.app-shell .gb-header span,
+.app-shell .gb-nav button,
+.app-shell .gb-role-switch button,
+.app-shell .gb-chip-row button,
+.app-shell .gb-form label,
+.app-shell .gb-buy-box label,
+.app-shell .owner-settings-card label,
+.app-shell .owner-prepayment-control label {
+  font-weight: var(--app-weight-medium);
+}
+
+.app-shell .family-card h3,
+.app-shell .family-card-title,
+.app-shell .family-overview-title h2,
+.app-shell .owner-details h4,
+.app-shell .section-inline-title h2,
+.app-shell .section-inline-title h3,
+.app-shell .gb-detail-card h2,
+.app-shell .gb-detail-card > strong {
+  font-weight: var(--app-weight-semibold);
+}
+
+.app-shell :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--app-focus);
+  outline-offset: 3px;
+}
+
+.app-shell :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-shell .family-details-page-public .family-detail-actions:has(button) {
+    background: var(--app-bg);
+  }
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+  .app-shell :is(input, select, textarea),
+  .app-shell :is(.family-type-switch, .product-scope-switch, .owner-tabs, .gb-nav, .gb-role-switch),
+  .app-shell :is(.empty-state, .family-workspace, .owner-details, .owner-settings-card, .detail-section, .status-block, .payment-row, .request-card, .family-card, .family-overview-card, .gb-empty, .gb-detail-card, .gb-info-card, .gb-form, .gb-buy-box) {
+    border: 1px solid var(--app-border-strong);
+  }
+}
+
+/* Shared iOS text roles for legacy family, marketplace and wizard surfaces. */
+.app-shell .family-card-title,
+.app-shell .family-compact-copy strong,
+.app-shell .family-row-price strong,
+.app-shell .market-fast-copy strong,
+.app-shell .market-section-actions strong,
+.app-shell .market-section-soon strong,
+.app-shell .market-empty-row strong,
+.app-shell .market-more-row strong,
+.app-shell .market-section-summary strong,
+.app-shell .metrics strong,
+.app-shell .owner-work-summary strong,
+.app-shell .detail-item strong,
+.app-shell .request-card-heading strong {
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: 0;
+}
+
+.app-shell .family-card-offer span,
+.app-shell .family-compact-copy small,
+.app-shell .family-row-price small,
+.app-shell .market-fast-copy small,
+.app-shell .market-more-row span,
+.app-shell .market-empty-row span,
+.app-shell .market-section-actions span,
+.app-shell .market-section-summary span,
+.app-shell .metrics span,
+.app-shell .owner-work-summary span,
+.app-shell .detail-item span,
+.app-shell .member-next-step span,
+.app-shell .family-detail-heading > span,
+.app-shell .family-overview-badges > span:not(.badge),
+.app-shell .family-overview-metrics .detail-item span,
+.app-shell .family-overview-facts dt,
+.app-shell .family-flow-compact .flow-step > span,
+.app-shell .wizard-step,
+.app-shell .wizard-step-index,
+.app-shell .wizard-step-label {
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  font-weight: var(--app-weight-regular);
+  letter-spacing: 0;
+}
+
+.app-shell .family-card-offer strong,
+.app-shell .family-overview-metrics .detail-item strong,
+.app-shell .family-overview-facts dd,
+.app-shell .action-summary strong {
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: 0;
+}
+
+.app-shell .family-card-subtitle,
+.app-shell .family-card-rules,
+.app-shell .family-card-note,
+.app-shell .market-hero-card p,
+.app-shell .market-section-soon p,
+.app-shell .family-overview-copy p,
+.app-shell .family-detail-status-section .status-block p,
+.app-shell .member-next-step p,
+.app-shell .field-helper,
+.app-shell .field-error,
+.app-shell .gb-operator-hint,
+.app-shell .gb-price-insight {
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+  font-weight: var(--app-weight-regular);
+  letter-spacing: 0;
+}
+
+.app-shell .market-hero-card span,
+.app-shell .market-section-top p,
+.app-shell .family-overview-badges .badge,
+.app-shell .family-flow-compact .flow-step strong,
+.app-shell .gb-request-head em,
+.app-shell .gb-request-actions button,
+.app-shell .gb-buy-box label,
+.app-shell .gb-form label,
+.app-shell .market-section-back,
+.app-shell .market-hero-action {
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  font-weight: var(--app-weight-medium);
+  letter-spacing: 0;
+}
+
+.app-shell .market-hero-card strong,
+.app-shell .market-section-top h1 {
+  font-size: var(--app-size-screen);
+  line-height: var(--app-leading-screen);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: -.018em;
+}
+
+.app-shell .family-detail-heading h1,
+.app-shell .family-overview-title h2,
+.app-shell .detail-section h3,
+.app-shell .owner-details h4,
+.app-shell .section-inline-title h2,
+.app-shell .section-inline-title h3,
+.app-shell .panel h2 {
+  letter-spacing: -.01em;
+}
+
+.app-shell .section-inline-title > span {
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: 0;
+}
+
+.app-shell .section-inline-title > .legacy-badge {
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  font-weight: var(--app-weight-medium);
+}
+
+/* HeroUI calendar keeps navigation and keyboard behavior accessible while the
+   payment cells follow the same compact surfaces as the rest of this screen. */
+.my-payment-calendar-hero {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  color: var(--app-text);
+  font-family: var(--app-font-family);
+}
+
+.my-payment-calendar-hero .calendar__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 4px;
+  padding: 0 0 12px;
+}
+
+.my-payment-calendar-month-heading {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+.app-shell button.my-payment-calendar-month-button {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  width: 100%;
+  min-width: var(--app-touch-min);
+  min-height: var(--app-touch-min);
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-text);
+  text-align: left;
+}
+
+.app-shell button.my-payment-calendar-month-button:hover {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+
+.app-shell button.my-payment-calendar-month-button:focus-visible {
+  outline: 2px solid var(--app-focus);
+  outline-offset: -2px;
+}
+
+.my-payment-calendar-month-name {
+  font-size: var(--app-size-card);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-card);
+  text-transform: capitalize;
+}
+
+.my-payment-calendar-year {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-label);
+}
+
+.my-payment-calendar-hero .calendar__heading {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: var(--app-size-card);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-card);
+  letter-spacing: -.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-payment-calendar-hero .calendar__nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--app-touch-min);
+  min-width: var(--app-touch-min);
+  height: var(--app-touch-min);
+  min-height: var(--app-touch-min);
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+}
+
+.actions-archive-week-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.actions-archive-carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  touch-action: pan-y;
+}
+
+.actions-archive-carousel-track {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+  will-change: transform;
+}
+
+.actions-archive-week-page {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.actions-archive-week-header {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.actions-archive-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+}
+
+.my-payment-calendar-hero .calendar__nav-button:hover,
+.my-payment-calendar-hero .calendar__nav-button[data-hovered="true"] {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+
+.my-payment-calendar-hero .calendar__nav-button:focus-visible,
+.my-payment-calendar-hero .calendar__nav-button[data-focus-visible="true"] {
+  outline: 2px solid var(--app-focus);
+  outline-offset: -2px;
+}
+
+.my-payment-calendar-hero .calendar__nav-button-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total {
+  display: grid;
+  grid-template-rows: var(--app-leading-label) 22px;
+  flex: 0 0 auto;
+  gap: 0;
+  width: 82px;
+  min-width: 82px;
+  text-align: right;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total > span {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-label);
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total > strong {
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 18px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 22px;
+  letter-spacing: -.018em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-total.is-empty > strong {
+  font-size: var(--app-size-label);
+  line-height: 22px;
+}
+
+.my-payment-calendar-hero .calendar__grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+.my-payment-calendar-hero .calendar__grid-header {
+  display: block;
+  width: 100%;
+}
+
+.my-payment-calendar-hero .calendar__grid-header > tr {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.my-payment-calendar-hero .calendar__grid-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.my-payment-calendar-hero .calendar__grid-body > tr {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 4px;
+  width: 100%;
+  max-height: 80px;
+  opacity: 1;
+  margin-bottom: 8px;
+  transform: scale(1) translateY(0);
+  transform-origin: center top;
+  transition: max-height 300ms cubic-bezier(.22, 1, .36, 1),
+              opacity 200ms ease,
+              transform 300ms cubic-bezier(.22, 1, .36, 1),
+              margin-bottom 300ms cubic-bezier(.22, 1, .36, 1);
+  overflow: visible;
+}
+
+.my-payment-calendar-hero .calendar__grid-body > tr:last-child {
+  margin-bottom: 0;
+}
+
+.my-payment-calendar-hero .calendar__grid th,
+.my-payment-calendar-hero .calendar__grid td {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.my-payment-calendar-hero .calendar__header-cell {
+  min-width: 0;
+  padding: 0 0 4px;
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: var(--app-weight-medium);
+  line-height: 16px;
+  text-align: center;
+}
+
+.my-payment-calendar-hero .calendar__grid-body > tr:first-child > td {
+  margin-top: 0;
+}
+
+.my-payment-calendar-hero .calendar__cell {
+  position: relative;
+  overflow: visible;
+  display: grid;
+  width: 100%;
+  height: 68px;
+  min-height: 68px;
+  padding: 6px 3px 5px;
+  grid-template-rows: 32px 14px;
+  row-gap: 8px;
+  align-content: space-between;
+  justify-items: center;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--app-surface) 76%, var(--app-secondary-bg) 24%);
+  color: var(--app-muted);
+  font-family: var(--app-font-family);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 14px;
+  transition: background-color 180ms ease, box-shadow 180ms ease, transform 160ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.my-payment-calendar-hero .calendar__cell.has-event {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-outside-month="true"] {
+  background: transparent;
+  color: transparent;
+  opacity: 1;
+  pointer-events: none;
+}
+
+.my-payment-calendar-hero .calendar__cell[data-selected="true"] {
+  border-color: transparent;
+  background: var(--app-nav-active);
+  color: var(--app-text);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-today="true"] {
+  border-color: var(--app-border-strong);
+  background: color-mix(in srgb, var(--app-surface) 76%, var(--app-secondary-bg) 24%);
+}
+
+.my-payment-calendar-hero .calendar__cell.has-event[data-today="true"] {
+  background: var(--app-secondary-bg);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-selected="true"][data-today="true"] {
+  background: var(--app-nav-active);
+}
+
+.my-payment-calendar-hero .calendar__cell[data-focus-visible="true"] {
+  outline: 2px solid var(--app-focus);
+  outline-offset: 2px;
+}
+
+.my-payment-calendar-hero .calendar__cell:active,
+.my-payment-calendar-hero .calendar__cell[data-pressed="true"] {
+  transform: scale(.93);
+}
+
+.my-payment-calendar-hero .calendar__cell:not(.has-event):not([data-outside-month="true"]):hover {
+  background: color-mix(in srgb, var(--app-surface) 76%, var(--app-secondary-bg) 24%);
+}
+
+.my-payment-calendar-hero .my-payment-calendar-event-logos {
+  display: inline-flex;
+  grid-row: 1;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 32px;
+  gap: 2px;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-event-logos .service-logo {
+  flex: 0 1 32px;
+  min-width: 0;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-extra-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.my-payment-calendar-hero .my-payment-calendar-day-number {
+  grid-row: 2;
+  grid-column: 1;
+  justify-self: end;
+  margin-inline-end: 4px;
+  color: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .my-payment-calendar-hero .calendar__cell,
+  .my-payment-calendar-hero .calendar__grid-body > tr,
+  .cal-week-events-wrap {
+    transition: none !important;
+    transform: none !important;
+  }
+}

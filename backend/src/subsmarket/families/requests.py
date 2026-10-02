@@ -120,7 +120,7 @@ def create_join_request(
         family_id=family.id,
         user_id=user_id,
         status=ACTIVE_REQUEST_STATUS,
-        expires_at=now + timedelta(hours=24),
+        expires_at=now + timedelta(hours=5),
     )
     db.add(request)
     db.flush()

@@ -179,8 +179,52 @@ test("capture 11: actions screen with populated archive", async ({ page }) => {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${outDir}/screen_actions_archive_expanded.png` });
 
+  // Light theme capture
+  await page.evaluate(() => document.documentElement.classList.add("tma-light"));
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: `${outDir}/screen_actions_archive_light.png` });
+  await page.evaluate(() => document.documentElement.classList.remove("tma-light"));
+
   // Switch to outbox tab and capture outbox archive (Покупок / Потрачено)
   await page.getByRole("button", { name: "Исходящие", exact: true }).click({ force: true });
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${outDir}/screen_actions_archive_outbox.png` });
+
+
+
+  // Test swiping / scrolling cards up under the pinned calendar
+  const feedScroll = page.getByTestId("actions-archive-feed-scroll").first();
+  if (await feedScroll.count() > 0) {
+    await feedScroll.evaluate((el) => {
+      el.scrollTop = 80;
+    });
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${outDir}/screen_actions_archive_scrolled.png` });
+  }
+
+  // Switch back to "Входящие" and test real horizontal swipe gesture
+  await page.getByRole("button", { name: "Входящие", exact: true }).click({ force: true });
+  await page.waitForTimeout(400);
+
+  const archiveViewport = page.locator(".actions-archive-content .actions-scope-swipe-viewport");
+  const box = await archiveViewport.boundingBox();
+  if (box) {
+    const startX = box.x + box.width * 0.8;
+    const midX = box.x + box.width * 0.45;
+    const endX = box.x + box.width * 0.1;
+    const y = box.y + box.height * 0.5;
+
+    // Start drag
+    await page.mouse.move(startX, y);
+    await page.mouse.down();
+    await page.mouse.move(midX, y, { steps: 5 });
+    await page.waitForTimeout(100);
+    await page.screenshot({ path: `${outDir}/screen_actions_archive_swipe_midway.png` });
+
+    // Release drag with inertia
+    await page.mouse.move(endX, y, { steps: 5 });
+    await page.mouse.up();
+    await page.waitForTimeout(450); // wait for spring physics
+    await page.screenshot({ path: `${outDir}/screen_actions_archive_swipe_completed.png` });
+  }
 });

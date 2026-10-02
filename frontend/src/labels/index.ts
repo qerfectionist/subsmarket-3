@@ -11,8 +11,8 @@ export const familyTypeLabels: Record<FamilyType, string> = {
 };
 
 export const familyKindLabels: Record<FamilyType, string> = {
-  subscription: "Семья подписки",
-  tariff: "Семья тарифа"
+  subscription: "Семейная подписка",
+  tariff: "Семейный тариф"
 };
 
 export const requestCancelReasonLabels: Record<string, string> = {

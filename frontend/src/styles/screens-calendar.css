@@ -1,0 +1,411 @@
+﻿/* 📅 Payment Calendar: Week Collapse Mode & Smooth Animations */
+.my-payment-calendar.is-week-mode table tbody.calendar__grid-body > tr:not(:has(.is-active-day)) {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  transform: scale(0.96) translateY(-4px);
+  pointer-events: none;
+}
+
+.cal-week-events-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: grid-template-rows 300ms cubic-bezier(.22, 1, .36, 1),
+              opacity 220ms ease,
+              transform 300ms cubic-bezier(.22, 1, .36, 1);
+}
+.cal-week-events-wrap.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+.cal-week-events-inner {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cal-week-event-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--app-surface-inset, rgba(255, 255, 255, 0.04));
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: background-color 180ms ease;
+}
+.cal-week-event-info {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-week-event-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--app-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-week-event-kind {
+  font-size: 12px;
+  color: var(--app-muted);
+}
+.cal-week-event-price {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.cal-week-event-price strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--app-text);
+  font-variant-numeric: tabular-nums;
+}
+.cal-week-event-price span {
+  font-size: 11.5px;
+  color: var(--app-muted);
+}
+.my-family-role-control {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+.my-family-role-picker {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  gap: 6px;
+  width: min(220px, calc(100vw - 32px));
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--app-control-border);
+  border-radius: 18px;
+  background: var(--app-control-material);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--app-shadow);
+  color: var(--app-text);
+  animation: my-family-role-picker-in 180ms cubic-bezier(.22, 1, .36, 1) both;
+  transform-origin: top right;
+}
+.my-family-role-picker-label {
+  padding: 3px 8px 2px;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+}
+.my-family-role-options { display: grid; gap: 8px; }
+.my-family-role-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--app-touch-min);
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-text);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-caption);
+  text-align: left;
+  transition: background-color 160ms ease, transform 140ms ease;
+}
+.my-family-role-option:hover { background: var(--app-secondary-bg); }
+.my-family-role-option:active { transform: scale(.985); }
+.my-family-role-option.is-active { background: var(--app-secondary-bg); }
+.my-family-role-option-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--app-secondary-bg);
+  color: var(--app-muted);
+}
+.my-family-role-option.is-active .my-family-role-option-icon { color: var(--app-text); }
+.my-family-role-option > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
+.my-family-role-option > .sm-system-symbol:last-child { flex: 0 0 auto; color: var(--app-text); }
+.my-family-filter-actions { position: relative; display: inline-flex; }
+.my-family-role-reset {
+  width: 100%;
+  min-height: var(--app-touch-min);
+  margin-top: 2px;
+  padding: 6px 8px;
+  border: 0;
+  border-top: 1px solid var(--app-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-medium);
+  text-align: left;
+}
+.my-family-role-reset:hover { background: var(--app-surface-inset); color: var(--app-text); }
+@keyframes my-family-role-picker-in {
+  from { opacity: 0; transform: translateY(-4px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .my-family-role-picker { animation: none; }
+  .my-family-role-option { transition: none; }
+}
+@media (max-width: 440px) {
+  .my-family-filter-row {
+    flex-wrap: nowrap;
+    column-gap: 6px;
+    row-gap: 0;
+  }
+  .my-family-section-heading {
+    flex: 0 0 auto;
+    margin-right: auto;
+  }
+  .app-shell :is(.my-screen, .actions-screen) .my-family-filter-row .sm-market-filter-chip,
+  .app-shell :is(.my-screen, .actions-screen) .my-family-filter-row .sm-history-filter-chip {
+    gap: 4px;
+    min-width: 0;
+    padding-inline: 13px;
+    font-size: 12px;
+  }
+  .my-family-filter-row > .my-family-role-control,
+  .my-family-filter-row > .my-family-filter-actions {
+    flex: 0 1 auto;
+  }
+  .my-family-filter-row > .my-family-filter-actions { margin-left: 0; }
+}
+@media (max-width: 360px) {
+  .my-family-filter-row { flex-wrap: wrap; row-gap: 8px; }
+  .my-family-section-heading { flex: 1 0 100%; }
+}
+:is(.my-screen-filters, .actions-screen-filters) .product-scope-switch { width: 100%; }
+:is(.my-screen, .actions-screen) .product-scope-switch {
+  --scope-position: 0;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: var(--app-segment-gap);
+  min-height: 44px;
+  padding: var(--app-segment-padding);
+  border: 1px solid var(--app-control-border);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-control-material);
+  box-shadow: var(--app-control-shadow);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+.my-screen .product-scope-switch {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.actions-screen .product-scope-switch {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+:is(.my-screen, .actions-screen) .product-scope-switch button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  height: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-caption);
+  transition: color 220ms ease;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+:is(.my-screen, .actions-screen) .product-scope-switch button.ui-button-primary,
+:is(.my-screen, .actions-screen) .product-scope-switch button[aria-pressed="true"] {
+  color: var(--app-text) !important;
+}
+.my-screen .product-scope-switch::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: var(--app-segment-padding) auto var(--app-segment-padding) var(--app-segment-padding);
+  /* Три колонки и два gap: ширина индикатора равна ширине сегмента. */
+  width: calc((100% - 2 * var(--app-segment-padding) - 2 * var(--app-segment-gap)) / 3);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-nav-active);
+  box-shadow: var(--app-nav-active-shadow);
+  /* Шаг равен ширине сегмента плюс gap, иначе индикатор уезжает от подписи. */
+  transform: translateX(calc(var(--scope-position, 0) * (100% + var(--app-segment-gap))));
+  transition: none;
+  pointer-events: none;
+}
+.actions-screen .product-scope-switch::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: var(--app-segment-padding) auto var(--app-segment-padding) var(--app-segment-padding);
+  width: calc((100% - 2 * var(--app-segment-padding) - var(--app-segment-gap)) / 2);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-nav-active);
+  box-shadow: var(--app-nav-active-shadow);
+  transform: translateX(calc(var(--scope-position, 0) * (100% + var(--app-segment-gap))));
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+:is(.my-screen, .actions-screen) .product-scope-switch[data-scope-dragging="true"]::before {
+  transition: none;
+}
+:is(.my-screen, .actions-screen) .product-scope-switch button { position: relative; z-index: 1; }
+:is(.my-screen, .actions-screen) .product-scope-switch button.ui-button-tertiary {
+  border: 0;
+  background: transparent;
+  color: var(--app-muted);
+}
+.my-product-scope-swipe-viewport,
+.my-product-scope-swipe-track,
+.my-product-scope-swipe-pane,
+.my-product-scope-swipe-pane *,
+.actions-scope-swipe-viewport,
+.actions-scope-swipe-track,
+.actions-scope-swipe-pane,
+.actions-scope-swipe-pane * {
+  touch-action: pan-y;
+}
+.my-product-scope-swipe-viewport,
+.actions-scope-swipe-viewport {
+  min-width: 0;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  overscroll-behavior-x: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.my-product-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll,
+.actions-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll,
+.actions-scope-swipe-viewport[data-swiping="true"] .actions-archive-feed-scroll {
+  overflow-y: hidden !important;
+  touch-action: none !important;
+}
+.my-product-scope-swipe-track {
+  height: 100%;
+  align-items: stretch;
+  display: flex;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: translate3d(0, 0, 0);
+  width: calc(300% + 32px);
+  gap: 16px;
+  will-change: transform;
+}
+.actions-scope-swipe-track {
+  height: 100%;
+  align-items: stretch;
+  display: flex;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: translate3d(0, 0, 0);
+  width: calc(200% + 16px);
+  gap: 16px;
+  will-change: transform;
+}
+.my-product-scope-swipe-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 calc((100% - 32px) / 3);
+  width: calc((100% - 32px) / 3);
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding-inline: 0;
+  overflow: hidden;
+}
+.actions-scope-swipe-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 calc((100% - 16px) / 2);
+  width: calc((100% - 16px) / 2);
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  padding-inline: 0;
+  overflow: hidden;
+}
+.my-product-scope-swipe-pane[aria-hidden="true"],
+.actions-scope-swipe-pane[aria-hidden="true"] { pointer-events: none; }
+.my-screen .my-account-listings {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  gap: 10px;
+}
+.my-accounts-header-scope {
+  display: grid;
+  min-width: 0;
+}
+.my-screen .sm-listing-copy > span,
+.my-screen .sm-listing-price > span,
+.my-screen .sm-listing-detail,
+.my-screen .sm-market-family-avatar-name {
+  color: color-mix(in srgb, var(--app-text) 64%, var(--app-surface));
+  font-size: 14px;
+  line-height: 1.3;
+}
+.my-screen .my-listings-toolbar {
+  align-items: center;
+  display: flex;
+  gap: var(--app-space-3);
+  justify-content: space-between;
+  min-height: var(--app-touch-min);
+  flex-shrink: 0;
+}
+.my-screen .my-account-listings-heading {
+  flex: 1 1 auto;
+  gap: var(--app-space-2);
+  justify-content: flex-start;
+  min-width: 0;
+}
+.my-screen .my-account-listings-heading h2 {
+  min-width: 0;
+}
+.my-screen .my-account-listings-heading > .legacy-badge {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 4px 8px;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}
+.app-shell button.my-listings-create-button {
+  flex: 0 0 auto;
+  min-height: var(--app-touch-min);
+  padding: 8px 14px;
+  white-space: nowrap;
+}
+.actions-screen .request-card { border: 1px solid var(--app-control-border); box-shadow: var(--app-control-shadow); }
+.actions-screen .request-card-dates { display: grid; gap: 2px; }
+.actions-screen .request-card-pending .request-card-heading > .legacy-badge { background: var(--app-warning-soft); color: var(--app-warning); }
+.actions-screen .request-card-accepted .request-card-heading > .legacy-badge { background: var(--app-success-soft); color: var(--app-success); }

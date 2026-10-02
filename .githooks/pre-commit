@@ -1,0 +1,21 @@
+#!/bin/sh
+# Fast Git pre-commit hook (0.5s check)
+
+# 1. Whitespace and newline hygiene
+git diff --cached --check
+if [ $? -ne 0 ]; then
+    echo "ERROR: Aborting commit due to whitespace/formatting errors in staged diff." >&2
+    exit 1
+fi
+
+# 2. Fast lint on modified Python files
+STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
+if [ -n "$STAGED_PY" ]; then
+    node scripts/run-python.mjs -m ruff check $STAGED_PY
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Aborting commit due to ruff linting errors." >&2
+        exit 1
+    fi
+fi
+
+exit 0

@@ -1,8 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { initFrontendObservability } from "./observability";
 import { App } from "./App";
 import { Toaster, ToastProvider } from "./components/ui";
+
+initFrontendObservability();
 import "@heroui/styles";
 import "./styles/tokens.css";
 import "./styles.css";

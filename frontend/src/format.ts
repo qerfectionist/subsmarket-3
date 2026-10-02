@@ -1,20 +1,79 @@
 import { errorLabels, statusLabels } from "./labels";
 import type { Family, FamilyRequest, FamilyService, MyFamily } from "./types";
 
+export const DEFAULT_FAMILY_VARIANTS: Record<string, string> = {
+  netflix: "Premium",
+  spotify: "Family",
+  "google one": "2 ТБ",
+  "google-one": "2 ТБ",
+  "apple music": "Family",
+  "apple-music": "Family",
+  "apple one": "Family",
+  "apple-one": "Family",
+  "youtube premium": "Family",
+  "youtube-premium": "Family",
+  "яндекс плюс": "Мульти",
+  "yandex plus": "Мульти",
+  "yandex-plus": "Мульти",
+  "hbo max": "Ultimate",
+  "hbo-max": "Ultimate",
+  "disney+": "Premium",
+  "disney plus": "Premium",
+  "disney-plus": "Premium",
+  "icloud+": "2 ТБ",
+  duolingo: "Super",
+  mybook: "Премиум",
+  "microsoft 365": "Family",
+  kaspersky: "Standard"
+};
+
 export function serviceTitle(service: FamilyService) {
-  return `${service.name}${service.variant ? ` ${service.variant}` : ""}`;
+  const variant = service.variant || DEFAULT_FAMILY_VARIANTS[service.name.trim().toLowerCase()];
+  return `${service.name}${variant ? ` ${variant}` : ""}`;
 }
 
 export function familyTitle(
-  family: Pick<
-    Family | FamilyRequest,
-    "family_type" | "service_name" | "service_variant" | "plan_name"
+  family: Partial<
+    Pick<
+      Family | FamilyRequest,
+      "family_type" | "service_name" | "service_variant" | "plan_name"
+    >
   >
 ) {
-  if (family.family_type === "tariff" && family.plan_name) {
-    return `${family.service_name} ${family.plan_name}`;
+  const serviceName = (family.service_name ?? "").trim();
+  if (!serviceName) {
+    return "Заявка в семью";
   }
-  return `${family.service_name}${family.service_variant ? ` ${family.service_variant}` : ""}`;
+
+  if (family.family_type === "tariff" && family.plan_name) {
+    const planName = family.plan_name.trim();
+    if (planName.toLowerCase().startsWith(serviceName.toLowerCase())) {
+      return planName;
+    }
+    return `${serviceName} ${planName}`;
+  }
+
+  const rawVariant = family.service_variant?.trim();
+  if (rawVariant) {
+    const variantLower = rawVariant.toLowerCase();
+    const serviceLower = serviceName.toLowerCase();
+    if (variantLower.startsWith(serviceLower)) {
+      const rest = rawVariant.slice(serviceLower.length).replace(/^[\s\-–—|•·:]+/, "").trim();
+      return rest ? `${serviceName} ${rest}` : serviceName;
+    }
+    if (serviceLower.endsWith(variantLower)) {
+      return serviceName;
+    }
+    return `${serviceName} ${rawVariant}`;
+  }
+
+  const lookupKey = serviceName.toLowerCase();
+  const defaultVariant = DEFAULT_FAMILY_VARIANTS[lookupKey];
+  if (defaultVariant) {
+    return `${serviceName} ${defaultVariant}`;
+  }
+
+  return serviceName;
 }
 
 export function statusText(status: string) {
@@ -198,4 +257,63 @@ export function futureDateISO(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Formats account title as "Service Tariff" (e.g. "ChatGPT Plus", "Canva Pro", "Gemini Advanced").
+ * Strips period/duration phrases like "годовая подписка", "на 1 месяц", etc.
+ */
+export function formatAccountTitle(serviceName?: string | null, title?: string | null): string {
+  const cleanService = (serviceName ?? "").trim();
+  if (!title) return cleanService;
+
+  let clean = title.trim();
+
+  // 1. Remove parentheses with duration info: e.g. "(на 1 месяц)", "(1 год)", "(12 мес)"
+  clean = clean.replace(/\s*\([^)]*?(?:месяц|мес|год|дн|week|month|year)[^)]*?\)/gi, "");
+
+  // 2. Remove adjectives like "годовая подписка", "годовая", "месячная", "пожизненная", "бессрочная"
+  clean = clean.replace(/\s*[-–—|•·/]?\s*(?:годов[а-я]*|месячн[а-я]*|пожизненн[а-я]*|бессрочн[а-я]*)(?:\s+подписк[а-я]*)?(?:\s+на\s+.*)?$/iu, "");
+
+  // 3. Remove period/duration phrases at the end:
+  // e.g. "на 1 месяц", "на 12 месяцев", "на месяц", "на 1 год", "1 месяц", "12 месяцев", "1 год", "3 месяца"
+  clean = clean.replace(/\s*[-–—|•·/]?\s*(?:на\s+)?(?:\d+\s+)?(?:месяц[а-я]*|мес|год[а-я]*|лет|дн[а-я]*)(?:\s.*)?$/iu, "");
+
+  // 4. Remove standalone "подписка" or "подписка на ..."
+  clean = clean.replace(/\s*[-–—|•·/]?\s*подписк[а-я]*(?:\s+на\s+.*)?$/iu, "");
+
+  // 5. Remove English duration suffixes: "1m", "1y", "1 month", "1 year", "annual", "yearly", "monthly"
+  clean = clean.replace(/\s*[-–—|•·/]?\s*(?:1\s*m|1\s*y|\d+\s*months?|\d+\s*years?|monthly|yearly|annual)(?:\s.*)?$/iu, "");
+
+  // 6. Clean trailing separators/punctuation
+  clean = clean.replace(/[\s\-_–—|•·/]+$/, "").trim();
+
+  if (!clean) {
+    return cleanService;
+  }
+
+  if (!cleanService) {
+    return clean;
+  }
+
+  const cleanLower = clean.toLowerCase();
+  const serviceLower = cleanService.toLowerCase();
+
+  // If clean title already starts with service name:
+  // E.g. clean = "Canva Pro", service = "Canva" -> "Canva Pro"
+  // E.g. clean = "Canva - Pro", service = "Canva" -> "Canva Pro"
+  if (cleanLower.startsWith(serviceLower)) {
+    const rest = clean.slice(serviceLower.length).replace(/^[\s\-–—|•·:]+/, "").trim();
+    return rest ? `${cleanService} ${rest}` : cleanService;
+  }
+
+  // Handle special case like ChatGPT vs Chat GPT
+  const normalizedClean = cleanLower.replace(/\s+/g, "");
+  const normalizedService = serviceLower.replace(/\s+/g, "");
+  if (normalizedClean.startsWith(normalizedService)) {
+    return clean;
+  }
+
+  // If clean title is just the tariff (e.g. "Pro", "Plus", "Advanced")
+  return `${cleanService} ${clean}`;
 }

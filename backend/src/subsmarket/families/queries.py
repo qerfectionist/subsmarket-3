@@ -102,6 +102,16 @@ def to_family_request_out(request: FamilyRequest) -> FamilyRequestOut:
         decided_at=request.decided_at,
         cancelled_at=request.cancelled_at,
         expired_at=request.expired_at,
+        member_share_kzt=(
+            getattr(request.family, "member_share_kzt", None)
+            if getattr(request, "family", None)
+            else None
+        ),
+        price_kzt=(
+            getattr(request.family, "member_share_kzt", None)
+            if getattr(request, "family", None)
+            else None
+        ),
     )
 
 

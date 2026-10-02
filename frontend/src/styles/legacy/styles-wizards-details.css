@@ -1,0 +1,494 @@
+.family-overview-facts div + div {
+  border-left: 1px solid var(--app-border);
+}
+
+.family-overview-facts dt,
+.family-overview-facts dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-facts dt {
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.family-overview-facts dd {
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.family-overview-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.family-overview-copy p {
+  color: var(--app-muted);
+  display: -webkit-box;
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.family-overview-copy p + p {
+  background: var(--app-secondary-bg);
+  border-radius: var(--app-radius-sm);
+  color: var(--app-text);
+  padding: 7px 9px;
+  -webkit-line-clamp: 1;
+}
+
+.family-detail-status-section .status-block {
+  align-items: center;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  box-shadow: none;
+  display: grid;
+  gap: 2px;
+  padding: 10px 13px;
+}
+
+.family-detail-status-section .status-block strong {
+  font-size: 14px;
+}
+
+.family-detail-status-section .status-block p {
+  color: var(--app-muted);
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.family-flow-compact {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  padding: 8px;
+}
+
+.family-flow-compact .flow-steps {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.family-flow-compact .flow-step {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 0;
+  padding: 2px;
+}
+
+.family-flow-compact .flow-step > span {
+  align-items: center;
+  background: var(--app-secondary-bg);
+  border-radius: 50%;
+  color: var(--app-muted);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 750;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.family-flow-compact .flow-step strong {
+  color: var(--app-muted);
+  font-size: 10px;
+  font-weight: 650;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-flow-compact .flow-step-done > span {
+  background: color-mix(in srgb, var(--app-success) 14%, var(--app-surface));
+  color: var(--app-success);
+}
+
+.family-flow-compact .flow-step-active > span {
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+}
+
+.family-flow-compact .flow-step-active strong,
+.family-flow-compact .flow-step-done strong {
+  color: var(--app-text);
+}
+
+.family-detail-actions:has(.workspace-actions:empty) {
+  display: none;
+}
+
+.family-detail-actions .workspace-actions {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.family-detail-actions .workspace-actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+.family-detail-actions button {
+  min-height: 44px;
+  width: 100%;
+}
+
+/* App-like home pass: compact status cards instead of promo-banner carousel. */
+.market-home .app-panel-body {
+  gap: 12px;
+}
+
+.market-home .market-search-box {
+  border-radius: var(--app-radius-lg);
+  min-height: 54px;
+  padding: 7px 14px;
+}
+
+.market-home .market-hero-wrap {
+  gap: 6px;
+}
+
+.market-home .market-hero-carousel {
+  display: grid;
+  gap: 10px;
+  grid-auto-columns: 100%;
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.market-home .market-hero-card {
+  gap: 5px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  min-height: 136px;
+  padding: 16px;
+  scroll-snap-align: start;
+}
+
+.market-home .market-hero-card span {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.market-home .market-hero-card strong {
+  font-size: 17px;
+  line-height: 1.12;
+}
+
+.market-home .market-hero-card p {
+  display: -webkit-box;
+  font-size: 13px;
+  line-height: 18px;
+  max-width: none;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.market-home .market-hero-card:last-child:nth-child(odd) {
+  grid-column: auto;
+}
+
+.market-home .market-hero-action {
+  font-size: 12px;
+  min-height: 28px;
+  padding: 5px 11px;
+}
+
+.market-home .market-hero-dots {
+  display: flex;
+}
+
+.market-home .market-fast-grid {
+  gap: 10px;
+  margin-top: 0;
+}
+
+.market-home .market-fast-card {
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  min-height: 72px;
+  padding: 10px 11px;
+}
+
+.market-home .market-fast-icon {
+  border-radius: var(--app-radius-md);
+  height: 42px;
+  width: 42px;
+}
+
+.market-home .market-fast-copy strong {
+  font-size: 14px;
+  line-height: 1.12;
+}
+
+.market-home .market-fast-copy small {
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.market-home .market-recommendations .wallet-list-group {
+  border-radius: var(--app-radius-lg);
+}
+
+.market-home .market-recommendations .family-list-item-compact [data-testid="open-family-button"] {
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  min-height: 50px;
+  padding: 6px 11px;
+}
+
+.market-home .market-recommendations .service-logo {
+  border-radius: var(--app-radius-sm);
+  height: 34px !important;
+  width: 34px !important;
+}
+
+.market-home .market-more-row {
+  min-height: 40px;
+  padding: 0 11px;
+}
+
+.action-summary {
+  background: var(--app-surface);
+  border-radius: var(--app-radius-lg);
+  box-shadow: 0 1px 2px rgba(28, 28, 30, 0.04);
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.action-summary > div {
+  background: var(--app-secondary-bg);
+  display: grid;
+  gap: 4px;
+  min-height: 72px;
+  padding: 12px 8px;
+}
+
+.action-summary span {
+  color: var(--app-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.action-summary strong {
+  color: var(--app-text);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* UI/UX stabilization: real wizard panes and compact operational hierarchy. */
+.screen-body-inset {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.wizard-progress {
+  background: var(--app-secondary-bg);
+  border-radius: var(--app-radius-pill);
+  height: 4px;
+  overflow: hidden;
+}
+
+.wizard-progress-bar {
+  background: var(--app-accent);
+  border-radius: inherit;
+  height: 100%;
+  transition: width 180ms ease;
+}
+
+/* Market dock is isolated from the legacy bottom-nav cascade. */
+
+.subs-screen-scroll {
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding-bottom: calc(
+    112px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom)
+  );
+  scroll-padding-bottom: calc(
+    112px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom)
+  );
+  scrollbar-width: none;
+}
+
+.subs-screen-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.wizard-steps {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: -4px 0 0;
+  padding: 0;
+}
+
+.wizard-step {
+  align-items: center;
+  color: var(--app-muted);
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+}
+
+.wizard-step-index {
+  align-items: center;
+  background: var(--app-secondary-bg);
+  border-radius: 50%;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 750;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.wizard-step-label {
+  font-size: 11px;
+  font-weight: 650;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-step-current {
+  color: var(--app-text);
+}
+
+.wizard-step-current .wizard-step-index,
+.wizard-step-done .wizard-step-index {
+  background: var(--app-accent);
+  color: var(--app-accent-text);
+}
+
+.wizard-pane {
+  display: none;
+}
+
+.wizard-pane-active {
+  display: grid;
+  gap: 13px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wizard-pane-active > div:not(.half) {
+  grid-column: 1 / -1;
+}
+
+.create-wizard-footer {
+  grid-column: 1 / -1;
+}
+
+.wizard-nav {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wizard-nav > :only-child {
+  grid-column: 1 / -1;
+}
+
+.market-section-summary {
+  align-items: center;
+  background: var(--app-surface);
+  border-radius: var(--surface-radius);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 11px 12px 11px 15px;
+}
+
+.market-section-summary > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.market-section-summary strong {
+  font-size: 15px;
+  font-weight: 780;
+}
+
+.market-section-summary span {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.market-section-summary button {
+  background: var(--app-accent-soft);
+  border: 0;
+  border-radius: var(--app-radius-md);
+  color: var(--app-accent);
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 780;
+  min-height: 40px;
+  padding: 0 15px;
+}
+
+@media (max-width: 370px) {
+  .wizard-step-label {
+    display: none;
+  }
+
+  .wizard-step {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 370px) {
+  .market-home .market-hero-carousel {
+    gap: 8px;
+  }
+
+  .market-home .market-hero-card {
+    min-height: 128px;
+    padding: 12px;
+  }
+
+  .market-home .market-fast-card {
+    grid-template-columns: 40px minmax(0, 1fr);
+    min-height: 70px;
+    padding: 9px 10px;
+  }
+
+  .market-home .market-fast-icon {
+    height: 40px;
+    width: 40px;
+  }
+}

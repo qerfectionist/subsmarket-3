@@ -50,6 +50,8 @@ export type RequestUser = Schema["RequestUserOut"];
 
 export type FamilyRequest = Omit<Schema["FamilyRequestOut"], "family_type"> & {
   family_type: FamilyType;
+  member_share_kzt?: number | null;
+  price_kzt?: number | null;
 };
 
 export type OwnerFamilyRequest = FamilyRequest & {

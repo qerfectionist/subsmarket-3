@@ -1,0 +1,251 @@
+﻿/* ── Scroll-isolation: both screens become full-height flex containers ── */
+:is(.my-screen, .actions-screen) {
+  height: var(--app-viewport-stable-height, 100dvh);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+:is(.my-screen, .actions-screen) .app-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+:is(.my-screen, .actions-screen) .app-panel-head {
+  flex-shrink: 0;
+}
+:is(.my-screen, .actions-screen) .app-panel-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 10px;
+}
+.my-screen-filters,
+.actions-screen-filters {
+  display: grid;
+  gap: var(--app-space-3);
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+.app-shell:has(> :is(.my-screen, .actions-screen)) {
+  padding-bottom: 0;
+}
+.my-screen .app-panel-body {
+  gap: 10px;
+}
+
+/* ── Feed scroll containers & grouped feeds for My and Actions screens ── */
+.my-feed-scroll,
+.actions-tab-content {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: calc(var(--app-nav-clearance, 76px) + 24px);
+}
+.my-feed-scroll {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 240ms ease,
+              transform 320ms cubic-bezier(.22, 1, .36, 1),
+              flex 320ms cubic-bezier(.22, 1, .36, 1),
+              max-height 320ms cubic-bezier(.22, 1, .36, 1),
+              margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-feed-scroll::-webkit-scrollbar,
+.actions-tab-content::-webkit-scrollbar {
+  display: none;
+}
+.actions-feed-group {
+  display: contents;
+}
+.my-scope-pane-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  gap: 10px;
+}
+.my-family-filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  min-height: 44px;
+  flex-shrink: 0;
+  padding: 4px 4px 0;
+  box-sizing: border-box;
+}
+.my-family-filter-row button { min-height: 48px; padding-inline: 16px; }
+.my-account-filter-chips,
+.my-gigabytes-filter-chips { display: flex; gap: 8px; margin-left: auto; padding-right: 1px; }
+.my-family-section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  margin-right: auto;
+}
+.my-family-section-title {
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--app-text);
+  font-size: var(--app-size-section);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-section);
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+.my-family-section-count {
+  flex: 0 0 auto;
+  color: var(--app-muted);
+  font-size: var(--app-size-section);
+  font-weight: var(--app-weight-regular);
+  line-height: var(--app-leading-section);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.my-family-role-trigger {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.my-family-role-trigger > svg { flex: 0 0 14px; }
+.my-family-role-trigger > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-calendar-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  opacity: 0;
+  margin-top: calc(-1 * var(--app-space-4));
+  pointer-events: none;
+  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1),
+              opacity 240ms ease,
+              margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-calendar-disclosure.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 0;
+  pointer-events: auto;
+  flex: 1 1 0;
+  min-height: 0;
+}
+.my-calendar-disclosure.is-open ~ .my-feed-scroll {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  flex: 0 0 0px;
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: -10px;
+}
+.my-calendar-disclosure + .stack {
+  margin-top: 0;
+  transition: margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-calendar-disclosure:not(.is-open) + .stack {
+  margin-top: calc(-1 * var(--app-space-4));
+}
+.my-calendar-disclosure-content {
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+  transition: padding-bottom 320ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-calendar-disclosure.is-open .my-calendar-disclosure-content {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--app-nav-clearance, 76px) + 16px);
+}
+.my-calendar-disclosure.is-open .my-calendar-disclosure-content::-webkit-scrollbar {
+  display: none;
+}
+.my-calendar-month-viewport {
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.my-payment-calendar {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 12px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+  color: var(--app-text);
+}
+.my-payment-calendar-selection-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: grid-template-rows 280ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease, transform 280ms cubic-bezier(.22, 1, .36, 1);
+}
+.my-payment-calendar-selection-wrap.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+.my-payment-calendar-selection {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  border-top: 1px solid transparent;
+}
+.my-payment-calendar-selection-wrap.is-open .my-payment-calendar-selection {
+  padding-top: 10px;
+  border-top-color: var(--app-border);
+}
+.my-payment-calendar-selection-heading {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-medium);
+  line-height: var(--app-leading-label);
+}
+.my-payment-calendar-selection-list { display: grid; gap: 4px; }
+.my-payment-calendar-selection-item {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: var(--app-surface-inset);
+}
+.my-payment-calendar-selection-item strong,
+.my-payment-calendar-selection-item > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.my-payment-calendar-selection-item strong { font-weight: var(--app-weight-medium); }
+.my-payment-calendar-selection-item > span { color: var(--app-muted); }

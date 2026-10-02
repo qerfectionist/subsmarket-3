@@ -21,6 +21,12 @@ export const DEV_TELEGRAM_USERS: DevTelegramUser[] = [
     username: "demo_member",
     firstName: "Demo Member",
     label: "Member"
+  },
+  {
+    id: 200003,
+    username: "demo_newbie",
+    firstName: "New User",
+    label: "Newbie"
   }
 ];
 
@@ -29,7 +35,13 @@ export function isDevAuthEnabled() {
 }
 
 export function isDevUserSwitchVisible() {
-  return isDevAuthEnabled() && import.meta.env.VITE_SHOW_DEV_USER_SWITCH === "true";
+  if (!isDevAuthEnabled()) {
+    return false;
+  }
+  if (new URLSearchParams(window.location.search).get("dev_user") === "1") {
+    return true;
+  }
+  return import.meta.env.VITE_SHOW_DEV_USER_SWITCH === "true";
 }
 
 export function getActiveDevTelegramUser() {

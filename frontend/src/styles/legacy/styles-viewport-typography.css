@@ -1,0 +1,499 @@
+.family-list-item [data-testid="open-family-button"] [class*="label"],
+.family-list-item [data-testid="open-family-button"] [class*="Label"] {
+  font-weight: 760;
+}
+
+.family-row-price {
+  color: var(--app-text);
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+  min-width: 54px;
+}
+
+.family-row-price strong {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.family-row-price small {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.market-recommendations .wallet-list-group {
+  border-radius: var(--app-radius-lg);
+}
+
+.market-recommendations .family-list-item [data-testid="open-family-button"] {
+  min-height: 58px;
+  padding: 7px 12px;
+}
+
+.market-recommendations .family-list-item-compact [data-testid="open-family-button"] {
+  align-items: center;
+  background: transparent;
+  border-radius: 0;
+  color: var(--app-text);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  min-height: 54px;
+  padding: 7px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.family-compact-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.family-compact-copy strong {
+  color: var(--app-text);
+  font-size: 15px;
+  font-weight: 760;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-compact-copy small {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-recommendations .service-logo {
+  border-radius: var(--app-radius-sm);
+  height: 36px !important;
+  width: 36px !important;
+}
+
+.market-recommendations .service-logo svg {
+  height: 20px;
+  width: 20px;
+}
+
+.market-recommendations .service-logo-monogram {
+  font-size: 11px;
+}
+
+.market-recommendations .family-row-price {
+  min-width: 48px;
+}
+
+.market-recommendations .family-row-price strong {
+  font-size: 15px;
+}
+
+.market-recommendations .family-row-price small {
+  font-size: 11px;
+}
+
+.market-recommendations .market-more-row {
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.market-more-row {
+  align-items: center;
+  background: transparent;
+  border-radius: 0;
+  color: var(--app-muted);
+  display: flex;
+  font-size: 15px;
+  font-weight: 720;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 0 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.market-more-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-more-row strong {
+  color: var(--app-accent);
+  flex: 0 0 auto;
+  font-size: 15px;
+  font-weight: 760;
+  margin-left: 12px;
+}
+
+/* Mini App viewport lock: the browser page stays fixed, only the app surface scrolls. */
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+
+#root {
+  background: var(--app-bg);
+  font-family: var(--app-font-family);
+}
+
+.app-shell {
+  height: var(--app-viewport-stable-height, 100dvh);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(136px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom));
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-shell::-webkit-scrollbar {
+  display: none;
+}
+
+/* Color, radius, and icon logic pass:
+   neutral surfaces first; category colors only on icons and small active accents. */
+
+.market-hero-card,
+.market-fast-card,
+.wallet-list-group,
+.market-empty-row,
+.market-section-action,
+.market-section-soon {
+  border-radius: var(--surface-radius);
+}
+
+.market-fast-icon,
+.market-section-top .market-fast-icon {
+  border-radius: var(--icon-radius);
+}
+
+.market-fast-card {
+  background: var(--app-surface);
+  box-shadow: 0 1px 2px rgba(28, 28, 30, 0.04);
+}
+
+.market-fast-icon-blue {
+  background: var(--category-subscription-bg);
+  color: var(--category-subscription);
+}
+
+.market-fast-icon-green {
+  background: var(--category-tariff-bg);
+  color: var(--category-tariff);
+}
+
+.market-fast-icon-orange {
+  background: var(--category-gigabytes-bg);
+  color: var(--category-gigabytes);
+}
+
+.market-fast-icon-violet {
+  background: var(--category-accounts-bg);
+  color: var(--category-accounts);
+}
+
+.market-hero-card-blue,
+.market-hero-card-green,
+.market-hero-card-amber,
+.market-hero-card-violet {
+  background:
+    radial-gradient(circle at 92% 10%, rgba(36, 129, 204, 0.14), transparent 34%),
+    var(--app-surface);
+}
+
+.market-hero-card-green {
+  background:
+    radial-gradient(circle at 92% 10%, rgba(42, 168, 102, 0.13), transparent 34%),
+    var(--app-surface);
+}
+
+.market-hero-card-amber {
+  background:
+    radial-gradient(circle at 92% 10%, rgba(245, 158, 11, 0.14), transparent 34%),
+    var(--app-surface);
+}
+
+.market-hero-card-violet {
+  background:
+    radial-gradient(circle at 92% 10%, rgba(139, 92, 246, 0.12), transparent 34%),
+    var(--app-surface);
+}
+
+.market-hero-action {
+  background: var(--category-subscription-bg);
+  color: var(--category-subscription);
+}
+
+.market-hero-card-green .market-hero-action {
+  background: var(--category-tariff-bg);
+  color: var(--category-tariff);
+}
+
+.market-hero-card-amber .market-hero-action {
+  background: var(--category-gigabytes-bg);
+  color: var(--app-warning);
+}
+
+.market-hero-card-violet .market-hero-action {
+  background: var(--category-accounts-bg);
+  color: var(--category-accounts);
+}
+
+.market-hero-dots button {
+  background: rgba(118, 122, 128, 0.22);
+}
+
+.market-hero-dots .market-hero-dot-active {
+  background: var(--category-subscription);
+}
+
+/* Raiton-inspired typography pass: Manrope, calmer weights, 14/20 body rhythm. */
+body,
+.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item)),
+input:not(.input),
+select,
+textarea {
+  font-family: var(--app-font-family);
+}
+
+.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item)) {
+  font-weight: 600;
+}
+
+.market-hero-card span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.market-hero-card strong {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.16;
+}
+
+.market-hero-card p {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.market-hero-action,
+.market-more-row strong,
+.market-empty-row strong {
+  font-weight: 600;
+}
+
+.market-fast-copy strong,
+.family-compact-copy strong,
+.family-list-item [data-testid="open-family-button"] [class*="label"],
+.family-list-item [data-testid="open-family-button"] [class*="Label"] {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.market-fast-copy small,
+.family-compact-copy small,
+.family-row-price small,
+.market-more-row span,
+.market-empty-row span {
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.family-row-price strong {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 370px) {
+  .market-fast-grid {
+    gap: 10px;
+  }
+
+  .market-fast-card {
+    grid-template-columns: 44px minmax(0, 1fr);
+    min-height: 82px;
+    padding: 10px;
+  }
+
+  .market-fast-icon {
+    border-radius: var(--app-radius-md);
+    height: 44px;
+    width: 44px;
+  }
+}
+
+/* Family details: one compact overview surface instead of repeated cards. */
+.app-shell:has(.family-details-page) .app-topbar,
+.app-shell:has(.family-details-page) .dev-user-compact {
+  display: none;
+}
+
+.family-details-page .app-panel,
+.family-details-page .app-panel-body {
+  gap: 10px;
+}
+
+.family-detail-topbar {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  min-height: 46px;
+}
+
+.family-detail-icon-button {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 50%;
+  color: var(--app-text);
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  width: 42px;
+}
+
+.family-detail-heading {
+  min-width: 0;
+  text-align: center;
+}
+
+.family-detail-heading span {
+  color: var(--app-muted);
+  display: block;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.family-detail-heading h1 {
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-xl);
+  box-shadow: var(--app-shadow);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.family-overview-head {
+  align-items: center;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.family-overview-title {
+  min-width: 0;
+}
+
+.family-overview-title h2 {
+  font-size: 18px;
+  font-weight: 720;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-badges {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  margin-top: 5px;
+}
+
+.family-overview-badges .badge {
+  font-size: 10px;
+  padding: 4px 8px;
+}
+
+.family-overview-badges > span:not(.badge) {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.family-overview-metrics.detail-grid {
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.family-overview-metrics .detail-item {
+  background: var(--app-secondary-bg);
+  border: 0;
+  border-radius: var(--app-radius-md);
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.family-overview-metrics .detail-item span {
+  font-size: 10px;
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.family-overview-metrics .detail-item strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.family-overview-facts {
+  border-bottom: 1px solid var(--app-border);
+  border-top: 1px solid var(--app-border);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 8px 0;
+}
+
+.family-overview-facts div {
+  min-width: 0;
+  padding: 0 8px;
+}

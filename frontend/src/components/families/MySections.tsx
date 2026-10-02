@@ -664,12 +664,14 @@ export function MyRequestsSection({
   busy,
   isLoading,
   showEmpty = false,
+  cancellingIds,
   onCancelRequest
 }: {
   requests: FamilyRequest[];
   busy: string | null;
   isLoading?: boolean;
   showEmpty?: boolean;
+  cancellingIds?: Set<string>;
   onCancelRequest: (requestId: string) => void;
 }) {
   if (isLoading && requests.length === 0) {
@@ -698,6 +700,7 @@ export function MyRequestsSection({
           key={request.id}
           request={request}
           busy={busy !== null}
+          isArchiving={cancellingIds?.has(request.id)}
           onCancelRequest={onCancelRequest}
         />
       ))}

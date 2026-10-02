@@ -139,6 +139,8 @@ class FamilyRequestOut(BaseModel):
     decided_at: datetime | None
     cancelled_at: datetime | None
     expired_at: datetime | None
+    member_share_kzt: int | None = None
+    price_kzt: int | None = None
 
 
 class OwnerFamilyRequestOut(FamilyRequestOut):
