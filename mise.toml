@@ -11,6 +11,10 @@ run = "npm run dev"
 description = "Expose local Mini App to real Telegram via free HTTPS Cloudflare tunnel"
 run = "npm run tunnel"
 
+[tasks.snap]
+description = "Instant visual snapshot of the UI via Playwright"
+run = "node scripts/snap.mjs"
+
 [tasks.test]
 description = "Run backend tests"
 run = "npm run backend:test"
