@@ -25,3 +25,6 @@ frontend/.tmp-*.png
 
 .DS_Store
 Thumbs.db
+.gemini/
+fix.js
+add_test_requests*.py
