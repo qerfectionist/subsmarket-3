@@ -349,12 +349,12 @@ test("Actions switch resets filters when direction changes", async ({ page }) =>
   await page.getByTestId("actions-category-filter-chip").click();
   await page.getByTestId("actions-status-filter-chip").click();
   await expect(categoryLabel).not.toHaveText("Все");
-  await expect(statusLabel).not.toHaveText("Все");
+  await expect(statusLabel).not.toHaveText("Все статусы");
 
   const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
   await scopeSwitch.getByTestId("actions-tab-outbox").click();
   await expect(categoryLabel).toHaveText("Все");
-  await expect(statusLabel).toHaveText("Все");
+  await expect(statusLabel).toHaveText("Все статусы");
 });
 
 test("Actions scope indicator matches its segment geometry", async ({ page }) => {

@@ -21,7 +21,7 @@ export const actionsStatusFilterOptions: readonly {
   label: string;
   icon: SystemSymbolName;
 }[] = [
-  { value: "all", label: "Все", icon: "sort" },
+  { value: "all", label: "Все статусы", icon: "clock" },
   { value: "pending", label: "Ожидают", icon: "clock" },
   { value: "settled", label: "Завершенные", icon: "checkmark" }
 ];
