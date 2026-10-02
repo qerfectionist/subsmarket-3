@@ -159,36 +159,46 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   height: 44px;
   flex: 0 0 44px;
   padding: 0;
-  border: 1px solid transparent;
-  border-radius: 14px;
+  border: 0;
   background: transparent;
   color: var(--app-muted);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 140ms ease;
+  cursor: pointer;
+  transition: color 240ms cubic-bezier(.22, 1, .36, 1),
+              opacity 200ms cubic-bezier(.22, 1, .36, 1),
+              transform 280ms cubic-bezier(.34, 1.56, 0.64, 1);
 }
 .my-screen-context-action .sm-system-symbol {
   pointer-events: none;
+  transition: transform 280ms cubic-bezier(.34, 1.56, 0.64, 1);
+  will-change: transform;
 }
 @media (hover: hover) and (pointer: fine) {
   .my-screen-context-action:hover {
-    border-color: var(--app-control-border);
-    background: var(--app-secondary-bg);
+    background: transparent;
     color: var(--app-text);
   }
 }
 .my-screen-context-action.is-active {
-  border-color: var(--app-control-border);
-  background: var(--app-secondary-bg);
+  border: 0;
+  background: transparent;
   color: var(--app-text);
+}
+.my-screen-context-action.is-active .sm-system-symbol {
+  transform: scale(1.12);
 }
 .my-screen-context-action--orders {
   width: 44px;
   flex-basis: 44px;
   padding: 0;
 }
-.my-screen-context-action:active { transform: scale(.96); }
+.my-screen-context-action:active {
+  transform: scale(0.85);
+  opacity: 0.6;
+  transition: transform 70ms ease-out, opacity 70ms ease-out;
+}
 .my-screen-context-menu {
   position: absolute;
   z-index: 40;
@@ -315,7 +325,9 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   display: grid;
   gap: 10px;
 }
-.my-trade-request {
+.my-trade-request,
+.sm-listing.my-trade-request,
+article.my-trade-request {
   display: flex;
   flex-direction: column;
   border-radius: 20px;
@@ -325,6 +337,15 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
+  cursor: default;
+  transform: none !important;
+  transition: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+.my-trade-request:active,
+.sm-listing.my-trade-request:active,
+article.my-trade-request:active {
+  transform: none !important;
 }
 .my-trade-request-body {
   display: flex;
@@ -432,6 +453,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   font-size: 13px;
   line-height: 1;
   font-weight: 400;
+  font-style: normal;
   color: var(--app-muted);
   white-space: nowrap;
   flex-shrink: 0;
@@ -443,20 +465,247 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: var(--app-muted);
   flex-shrink: 0;
 }
+.my-trade-request-timer {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+  font-weight: 500;
+}
+.timer-circular-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--app-warning);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.timer-ring-svg {
+  width: 17px;
+  height: 17px;
+  transform: rotate(-90deg);
+  flex-shrink: 0;
+}
+.timer-ring-bg {
+  stroke: rgba(245, 158, 11, 0.22);
+}
+.timer-ring-val {
+  stroke: var(--app-warning);
+  transition: stroke-dashoffset 0.3s ease;
+}
+.my-trade-request-status.is-pending {
+  color: var(--app-warning);
+}
 .my-trade-request-status.is-pending .my-trade-request-dot {
   background: var(--app-warning);
 }
+.my-trade-request-status.is-accepted,
+.my-trade-request-status.is-approved {
+  color: var(--app-success);
+}
 .my-trade-request-status.is-accepted .my-trade-request-dot,
+.my-trade-request-status.is-approved .my-trade-request-dot,
 .my-trade-request-status.is-successful .my-trade-request-dot {
   background: var(--app-success);
 }
+.my-trade-request-status.is-closed {
+  color: var(--app-muted);
+}
 .my-trade-request-status.is-closed .my-trade-request-dot {
   background: var(--app-muted);
+}
+.my-trade-request-status.is-rejected,
+.my-trade-request-status.is-cancelled,
+.my-trade-request-status.is-expired {
+  color: var(--app-danger, #ef4444);
 }
 .my-trade-request-status.is-rejected .my-trade-request-dot,
 .my-trade-request-status.is-cancelled .my-trade-request-dot,
 .my-trade-request-status.is-expired .my-trade-request-dot {
   background: var(--app-danger, #ef4444);
+}
+
+.sm-listing-price.sm-listing-price-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 3px;
+  text-align: right;
+  min-width: 0;
+  white-space: nowrap;
+}
+.sm-listing-price.sm-listing-price-col .my-trade-request-status {
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 500;
+  gap: 5px;
+}
+.sm-listing-price.sm-listing-price-col .my-trade-request-dot {
+  width: 5px;
+  height: 5px;
+}
+
+/* Card archiving exit animation - Variant 3: Dissolve Up & Fade (Fintech / Apple) */
+@keyframes tradeCardArchiveOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    border-color: var(--app-border, rgba(255, 255, 255, 0.08));
+    box-shadow: none;
+    max-height: 220px;
+    margin-bottom: 0;
+  }
+  20% {
+    opacity: 0.95;
+    transform: translateY(0) scale(1);
+    border-color: rgba(255, 69, 58, 0.35);
+    box-shadow: 0 0 10px rgba(255, 69, 58, 0.12);
+  }
+  50% {
+    opacity: 0.25;
+    transform: translateY(-8px) scale(0.97);
+    filter: blur(0.5px);
+    max-height: 220px;
+    margin-bottom: 0;
+  }
+  80% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.94);
+    filter: blur(1.5px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: -10px;
+    border-color: transparent;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.92);
+    filter: blur(2px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: -10px;
+    border-color: transparent;
+    pointer-events: none;
+    overflow: hidden;
+  }
+}
+
+.sm-listing.is-archiving-out {
+  animation: tradeCardArchiveOut 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sm-listing.is-archiving-out .my-trade-request-actions {
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+  pointer-events: none;
+}
+
+/* Archive button receiving indicator pulse */
+@keyframes archivePulseReceive {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.28);
+    color: var(--app-accent, #0a84ff);
+  }
+  70% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.my-screen-context-action.is-receiving-item {
+  animation: archivePulseReceive 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.my-trade-request-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.my-trade-request-btn-cancel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: color var(--app-duration-press, 120ms) ease, opacity var(--app-duration-press, 120ms) ease;
+}
+.my-trade-request-btn-cancel::before,
+.my-trade-request-btn-remind::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+}
+.my-trade-request-btn-cancel:hover {
+  color: var(--app-text);
+}
+.my-trade-request-btn-cancel:active {
+  opacity: 0.7;
+}
+.my-trade-request-btn-cancel:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.my-trade-request-footer-actions-divider {
+  color: var(--app-divider, rgba(255, 255, 255, 0.15));
+  font-size: 13px;
+  line-height: 1;
+  user-select: none;
+}
+
+.my-trade-request-btn-remind {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: opacity var(--app-duration-press, 120ms) ease;
+}
+.my-trade-request-btn-remind:active {
+  opacity: 0.7;
+}
+.my-trade-request-btn-remind.is-disabled,
+.my-trade-request-btn-remind:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: var(--app-muted);
 }
 .my-trade-request-footer {
   display: flex;
@@ -552,6 +801,80 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: var(--app-surface-inset);
   border-top: 1px solid var(--app-divider, rgba(255, 255, 255, 0.06));
 }
+/* Prototype Styles */
+.timer-context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.timer-context-label {
+  font-size: 12px;
+  color: var(--app-muted);
+  white-space: nowrap;
+}
+.trade-timer-sub-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #f59e0b;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.trade-timer-sub-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  display: inline-block;
+}
+.actions-dev-prototype-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--app-radius-sm, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.actions-dev-prototype-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--app-muted);
+}
+.actions-dev-prototype-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.actions-dev-proto-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  background: var(--app-surface-inset);
+  color: var(--app-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  transition: all 120ms ease;
+}
+.actions-dev-proto-btn:active {
+  transform: scale(0.97);
+}
+.actions-dev-proto-btn.is-active {
+  background: var(--app-control-material, rgba(255, 255, 255, 0.16));
+  color: #fff;
+  border-color: var(--app-accent, #38bdf8);
+  font-weight: 600;
+}
 .app-shell .my-trade-request-actions button,
 .my-trade-request-actions button {
   display: inline-flex;
@@ -567,13 +890,80 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
   transition: transform var(--app-duration-press, 120ms) ease, opacity var(--app-duration-press, 120ms) ease;
+}
+.app-shell .my-trade-request-actions button[data-testid="trade-request-accept-btn"],
+.app-shell .my-trade-request-actions button[data-testid="trade-request-reject-btn"],
+.app-shell .my-trade-request-actions button[data-testid="trade-request-cancel-btn"],
+.app-shell .my-trade-request-actions button[data-testid="trade-request-remind-btn"],
+.my-trade-request-actions button[data-testid="trade-request-accept-btn"],
+.my-trade-request-actions button[data-testid="trade-request-reject-btn"],
+.my-trade-request-actions button[data-testid="trade-request-cancel-btn"],
+.my-trade-request-actions button[data-testid="trade-request-remind-btn"] {
+  flex: 1 1 0;
+  min-width: 110px;
 }
 .app-shell .my-trade-request-actions button:active:not(:disabled),
 .my-trade-request-actions button:active:not(:disabled) {
-  transform: scale(0.96);
-  opacity: 0.85;
+  transform: scale(0.97);
+  opacity: 0.9;
 }
+.app-shell .my-trade-request-actions button.is-countdown:active,
+.my-trade-request-actions button.is-countdown:active {
+  transform: scale(0.98);
+  opacity: 1;
+}
+.app-shell .my-trade-request-actions button:disabled,
+.my-trade-request-actions button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.app-shell .my-trade-request-actions button.is-countdown,
+.my-trade-request-actions button.is-countdown {
+  position: relative;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform var(--app-duration-press, 120ms) ease;
+}
+.app-shell .my-trade-request-actions button.is-countdown.is-reject,
+.my-trade-request-actions button.is-countdown.is-reject {
+  background: rgba(239, 68, 68, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+}
+.app-shell .my-trade-request-actions button.is-countdown.is-accept,
+.my-trade-request-actions button.is-countdown.is-accept {
+  background: rgba(34, 197, 94, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #4ade80 !important;
+}
+[data-theme="light"] .app-shell .my-trade-request-actions button.is-countdown.is-reject,
+[data-theme="light"] .my-trade-request-actions button.is-countdown.is-reject {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #dc2626 !important;
+}
+[data-theme="light"] .app-shell .my-trade-request-actions button.is-countdown.is-accept,
+[data-theme="light"] .my-trade-request-actions button.is-countdown.is-accept {
+  background: rgba(34, 197, 94, 0.12) !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+  color: #16a34a !important;
+}
+.action-countdown-svg {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.action-countdown-circle-progress {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  stroke-dasharray: 47.12;
+  stroke-dashoffset: 0;
+}
+
 /* ── Scroll-isolation: both screens become full-height flex containers ── */
 :is(.my-screen, .actions-screen) {
   height: var(--app-viewport-stable-height, 100dvh);
@@ -1126,7 +1516,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   -webkit-user-select: none;
 }
 .my-product-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll,
-.actions-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll {
+.actions-scope-swipe-viewport[data-swiping="true"] .my-feed-scroll,
+.actions-scope-swipe-viewport[data-swiping="true"] .actions-archive-feed-scroll {
   overflow-y: hidden !important;
   touch-action: none !important;
 }
@@ -1237,63 +1628,365 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .actions-screen .request-card-pending .request-card-heading > .legacy-badge { background: var(--app-warning-soft); color: var(--app-warning); }
 .actions-screen .request-card-accepted .request-card-heading > .legacy-badge { background: var(--app-success-soft); color: var(--app-success); }
 
-/* Actions archive disclosure */
-.actions-archive-disclosure {
+/* Actions archive disclosure & active view layout */
+.actions-screen .app-panel-body {
   display: grid;
-  grid-template-rows: 0fr;
-  min-width: 0;
-  opacity: 0;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  position: relative;
+  overflow: hidden;
+  gap: 10px;
+}
+.actions-screen .actions-screen-filters {
+  grid-row: 1;
+  grid-column: 1;
+  z-index: 2;
+}
+.actions-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actions-dev-constructor {
+  background: var(--app-bg-card, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--app-radius-card, 16px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+  animation: slideDownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.actions-dev-constructor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.actions-dev-constructor-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.actions-dev-constructor-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--app-muted);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.actions-dev-constructor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.actions-dev-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: var(--app-text);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+.actions-dev-chip:active {
+  background: rgba(255, 255, 255, 0.14);
+  transform: scale(0.96);
+}
+
+.actions-dev-chip-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.actions-dev-constructor-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actions-dev-btn-all {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  background: var(--app-accent, #3390ec);
+  color: var(--app-accent-text, #000000);
+  border: 0;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.actions-dev-btn-all:active {
+  opacity: 0.85;
+  transform: scale(0.97);
+}
+
+.actions-dev-btn-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 10px;
+  background: rgba(255, 59, 48, 0.12);
+  color: #ff453a;
+  border: 1px solid rgba(255, 59, 48, 0.25);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.actions-dev-btn-clear:disabled {
+  opacity: 0.35;
+  cursor: default;
   pointer-events: none;
-  margin-top: calc(-1 * var(--app-space-4));
-  transition: grid-template-rows 320ms cubic-bezier(.22, 1, .36, 1),
-              opacity 240ms ease,
-              margin-top 320ms cubic-bezier(.22, 1, .36, 1);
+}
+
+.actions-dev-btn-clear:active:not(:disabled) {
+  background: rgba(255, 59, 48, 0.22);
+  transform: scale(0.97);
+}
+
+.actions-archive-disclosure {
+  grid-row: 2;
+  grid-column: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-16px) scale(0.985);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 280ms cubic-bezier(.22, 1, .36, 1),
+              transform 320ms cubic-bezier(.22, 1, .36, 1),
+              visibility 320ms;
+  will-change: transform, opacity;
 }
 .actions-archive-disclosure.is-open {
-  grid-template-rows: 1fr;
   opacity: 1;
-  margin-top: 0;
+  transform: translateY(0) scale(1);
   pointer-events: auto;
-  flex: 1 1 0;
-  min-height: 0;
+  visibility: visible;
+  transition: opacity 300ms cubic-bezier(.22, 1, .36, 1),
+              transform 340ms cubic-bezier(.22, 1, .36, 1),
+              visibility 0ms;
 }
-.actions-archive-disclosure.is-open ~ .my-family-filter-row,
-.actions-archive-disclosure.is-open ~ .actions-scope-swipe-viewport {
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-  flex: 0 0 0px;
-  max-height: 0;
+
+.actions-active-view {
+  grid-row: 2;
+  grid-column: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   overflow: hidden;
-  padding-top: 0;
-  padding-bottom: 0;
-  margin-top: -10px;
-  transition: max-height 320ms cubic-bezier(.22, 1, .36, 1),
-              opacity 200ms ease,
-              transform 320ms cubic-bezier(.22, 1, .36, 1);
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 300ms cubic-bezier(.22, 1, .36, 1),
+              transform 340ms cubic-bezier(.22, 1, .36, 1),
+              visibility 0ms;
+  will-change: transform, opacity;
+}
+.actions-active-view.is-hidden {
+  opacity: 0;
+  transform: translateY(16px) scale(0.985);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 240ms cubic-bezier(.22, 1, .36, 1),
+              transform 280ms cubic-bezier(.22, 1, .36, 1),
+              visibility 280ms;
 }
 .actions-archive-disclosure-content {
   min-height: 0;
   overflow: hidden;
   padding-bottom: 0;
-  transition: padding-bottom 320ms cubic-bezier(.22, 1, .36, 1);
-}
-.actions-archive-disclosure.is-open .actions-archive-disclosure-content {
-  overflow-y: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(var(--app-nav-clearance, 76px) + 16px);
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
 }
 .actions-archive-section {
   display: flex;
   flex-direction: column;
   gap: var(--app-space-2, 8px);
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
 }
 .actions-archive-content {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.actions-archive-content > .my-payment-calendar {
+  flex-shrink: 0;
+  transition: transform 340ms cubic-bezier(.22, 1, .36, 1), opacity 300ms cubic-bezier(.22, 1, .36, 1);
+  will-change: transform, opacity;
+}
+.actions-archive-disclosure:not(.is-open) .actions-archive-content > .my-payment-calendar {
+  transform: translateY(-8px);
+  opacity: 0.85;
+}
+.actions-archive-disclosure.is-open .actions-archive-content > .my-payment-calendar {
+  transform: translateY(0);
+  opacity: 1;
+}
+.actions-archive-content > .actions-scope-swipe-viewport {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+.actions-archive-content .actions-scope-swipe-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.actions-archive-feed-scroll {
+  flex: 1 1 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-width: none;
+  padding-bottom: calc(var(--app-nav-clearance, 76px) + 24px);
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 8px;
+}
+.actions-archive-feed-scroll::-webkit-scrollbar {
+  display: none;
+}
+.actions-archive-date-group {
+  scroll-snap-align: start;
+}
+/* ── LAYER 3: Actions Archive Card (Clean Native SubsMarket Listing) ── */
+.actions-archive-card {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+.actions-archive-card .sm-listing-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.actions-archive-card .actions-archive-card-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--app-muted);
+}
+.actions-archive-card .actions-archive-price {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text);
+  white-space: nowrap;
+}
+.actions-archive-card .actions-archive-price.is-positive {
+  color: var(--app-success, #30d158);
+}
+.actions-archive-card .actions-archive-rejection-text {
+  font-size: 12px;
+  color: var(--app-danger, #ff453a);
+  margin-top: 1px;
+}
+.actions-archive-card .actions-archive-date {
+  font-size: 12px;
+  color: var(--app-muted);
+  flex-shrink: 0;
+}
+.actions-archive-card .sm-market-family-owner[role="button"] {
+  cursor: pointer;
+  border-radius: var(--app-radius-sm, 12px);
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: opacity 120ms ease;
+}
+.actions-archive-card .sm-market-family-owner[role="button"]:active {
+  opacity: 0.7;
+}
+
+.actions-archive-card .actions-archive-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.actions-archive-card .actions-archive-reapply-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--app-secondary-bg, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--app-radius-sm, 12px);
+  color: var(--app-text, #ffffff);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.actions-archive-card .actions-archive-reapply-btn:hover {
+  background: var(--app-card-bg-active, rgba(255, 255, 255, 0.12));
+}
+.actions-archive-card .actions-archive-reapply-btn:active:not(:disabled) {
+  transform: scale(0.98);
+  background: var(--app-card-bg-active, rgba(255, 255, 255, 0.14));
+}
+.actions-archive-card .actions-archive-reapply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* LAYER 1: Summary Cards matching SubsMarket metrics */
@@ -1347,16 +2040,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   font-weight: var(--app-weight-medium);
   color: var(--app-muted);
 }
-.actions-archive-all-btn {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  font-size: var(--app-size-label);
-  font-weight: var(--app-weight-medium);
-  color: var(--app-accent, #3b82f6);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
+
 .actions-archive-days-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1858,8 +2542,20 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   gap: 6px;
 }
 .skeleton, .skeleton-card { background: var(--app-secondary-bg); border-color: transparent; }
-.tma-dark [data-monochrome-source="dark"] img { filter: brightness(0) invert(1); }
-.tma-light [data-monochrome-source="light"] img { filter: brightness(0); }
+/* Monochrome / negative logo contrast handling */
+[data-monochrome="true"] img,
+[data-monochrome-source="dark"] img {
+  filter: brightness(0) invert(1);
+}
+
+.tma-light [data-monochrome="true"] img,
+.tma-light [data-monochrome-source="dark"] img,
+.tma-light [data-monochrome-source="light"] img,
+[data-theme="light"] [data-monochrome="true"] img,
+[data-theme="light"] [data-monochrome-source="dark"] img,
+[data-theme="light"] [data-monochrome-source="light"] img {
+  filter: brightness(0);
+}
 @media (max-width: 360px) {
   .app-shell .gb-header h1 { font-size: 1.5rem; }
   .gb-detail-card, .gb-form, .gb-buy-box { padding: 20px; }
@@ -1875,8 +2571,8 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .my-history-disclosure + *,
   .actions-archive-disclosure,
   .actions-archive-disclosure-content,
-  .actions-archive-disclosure.is-open ~ .my-family-filter-row,
-  .actions-archive-disclosure.is-open ~ .actions-scope-swipe-viewport { transition: none; }
+  .actions-active-view,
+  .actions-archive-content > .my-payment-calendar { transition: none; transform: none !important; }
   .app-shell button, .wizard-progress-bar { transition: none; transform: none !important; }
   .my-product-scope-swipe-track,
   .actions-scope-swipe-track { will-change: auto; }
@@ -2109,25 +2805,6 @@ body, #root {
   gap: 8px;
 }
 
-.my-payment-calendar-hero .actions-archive-all-btn {
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: var(--app-secondary-bg);
-  color: var(--app-accent, #3b82f6);
-  font-size: 11px;
-  font-weight: var(--app-weight-medium);
-  border: 1px solid rgb(255 255 255 / 8%);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: opacity 120ms ease;
-}
-
-.my-payment-calendar-hero .actions-archive-all-btn:active {
-  opacity: 0.7;
-}
 
 .app-shell button.my-payment-calendar-month-button {
   display: grid;
@@ -2208,6 +2885,27 @@ body, #root {
   touch-action: pan-y;
 }
 
+.actions-archive-carousel-viewport {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  touch-action: pan-y;
+}
+
+.actions-archive-carousel-track {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+  will-change: transform;
+}
+
+.actions-archive-week-page {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
 .actions-archive-week-header {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -2221,7 +2919,6 @@ body, #root {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   column-gap: 4px;
   width: 100%;
-  will-change: transform;
 }
 
 .my-payment-calendar-hero .calendar__nav-button:hover,
@@ -2315,7 +3012,7 @@ body, #root {
               opacity 200ms ease,
               transform 300ms cubic-bezier(.22, 1, .36, 1),
               margin-bottom 300ms cubic-bezier(.22, 1, .36, 1);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .my-payment-calendar-hero .calendar__grid-body > tr:last-child {
@@ -2327,6 +3024,7 @@ body, #root {
   width: auto;
   min-width: 0;
   max-width: 100%;
+  overflow: visible;
 }
 
 .my-payment-calendar-hero .calendar__header-cell {
@@ -2344,6 +3042,8 @@ body, #root {
 }
 
 .my-payment-calendar-hero .calendar__cell {
+  position: relative;
+  overflow: visible;
   display: grid;
   width: 100%;
   height: 68px;
@@ -2427,13 +3127,22 @@ body, #root {
 }
 
 .my-payment-calendar-hero .my-payment-calendar-extra-count {
-  grid-row: 2;
-  grid-column: 1;
-  justify-self: start;
-  margin-inline-start: 4px;
-  color: var(--app-muted);
-  font-size: 10px;
-  font-weight: var(--app-weight-semibold);
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #e11d48;
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 5;
+  pointer-events: none;
 }
 
 .my-payment-calendar-hero .my-payment-calendar-day-number {

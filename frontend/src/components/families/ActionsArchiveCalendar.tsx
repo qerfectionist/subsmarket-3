@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 function ChevronLeftIcon() {
   return (
@@ -42,6 +42,10 @@ export type ActionsArchiveItem = {
   statusLabel: string;
   amountKzt?: number;
   rejectionReason?: string;
+  originalId?: string;
+  familyId?: string;
+  listingId?: string;
+  amountGb?: string;
 };
 
 function getMonday(d: Date): Date {
@@ -71,9 +75,17 @@ export function ActionsArchiveCalendar({
   onSelectDate: (dateKey: string | null) => void;
   mode?: "inbox" | "outbox";
 }) {
-  const gridRef = useRef<HTMLDivElement>(null);
-  const motionRef = useRef<Animation | null>(null);
-  const dragRef = useRef<{ id: number; startX: number; startY: number; dx: number; isDragging: boolean } | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const isAnimatingRef = useRef(false);
+  const dragRef = useRef<{
+    id: number;
+    startX: number;
+    startY: number;
+    dx: number;
+    isDragging: boolean;
+    startTime: number;
+  } | null>(null);
   const suppressClickRef = useRef(false);
 
   // Group items by YYYY-MM-DD
@@ -126,24 +138,35 @@ export function ActionsArchiveCalendar({
   // Today key
   const todayKey = useMemo(() => formatDateKey(new Date()), []);
 
-  // 7 days of the visible week
-  const weekDays = useMemo(() => {
-    const days = [];
-    const dayNames = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(visibleMonday);
-      d.setDate(d.getDate() + i);
-      const dateKey = formatDateKey(d);
-      days.push({
-        date: d,
-        dateKey,
-        dayNum: d.getDate(),
-        dayName: dayNames[i],
-        isToday: dateKey === todayKey
+  const dayNames = useMemo(() => ["пн", "вт", "ср", "чт", "пт", "сб", "вс"], []);
+
+  // 3 weeks (prev, current, next) for seamless infinite carousel
+  const threeWeeks = useMemo(() => {
+    const weeks = [];
+    for (let offset = -1; offset <= 1; offset++) {
+      const mon = new Date(visibleMonday);
+      mon.setDate(mon.getDate() + offset * 7);
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(mon);
+        d.setDate(d.getDate() + i);
+        const dateKey = formatDateKey(d);
+        days.push({
+          date: d,
+          dateKey,
+          dayNum: d.getDate(),
+          dayName: dayNames[i],
+          isToday: dateKey === todayKey
+        });
+      }
+      weeks.push({
+        offset,
+        mondayKey: formatDateKey(mon),
+        days
       });
     }
-    return days;
-  }, [visibleMonday, todayKey]);
+    return weeks;
+  }, [visibleMonday, todayKey, dayNames]);
 
   // Midweek date determines visible month name & year (standard Thursday ISO)
   const midWeekDate = useMemo(() => {
@@ -175,39 +198,95 @@ export function ActionsArchiveCalendar({
     return { turnover, count };
   }, [items, monthKey]);
 
-  // Week change with animation
-  const changeWeek = useCallback((direction: 1 | -1) => {
-    triggerTelegramImpact("light");
-    const grid = gridRef.current;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (grid && !reduced) {
-      const width = grid.offsetWidth || 300;
-      motionRef.current?.cancel();
-      motionRef.current = grid.animate([
-        { transform: grid.style.transform || "translateX(0)", opacity: 1 },
-        { transform: `translateX(${-direction * width * 0.35}px)`, opacity: 0 }
-      ], { duration: 140, easing: "ease-in" });
+  const PAGE_GAP = 4;
 
-      motionRef.current.onfinish = () => {
-        setVisibleMonday((prev) => {
-          const next = new Date(prev);
-          next.setDate(next.getDate() + direction * 7);
-          return next;
-        });
-        grid.style.transform = "";
-        motionRef.current = grid.animate([
-          { transform: `translateX(${direction * width * 0.35}px)`, opacity: 0 },
-          { transform: "translateX(0)", opacity: 1 }
-        ], { duration: 200, easing: "cubic-bezier(.22, 1, .36, 1)" });
-      };
-    } else {
+  const getStep = useCallback(() => {
+    const width = viewportRef.current?.offsetWidth || 300;
+    return width + PAGE_GAP;
+  }, []);
+
+  // Sync track position on mount and resize
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const applyPosition = () => {
+      if (isAnimatingRef.current || dragRef.current?.isDragging) return;
+      const w = viewport.offsetWidth;
+      if (w > 0 && trackRef.current) {
+        trackRef.current.style.transform = `translate3d(${-(w + PAGE_GAP)}px, 0, 0)`;
+      }
+    };
+    applyPosition();
+    const observer = new ResizeObserver(applyPosition);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
+
+  // Smooth slide to week with continuous transform and snap reset
+  const slideToWeek = useCallback((direction: 1 | -1 | 0) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const step = getStep();
+
+    if (direction === 0) {
+      track.style.transition = reduced ? "none" : "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)";
+      track.style.transform = `translate3d(${-step}px, 0, 0)`;
+      return;
+    }
+
+    if (isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
+    triggerTelegramImpact("light");
+
+    const targetTransform = direction === 1
+      ? `translate3d(${-2 * step}px, 0, 0)`
+      : "translate3d(0px, 0, 0)";
+
+    if (reduced) {
       setVisibleMonday((prev) => {
         const next = new Date(prev);
         next.setDate(next.getDate() + direction * 7);
         return next;
       });
+      return;
     }
-  }, []);
+
+    track.style.transition = "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)";
+    track.style.transform = targetTransform;
+
+    let finished = false;
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      track.removeEventListener("transitionend", onEnd);
+      setVisibleMonday((prev) => {
+        const next = new Date(prev);
+        next.setDate(next.getDate() + direction * 7);
+        return next;
+      });
+    };
+
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === track && e.propertyName === "transform") {
+        cleanup();
+      }
+    };
+
+    track.addEventListener("transitionend", onEnd);
+    setTimeout(cleanup, 320);
+  }, [getStep]);
+
+  // Synchronously reset track transform when visibleMonday updates (avoids frame flicker)
+  useLayoutEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const step = getStep();
+    track.style.transition = "none";
+    track.style.transform = `translate3d(${-step}px, 0, 0)`;
+    void track.offsetWidth;
+    isAnimatingRef.current = false;
+  }, [visibleMonday, getStep]);
 
   function handleResetToday() {
     triggerTelegramImpact("light");
@@ -227,6 +306,84 @@ export function ActionsArchiveCalendar({
       onSelectDate(dateKey);
     }
   }
+
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.isPrimary || event.button !== 0 || isAnimatingRef.current) return;
+    suppressClickRef.current = false;
+    dragRef.current = {
+      id: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      dx: 0,
+      isDragging: false,
+      startTime: performance.now()
+    };
+  };
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== event.pointerId || isAnimatingRef.current) return;
+    drag.dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+
+    if (!drag.isDragging) {
+      if (Math.abs(drag.dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) > Math.abs(drag.dx)) {
+        dragRef.current = null;
+        return;
+      }
+      drag.isDragging = true;
+      suppressClickRef.current = true;
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {}
+      if (trackRef.current) {
+        trackRef.current.style.transition = "none";
+      }
+    }
+
+    if (drag.isDragging && trackRef.current) {
+      const step = getStep();
+      trackRef.current.style.transform = `translate3d(${-step + drag.dx}px, 0, 0)`;
+    }
+  };
+
+  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {}
+    }
+    if (!drag?.isDragging) return;
+
+    const dt = Math.max(performance.now() - drag.startTime, 1);
+    const velocity = drag.dx / dt;
+    const width = viewportRef.current?.offsetWidth || 300;
+    const threshold = Math.min(width * 0.22, 50);
+
+    if (drag.dx <= -threshold || velocity <= -0.3) {
+      slideToWeek(1);
+    } else if (drag.dx >= threshold || velocity >= 0.3) {
+      slideToWeek(-1);
+    } else {
+      slideToWeek(0);
+    }
+  };
+
+  const onPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {}
+    }
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (drag?.isDragging) {
+      slideToWeek(0);
+    }
+  };
 
   return (
     <section
@@ -249,18 +406,6 @@ export function ActionsArchiveCalendar({
                 <SystemSymbol name="arrow.clockwise" size={12} />
               </span>
             </button>
-            {selectedDateKey && (
-              <button
-                type="button"
-                className="actions-archive-all-btn"
-                onClick={() => {
-                  triggerTelegramImpact("light");
-                  onSelectDate(null);
-                }}
-              >
-                Все дни
-              </button>
-            )}
           </div>
 
           <div className={`my-payment-calendar-total${monthStats.count ? "" : " is-empty"}`}>
@@ -276,7 +421,7 @@ export function ActionsArchiveCalendar({
             type="button"
             className="calendar__nav-button"
             aria-label="Предыдущая неделя"
-            onClick={() => changeWeek(-1)}
+            onClick={() => slideToWeek(-1)}
           >
             <ChevronLeftIcon />
           </button>
@@ -284,125 +429,84 @@ export function ActionsArchiveCalendar({
             type="button"
             className="calendar__nav-button"
             aria-label="Следующая неделя"
-            onClick={() => changeWeek(1)}
+            onClick={() => slideToWeek(1)}
           >
             <ChevronRightIcon />
           </button>
         </div>
 
-        <div
-          className="my-calendar-month-viewport"
-          style={{ overflow: "hidden", touchAction: "pan-y" }}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-            if (!event.isPrimary || event.button !== 0) return;
-            suppressClickRef.current = false;
-            dragRef.current = {
-              id: event.pointerId,
-              startX: event.clientX,
-              startY: event.clientY,
-              dx: 0,
-              isDragging: false
-            };
-          }}
-          onPointerMove={(event) => {
-            const drag = dragRef.current;
-            if (!drag || drag.id !== event.pointerId) return;
-            drag.dx = event.clientX - drag.startX;
-            const dy = event.clientY - drag.startY;
-            if (!drag.isDragging) {
-              if (Math.abs(drag.dx) < 8) return;
-              if (Math.abs(dy) > Math.abs(drag.dx)) {
-                dragRef.current = null;
-                return;
-              }
-              drag.isDragging = true;
-              suppressClickRef.current = true;
-              event.currentTarget.setPointerCapture(event.pointerId);
-              motionRef.current?.cancel();
-            }
-            if (gridRef.current) {
-              gridRef.current.style.transform = `translateX(${drag.dx}px)`;
-            }
-          }}
-          onPointerUp={(event) => {
-            const drag = dragRef.current;
-            dragRef.current = null;
-            if (!drag?.isDragging) return;
-            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-              event.currentTarget.releasePointerCapture(event.pointerId);
-            }
-            if (drag.dx <= -40) {
-              changeWeek(1);
-            } else if (drag.dx >= 40) {
-              changeWeek(-1);
-            } else if (gridRef.current) {
-              const from = gridRef.current.style.transform;
-              gridRef.current.style.transform = "";
-              motionRef.current = gridRef.current.animate(
-                [{ transform: from }, { transform: "translateX(0)" }],
-                { duration: 180, easing: "ease-out" }
-              );
-            }
-          }}
-          onPointerCancel={() => {
-            const drag = dragRef.current;
-            dragRef.current = null;
-            if (drag?.isDragging && gridRef.current) {
-              gridRef.current.style.transform = "";
-            }
-          }}
-        >
-          <div className="actions-archive-week-container">
-            <div className="actions-archive-week-header">
-              {weekDays.map((d) => (
-                <div key={d.dateKey} className="calendar__header-cell">
-                  {d.dayName}
+        <div className="actions-archive-week-container">
+          <div
+            ref={viewportRef}
+            className="actions-archive-carousel-viewport"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onClickCapture={(event) => {
+              if (!suppressClickRef.current) return;
+              event.preventDefault();
+              event.stopPropagation();
+              suppressClickRef.current = false;
+            }}
+          >
+            <div ref={trackRef} className="actions-archive-carousel-track">
+              {threeWeeks.map((week) => (
+                <div key={week.offset} className="actions-archive-week-page">
+                  <div className="actions-archive-week-header">
+                    {dayNames.map((name) => (
+                      <div key={name} className="calendar__header-cell">
+                        {name}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="actions-archive-week-row">
+                    {week.days.map((day) => {
+                      const dayItems = itemsByDate.get(day.dateKey) ?? [];
+                      const previewItem = dayItems[0];
+                      const isSelected = selectedDateKey === day.dateKey;
+                      const dayLabel = dayItems.length
+                        ? `${calendarDayLabel(day.dateKey)}: ${dayItems.map((it) => it.title).join(", ")}`
+                        : calendarDayLabel(day.dateKey);
+
+                      return (
+                        <button
+                          key={day.dateKey}
+                          type="button"
+                          data-testid="actions-archive-calendar-cell"
+                          data-today={day.isToday ? "true" : undefined}
+                          data-selected={isSelected ? "true" : undefined}
+                          className={`calendar__cell my-payment-calendar-hero-cell${dayItems.length ? " has-event" : ""}${isSelected ? " is-active-day" : ""}`}
+                          aria-label={dayLabel}
+                          aria-pressed={isSelected}
+                          onClick={() => handleDayClick(day.dateKey)}
+                        >
+                          <span className="my-payment-calendar-event-logos">
+                            {previewItem ? (
+                              <ServiceLogo
+                                key={previewItem.id}
+                                serviceSlug={previewItem.serviceSlug}
+                                serviceName={previewItem.serviceName || previewItem.title}
+                                familyType={previewItem.category === "gigabytes" ? "tariff" : "subscription"}
+                                size={32}
+                                loading="eager"
+                                decoding="sync"
+                              />
+                            ) : null}
+                          </span>
+                          {dayItems.length > 1 ? (
+                            <small className="my-payment-calendar-extra-count">{dayItems.length - 1}</small>
+                          ) : null}
+                          <span className="my-payment-calendar-day-number">
+                            {day.dayNum}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ))}
-            </div>
-
-            <div className="actions-archive-week-row" ref={gridRef}>
-              {weekDays.map((day) => {
-                const dayItems = itemsByDate.get(day.dateKey) ?? [];
-                const previewItem = dayItems[0];
-                const isSelected = selectedDateKey === day.dateKey;
-                const dayLabel = dayItems.length
-                  ? `${calendarDayLabel(day.dateKey)}: ${dayItems.map((it) => it.title).join(", ")}`
-                  : calendarDayLabel(day.dateKey);
-
-                return (
-                  <button
-                    key={day.dateKey}
-                    type="button"
-                    data-testid="actions-archive-calendar-cell"
-                    data-today={day.isToday ? "true" : undefined}
-                    data-selected={isSelected ? "true" : undefined}
-                    className={`calendar__cell my-payment-calendar-hero-cell${dayItems.length ? " has-event" : ""}${isSelected ? " is-active-day" : ""}`}
-                    aria-label={dayLabel}
-                    aria-pressed={isSelected}
-                    onClick={() => handleDayClick(day.dateKey)}
-                  >
-                    <span className="my-payment-calendar-event-logos">
-                      {previewItem ? (
-                        <ServiceLogo
-                          key={previewItem.id}
-                          serviceSlug={previewItem.serviceSlug}
-                          serviceName={previewItem.serviceName || previewItem.title}
-                          familyType={previewItem.category === "gigabytes" ? "tariff" : "subscription"}
-                          size={32}
-                        />
-                      ) : null}
-                    </span>
-                    {dayItems.length > 1 ? (
-                      <small className="my-payment-calendar-extra-count">+{dayItems.length - 1}</small>
-                    ) : null}
-                    <span className="my-payment-calendar-day-number">
-                      {day.dayNum}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
           </div>
         </div>
