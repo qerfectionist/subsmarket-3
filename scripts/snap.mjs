@@ -15,6 +15,8 @@ const route = args[0] || "/?dev_user=1";
 const name = (args[1] || "screen").replace(/[^a-zA-Z0-9_-]/g, "_");
 const tabArg = args.find((a) => a.startsWith("--tab="));
 const tabIndex = tabArg ? Number(tabArg.split("=")[1]) : null;
+const clickArg = args.find((a) => a.startsWith("--click="));
+const clickSelector = clickArg ? clickArg.slice("--click=".length) : null;
 
 const port = process.env.VITE_PORT || "5173";
 const targetUrl = route.startsWith("http") ? route : `http://localhost:${port}${route}`;
@@ -35,6 +37,14 @@ async function main() {
       if (await tabButton.count()) {
         await tabButton.click();
         await page.waitForTimeout(300);
+      }
+    }
+
+    if (clickSelector) {
+      const target = page.locator(clickSelector).first();
+      if (await target.count()) {
+        await target.click({ force: true });
+        await page.waitForTimeout(400);
       }
     }
 
