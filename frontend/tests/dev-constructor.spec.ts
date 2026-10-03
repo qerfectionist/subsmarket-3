@@ -60,25 +60,23 @@ test("dev constructor adds and clears test cards across all 3 categories", async
   // Accept the account card to see the exact state from user's screenshot
   const accountCard = page.getByTestId("account-sales-actions-card");
   await accountCard.getByRole("button", { name: "Принять" }).click();
-  const writeBtn = accountCard.getByRole("button", { name: "Написать" });
+  const writeBtn = accountCard.getByRole("button", { name: "Написать покупателю" });
   await expect(writeBtn).toBeVisible();
   const soldBtn = accountCard.getByRole("button", { name: "Продано", exact: true });
   const notSoldBtn = accountCard.getByRole("button", { name: "Не продано", exact: true });
-  await expect(soldBtn).toBeVisible();
-  await expect(soldBtn).toBeDisabled();
-  await expect(notSoldBtn).toBeVisible();
-  await expect(notSoldBtn).toBeDisabled();
+  await expect(soldBtn).toHaveCount(0);
+  await expect(notSoldBtn).toHaveCount(0);
 
   await page.screenshot({
-    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_3buttons_disabled.png"
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_stepwise_step1.png"
   });
 
   await writeBtn.click();
-  await expect(soldBtn).toBeEnabled();
-  await expect(notSoldBtn).toBeEnabled();
+  await expect(soldBtn).toBeVisible();
+  await expect(notSoldBtn).toBeVisible();
 
   await page.screenshot({
-    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_3buttons_enabled.png"
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_stepwise_step2.png"
   });
 
   // Verify prototype switcher buttons exist in constructor

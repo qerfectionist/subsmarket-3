@@ -83,9 +83,9 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Можно написать", { exact: true })).toBeVisible();
   await expect(page.getByText("@demo_member", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Написать" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Написать покупателю" })).toBeVisible();
   await page.screenshot({
-    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_gb_unified.png"
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_gb_stepwise_step1.png"
   });
 
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
@@ -99,10 +99,15 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   await page.getByTestId("market-notifications").click({ force: true });
-  await expect(page.getByRole("button", { name: "Продано", exact: true })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Не продано", exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: "Написать" }).click({ force: true });
-  await expect(page.getByRole("button", { name: "Продано", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Написать покупателю" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Продано", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Не продано", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Написать покупателю" }).click({ force: true });
+  await expect(page.getByRole("button", { name: "Продано", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Не продано", exact: true })).toBeVisible();
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_gb_stepwise_step2.png"
+  });
   await page.getByRole("button", { name: "Продано", exact: true }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByTestId("marketplace-actions-card")).toHaveCount(0);

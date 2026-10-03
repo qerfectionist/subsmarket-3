@@ -157,49 +157,66 @@ export function GigabytesTradeRequestCard({
               </button>
             </>
           ) : null}
-          {request.status === "accepted" && request.counterparty_username ? (
-            <button
-              type="button"
-              className="gb-chat-button"
-              onClick={() => {
-                markContacted();
-                openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined);
-              }}
-            >
-              <SystemSymbol name="message" size={17} />
-              <span>Написать</span>
-            </button>
-          ) : null}
           {request.role === "buyer" && request.status === "accepted" ? (
-            <TradeRequestCancelButton
-              busy={busy}
-              onCancel={() => onCancel?.(request.id)}
-              label="Отменить"
-            />
+            <>
+              {request.counterparty_username ? (
+                <button
+                  type="button"
+                  className="gb-chat-button"
+                  onClick={() => {
+                    markContacted();
+                    openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined);
+                  }}
+                >
+                  <SystemSymbol name="message" size={17} />
+                  <span>Написать</span>
+                </button>
+              ) : null}
+              <TradeRequestCancelButton
+                busy={busy}
+                onCancel={() => onCancel?.(request.id)}
+                label="Отменить"
+              />
+            </>
           ) : null}
           {request.role === "seller" && request.status === "accepted" ? (
-            <>
+            !hasContacted ? (
               <button
-                disabled={busy || !hasContacted}
                 type="button"
-                onClick={() => onClose?.(request.id, "sold")}
-                className="trade-request-sold-btn"
-                data-testid="gb-close-sold-btn"
+                className="gb-chat-button is-stepwise-write"
+                data-testid="trade-request-write-btn"
+                onClick={() => {
+                  markContacted();
+                  openTelegramUser(request.counterparty_username!, request.telegram_draft ?? undefined);
+                }}
               >
-                <SystemSymbol name="checkmark" size={17} />
-                <span>Продано</span>
+                <SystemSymbol name="message" size={17} />
+                <span>Написать покупателю</span>
               </button>
-              <button
-                disabled={busy || !hasContacted}
-                type="button"
-                onClick={() => onClose?.(request.id, "not_sold")}
-                className="trade-request-not-sold-btn"
-                data-testid="gb-close-not-sold-btn"
-              >
-                <SystemSymbol name="xmark" size={17} />
-                <span>Не продано</span>
-              </button>
-            </>
+            ) : (
+              <>
+                <button
+                  disabled={busy}
+                  type="button"
+                  onClick={() => onClose?.(request.id, "sold")}
+                  className="trade-request-sold-btn"
+                  data-testid="gb-close-sold-btn"
+                >
+                  <SystemSymbol name="checkmark" size={17} />
+                  <span>Продано</span>
+                </button>
+                <button
+                  disabled={busy}
+                  type="button"
+                  onClick={() => onClose?.(request.id, "not_sold")}
+                  className="trade-request-not-sold-btn"
+                  data-testid="gb-close-not-sold-btn"
+                >
+                  <SystemSymbol name="xmark" size={17} />
+                  <span>Не продано</span>
+                </button>
+              </>
+            )
           ) : null}
         </div>
       ) : null}

@@ -276,36 +276,30 @@
   scroll-snap-align: start;
 }
 
-/* ── Deal Resolution Actions (iOS Action Toolbar) ── */
+/* ── Deal Resolution Actions (Variant 3: Stepwise Reveal) ── */
 .my-trade-request-actions.is-deal-resolution {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  padding: 0 !important;
-  background: rgba(255, 255, 255, 0.02);
-  border-top: 1px solid var(--app-divider, rgba(255, 255, 255, 0.08));
-  flex-wrap: nowrap;
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  background: var(--app-surface-inset, rgba(0, 0, 0, 0.16));
+  border-top: 1px solid var(--app-divider, rgba(255, 255, 255, 0.06));
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button,
 .my-trade-request-actions.is-deal-resolution button {
+  flex: 1 1 0;
   width: 100%;
   min-width: 0;
-  min-height: 44px;
-  padding: 10px 4px;
+  min-height: 42px;
+  padding: 8px 12px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   white-space: nowrap;
-  gap: 5px;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-.app-shell .my-trade-request-actions.is-deal-resolution button + button,
-.my-trade-request-actions.is-deal-resolution button + button {
-  border-left: 1px solid var(--app-divider, rgba(255, 255, 255, 0.08)) !important;
+  transition: transform var(--app-duration-press, 120ms) ease, opacity var(--app-duration-press, 120ms) ease, background-color 0.15s ease;
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button span,
@@ -315,65 +309,63 @@
   white-space: nowrap;
 }
 
-.app-shell .my-trade-request-actions.is-deal-resolution button.gb-chat-button,
-.my-trade-request-actions.is-deal-resolution button.gb-chat-button {
-  color: var(--app-accent, #38bdf8);
+/* Step 1: Write to buyer (prominent full-width button) */
+.app-shell .my-trade-request-actions.is-deal-resolution button.is-stepwise-write,
+.my-trade-request-actions.is-deal-resolution button.is-stepwise-write {
+  width: 100%;
+  background: #0ea5e9 !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--app-radius-sm, 12px) !important;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.28) !important;
 }
 
-.app-shell .my-trade-request-actions.is-deal-resolution button.gb-chat-button:active,
-.my-trade-request-actions.is-deal-resolution button.gb-chat-button:active {
-  background: rgba(56, 189, 248, 0.12) !important;
+.app-shell .my-trade-request-actions.is-deal-resolution button.is-stepwise-write:active,
+.my-trade-request-actions.is-deal-resolution button.is-stepwise-write:active {
+  transform: scale(0.98);
+  opacity: 0.92 !important;
+  background: #0284c7 !important;
 }
 
+/* Step 2: Resolution buttons (2 equal action buttons) */
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn,
 .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn {
-  color: #4ade80;
+  background: rgba(34, 197, 94, 0.14) !important;
+  border: 1px solid rgba(34, 197, 94, 0.28) !important;
+  color: #4ade80 !important;
+  border-radius: var(--app-radius-sm, 12px) !important;
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn:not(:disabled):active,
 .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn:not(:disabled):active {
-  background: rgba(34, 197, 94, 0.14) !important;
+  background: rgba(34, 197, 94, 0.24) !important;
+  transform: scale(0.97);
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn,
 .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn {
-  color: #f87171;
+  background: rgba(239, 68, 68, 0.14) !important;
+  border: 1px solid rgba(239, 68, 68, 0.28) !important;
+  color: #f87171 !important;
+  border-radius: var(--app-radius-sm, 12px) !important;
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn:not(:disabled):active,
 .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn:not(:disabled):active {
-  background: rgba(239, 68, 68, 0.14) !important;
-}
-
-.app-shell .my-trade-request-actions.is-deal-resolution button:disabled,
-.my-trade-request-actions.is-deal-resolution button:disabled {
-  opacity: 0.35 !important;
-  color: var(--app-muted, #71717a) !important;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-[data-theme="light"] .my-trade-request-actions.is-deal-resolution {
-  background: rgba(0, 0, 0, 0.015);
-  border-top-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button + button,
-[data-theme="light"] .my-trade-request-actions.is-deal-resolution button + button {
-  border-left-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-[data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.gb-chat-button,
-[data-theme="light"] .my-trade-request-actions.is-deal-resolution button.gb-chat-button {
-  color: #0284c7;
+  background: rgba(239, 68, 68, 0.24) !important;
+  transform: scale(0.97);
 }
 
 [data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn,
 [data-theme="light"] .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn {
-  color: #16a34a;
+  background: rgba(34, 197, 94, 0.1) !important;
+  border-color: rgba(34, 197, 94, 0.25) !important;
+  color: #16a34a !important;
 }
 
 [data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn,
 [data-theme="light"] .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn {
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  color: #dc2626 !important;
 }
