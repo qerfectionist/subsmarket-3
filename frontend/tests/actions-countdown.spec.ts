@@ -161,7 +161,7 @@ test("seller has undo countdown on accept and reject buttons", async ({ page }) 
   // In test mode (webdriver=true), effectiveDuration is 350ms, so it completes automatically
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Можно написать", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Открыть Telegram" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Написать" })).toBeVisible();
 
   // Screenshot accepted state
   await page.screenshot({

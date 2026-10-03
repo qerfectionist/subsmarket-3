@@ -83,7 +83,10 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Можно написать", { exact: true })).toBeVisible();
   await expect(page.getByText("@demo_member", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Открыть Telegram" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Написать" })).toBeVisible();
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_gb_unified.png"
+  });
 
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200002", "Member · @demo_member");
@@ -96,11 +99,11 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   await page.getByTestId("market-notifications").click({ force: true });
-  await expect(page.getByRole("button", { name: "Продано" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Не состоялось" })).toBeDisabled();
-  await page.getByRole("button", { name: "Открыть Telegram" }).click({ force: true });
-  await expect(page.getByRole("button", { name: "Продано" })).toBeEnabled();
-  await page.getByRole("button", { name: "Продано" }).click({ force: true });
+  await expect(page.getByRole("button", { name: "Продано", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Не продано", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Написать" }).click({ force: true });
+  await expect(page.getByRole("button", { name: "Продано", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Продано", exact: true }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByTestId("marketplace-actions-card")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Открыть архив/ })).toBeVisible();

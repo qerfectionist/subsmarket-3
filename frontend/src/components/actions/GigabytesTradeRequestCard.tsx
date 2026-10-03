@@ -161,7 +161,7 @@ export function GigabytesTradeRequestCard({
             <TradeRequestCancelButton
               busy={busy}
               onCancel={() => onCancel?.(request.id)}
-              label="Отменить заявку"
+              label="Отменить"
             />
           ) : null}
           {request.status === "accepted" && request.counterparty_username ? (
@@ -174,7 +174,7 @@ export function GigabytesTradeRequestCard({
               }}
             >
               <SystemSymbol name="message" size={17} />
-              <span>Открыть Telegram</span>
+              <span>Написать</span>
             </button>
           ) : null}
           {request.role === "seller" && request.status === "accepted" ? (
@@ -197,7 +197,7 @@ export function GigabytesTradeRequestCard({
                 data-testid="gb-close-not-sold-btn"
               >
                 <SystemSymbol name="xmark" size={17} />
-                <span>Не состоялось</span>
+                <span>Не продано</span>
               </button>
             </>
           ) : null}
