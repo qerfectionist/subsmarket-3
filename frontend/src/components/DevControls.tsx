@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Select, Typography } from "./ui";
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
 import { getTelegramPlatform, setDevPlatform } from "../telegram";
+import { countDevCards, DEV_CARDS_UPDATE_EVENT } from "../utils/devCardsStore";
+
+export const DEV_OPEN_CONSTRUCTOR_EVENT = "subsmarket:open-dev-cards-modal";
 
 export function DevUserSwitch({
   value,
@@ -11,11 +14,22 @@ export function DevUserSwitch({
   onChange: (userId: string) => void;
 }) {
   const [platform, setPlatformState] = useState<string>(() => getTelegramPlatform());
+  const [cardCounts, setCardCounts] = useState(() => countDevCards());
 
   const handlePlatformChange = (p: string) => {
     setPlatformState(p);
     setDevPlatform(p as "ios" | "android" | "tdesktop" | "default");
   };
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setCardCounts(countDevCards());
+    };
+    window.addEventListener(DEV_CARDS_UPDATE_EVENT, handleUpdate);
+    return () => {
+      window.removeEventListener(DEV_CARDS_UPDATE_EVENT, handleUpdate);
+    };
+  }, []);
 
   return (
     <div
@@ -39,7 +53,7 @@ export function DevUserSwitch({
           />
         </div>
       </div>
-      <div style={{ minWidth: "110px" }}>
+      <div style={{ minWidth: "100px" }}>
         <Typography as="span" variant="label" level={2}>
           Platform
         </Typography>
@@ -53,6 +67,17 @@ export function DevUserSwitch({
             { value: "tdesktop", label: "Desktop" }
           ]}
         />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", paddingTop: "14px" }}>
+        <button
+          type="button"
+          className="dev-constructor-trigger-btn"
+          onClick={() => window.dispatchEvent(new CustomEvent(DEV_OPEN_CONSTRUCTOR_EVENT))}
+          title="Открыть конструктор карточек (Ctrl+Shift+D)"
+          data-testid="dev-constructor-open-btn"
+        >
+          ⚡ Карточки {cardCounts.total > 0 ? `(${cardCounts.total})` : ""}
+        </button>
       </div>
     </div>
   );

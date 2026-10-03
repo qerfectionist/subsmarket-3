@@ -13,6 +13,9 @@ import {
 } from "./api";
 import type { Tab } from "./appTypes";
 import { BottomNav, DevUserSwitch, Shell } from "./components/layout";
+import { DevCardsConstructorModal } from "./components/dev/DevCardsConstructorModal";
+import { countDevCards, DEV_CARDS_UPDATE_EVENT } from "./utils/devCardsStore";
+import { DEV_OPEN_CONSTRUCTOR_EVENT } from "./components/DevControls";
 import { AsyncContent } from "./components/AsyncContent";
 import { ViewportMetrics } from "./components/ViewportMetrics";
 import { formatError, futureDateISO, normalizeText } from "./format";
@@ -75,6 +78,33 @@ export function App() {
   const [createForm, setCreateForm] = useState<FamilyCreate>(emptyCreateForm);
   const [myProductScope, setMyProductScope] = useState<"families" | "accounts" | "gigabytes">("families");
   const startParamHandled = useRef(false);
+
+  const [isDevCardsModalOpen, setIsDevCardsModalOpen] = useState(false);
+  const [devCardsTotal, setDevCardsTotal] = useState(() => (import.meta.env.DEV ? countDevCards().total : 0));
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const handleCardsUpdate = () => {
+      setDevCardsTotal(countDevCards().total);
+    };
+    const handleOpenModal = () => {
+      setIsDevCardsModalOpen(true);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.code === "KeyD" || e.key === "D")) {
+        e.preventDefault();
+        setIsDevCardsModalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener(DEV_CARDS_UPDATE_EVENT, handleCardsUpdate);
+    window.addEventListener(DEV_OPEN_CONSTRUCTOR_EVENT, handleOpenModal);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener(DEV_CARDS_UPDATE_EVENT, handleCardsUpdate);
+      window.removeEventListener(DEV_OPEN_CONSTRUCTOR_EVENT, handleOpenModal);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const {
     meQuery,
@@ -696,6 +726,28 @@ export function App() {
           ).length
         }}
       />
+
+      {import.meta.env.DEV && (
+        <>
+          <button
+            type="button"
+            className="dev-floating-fab"
+            onClick={() => setIsDevCardsModalOpen(true)}
+            data-testid="dev-floating-fab-btn"
+            title="Конструктор карточек (Ctrl+Shift+D)"
+            aria-label="Конструктор карточек"
+          >
+            <span>⚡ Карточки</span>
+            {devCardsTotal > 0 ? (
+              <span className="dev-floating-fab-count">{devCardsTotal}</span>
+            ) : null}
+          </button>
+          <DevCardsConstructorModal
+            isOpen={isDevCardsModalOpen}
+            onClose={() => setIsDevCardsModalOpen(false)}
+          />
+        </>
+      )}
     </Shell>
   );
 }

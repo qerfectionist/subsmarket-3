@@ -38,10 +38,10 @@ export function isDevUserSwitchVisible() {
   if (!isDevAuthEnabled()) {
     return false;
   }
-  if (new URLSearchParams(window.location.search).get("dev_user") === "1") {
-    return true;
+  if (new URLSearchParams(window.location.search).get("dev_user") === "0") {
+    return false;
   }
-  return import.meta.env.VITE_SHOW_DEV_USER_SWITCH === "true";
+  return true;
 }
 
 export function getActiveDevTelegramUser() {
@@ -74,4 +74,63 @@ export function authHeaders(): HeadersInit {
     "X-Dev-Telegram-Username": devUser.username,
     "X-Dev-Telegram-First-Name": devUser.firstName
   };
+}
+
+export async function clearArchiveApi(): Promise<{
+  gb_archived_cleaned: number;
+  account_archived_cleaned: number;
+  family_archived_cleaned: number;
+}> {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+  const res = await fetch(`${baseUrl}/api/dev/clear-archive`, {
+    method: "POST",
+    headers: { ...authHeaders() }
+  });
+  if (!res.ok) throw new Error("Failed to clear archive");
+  return res.json();
+}
+
+export async function cleanAllCardsApi(): Promise<{
+  gb_requests: number;
+  account_requests: number;
+  family_requests: number;
+}> {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+  const res = await fetch(`${baseUrl}/api/dev/clean-all`, {
+    method: "POST",
+    headers: { ...authHeaders() }
+  });
+  if (!res.ok) throw new Error("Failed to clean all cards");
+  return res.json();
+}
+
+export async function purgeAllApi(): Promise<{
+  gb_requests: number;
+  account_requests: number;
+  family_requests: number;
+  gb_listings: number;
+  account_listings: number;
+  families: number;
+}> {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+  const res = await fetch(`${baseUrl}/api/dev/purge-all`, {
+    method: "POST",
+    headers: { ...authHeaders() }
+  });
+  if (!res.ok) throw new Error("Failed to purge all data");
+  return res.json();
+}
+
+export async function resetAndSeedAllApi(): Promise<{
+  gb: number;
+  accounts: number;
+  families: number;
+}> {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+  const res = await fetch(`${baseUrl}/api/dev/reset-and-seed`, {
+    method: "POST",
+    headers: { ...authHeaders() }
+  });
+  if (!res.ok) throw new Error("Failed to reset and seed cards");
+  return res.json();
 }

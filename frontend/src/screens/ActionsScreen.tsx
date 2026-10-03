@@ -14,11 +14,6 @@ import {
   type ActionsTab
 } from "../components/actions/ActionsScopePager";
 import {
-  DEV_TEST_CARDS_STORAGE_KEY,
-  ActionsDevConstructor,
-  type DevTestCardsState
-} from "../components/actions/ActionsDevConstructor";
-import {
   type ActionsCategoryFilter,
   type ActionsStatusFilter,
   type ActionsArchiveFilter,
@@ -137,9 +132,7 @@ export {
   getOrderNumber,
   formatArchiveAccountTitle,
   getArchiveDateHeader,
-  formatArchiveCardDate,
-  DEV_TEST_CARDS_STORAGE_KEY,
-  type DevTestCardsState
+  formatArchiveCardDate
 };
 
 export function ActionsScreen({
@@ -185,7 +178,6 @@ export function ActionsScreen({
   const [expandedFamilyId, setExpandedFamilyId] = useState<string | null>(null);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [archiveFilter, setArchiveFilter] = useState<ActionsArchiveFilter>("all");
-  const [isConstructorOpen, setIsConstructorOpen] = useState(false);
   const [actionsCategory, setActionsCategory] = useState<ActionsCategoryFilter>("all");
   const [actionsStatus, setActionsStatus] = useState<ActionsStatusFilter>("all");
   const [selectedArchiveDayISO, setSelectedArchiveDayISO] = useState<string | null>(null);
@@ -404,21 +396,6 @@ export function ActionsScreen({
           <div className="actions-header-actions">
             <button
               type="button"
-              className={`my-screen-context-action${isConstructorOpen ? " is-active" : ""}`}
-              aria-expanded={isConstructorOpen}
-              aria-controls="actions-dev-constructor"
-              aria-label="Конструктор карточек"
-              title="Конструктор карточек"
-              data-testid="actions-dev-constructor-trigger"
-              onClick={() => {
-                triggerTelegramImpact("light");
-                setIsConstructorOpen((prev) => !prev);
-              }}
-            >
-              <SystemSymbol name={isConstructorOpen ? "xmark" : "plus"} size={22} />
-            </button>
-            <button
-              type="button"
               className={`my-screen-context-action${isArchiveOpen ? " is-active" : ""}${mutations.isArchivePulsing ? " is-receiving-item" : ""}`}
               aria-expanded={isArchiveOpen}
               aria-controls="actions-archive-disclosure"
@@ -436,17 +413,6 @@ export function ActionsScreen({
         }
       >
         <div className="actions-screen-filters">
-          <ActionsDevConstructor
-            isOpen={isConstructorOpen}
-            totalCount={dev.devCardsTotalCount}
-            timerPrototype={dev.timerPrototype}
-            onSelectTimerPrototype={dev.handleSelectTimerPrototype}
-            onAddDevFamily={dev.handleAddDevFamily}
-            onAddDevAccount={dev.handleAddDevAccount}
-            onAddDevGb={dev.handleAddDevGb}
-            onAddAllCategories={dev.handleAddAllDevCategories}
-            onClearAll={dev.handleClearAllDevCards}
-          />
 
           <div
             ref={actionsRoleSwitchRef}

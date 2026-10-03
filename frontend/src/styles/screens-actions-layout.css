@@ -18,135 +18,8 @@
   gap: 4px;
 }
 
-.actions-dev-constructor {
-  background: var(--app-bg-card, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.1));
-  border-radius: var(--app-radius-card, 16px);
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 4px;
-  animation: slideDownFade 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
 
-@keyframes slideDownFade {
-  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 
-.actions-dev-constructor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.actions-dev-constructor-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--app-text);
-}
-
-.actions-dev-constructor-badge {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--app-muted);
-  background: rgba(255, 255, 255, 0.08);
-  padding: 2px 7px;
-  border-radius: 999px;
-}
-
-.actions-dev-constructor-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.actions-dev-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  padding: 7px 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  color: var(--app-text);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
-  user-select: none;
-}
-
-.actions-dev-chip:active {
-  background: rgba(255, 255, 255, 0.14);
-  transform: scale(0.96);
-}
-
-.actions-dev-chip-icon {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.actions-dev-constructor-footer {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.actions-dev-btn-all {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 7px 10px;
-  background: var(--app-accent, #3390ec);
-  color: var(--app-accent-text, #000000);
-  border: 0;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-}
-
-.actions-dev-btn-all:active {
-  opacity: 0.85;
-  transform: scale(0.97);
-}
-
-.actions-dev-btn-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 7px 10px;
-  background: rgba(255, 59, 48, 0.12);
-  color: #ff453a;
-  border: 1px solid rgba(255, 59, 48, 0.25);
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-}
-
-.actions-dev-btn-clear:disabled {
-  opacity: 0.35;
-  cursor: default;
-  pointer-events: none;
-}
-
-.actions-dev-btn-clear:active:not(:disabled) {
-  background: rgba(255, 59, 48, 0.22);
-  transform: scale(0.97);
-}
 
 .actions-archive-disclosure {
   grid-row: 2;
@@ -276,13 +149,13 @@
   scroll-snap-align: start;
 }
 
-/* ── Deal Resolution Actions (Variant 3A: Canonical SubsMarket Stepwise Reveal) ── */
+/* ── Deal Resolution Actions (Canonical SubsMarket Inset Tray & Refined Hierarchy) ── */
 .my-trade-request-actions.is-deal-resolution {
   display: flex;
   gap: 8px;
-  padding: 0 16px 14px;
-  background: transparent;
-  border-top: none;
+  padding: 10px 16px 14px;
+  background: var(--app-surface-inset);
+  border-top: 1px solid var(--app-divider, rgba(255, 255, 255, 0.06));
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button,
@@ -290,10 +163,12 @@
   flex: 1 1 0;
   width: 100%;
   min-width: 0;
-  min-height: 42px;
-  padding: 9px 16px;
+  min-height: 40px;
+  padding: 8px 16px;
   font-size: 13.5px;
   font-weight: 500;
+  border: none !important;
+  outline: none !important;
   border-radius: var(--app-radius-pill, 9999px) !important;
   display: inline-flex;
   align-items: center;
@@ -301,6 +176,11 @@
   gap: 6px;
   white-space: nowrap;
   box-shadow: none !important;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent !important;
   transition: transform var(--app-duration-press, 120ms) ease, opacity var(--app-duration-press, 120ms) ease, background-color 0.15s ease;
 }
 
@@ -315,9 +195,10 @@
 .app-shell .my-trade-request-actions.is-deal-resolution button.is-stepwise-write,
 .my-trade-request-actions.is-deal-resolution button.is-stepwise-write {
   width: 100%;
+  border: none !important;
   background: var(--app-control-material, rgba(255, 255, 255, 0.08)) !important;
-  border: 1px solid var(--app-control-border, rgba(255, 255, 255, 0.12)) !important;
   color: var(--app-text) !important;
+  font-weight: 500;
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button.is-stepwise-write:active,
@@ -327,50 +208,67 @@
   background: var(--app-secondary-bg) !important;
 }
 
-/* Step 2: Resolution buttons (2 equal action pills) */
+/* Step 2: Resolution buttons — Neutral action choices (prevent false "already sold" status confusion) */
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn,
 .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn {
-  background: var(--app-success-soft, rgba(48, 209, 88, 0.15)) !important;
-  border: 1px solid rgba(48, 209, 88, 0.28) !important;
-  color: var(--app-success, #30d158) !important;
+  border: none !important;
+  background: var(--app-control-material, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--app-text) !important;
+  font-weight: 500;
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn:not(:disabled):active,
 .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn:not(:disabled):active {
-  background: rgba(48, 209, 88, 0.25) !important;
+  background: rgba(48, 209, 88, 0.22) !important;
+  color: #30d158 !important;
   transform: scale(0.97);
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn,
 .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn {
-  background: var(--app-danger-soft, rgba(255, 69, 58, 0.15)) !important;
-  border: 1px solid rgba(255, 69, 58, 0.28) !important;
-  color: var(--app-danger, #ff453a) !important;
+  border: none !important;
+  background: var(--app-control-material, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--app-text) !important;
+  font-weight: 500;
 }
 
 .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn:not(:disabled):active,
 .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn:not(:disabled):active {
-  background: rgba(255, 69, 58, 0.25) !important;
+  background: rgba(255, 69, 58, 0.22) !important;
+  color: #ff453a !important;
   transform: scale(0.97);
 }
 
+/* Light theme adaptations */
 [data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.is-stepwise-write,
 [data-theme="light"] .my-trade-request-actions.is-deal-resolution button.is-stepwise-write {
+  border: none !important;
   background: rgba(0, 0, 0, 0.05) !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
   color: var(--app-text) !important;
 }
 
 [data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn,
 [data-theme="light"] .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn {
-  background: rgba(36, 138, 61, 0.12) !important;
-  border-color: rgba(36, 138, 61, 0.25) !important;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--app-text) !important;
+}
+
+[data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn:not(:disabled):active,
+[data-theme="light"] .my-trade-request-actions.is-deal-resolution button.trade-request-sold-btn:not(:disabled):active {
+  background: rgba(36, 138, 61, 0.18) !important;
   color: #248a3d !important;
 }
 
 [data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn,
 [data-theme="light"] .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn {
-  background: rgba(215, 0, 21, 0.12) !important;
-  border-color: rgba(215, 0, 21, 0.25) !important;
+  border: none !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--app-text) !important;
+}
+
+[data-theme="light"] .app-shell .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn:not(:disabled):active,
+[data-theme="light"] .my-trade-request-actions.is-deal-resolution button.trade-request-not-sold-btn:not(:disabled):active {
+  background: rgba(215, 0, 21, 0.18) !important;
   color: #d70015 !important;
 }

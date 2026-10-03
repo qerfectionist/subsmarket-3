@@ -72,6 +72,8 @@ export function useMarketplaceListings(
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 10_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
@@ -83,6 +85,8 @@ export function useMyMarketplaceListings(enabled = true) {
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 5_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
@@ -105,6 +109,8 @@ export function useMarketplaceRequests(
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 5_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
@@ -114,7 +120,9 @@ export function useMarketplaceActionSummary(enabled = true) {
     queryKey: queryKeys.marketplaceActionSummary,
     queryFn: getMarketplaceActionSummary,
     enabled,
-    staleTime: 15 * 1000
+    refetchOnMount: "always",
+    refetchInterval: 5_000,
+    staleTime: 5 * 1000
   });
 }
 

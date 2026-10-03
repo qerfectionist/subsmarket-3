@@ -55,10 +55,37 @@ function generateUid(): string {
   return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
-export function createRandomDevCandidate(): { family: Family; request: OwnerFamilyRequest } {
+export interface DevCardCandidateOptions {
+  serviceSlug?: string;
+  username?: string;
+  expiresInSeconds?: number;
+}
+
+export interface DevCardAccountOptions {
+  serviceSlug?: string;
+  username?: string;
+  priceKzt?: number;
+}
+
+export interface DevCardGbOptions {
+  operatorSlug?: string;
+  username?: string;
+  amountGb?: number;
+}
+
+export interface DevCardBuyerFamilyOptions {
+  serviceSlug?: string;
+  username?: string;
+  expiresInSeconds?: number;
+}
+
+export function createRandomDevCandidate(options?: DevCardCandidateOptions): { family: Family; request: OwnerFamilyRequest } {
   const uid = generateUid();
-  const srv = pickRandom(RANDOM_FAMILIES);
-  const username = pickRandom(RANDOM_USERNAMES);
+  const srv = options?.serviceSlug
+    ? RANDOM_FAMILIES.find((f) => f.service_slug === options.serviceSlug) ?? pickRandom(RANDOM_FAMILIES)
+    : pickRandom(RANDOM_FAMILIES);
+  const username = options?.username ?? pickRandom(RANDOM_USERNAMES);
+  const expiresIn = options?.expiresInSeconds ? options.expiresInSeconds * 1000 : 5 * 60 * 60 * 1000;
 
   const family: Family = {
     id: `test-fam-${uid}`,
@@ -101,7 +128,7 @@ export function createRandomDevCandidate(): { family: Family; request: OwnerFami
     status: "pending",
     cancel_reason: null,
     created_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+    expires_at: new Date(Date.now() + expiresIn).toISOString(),
     decided_at: null,
     cancelled_at: null,
     expired_at: null,
@@ -116,10 +143,15 @@ export function createRandomDevCandidate(): { family: Family; request: OwnerFami
   return { family, request };
 }
 
-export function createRandomDevAccountRequest(role: "seller" | "buyer" = "seller"): AccountRequest {
+export function createRandomDevAccountRequest(
+  role: "seller" | "buyer" = "seller",
+  options?: DevCardAccountOptions
+): AccountRequest {
   const uid = generateUid();
-  const acc = pickRandom(RANDOM_ACCOUNTS);
-  const username = pickRandom(RANDOM_USERNAMES);
+  const acc = options?.serviceSlug
+    ? RANDOM_ACCOUNTS.find((a) => a.service_slug === options.serviceSlug) ?? pickRandom(RANDOM_ACCOUNTS)
+    : pickRandom(RANDOM_ACCOUNTS);
+  const username = options?.username ?? pickRandom(RANDOM_USERNAMES);
 
   return {
     id: `test-acc-${uid}`,
@@ -129,17 +161,23 @@ export function createRandomDevAccountRequest(role: "seller" | "buyer" = "seller
     service_name: acc.service_name,
     service_slug: acc.service_slug,
     title: acc.title,
-    price_kzt: acc.price_kzt,
+    price_kzt: options?.priceKzt ?? acc.price_kzt,
     counterparty_username: username,
     created_at: new Date().toISOString(),
     can_remind: false
   };
 }
 
-export function createRandomDevGbRequest(role: "seller" | "buyer" = "seller"): MarketplaceListingRequest {
+export function createRandomDevGbRequest(
+  role: "seller" | "buyer" = "seller",
+  options?: DevCardGbOptions
+): MarketplaceListingRequest {
   const uid = generateUid();
-  const gb = pickRandom(RANDOM_GB);
-  const username = pickRandom(RANDOM_USERNAMES);
+  const gb = options?.operatorSlug
+    ? RANDOM_GB.find((g) => g.operator_slug === options.operatorSlug) ?? pickRandom(RANDOM_GB)
+    : pickRandom(RANDOM_GB);
+  const username = options?.username ?? pickRandom(RANDOM_USERNAMES);
+  const amount = options?.amountGb ?? gb.amount_gb;
 
   return {
     id: `test-gb-${uid}`,
@@ -148,19 +186,24 @@ export function createRandomDevGbRequest(role: "seller" | "buyer" = "seller"): M
     status: "pending",
     operator_name: gb.operator_name,
     operator_slug: gb.operator_slug,
-    amount_gb: String(gb.amount_gb),
+    amount_gb: String(amount),
     price_per_gb_kzt: gb.price_per_gb_kzt,
-    total_price_kzt: gb.total_price_kzt,
+    total_price_kzt: amount * gb.price_per_gb_kzt,
     counterparty_username: username,
     created_at: new Date().toISOString(),
     can_remind: false
   };
 }
 
-export function createRandomDevBuyerFamilyRequest(): FamilyRequest {
+export function createRandomDevBuyerFamilyRequest(
+  options?: DevCardBuyerFamilyOptions
+): FamilyRequest {
   const uid = generateUid();
-  const srv = pickRandom(RANDOM_FAMILIES);
-  const owner = pickRandom(RANDOM_USERNAMES);
+  const srv = options?.serviceSlug
+    ? RANDOM_FAMILIES.find((f) => f.service_slug === options.serviceSlug) ?? pickRandom(RANDOM_FAMILIES)
+    : pickRandom(RANDOM_FAMILIES);
+  const owner = options?.username ?? pickRandom(RANDOM_USERNAMES);
+  const expiresIn = options?.expiresInSeconds ? options.expiresInSeconds * 1000 : 5 * 60 * 60 * 1000;
 
   return {
     id: `test-fam-out-${uid}`,
@@ -174,7 +217,7 @@ export function createRandomDevBuyerFamilyRequest(): FamilyRequest {
     status: "pending",
     cancel_reason: null,
     created_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
+    expires_at: new Date(Date.now() + expiresIn).toISOString(),
     decided_at: null,
     cancelled_at: null,
     expired_at: null,

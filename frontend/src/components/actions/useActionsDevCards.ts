@@ -1,10 +1,26 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../ui";
 import { triggerTelegramImpact, triggerTelegramSelection } from "../../telegram";
-import {
+import type {
+  Family,
+  OwnerFamilyRequest,
+  AccountRequest,
+  MarketplaceListingRequest,
+  FamilyRequest
+} from "../../types";
+
+export {
   DEV_TEST_CARDS_STORAGE_KEY,
   type DevTestCardsState
-} from "./ActionsDevConstructor";
+} from "../../utils/devCardsStore";
+import {
+  DEV_TEST_CARDS_STORAGE_KEY,
+  DEV_CARDS_UPDATE_EVENT,
+  loadDevCards,
+  notifyDevCardsUpdated,
+  type DevTestCardsState
+} from "../../utils/devCardsStore";
 import type { ActionsTab } from "./ActionsScopePager";
 import type { ActionsCategoryFilter, ActionsStatusFilter } from "./actionsFilterTypes";
 import {
@@ -13,6 +29,8 @@ import {
   createRandomDevGbRequest,
   createRandomDevBuyerFamilyRequest
 } from "../../utils/devTestCards";
+import { cleanAllCardsApi, clearArchiveApi, resetAndSeedAllApi } from "../../api/dev";
+
 
 export interface UseActionsDevCardsOptions {
   actionsTab: ActionsTab;
@@ -28,27 +46,29 @@ export function useActionsDevCards({
   setActionsStatus
 }: UseActionsDevCardsOptions) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [devCards, setDevCards] = useState<DevTestCardsState>(() => {
-    if (typeof window === "undefined") {
-      return { candidates: [], sellerAccounts: [], buyerAccounts: [], sellerGb: [], buyerGb: [], buyerFamilies: [] };
-    }
-    try {
-      const raw = localStorage.getItem(DEV_TEST_CARDS_STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch {
-      // ignore
-    }
-    return { candidates: [], sellerAccounts: [], buyerAccounts: [], sellerGb: [], buyerGb: [], buyerFamilies: [] };
-  });
+  const [devCards, setDevCardsState] = useState<DevTestCardsState>(() => loadDevCards());
 
   useEffect(() => {
-    try {
-      localStorage.setItem(DEV_TEST_CARDS_STORAGE_KEY, JSON.stringify(devCards));
-    } catch {
-      // ignore
-    }
-  }, [devCards]);
+    const handleUpdate = () => {
+      setDevCardsState(loadDevCards());
+    };
+    window.addEventListener(DEV_CARDS_UPDATE_EVENT, handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener(DEV_CARDS_UPDATE_EVENT, handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, []);
+
+  const setDevCards = (action: React.SetStateAction<DevTestCardsState>) => {
+    setDevCardsState((prev) => {
+      const next = typeof action === "function" ? action(prev) : action;
+      notifyDevCardsUpdated(next);
+      return next;
+    });
+  };
 
   const [timerPrototype, setTimerPrototype] = useState<1 | 2 | 3 | 4>(() => {
     if (typeof window === "undefined") return 1;
@@ -147,10 +167,49 @@ export function useActionsDevCards({
     toast.success({ title: "Добавлены все 3 категории!" });
   }
 
-  function handleClearAllDevCards() {
+  async function handleClearAllDevCards() {
     triggerTelegramImpact("medium");
     setDevCards({ candidates: [], sellerAccounts: [], buyerAccounts: [], sellerGb: [], buyerGb: [], buyerFamilies: [] });
-    toast.info({ title: "Все тестовые карточки удалены" });
+    try {
+      localStorage.removeItem(DEV_TEST_CARDS_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    try {
+      await cleanAllCardsApi();
+      await queryClient.invalidateQueries();
+    } catch {
+      // dev API might not be available in non-dev
+    }
+    toast.info({ title: "Все тестовые карточки и архив очищены" });
+  }
+
+  async function handleClearArchive() {
+    triggerTelegramImpact("medium");
+    try {
+      await clearArchiveApi();
+      await queryClient.invalidateQueries();
+      toast.success({ title: "Архив успешно очищен" });
+    } catch {
+      toast.error({ title: "Не удалось очистить архив" });
+    }
+  }
+
+  async function handleResetAndSeedAll() {
+    triggerTelegramImpact("medium");
+    setDevCards({ candidates: [], sellerAccounts: [], buyerAccounts: [], sellerGb: [], buyerGb: [], buyerFamilies: [] });
+    try {
+      localStorage.removeItem(DEV_TEST_CARDS_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    try {
+      await resetAndSeedAllApi();
+      await queryClient.invalidateQueries();
+      toast.success({ title: "Новые карточки добавлены, архив очищен" });
+    } catch {
+      toast.error({ title: "Не удалось обновить карточки" });
+    }
   }
 
   return {
@@ -163,6 +222,8 @@ export function useActionsDevCards({
     handleAddDevAccount,
     handleAddDevGb,
     handleAddAllDevCategories,
-    handleClearAllDevCards
+    handleClearAllDevCards,
+    handleClearArchive,
+    handleResetAndSeedAll
   };
 }

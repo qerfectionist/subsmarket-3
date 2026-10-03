@@ -17,9 +17,10 @@ import {
 } from "../../hooks/useApi";
 import {
   triggerTelegramImpact,
-  triggerTelegramNotification
+  triggerTelegramNotification,
+  showTelegramConfirm
 } from "../../telegram";
-import type { DevTestCardsState } from "./ActionsDevConstructor";
+import type { DevTestCardsState } from "./useActionsDevCards";
 import type { ActionsArchiveItem } from "../families";
 import type { ActionsTab } from "./ActionsScopePager";
 import type { OwnerFamilyRequest, FamilyRequest } from "../../types";
@@ -144,6 +145,13 @@ export function useActionsTradeMutations({
   }
 
   async function handleCloseGbRequest(id: string, outcome: "sold" | "not_sold") {
+    const confirmMessage =
+      outcome === "sold"
+        ? "Завершить сделку? Покупатель оплатил и получил товар."
+        : "Отменить сделку как несостоявшуюся? Заявка будет закрыта.";
+    const confirmed = await showTelegramConfirm(confirmMessage);
+    if (!confirmed) return;
+
     if (id.startsWith("test-")) {
       setTradeBusyId(id);
       setCancellingIds((prev) => new Set(prev).add(id));
@@ -328,6 +336,13 @@ export function useActionsTradeMutations({
   }
 
   async function handleCloseAccountRequest(id: string, outcome: "sold" | "not_sold") {
+    const confirmMessage =
+      outcome === "sold"
+        ? "Завершить сделку? Покупатель оплатил и получил аккаунт."
+        : "Отменить сделку как несостоявшуюся? Заявка будет закрыта.";
+    const confirmed = await showTelegramConfirm(confirmMessage);
+    if (!confirmed) return;
+
     if (id.startsWith("test-")) {
       setTradeBusyId(id);
       setCancellingIds((prev) => new Set(prev).add(id));

@@ -57,6 +57,8 @@ export function useAccountListings(
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 10_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
@@ -68,6 +70,8 @@ export const useMyAccountListings = (enabled = true) =>
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 5_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 
@@ -88,6 +92,8 @@ export const useAccountRequests = (
     enabled,
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 5_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 

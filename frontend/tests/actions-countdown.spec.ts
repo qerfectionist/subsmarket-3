@@ -9,10 +9,19 @@ test.use({
   viewport: { width: 390, height: 844 },
 });
 
+let dialogAction: "accept" | "dismiss" = "accept";
+
 test.beforeEach(async ({ page }) => {
   await page.request.post(`${apiUrl}/api/dev/reset-demo-data`);
   await page.addInitScript(() => window.localStorage.clear());
-  page.on("dialog", (dialog) => dialog.accept());
+  dialogAction = "accept";
+  page.on("dialog", (dialog) => {
+    if (dialogAction === "dismiss") {
+      void dialog.dismiss();
+    } else {
+      void dialog.accept();
+    }
+  });
 });
 
 test.afterEach(async ({ page }) => {
@@ -161,10 +170,59 @@ test("seller has undo countdown on accept and reject buttons", async ({ page }) 
   // In test mode (webdriver=true), effectiveDuration is 350ms, so it completes automatically
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Можно написать", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Написать" })).toBeVisible();
+  const writeBtn = page.getByTestId("trade-request-write-btn");
+  await expect(writeBtn).toBeVisible();
 
-  // Screenshot accepted state
+  // Screenshot Step 1 accepted state (Написать покупателю)
   await page.screenshot({
     path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_accepted_done.png",
+  });
+
+  // 6. Click "Написать покупателю" to transition into Step 2: Deal resolution buttons
+  await writeBtn.click({ force: true });
+  await waitForNetworkQuiet(page);
+
+  const soldBtn = page.getByTestId("gb-close-sold-btn");
+  const notSoldBtn = page.getByTestId("gb-close-not-sold-btn");
+  await expect(soldBtn).toBeVisible();
+  await expect(notSoldBtn).toBeVisible();
+
+  // Screenshot Step 2 in dark mode
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_step2_deal_dark.png",
+  });
+
+  // Screenshot Step 2 in light mode
+  await page.evaluate(() => {
+    document.documentElement.classList.remove("tma-dark");
+    document.documentElement.classList.add("tma-light");
+  });
+  await page.waitForTimeout(200);
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_step2_deal_light.png",
+  });
+  await page.evaluate(() => {
+    document.documentElement.classList.remove("tma-light");
+    document.documentElement.classList.add("tma-dark");
+  });
+
+  // 7. Safety Confirm: Dismissing confirm dialog prevents accidental close
+  dialogAction = "dismiss";
+  await notSoldBtn.click({ force: true });
+  await page.waitForTimeout(200);
+  await expect(soldBtn).toBeVisible();
+
+  // 8. Confirm deal completion: Accepting dialog closes the deal
+  dialogAction = "accept";
+  await soldBtn.click({ force: true });
+  await waitForNetworkQuiet(page);
+
+  // 9. Verify toast and that the card disappears from active sales feed
+  await expect(page.getByText("Сделка завершена")).toBeVisible();
+  await expect(page.getByTestId("gigabytes-request-card")).toHaveCount(0);
+
+  // Screenshot final empty / resolved state
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_deal_closed_done.png",
   });
 });

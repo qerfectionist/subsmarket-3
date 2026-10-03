@@ -35,6 +35,8 @@ export function useMyFamilies() {
     queryFn: ({ pageParam }) => getMyFamiliesPage(pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
+    refetchInterval: 5_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
 }
@@ -45,6 +47,7 @@ export function useMyFamilyRequests() {
     queryFn: ({ pageParam }) => getMyFamilyRequestsPage(pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    refetchOnMount: "always",
     refetchInterval: 5_000,
     select: (data) => data.pages.flatMap((page) => page.items)
   });
