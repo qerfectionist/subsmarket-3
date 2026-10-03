@@ -157,13 +157,6 @@ export function GigabytesTradeRequestCard({
               </button>
             </>
           ) : null}
-          {request.role === "buyer" && request.status === "accepted" ? (
-            <TradeRequestCancelButton
-              busy={busy}
-              onCancel={() => onCancel?.(request.id)}
-              label="Отменить"
-            />
-          ) : null}
           {request.status === "accepted" && request.counterparty_username ? (
             <button
               type="button"
@@ -176,6 +169,13 @@ export function GigabytesTradeRequestCard({
               <SystemSymbol name="message" size={17} />
               <span>Написать</span>
             </button>
+          ) : null}
+          {request.role === "buyer" && request.status === "accepted" ? (
+            <TradeRequestCancelButton
+              busy={busy}
+              onCancel={() => onCancel?.(request.id)}
+              label="Отменить"
+            />
           ) : null}
           {request.role === "seller" && request.status === "accepted" ? (
             <>
