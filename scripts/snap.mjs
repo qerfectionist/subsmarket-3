@@ -31,7 +31,7 @@ async function main() {
     await page.goto(targetUrl, { waitUntil: "networkidle", timeout: 10000 });
 
     if (tabIndex !== null && !isNaN(tabIndex)) {
-      const tabButton = page.locator("nav button").nth(tabIndex);
+      const tabButton = page.locator("[data-testid='nav-item'], nav button").nth(tabIndex);
       if (await tabButton.count()) {
         await tabButton.click();
         await page.waitForTimeout(300);
