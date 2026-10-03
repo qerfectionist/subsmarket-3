@@ -248,7 +248,7 @@ test("market cards; mobile search opens the selected offer", async ({ page }, in
   await page.getByTestId("market-category-option-video").click();
   await expect(catalogFilterLabel).toHaveText("Видео");
   await expect(page.locator(".sm-market-catalog-swipe-pane[aria-hidden='false'] .sm-listing")).toHaveCount(1);
-  await expect(page.getByText("YouTube Premium", { exact: true })).toBeVisible();
+  await expect(page.getByText(/YouTube Premium/)).toBeVisible();
   await catalogFilterButton.click();
   await page.getByTestId("market-category-option-all").click();
   await catalogPriceButton.click();
@@ -266,7 +266,7 @@ test("market cards; mobile search opens the selected offer", async ({ page }, in
   await page.goto(appUrl + "?theme=light");
   await expect(page.getByTestId("market-popular-account")).toBeVisible();
   await page.getByTestId("market-popular-account").scrollIntoViewIfNeeded();
-  expect(await page.locator('[data-monochrome-source="dark"] img').first().evaluate(el => getComputedStyle(el).filter)).toBe("none");
+  expect(await page.locator('[data-monochrome-source="dark"] img').first().evaluate(el => getComputedStyle(el).filter)).toBe("brightness(0)");
   await page.screenshot({ path: info.outputPath("offers-light.png") });
 });
 

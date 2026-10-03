@@ -130,6 +130,7 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(notificationsButton).toBeVisible();
   await notificationsButton.click({ force: true });
   await waitForNetworkQuiet(page);
+  await openNav(page, 1);
   await openOwnerDetails(page);
   await expect(page.getByTestId("approve-request-button")).toBeVisible();
   await clickAndWait(page, "approve-request-button");

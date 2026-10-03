@@ -1,11 +1,22 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
+const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
 
 test.use({
   deviceScaleFactor: 2,
   isMobile: true,
   viewport: { width: 390, height: 844 },
+});
+
+test.beforeEach(async ({ page }) => {
+  await page.request.post(`${apiUrl}/api/dev/reset-demo-data`);
+  await page.addInitScript(() => window.localStorage.clear());
+  page.on("dialog", (dialog) => dialog.accept());
+});
+
+test.afterEach(async ({ page }) => {
+  await page.request.post(`${apiUrl}/api/dev/reset-demo-data`);
 });
 
 async function waitForNetworkQuiet(page: Page) {
