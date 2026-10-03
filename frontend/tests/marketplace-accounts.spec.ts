@@ -82,6 +82,10 @@ async function switchDevUser(page: Page, userId: string, optionName: string) {
   if (!(await container.isVisible())) {
     const nav = page.getByRole("navigation", { name: "Главная навигация" });
     await nav.getByRole("button", { name: "Мои", exact: true }).click({ force: true });
+    const toggleBtn = page.getByTestId("dev-controls-toggle");
+    if (await toggleBtn.isVisible()) {
+      await toggleBtn.click();
+    }
     await expect(container).toBeVisible();
     returnedToMarket = true;
   }
