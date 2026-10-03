@@ -62,8 +62,24 @@ test("dev constructor adds and clears test cards across all 3 categories", async
   await accountCard.getByRole("button", { name: "Принять" }).click();
   const writeBtn = accountCard.getByRole("button", { name: "Написать" });
   await expect(writeBtn).toBeVisible();
+  const soldBtn = accountCard.getByRole("button", { name: "Продано", exact: true });
+  const notSoldBtn = accountCard.getByRole("button", { name: "Не продано", exact: true });
+  await expect(soldBtn).toBeVisible();
+  await expect(soldBtn).toBeDisabled();
+  await expect(notSoldBtn).toBeVisible();
+  await expect(notSoldBtn).toBeDisabled();
+
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_3buttons_disabled.png"
+  });
+
   await writeBtn.click();
-  await expect(accountCard.getByRole("button", { name: "Продано", exact: true })).toBeVisible();
+  await expect(soldBtn).toBeEnabled();
+  await expect(notSoldBtn).toBeEnabled();
+
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_actions_3buttons_enabled.png"
+  });
 
   // Verify prototype switcher buttons exist in constructor
   const protoBtn1 = page.getByTestId("dev-proto-btn-1");

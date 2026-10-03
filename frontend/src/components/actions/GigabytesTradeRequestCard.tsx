@@ -130,7 +130,7 @@ export function GigabytesTradeRequestCard({
       </div>
 
       {hasActions ? (
-        <div className="gb-request-actions my-trade-request-actions">
+        <div className={`gb-request-actions my-trade-request-actions${request.role === "seller" && request.status === "accepted" ? " is-deal-resolution" : ""}`}>
           {request.role === "seller" && request.status === "pending" ? (
             <TradeRequestSellerActions
               busy={busy || timeRemaining.isExpired}
@@ -174,18 +174,30 @@ export function GigabytesTradeRequestCard({
               }}
             >
               <SystemSymbol name="message" size={17} />
-              Открыть Telegram
+              <span>Открыть Telegram</span>
             </button>
           ) : null}
-          {request.role === "seller" && request.status === "accepted" && hasContacted ? (
+          {request.role === "seller" && request.status === "accepted" ? (
             <>
-              <button disabled={busy} type="button" onClick={() => onClose?.(request.id, "sold")}>
+              <button
+                disabled={busy || !hasContacted}
+                type="button"
+                onClick={() => onClose?.(request.id, "sold")}
+                className="trade-request-sold-btn"
+                data-testid="gb-close-sold-btn"
+              >
                 <SystemSymbol name="checkmark" size={17} />
-                Продано
+                <span>Продано</span>
               </button>
-              <button disabled={busy} type="button" onClick={() => onClose?.(request.id, "not_sold")}>
+              <button
+                disabled={busy || !hasContacted}
+                type="button"
+                onClick={() => onClose?.(request.id, "not_sold")}
+                className="trade-request-not-sold-btn"
+                data-testid="gb-close-not-sold-btn"
+              >
                 <SystemSymbol name="xmark" size={17} />
-                Не состоялось
+                <span>Не состоялось</span>
               </button>
             </>
           ) : null}

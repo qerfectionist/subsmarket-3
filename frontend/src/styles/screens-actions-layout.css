@@ -275,4 +275,56 @@
 .actions-archive-date-group {
   scroll-snap-align: start;
 }
-/* ── LAYER 3: Actions Archive Card (Clean Native SubsMarket Listing) ── */
+
+/* ── Deal Resolution Actions (Single-row 3-button layout) ── */
+.my-trade-request-actions.is-deal-resolution {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.app-shell .my-trade-request-actions.is-deal-resolution button,
+.my-trade-request-actions.is-deal-resolution button {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  gap: 4px;
+}
+
+.app-shell .my-trade-request-actions.is-deal-resolution button span,
+.my-trade-request-actions.is-deal-resolution button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .my-trade-request-actions button.trade-request-sold-btn:not(:disabled):active,
+.my-trade-request-actions button.trade-request-sold-btn:not(:disabled):active {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+}
+
+.app-shell .my-trade-request-actions button.trade-request-not-sold-btn:not(:disabled):active,
+.my-trade-request-actions button.trade-request-not-sold-btn:not(:disabled):active {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+[data-theme="light"] .app-shell .my-trade-request-actions button.trade-request-sold-btn:not(:disabled):active,
+[data-theme="light"] .my-trade-request-actions button.trade-request-sold-btn:not(:disabled):active {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #16a34a;
+}
+
+[data-theme="light"] .app-shell .my-trade-request-actions button.trade-request-not-sold-btn:not(:disabled):active,
+[data-theme="light"] .my-trade-request-actions button.trade-request-not-sold-btn:not(:disabled):active {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+}

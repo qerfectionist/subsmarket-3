@@ -128,7 +128,7 @@ export function AccountTradeRequestCard({
       </div>
 
       {hasActions ? (
-        <div className="gb-request-actions my-trade-request-actions">
+        <div className={`gb-request-actions my-trade-request-actions${request.role === "seller" && request.status === "accepted" ? " is-deal-resolution" : ""}`}>
           {request.role === "seller" && request.status === "pending" ? (
             <TradeRequestSellerActions
               busy={busy || timeRemaining.isExpired}
@@ -165,7 +165,7 @@ export function AccountTradeRequestCard({
               }}
             >
               <SystemSymbol name="message" size={17} />
-              Написать
+              <span>Написать</span>
             </button>
           ) : null}
           {request.role === "buyer" && request.status === "accepted" ? (
@@ -175,15 +175,27 @@ export function AccountTradeRequestCard({
               label="Отменить"
             />
           ) : null}
-          {request.role === "seller" && request.status === "accepted" && hasContacted ? (
+          {request.role === "seller" && request.status === "accepted" ? (
             <>
-              <button disabled={busy} onClick={() => onClose?.(request.id, "sold")} type="button">
+              <button
+                disabled={busy || !hasContacted}
+                onClick={() => onClose?.(request.id, "sold")}
+                type="button"
+                className="trade-request-sold-btn"
+                data-testid="account-close-sold-btn"
+              >
                 <SystemSymbol name="checkmark" size={17} />
-                Продано
+                <span>Продано</span>
               </button>
-              <button disabled={busy} onClick={() => onClose?.(request.id, "not_sold")} type="button">
+              <button
+                disabled={busy || !hasContacted}
+                onClick={() => onClose?.(request.id, "not_sold")}
+                type="button"
+                className="trade-request-not-sold-btn"
+                data-testid="account-close-not-sold-btn"
+              >
                 <SystemSymbol name="xmark" size={17} />
-                Не продано
+                <span>Не продано</span>
               </button>
             </>
           ) : null}

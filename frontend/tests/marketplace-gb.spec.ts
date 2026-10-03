@@ -96,8 +96,10 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200001", "Owner · @demo_owner");
   await page.getByTestId("market-notifications").click({ force: true });
-  await expect(page.getByRole("button", { name: "Продано" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Продано" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Не состоялось" })).toBeDisabled();
   await page.getByRole("button", { name: "Открыть Telegram" }).click({ force: true });
+  await expect(page.getByRole("button", { name: "Продано" })).toBeEnabled();
   await page.getByRole("button", { name: "Продано" }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByTestId("marketplace-actions-card")).toHaveCount(0);

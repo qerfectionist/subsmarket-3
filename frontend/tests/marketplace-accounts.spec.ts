@@ -58,8 +58,10 @@ test("seller publishes an account offer and accepts a buyer", async ({ page }) =
   await waitForNetworkQuiet(page);
   await expect(page.getByText("@demo_member", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Написать" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Продано", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Продано", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Не продано", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Написать" }).click({ force: true });
+  await expect(page.getByRole("button", { name: "Продано", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Продано", exact: true }).click({
     force: true
   });
