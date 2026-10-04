@@ -334,6 +334,24 @@ def seed_test_incoming(db: Session | None = None) -> dict[str, int]:
                         created_at=now - timedelta(minutes=2),
                     )
                 )
+                db.add(
+                    MarketplaceListingRequest(
+                        id=uuid.uuid4(),
+                        listing_id=ext_gb.id,
+                        buyer_user_id=user.id,
+                        amount_gb_snapshot=15,
+                        price_per_gb_kzt_snapshot=ext_gb.price_per_gb_kzt,
+                        total_price_kzt_snapshot=15 * ext_gb.price_per_gb_kzt,
+                        operator_slug_snapshot=(
+                            ext_gb.operator.slug if ext_gb.operator else "altel"
+                        ),
+                        operator_name_snapshot=(
+                            ext_gb.operator.name if ext_gb.operator else "Altel"
+                        ),
+                        status="rejected",
+                        created_at=now - timedelta(hours=1),
+                    )
+                )
 
             if ext_acc:
                 db.add(
@@ -353,6 +371,23 @@ def seed_test_incoming(db: Session | None = None) -> dict[str, int]:
                         created_at=now - timedelta(minutes=3),
                     )
                 )
+                db.add(
+                    MarketplaceAccountRequest(
+                        id=uuid.uuid4(),
+                        listing_id=ext_acc.id,
+                        buyer_user_id=user.id,
+                        title_snapshot=ext_acc.title,
+                        price_kzt_snapshot=ext_acc.price_kzt,
+                        service_slug_snapshot=(
+                            ext_acc.service.slug if ext_acc.service else "chatgpt"
+                        ),
+                        service_name_snapshot=(
+                            ext_acc.service.name if ext_acc.service else "ChatGPT"
+                        ),
+                        status="rejected",
+                        created_at=now - timedelta(hours=2),
+                    )
+                )
 
             if ext_fam:
                 db.add(
@@ -363,6 +398,16 @@ def seed_test_incoming(db: Session | None = None) -> dict[str, int]:
                         status="pending",
                         created_at=now - timedelta(minutes=1),
                         expires_at=now + timedelta(hours=5),
+                    )
+                )
+                db.add(
+                    FamilyRequest(
+                        id=uuid.uuid4(),
+                        family_id=ext_fam.id,
+                        user_id=user.id,
+                        status="rejected",
+                        created_at=now - timedelta(hours=3),
+                        expires_at=now - timedelta(hours=1),
                     )
                 )
 

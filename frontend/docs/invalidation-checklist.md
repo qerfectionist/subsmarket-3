@@ -15,10 +15,9 @@ Plus `familyView` when membership/status on the family screen changes.
 | useMarkAccessProvided | ✓ | ✓ | — | ✓ |
 | useRemindAccessConfirmation | — | ✓ | — | — |
 | useCancelMemberBeforeAccess | ✓ | ✓ | — | — |
-| useScheduleMemberRemoval | ✓ | ✓ | — | ✓ |
-| useRevokeMemberRemoval | ✓ | ✓ | — | ✓ |
+| useRemoveMember | ✓ | ✓ | — | ✓ |
 | useConfirmPaymentReceived | ✓ | ✓ | ✓ | ✓ |
 | useMarkPaymentNotReceived | ✓ | ✓ | ✓ | ✓ |
 | useRecordOwnerPrepaidPeriods | ✓ | ✓ | ✓ | — |
 
-Source of truth: `hooks/useApi.ts` `onSuccess` handlers.
+Source of truth: `frontend/src/hooks/api/families-mutations.ts` `onSuccess` handlers.

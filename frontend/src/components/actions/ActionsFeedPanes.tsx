@@ -126,11 +126,15 @@ export function ActionsFeedPane({
         {inboxTotalCount === 0 ? (
           <EmptyState
             icon={<SystemSymbol name="checklist" size={32} />}
-            title="Нет входящих действий"
+            title="Нет входящих заявок"
           >
             {inboxArchiveCount > 0 ? (
               <>
-                <p>Все завершённые сделки и отклонённые запросы находятся в архиве.</p>
+                <span className="actions-empty-state-text">
+                  Завершённые сделки и&nbsp;запросы
+                  <br />
+                  сохранены в&nbsp;архиве
+                </span>
                 <AppButton
                   type="button"
                   size="sm"
@@ -139,13 +143,16 @@ export function ActionsFeedPane({
                     triggerTelegramImpact("light");
                     onOpenArchive();
                   }}
-                  style={{ marginTop: 12 }}
                 >
                   Открыть архив ({inboxArchiveCount})
                 </AppButton>
               </>
             ) : (
-              "Когда покупатель запросит гигабайты или аккаунт, либо кандидат подаст заявку в семью, они появятся здесь."
+              <span className="actions-empty-state-text">
+                Новые запросы от&nbsp;покупателей
+                <br />
+                и&nbsp;участников появятся здесь
+              </span>
             )}
           </EmptyState>
         ) : visibleInboxCount === 0 ? (
@@ -153,7 +160,9 @@ export function ActionsFeedPane({
             icon={<SystemSymbol name="checklist" size={32} />}
             title="Ничего не найдено"
           >
-            Нет входящих действий, соответствующих выбранным фильтрам.
+            <span className="actions-empty-state-text">
+              Нет входящих заявок по&nbsp;выбранным фильтрам
+            </span>
           </EmptyState>
         ) : (
           <div className="sm-market-family-list">
@@ -231,7 +240,11 @@ export function ActionsFeedPane({
         >
           {outboxArchiveCount > 0 ? (
             <>
-              <p>Все завершённые и отменённые заявки перемещены в архив.</p>
+              <span className="actions-empty-state-text">
+                Завершённые и&nbsp;отменённые заявки
+                <br />
+                сохранены в&nbsp;архиве
+              </span>
               <AppButton
                 type="button"
                 size="sm"
@@ -240,13 +253,16 @@ export function ActionsFeedPane({
                   triggerTelegramImpact("light");
                   onOpenArchive();
                 }}
-                style={{ marginTop: 12 }}
               >
                 Открыть архив ({outboxArchiveCount})
               </AppButton>
             </>
           ) : (
-            "Здесь отображаются ваши запросы на покупку гигабайтов, аккаунтов и заявки в семьи."
+            <span className="actions-empty-state-text">
+              Ваши заявки на&nbsp;покупку
+              <br />
+              и&nbsp;вступление в&nbsp;семью появятся здесь
+            </span>
           )}
         </EmptyState>
       ) : visibleOutboxCount === 0 ? (
@@ -254,7 +270,9 @@ export function ActionsFeedPane({
           icon={<SystemSymbol name="paperplane" size={32} />}
           title="Ничего не найдено"
         >
-          Нет исходящих заявок, соответствующих выбранным фильтрам.
+          <span className="actions-empty-state-text">
+            Нет заявок по&nbsp;выбранным фильтрам
+          </span>
         </EmptyState>
       ) : (
         <div className="sm-market-family-list">

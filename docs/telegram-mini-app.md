@@ -19,7 +19,7 @@ runtime behavior.
   bottom bar, and destructive actions.
 - Respect viewport and safe-area values for top padding and bottom navigation.
 - Use Telegram BackButton on internal screens:
-  - hidden on `Главная`;
+  - hidden on `Маркет` (корневой экран);
   - visible on search/create/mine/requests/details;
   - details screen returns to the tab that opened it.
 - Use haptic feedback only on important interactions:
@@ -60,7 +60,7 @@ python -m subsmarket.bot.set_webhook
 ## Current implementation
 
 - `frontend/src/telegram.ts` owns Telegram WebApp integration.
-- `frontend/src/api.ts` sends `X-Telegram-Init-Data` when available.
+- `frontend/src/api/client.ts` sends `X-Telegram-Init-Data` when available.
 - `backend/src/subsmarket/identity/telegram.py` validates `initData`.
 - `backend/tests/test_identity_telegram.py` covers valid and expired init data.
 - `backend/src/subsmarket/bot/api.py` receives Telegram bot webhook updates.

@@ -73,12 +73,33 @@ export function notifyDevCardsUpdated(cards: DevTestCardsState): void {
 
 export function countDevCards(state?: DevTestCardsState) {
   const cards = state ?? loadDevCards();
-  const inbox = cards.candidates.length + cards.sellerAccounts.length + cards.sellerGb.length;
-  const outbox = cards.buyerFamilies.length + cards.buyerAccounts.length + cards.buyerGb.length;
+  const isArchived = (s?: string) =>
+    ["closed", "cancelled", "rejected", "expired", "approved"].includes(s || "");
+  const activeCandidates = cards.candidates.filter((c) => !isArchived(c.request.status)).length;
+  const activeSellerAccounts = cards.sellerAccounts.filter((c) => !isArchived(c.status)).length;
+  const activeSellerGb = cards.sellerGb.filter((c) => !isArchived(c.status)).length;
+  const activeBuyerFamilies = cards.buyerFamilies.filter((c) => !isArchived(c.status)).length;
+  const activeBuyerAccounts = cards.buyerAccounts.filter((c) => !isArchived(c.status)).length;
+  const activeBuyerGb = cards.buyerGb.filter((c) => !isArchived(c.status)).length;
+
+  const activeInbox = activeCandidates + activeSellerAccounts + activeSellerGb;
+  const activeOutbox = activeBuyerFamilies + activeBuyerAccounts + activeBuyerGb;
+  const total =
+    cards.candidates.length +
+    cards.sellerAccounts.length +
+    cards.sellerGb.length +
+    cards.buyerFamilies.length +
+    cards.buyerAccounts.length +
+    cards.buyerGb.length;
+  const activeTotal = activeInbox + activeOutbox;
+  const archivedTotal = total - activeTotal;
+
   return {
-    total: inbox + outbox,
-    inbox,
-    outbox,
+    total,
+    activeTotal,
+    archivedTotal,
+    inbox: activeInbox,
+    outbox: activeOutbox,
     candidates: cards.candidates.length,
     sellerAccounts: cards.sellerAccounts.length,
     buyerAccounts: cards.buyerAccounts.length,
@@ -164,6 +185,84 @@ export function addAllDevCategoriesSet(
   const fam = createRandomDevBuyerFamilyRequest({ expiresInSeconds: timerSeconds });
   const acc = createRandomDevAccountRequest("buyer");
   const gb = createRandomDevGbRequest("buyer");
+  const updated: DevTestCardsState = {
+    ...current,
+    buyerFamilies: [fam, ...current.buyerFamilies],
+    buyerAccounts: [acc, ...current.buyerAccounts],
+    buyerGb: [gb, ...current.buyerGb]
+  };
+  notifyDevCardsUpdated(updated);
+  return updated;
+}
+
+export function addDevRejectedCard(
+  category: "gb" | "account" | "family",
+  scope: "inbox" | "outbox" = "outbox"
+): DevTestCardsState {
+  const current = loadDevCards();
+  if (category === "gb") {
+    const role = scope === "inbox" ? "seller" : "buyer";
+    const item = createRandomDevGbRequest(role, { status: "rejected" });
+    const updated: DevTestCardsState = {
+      ...current,
+      ...(role === "seller"
+        ? { sellerGb: [item, ...current.sellerGb] }
+        : { buyerGb: [item, ...current.buyerGb] })
+    };
+    notifyDevCardsUpdated(updated);
+    return updated;
+  }
+  if (category === "account") {
+    const role = scope === "inbox" ? "seller" : "buyer";
+    const item = createRandomDevAccountRequest(role, { status: "rejected" });
+    const updated: DevTestCardsState = {
+      ...current,
+      ...(role === "seller"
+        ? { sellerAccounts: [item, ...current.sellerAccounts] }
+        : { buyerAccounts: [item, ...current.buyerAccounts] })
+    };
+    notifyDevCardsUpdated(updated);
+    return updated;
+  }
+  if (scope === "inbox") {
+    const item = createRandomDevCandidate({ status: "rejected" });
+    const updated: DevTestCardsState = {
+      ...current,
+      candidates: [item, ...current.candidates]
+    };
+    notifyDevCardsUpdated(updated);
+    return updated;
+  }
+  const item = createRandomDevBuyerFamilyRequest({ status: "rejected" });
+  const updated: DevTestCardsState = {
+    ...current,
+    buyerFamilies: [item, ...current.buyerFamilies]
+  };
+  notifyDevCardsUpdated(updated);
+  return updated;
+}
+
+export function addAllDevRejectedSet(
+  scope: "inbox" | "outbox" = "outbox"
+): DevTestCardsState {
+  const current = loadDevCards();
+  if (scope === "inbox") {
+    const cand = createRandomDevCandidate({ status: "rejected" });
+    const acc = createRandomDevAccountRequest("seller", { status: "rejected" });
+    const gb = createRandomDevGbRequest("seller", { status: "rejected" });
+    const updated: DevTestCardsState = {
+      ...current,
+      candidates: [cand, ...current.candidates],
+      sellerAccounts: [acc, ...current.sellerAccounts],
+      sellerGb: [gb, ...current.sellerGb]
+    };
+    notifyDevCardsUpdated(updated);
+    return updated;
+  }
+
+  const fam = createRandomDevBuyerFamilyRequest({ status: "rejected" });
+  const acc = createRandomDevAccountRequest("buyer", { status: "rejected" });
+  const gb = createRandomDevGbRequest("buyer", { status: "rejected" });
   const updated: DevTestCardsState = {
     ...current,
     buyerFamilies: [fam, ...current.buyerFamilies],

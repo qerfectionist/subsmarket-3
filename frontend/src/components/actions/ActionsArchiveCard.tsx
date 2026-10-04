@@ -49,7 +49,9 @@ export function ActionsArchiveCard({
           {item.amountKzt != null ? (
             <strong
               className={`actions-archive-price${
-                item.status === "successful" && scope === "inbox" ? " is-positive" : ""
+                item.status === "successful"
+                  ? (scope === "inbox" ? " is-positive" : "")
+                  : " is-cancelled"
               }`}
             >
               {item.status === "successful" && scope === "inbox"

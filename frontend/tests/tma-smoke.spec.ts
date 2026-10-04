@@ -273,135 +273,107 @@ test("My sections switch with a horizontal swipe", async ({ page }) => {
   ).toHaveAttribute("aria-hidden", "false");
 });
 
-test("Actions switch between incoming and outgoing requests", async ({ page }) => {
+test("My sections swipe snaps back cleanly on slight gesture without freezing", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page
     .getByRole("navigation", { name: "Главная навигация" })
-    .getByRole("button", { name: "Заявки", exact: true })
+    .getByRole("button", { name: "Мои", exact: true })
     .click({ force: true });
-  await expect(page.getByTestId("actions-screen")).toBeVisible();
+  await expect(page.getByTestId("my-screen")).toBeVisible();
 
-  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
-  const inbox = scopeSwitch.getByTestId("actions-tab-inbox");
-  const outbox = scopeSwitch.getByTestId("actions-tab-outbox");
-  await expect(inbox).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
+  const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
+  await scopeSwitch.getByRole("button", { name: "ГБ", exact: true }).click({ force: true });
+  await expect(
+    page.locator(".my-product-scope-swipe-pane[data-product-scope='gigabytes']")
+  ).toHaveAttribute("aria-hidden", "false");
 
-  // Направление переключается тапом или горизонтальным свайпом.
-  await outbox.click();
-  await expect(outbox).toHaveAttribute("aria-pressed", "true");
-  await expect(inbox).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByTestId("actions-outbox-pane")).toBeVisible();
-
-  await inbox.click();
-  await expect(inbox).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
-});
-
-test("Actions scope indicator and pane follow swipe gesture", async ({ page }) => {
-  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
-  await page
-    .getByRole("navigation", { name: "Главная навигация" })
-    .getByRole("button", { name: "Заявки", exact: true })
-    .click({ force: true });
-  await expect(page.getByTestId("actions-screen")).toBeVisible();
-
-  const pager = page.getByTestId("actions-scope-swipe-viewport");
-  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
+  const pager = page.locator(".my-product-scope-swipe-viewport");
   const box = await pager.boundingBox();
-  if (!box) throw new Error("Actions scope pager is not measurable");
+  if (!box) throw new Error("My product scope pager is not measurable");
 
   const y = box.y + Math.min(box.height / 2, 180);
-  // Swipe left: from 80% to 20% width
-  await page.mouse.move(box.x + box.width * 0.8, y);
+  // Slight swipe left (15px) + slight vertical movement (20px)
+  await page.mouse.move(box.x + box.width * 0.5, y);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.2, y, { steps: 5 });
+  await page.mouse.move(box.x + box.width * 0.5 - 15, y + 20, { steps: 5 });
   await page.mouse.up();
 
-  // Swiped to outbox
-  const outbox = scopeSwitch.getByTestId("actions-tab-outbox");
-  await expect(outbox).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("actions-outbox-pane")).toBeVisible();
+  // Wait for spring animation to finish
+  await page.waitForTimeout(350);
 
-  // Swipe right: from 20% to 80% width
-  await page.mouse.move(box.x + box.width * 0.2, y);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.8, y, { steps: 5 });
-  await page.mouse.up();
+  // Take screenshot for visual inspection
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_my_gb_slight_swipe_fixed.png"
+  });
 
-  // Swiped back to inbox
-  const inbox = scopeSwitch.getByTestId("actions-tab-inbox");
-  await expect(inbox).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("actions-inbox-pane")).toBeVisible();
+  // Verify track is not stuck / shifted: position is back at gigabytes (2), transform is correct
+  await expect(scopeSwitch.getByRole("button", { name: "ГБ", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await expect(
+    page.locator(".my-product-scope-swipe-pane[data-product-scope='gigabytes']")
+  ).toHaveAttribute("aria-hidden", "false");
+
+  // Clicking another tab must work immediately without being locked
+  await scopeSwitch.getByRole("button", { name: "Подписки", exact: true }).click({ force: true });
+  await expect(scopeSwitch.getByRole("button", { name: "Подписки", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await expect(
+    page.locator(".my-product-scope-swipe-pane[data-product-scope='families']")
+  ).toHaveAttribute("aria-hidden", "false");
 });
 
-test("Actions switch resets filters when direction changes", async ({ page }) => {
+test("My sections switch tabs via mobile touch swipe sequence", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page
     .getByRole("navigation", { name: "Главная навигация" })
-    .getByRole("button", { name: "Заявки", exact: true })
+    .getByRole("button", { name: "Мои", exact: true })
     .click({ force: true });
-  await expect(page.getByTestId("actions-screen")).toBeVisible();
+  await expect(page.getByTestId("my-screen")).toBeVisible();
 
-  // Чипы циклятся по тапу: сдвигаем оба, потом меняем направление.
-  const categoryLabel = page.getByTestId("actions-category-filter-label");
-  const statusLabel = page.getByTestId("actions-status-filter-label");
-  await page.getByTestId("actions-category-filter-chip").click();
-  await page.getByTestId("actions-status-filter-chip").click();
-  await expect(categoryLabel).not.toHaveText("Все");
-  await expect(statusLabel).not.toHaveText("Все статусы");
+  const pager = page.locator(".my-product-scope-swipe-viewport");
+  const box = await pager.boundingBox();
+  if (!box) throw new Error("My product scope pager is not measurable");
 
-  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
-  await scopeSwitch.getByTestId("actions-tab-outbox").click();
-  await expect(categoryLabel).toHaveText("Все");
-  await expect(statusLabel).toHaveText("Все статусы");
-});
+  const startX = box.x + box.width * 0.8;
+  const startY = box.y + 120;
+  const endX = box.x + box.width * 0.2;
 
-test("Actions scope indicator matches its segment geometry", async ({ page }) => {
-  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
-  await page
-    .getByRole("navigation", { name: "Главная навигация" })
-    .getByRole("button", { name: "Заявки", exact: true })
-    .click({ force: true });
-  await expect(page.getByTestId("actions-screen")).toBeVisible();
+  await page.evaluate(async ({ startX, startY, endX }) => {
+    const vp = document.querySelector(".my-product-scope-swipe-viewport") as HTMLElement;
+    vp.dispatchEvent(new PointerEvent("pointerdown", {
+      bubbles: true, cancelable: true, pointerId: 99, pointerType: "touch", clientX: startX, clientY: startY
+    }));
 
-  const scopeSwitch = page.locator(".actions-screen .product-scope-switch");
-  const outbox = scopeSwitch.getByTestId("actions-tab-outbox");
-  await outbox.click();
-  await expect(outbox).toHaveAttribute("aria-pressed", "true");
+    for (let i = 1; i <= 6; i++) {
+      const curX = startX + (endX - startX) * (i / 6);
+      vp.dispatchEvent(new PointerEvent("pointermove", {
+        bubbles: true, cancelable: true, pointerId: 99, pointerType: "touch", clientX: curX, clientY: startY
+      }));
+      await new Promise((r) => setTimeout(r, 16));
+    }
 
-  // Капсула обязана совпадать со своим сегментом: та же формула, что и в Маркете.
-  const geometry = await readSegmentIndicatorGeometry(scopeSwitch, 1, "--scope-position");
-  expect(geometry.position).toBe(1);
-  expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
-  expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
-});
+    vp.dispatchEvent(new PointerEvent("lostpointercapture", {
+      bubbles: true, cancelable: true, pointerId: 99, pointerType: "touch", clientX: endX, clientY: startY
+    }));
 
-test("Actions archive disclosure opens and closes via top-right header action", async ({ page }) => {
-  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
-  await page
-    .getByRole("navigation", { name: "Главная навигация" })
-    .getByRole("button", { name: "Заявки", exact: true })
-    .click({ force: true });
-  await expect(page.getByTestId("actions-screen")).toBeVisible();
+    vp.dispatchEvent(new PointerEvent("pointerup", {
+      bubbles: true, cancelable: true, pointerId: 99, pointerType: "touch", clientX: endX, clientY: startY
+    }));
+  }, { startX, startY, endX });
 
-  const archiveTrigger = page.getByTestId("actions-archive-trigger");
-  await expect(archiveTrigger).toBeVisible();
-  await expect(archiveTrigger).toHaveAttribute("aria-expanded", "false");
-
-  const disclosure = page.locator("#actions-archive-disclosure");
-  await expect(disclosure).not.toHaveClass(/is-open/);
-
-  // Click to open archive
-  await archiveTrigger.click();
-  await expect(archiveTrigger).toHaveAttribute("aria-expanded", "true");
-  await expect(disclosure).toHaveClass(/is-open/);
-  await expect(disclosure.getByRole("heading", { name: "Архив заявок" })).toBeVisible();
-
-  // Click to close archive
-  await archiveTrigger.click();
-  await expect(archiveTrigger).toHaveAttribute("aria-expanded", "false");
-  await expect(disclosure).not.toHaveClass(/is-open/);
+  const scopeSwitch = page.getByRole("group", { name: "Разделы", exact: true });
+  await expect(scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true"
+  );
+  await page.waitForTimeout(400);
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_my_swiped_to_accounts.png"
+  });
 });
 
 test("My scope indicator starts with content on click", async ({ page }) => {

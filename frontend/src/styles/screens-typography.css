@@ -360,6 +360,7 @@ body, #root {
   width: 100%;
   min-width: 100%;
   box-sizing: border-box;
+  padding: 4px 4px 0;
 }
 
 .actions-archive-week-header {
@@ -584,8 +585,8 @@ body, #root {
 
 .my-payment-calendar-hero .my-payment-calendar-extra-count {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -3px;
+  left: -3px;
   width: 16px;
   height: 16px;
   border-radius: 50%;

@@ -21,16 +21,31 @@ export function parseTimestamp(val: string) {
   return Number.isNaN(ms) ? new Date(val).getTime() : ms;
 }
 
+export const REQUEST_EXPIRED_EVENT = "sm:request-expired";
+
+export function isRequestExpired(
+  status?: string | null,
+  createdAt?: string | null,
+  expiresAt?: string | null
+): boolean {
+  if (status === "expired") return true;
+  if (status && status !== "pending") return false;
+  // Requests without an explicit expiresAt (e.g. GB / accounts) do not have a client TTL.
+  // Only requests with expiresAt (e.g. Family requests with 5h deadline) or status === "expired" expire.
+  if (!expiresAt) return false;
+  const now = Date.now();
+  const deadline = parseTimestamp(expiresAt);
+  return deadline <= now;
+}
+
 export function useRequestTimeRemaining(createdAt?: string | null, expiresAt?: string | null) {
   const calculate = () => {
-    if (!createdAt && !expiresAt) return { text: "", progress: 1, isExpired: false };
+    // Only requests with a designated expiresAt deadline have a countdown timer.
+    if (!expiresAt) return { text: "", progress: 1, isExpired: false };
     const now = Date.now();
-    const start = parseTimestamp(createdAt!);
-    const totalDuration = 5 * 60 * 60 * 1000;
-    const maxDeadline = start ? start + totalDuration : (expiresAt ? parseTimestamp(expiresAt) : now + totalDuration);
-    const deadline = expiresAt
-      ? Math.min(parseTimestamp(expiresAt), maxDeadline)
-      : maxDeadline;
+    const start = createdAt ? parseTimestamp(createdAt) : 0;
+    const deadline = parseTimestamp(expiresAt);
+    const totalDuration = start && deadline > start ? deadline - start : 5 * 60 * 60 * 1000;
     const diffMs = deadline - now;
 
     if (diffMs <= 0) {
@@ -52,11 +67,24 @@ export function useRequestTimeRemaining(createdAt?: string | null, expiresAt?: s
   const [data, setData] = useState(calculate);
 
   useEffect(() => {
-    if (!createdAt && !expiresAt) return;
+    if (!expiresAt) return;
 
-    setData(calculate());
+    const initial = calculate();
+    setData(initial);
+    if (initial.isExpired && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(REQUEST_EXPIRED_EVENT));
+    }
+
+    let lastExpired = initial.isExpired;
     const interval = setInterval(() => {
-      setData(calculate());
+      const next = calculate();
+      if (!lastExpired && next.isExpired) {
+        lastExpired = true;
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent(REQUEST_EXPIRED_EVENT));
+        }
+      }
+      setData(next);
     }, 1000);
     return () => clearInterval(interval);
   }, [createdAt, expiresAt]);

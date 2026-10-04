@@ -1,4 +1,4 @@
-.gb-owner-actions button,
+﻿.gb-owner-actions button,
 .gb-request-actions button {
   align-items: center;
   background: var(--app-surface);
@@ -113,20 +113,14 @@
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
   background: var(--app-bg);
   color: var(--app-text);
-  overscroll-behavior-y: none;
-  overflow-x: hidden;
 }
 
 html,
 body,
 #root {
-  min-height: 100%;
   max-width: 100%;
-  overscroll-behavior-x: none;
-  overflow-x: hidden;
   scroll-padding-bottom: calc(150px + var(--app-safe-area-bottom) + env(safe-area-inset-bottom));
 }
 

@@ -59,24 +59,28 @@ export interface DevCardCandidateOptions {
   serviceSlug?: string;
   username?: string;
   expiresInSeconds?: number;
+  status?: "pending" | "approved" | "rejected" | "cancelled" | "expired";
 }
 
 export interface DevCardAccountOptions {
   serviceSlug?: string;
   username?: string;
   priceKzt?: number;
+  status?: "pending" | "accepted" | "rejected" | "closed" | "cancelled" | "expired";
 }
 
 export interface DevCardGbOptions {
   operatorSlug?: string;
   username?: string;
   amountGb?: number;
+  status?: "pending" | "accepted" | "rejected" | "closed" | "cancelled" | "expired";
 }
 
 export interface DevCardBuyerFamilyOptions {
   serviceSlug?: string;
   username?: string;
   expiresInSeconds?: number;
+  status?: "pending" | "approved" | "rejected" | "cancelled" | "expired";
 }
 
 export function createRandomDevCandidate(options?: DevCardCandidateOptions): { family: Family; request: OwnerFamilyRequest } {
@@ -125,7 +129,7 @@ export function createRandomDevCandidate(options?: DevCardCandidateOptions): { f
     plan_name: family.plan_name,
     owner_username: "demo_owner",
     user_id: `test-user-${uid}`,
-    status: "pending",
+    status: options?.status ?? "pending",
     cancel_reason: null,
     created_at: new Date().toISOString(),
     expires_at: new Date(Date.now() + expiresIn).toISOString(),
@@ -157,7 +161,7 @@ export function createRandomDevAccountRequest(
     id: `test-acc-${uid}`,
     listing_id: `test-acc-listing-${uid}`,
     role,
-    status: "pending",
+    status: options?.status ?? "pending",
     service_name: acc.service_name,
     service_slug: acc.service_slug,
     title: acc.title,
@@ -183,7 +187,7 @@ export function createRandomDevGbRequest(
     id: `test-gb-${uid}`,
     listing_id: `test-gb-listing-${uid}`,
     role,
-    status: "pending",
+    status: options?.status ?? "pending",
     operator_name: gb.operator_name,
     operator_slug: gb.operator_slug,
     amount_gb: String(amount),
@@ -214,7 +218,7 @@ export function createRandomDevBuyerFamilyRequest(
     plan_name: srv.plan_name,
     owner_username: owner,
     user_id: "200001",
-    status: "pending",
+    status: options?.status ?? "pending",
     cancel_reason: null,
     created_at: new Date().toISOString(),
     expires_at: new Date(Date.now() + expiresIn).toISOString(),

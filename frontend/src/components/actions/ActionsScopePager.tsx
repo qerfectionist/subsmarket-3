@@ -47,8 +47,14 @@ export function ActionsScopePager({
   const animationTargetRef = useRef<number | null>(null);
   const wasSwipedRef = useRef(false);
   const activeIndex = actionsTabOrder.indexOf(value);
-  const pagePercent = 100 / actionsTabOrder.length;
+  const activeIndexRef = useRef(activeIndex);
+  activeIndexRef.current = activeIndex;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const onDragPositionChangeRef = useRef(onDragPositionChange);
+  onDragPositionChangeRef.current = onDragPositionChange;
   const SWIPE_GAP = 16;
+  const scopeCount = actionsTabOrder.length;
 
   function setPosition(position: number) {
     positionRef.current = position;
@@ -57,7 +63,7 @@ export function ActionsScopePager({
       if (width > 0) {
         trackRef.current.style.transform = `translate3d(${-position * (width + SWIPE_GAP)}px, 0, 0)`;
       } else {
-        trackRef.current.style.transform = `translate3d(calc(${-position * pagePercent}% - ${position * ((SWIPE_GAP * (actionsTabOrder.length - 1)) / actionsTabOrder.length)}px), 0, 0)`;
+        trackRef.current.style.transform = `translate3d(calc(-${position} * ((100% + ${SWIPE_GAP}px) / ${scopeCount})), 0, 0)`;
       }
     }
   }
@@ -74,15 +80,15 @@ export function ActionsScopePager({
     initialVelocity = 0,
     interaction: "gesture" | "click" = "gesture"
   ) {
-    const target = Math.min(Math.max(nextPosition, 0), actionsTabOrder.length - 1);
+    const target = Math.min(Math.max(nextPosition, 0), scopeCount - 1);
     stopAnimation();
     animationTargetRef.current = target;
     if (interaction === "click") {
-      onDragPositionChange?.(target, false);
+      onDragPositionChangeRef.current?.(target, false);
     }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setPosition(target);
-      onDragPositionChange?.(target, false);
+      onDragPositionChangeRef.current?.(target, false);
       animationTargetRef.current = null;
       return;
     }
@@ -90,7 +96,7 @@ export function ActionsScopePager({
     let position = positionRef.current;
     if (Math.abs(target - position) < 0.001 && Math.abs(initialVelocity) < 0.01) {
       setPosition(target);
-      onDragPositionChange?.(target, false);
+      onDragPositionChangeRef.current?.(target, false);
       animationTargetRef.current = null;
       return;
     }
@@ -99,9 +105,10 @@ export function ActionsScopePager({
     const stiffness = 260;
     const damping = 32;
     if (interaction === "gesture") {
-      onDragPositionChange?.(position, true);
+      onDragPositionChangeRef.current?.(position, true);
     }
     let previousTime = performance.now();
+    const startTime = previousTime;
     const step = (time: number) => {
       const deltaTime = Math.min((time - previousTime) / 1000, 0.032);
       previousTime = time;
@@ -110,12 +117,17 @@ export function ActionsScopePager({
       position += velocity * deltaTime;
       setPosition(position);
       if (interaction === "gesture") {
-        onDragPositionChange?.(position, true);
+        onDragPositionChangeRef.current?.(position, true);
       }
 
-      if (Math.abs(target - position) < 0.001 && Math.abs(velocity) < 0.01) {
+      const distance = Math.abs(target - position);
+      const isSettled =
+        (distance < 0.002 && Math.abs(velocity) < 0.04) ||
+        time - startTime > 350;
+
+      if (isSettled) {
         setPosition(target);
-        onDragPositionChange?.(target, false);
+        onDragPositionChangeRef.current?.(target, false);
         animationTargetRef.current = null;
         animationFrameRef.current = null;
         return;
@@ -123,6 +135,54 @@ export function ActionsScopePager({
       animationFrameRef.current = requestAnimationFrame(step);
     };
     animationFrameRef.current = requestAnimationFrame(step);
+  }
+
+  function cleanupPointer() {
+    const pointer = pointerRef.current;
+    if (pointer && viewportRef.current) {
+      try {
+        if (viewportRef.current.hasPointerCapture(pointer.pointerId)) {
+          viewportRef.current.releasePointerCapture(pointer.pointerId);
+        }
+      } catch {}
+    }
+    pointerRef.current = null;
+  }
+
+  function finishPointer(clientX: number, cancelled = false) {
+    const pointer = pointerRef.current;
+    if (!pointer) return;
+
+    const wasDragging = pointer.isDragging;
+    const isCancelled = cancelled || pointer.cancelled;
+    const currentActive = activeIndexRef.current;
+    const finalX = typeof clientX === "number" && clientX > 0 ? clientX : pointer.lastX;
+    cleanupPointer();
+
+    if (isCancelled || !wasDragging) {
+      animateTo(currentActive, 0, "gesture");
+      return;
+    }
+
+    const deltaX = finalX - pointer.startX;
+    const width = viewportRef.current?.clientWidth || 1;
+    const stepSize = width + SWIPE_GAP;
+    const passedDistance = Math.abs(deltaX) >= Math.min(width * 0.14, 48);
+    const passedVelocity = Math.abs(pointer.velocityX) >= 220;
+    let target = currentActive;
+
+    if (passedDistance || passedVelocity) {
+      const direction = passedVelocity
+        ? (pointer.velocityX < 0 ? 1 : -1)
+        : (deltaX < 0 ? 1 : -1);
+      target = Math.round(pointer.originPosition) + direction;
+    }
+    target = Math.min(Math.max(target, 0), scopeCount - 1);
+    animateTo(target, -pointer.velocityX / stepSize, "gesture");
+    if (target !== currentActive) {
+      triggerTelegramImpact("light");
+      onChangeRef.current(actionsTabOrder[target]);
+    }
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -148,6 +208,7 @@ export function ActionsScopePager({
     if (!pointer || pointer.pointerId !== event.pointerId || pointer.cancelled) return;
     const deltaX = event.clientX - pointer.startX;
     const deltaY = event.clientY - pointer.startY;
+
     if (!pointer.isDragging) {
       const absX = Math.abs(deltaX);
       const absY = Math.abs(deltaY);
@@ -155,21 +216,16 @@ export function ActionsScopePager({
 
       if (absY >= 14 && absY > absX * 1.4) {
         pointer.cancelled = true;
-        pointerRef.current = null;
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
+        finishPointer(event.clientX, true);
         return;
       }
+
       if (absX >= 8 && absX * 1.4 >= absY) {
         pointer.isDragging = true;
         wasSwipedRef.current = true;
         try {
           event.currentTarget.setPointerCapture(event.pointerId);
         } catch {}
-        if (viewportRef.current) {
-          viewportRef.current.dataset.swiping = "true";
-        }
       } else {
         return;
       }
@@ -183,74 +239,57 @@ export function ActionsScopePager({
     const width = viewportRef.current?.clientWidth || 1;
     const stepSize = width + SWIPE_GAP;
     const rawPosition = pointer.originPosition - deltaX / stepSize;
-    const lastIndex = actionsTabOrder.length - 1;
-    const position = rawPosition < 0
-      ? rawPosition * 0.25
-      : rawPosition > lastIndex
-        ? lastIndex + (rawPosition - lastIndex) * 0.25
-        : rawPosition;
+    const lastIndex = scopeCount - 1;
+    const position =
+      rawPosition < 0
+        ? rawPosition * 0.25
+        : rawPosition > lastIndex
+          ? lastIndex + (rawPosition - lastIndex) * 0.25
+          : rawPosition;
     setPosition(position);
-    onDragPositionChange?.(position, true);
-  }
-
-  function handlePointerEnd(event: ReactPointerEvent<HTMLDivElement>, cancelled = false) {
-    if (viewportRef.current) {
-      delete viewportRef.current.dataset.swiping;
-    }
-    const pointer = pointerRef.current;
-    if (!pointer || pointer.pointerId !== event.pointerId) return;
-    pointerRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    if (pointer.cancelled) {
-      setPosition(activeIndex);
-      onDragPositionChange?.(activeIndex, false);
-      return;
-    }
-    if (cancelled) {
-      animateTo(activeIndex);
-      return;
-    }
-    if (!pointer.isDragging) return;
-
-    const deltaX = event.clientX - pointer.startX;
-    const width = viewportRef.current?.clientWidth || 1;
-    const stepSize = width + SWIPE_GAP;
-    const passedDistance = Math.abs(deltaX) >= width * 0.18;
-    const passedVelocity = Math.abs(pointer.velocityX) >= 450;
-    let target = Math.round(positionRef.current);
-    if (passedDistance || passedVelocity) {
-      const direction = passedVelocity
-        ? (pointer.velocityX < 0 ? 1 : -1)
-        : (deltaX < 0 ? 1 : -1);
-      target = Math.round(pointer.originPosition) + direction;
-    }
-    target = Math.min(Math.max(target, 0), actionsTabOrder.length - 1);
-    animateTo(target, -pointer.velocityX / stepSize, "gesture");
-    if (target !== activeIndex) {
-      triggerTelegramImpact("light");
-      onChange(actionsTabOrder[target]);
-    }
+    onDragPositionChangeRef.current?.(position, true);
   }
 
   useLayoutEffect(() => {
-    if (pointerRef.current) return;
+    if (pointerRef.current && !pointerRef.current.isDragging) {
+      pointerRef.current = null;
+    }
+    if (pointerRef.current?.isDragging) return;
     if (animationTargetRef.current === activeIndex) return;
     if (Math.abs(positionRef.current - activeIndex) < 0.001) {
       setPosition(activeIndex);
-      onDragPositionChange?.(activeIndex, false);
+      onDragPositionChangeRef.current?.(activeIndex, false);
       return;
     }
     animateTo(activeIndex, 0, "click");
   }, [activeIndex]);
 
-  useEffect(() => () => {
-    stopAnimation();
-    animationTargetRef.current = null;
-    if (viewportRef.current) {
-      delete viewportRef.current.dataset.swiping;
-    }
+  useEffect(() => {
+    const handleWindowPointerUp = (event: PointerEvent) => {
+      if (pointerRef.current && pointerRef.current.pointerId === event.pointerId) {
+        finishPointer(event.clientX, false);
+      }
+    };
+    const handleWindowPointerCancel = (event: PointerEvent) => {
+      if (pointerRef.current && pointerRef.current.pointerId === event.pointerId) {
+        finishPointer(event.clientX, true);
+      }
+    };
+    const handleResize = () => {
+      if (!pointerRef.current?.isDragging && animationTargetRef.current === null) {
+        setPosition(activeIndexRef.current);
+      }
+    };
+    window.addEventListener("pointerup", handleWindowPointerUp);
+    window.addEventListener("pointercancel", handleWindowPointerCancel);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("pointerup", handleWindowPointerUp);
+      window.removeEventListener("pointercancel", handleWindowPointerCancel);
+      window.removeEventListener("resize", handleResize);
+      stopAnimation();
+      animationTargetRef.current = null;
+    };
   }, []);
 
   return (
@@ -262,8 +301,6 @@ export function ActionsScopePager({
       aria-label={ariaLabel}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={(event) => handlePointerEnd(event)}
-      onPointerCancel={(event) => handlePointerEnd(event, true)}
       onClickCapture={(event) => {
         if (!wasSwipedRef.current) return;
         event.preventDefault();
@@ -275,7 +312,9 @@ export function ActionsScopePager({
         className="actions-scope-swipe-track"
         ref={trackRef}
         data-testid="actions-scope-swipe-track"
-        style={{ transform: `translate3d(calc(${-positionRef.current * pagePercent}% - ${positionRef.current * ((SWIPE_GAP * (actionsTabOrder.length - 1)) / actionsTabOrder.length)}px), 0, 0)` }}
+        style={{
+          transform: `translate3d(calc(-${positionRef.current} * ((100% + ${SWIPE_GAP}px) / ${scopeCount})), 0, 0)`
+        }}
       >
         {actionsTabOrder.map((scope) => (
           <div

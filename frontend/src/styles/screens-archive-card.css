@@ -25,6 +25,11 @@
 .actions-archive-card .actions-archive-price.is-positive {
   color: var(--app-success, #30d158);
 }
+.actions-archive-card .actions-archive-price.is-cancelled {
+  color: var(--app-muted, rgba(255, 255, 255, 0.38));
+  text-decoration: line-through;
+  font-weight: 500;
+}
 .actions-archive-card .actions-archive-rejection-text {
   font-size: 12px;
   color: var(--app-danger, #ff453a);
@@ -267,9 +272,14 @@
   flex-wrap: wrap;
 }
 .my-screen .my-family-empty-state .empty-state-body > span,
-.my-screen .empty-state .empty-state-body > span {
+.my-screen .empty-state .empty-state-body > span,
+.actions-empty-state-text {
   color: var(--app-muted);
   display: block;
+  font-size: var(--app-size-caption, 14px);
+  line-height: 1.45;
+  text-wrap: balance;
+  text-align: center;
 }
 .legacy-badge, .badge, .type-label, .request-card-heading em, .gb-request-head em {
   background: var(--app-secondary-bg); border: 0; border-radius: var(--app-radius-sm); color: var(--app-muted);
@@ -306,7 +316,7 @@
 .family-type-switch, .product-scope-switch, .owner-tabs, .gb-nav, .gb-role-switch {
   padding: var(--app-segment-padding); border: 0; border-radius: var(--app-radius-pill); background: var(--app-surface); box-shadow: none;
 }
-.family-type-switch { position: relative; gap: var(--app-segment-gap); }
+.family-type-switch { position: relative; gap: var(--app-segment-gap); touch-action: none; }
 .family-type-switch::before {
   content: "";
   position: absolute;
@@ -321,6 +331,10 @@
   transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
   pointer-events: none;
 }
+.family-type-switch[data-scope-dragging="true"]::before {
+  transition: none;
+}
+.owner-tabs { touch-action: none; }
 .family-type-switch button { position: relative; z-index: 1; }
 .app-shell :is(.family-type-switch, .product-scope-switch, .owner-tabs, .gb-nav, .gb-role-switch) button {
   padding: 10px 12px; min-height: 44px; border: 0; border-radius: var(--app-radius-pill);

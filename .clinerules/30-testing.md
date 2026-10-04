@@ -2,7 +2,7 @@
 
 1. **Targeted Module Testing**:
    - After editing a specific module, run ONLY relevant tests:
-     `npx playwright test tests/tma-smoke.spec.ts -g "<Filter>"`
+     `npx --prefix frontend playwright test tests/tma-smoke.spec.ts -g "<Filter>"`
      or `node scripts/run-python.mjs -m pytest backend/tests/test_xxx.py`.
 
 2. **Full Regression Cadence**:

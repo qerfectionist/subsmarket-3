@@ -37,30 +37,36 @@ export function useTouchScrollLock() {
       // 2. Never interfere with horizontal swipe widgets
       if (
         target.closest(
-          ".actions-archive-carousel-viewport, .actions-archive-carousel-track, .actions-scope-swipe-viewport, .actions-scope-swipe-track, .my-product-scope-swipe-viewport, .my-product-scope-swipe-track, .sm-market-catalog-swipe-viewport, .sm-market-catalog-swipe-track, .my-calendar-month-viewport, [data-swipe-track]"
+          ".actions-archive-carousel-viewport, .actions-archive-carousel-track, .actions-scope-swipe-viewport, .actions-scope-swipe-track, .my-product-scope-swipe-viewport, .my-product-scope-swipe-track, .sm-market-catalog-swipe-viewport, .sm-market-catalog-swipe-track, .my-calendar-month-viewport, .product-scope-switch, .family-type-switch, .sm-market-family-type-switch, .owner-tabs, [data-swipe-track]"
         )
       ) {
         return;
       }
 
       const scrollable = target.closest(
-        ".my-feed-scroll, .actions-tab-content, .actions-archive-feed-scroll, .sm-market-home-feed-scroll, .sm-market-catalog-feed-scroll, .subs-screen-scroll, .my-calendar-disclosure-content, .wizard-scroll, textarea"
+        ".my-feed-scroll, .actions-tab-content, .actions-archive-feed-scroll, .sm-market-home-feed-scroll, .sm-market-catalog-feed-scroll, .subs-screen-scroll, .my-calendar-disclosure-content, .wizard-scroll, .app-shell, textarea, [data-scrollable]"
       ) as HTMLElement | null;
 
       if (!scrollable) {
-        if (deltaY > 0 && e.cancelable) e.preventDefault();
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      const style = window.getComputedStyle(scrollable);
+      if (style.overflowY === "hidden") {
+        if (e.cancelable) e.preventDefault();
         return;
       }
 
       const maxScroll = scrollable.scrollHeight - scrollable.clientHeight;
       if (maxScroll > 1) {
-        const isAtTop = scrollable.scrollTop <= 0;
+        const isAtTop = scrollable.scrollTop <= 1;
         const isAtBottom = scrollable.scrollTop >= maxScroll - 1;
         if ((isAtTop && deltaY > 0) || (isAtBottom && deltaY < 0)) {
           if (e.cancelable) e.preventDefault();
         }
       } else {
-        if (deltaY > 0 && e.cancelable) e.preventDefault();
+        if (e.cancelable) e.preventDefault();
       }
     };
 

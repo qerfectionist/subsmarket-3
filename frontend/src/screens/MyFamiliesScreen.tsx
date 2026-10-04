@@ -98,6 +98,7 @@ export type MyFamiliesScreenProps = {
   onCreateAccountListing: () => void;
   onOpenGigabytesListing: (listingId: string) => void;
   onCreateGigabytesListing: () => void;
+  onCreateFamily?: () => void;
   onOpenMarket?: () => void;
 };
 
@@ -141,6 +142,7 @@ export function MyFamiliesScreen({
   onCreateAccountListing,
   onOpenGigabytesListing,
   onCreateGigabytesListing,
+  onCreateFamily,
   onOpenMarket
 }: MyFamiliesScreenProps) {
   const [expandedFamilyId, setExpandedFamilyId] = useState<string | null>(null);
@@ -265,7 +267,17 @@ export function MyFamiliesScreen({
             icon={<SystemSymbol name="person.2" size={32} />}
           >
             <span>Найдите подходящую семью в каталоге или создайте свою.</span>
-            {onOpenMarket ? (
+            {onCreateFamily ? (
+              <AppButton
+                type="button"
+                variant="primary"
+                size="sm"
+                data-testid="my-family-create-button"
+                onClick={onCreateFamily}
+              >
+                Создать семью
+              </AppButton>
+            ) : onOpenMarket ? (
               <AppButton type="button" variant="primary" size="sm" onClick={onOpenMarket}>
                 Перейти в Маркет
               </AppButton>
@@ -358,7 +370,6 @@ export function MyFamiliesScreen({
             ref={scopeSwitchRef}
             value={myProductScope}
             familiesLabel="Подписки"
-            activateOnPointerDown
             imperativePosition
             onChange={onChangeProductScope}
           />

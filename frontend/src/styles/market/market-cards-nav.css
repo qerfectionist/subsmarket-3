@@ -150,7 +150,7 @@
 .subs-dock-surface {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
   min-height: var(--app-nav-height); padding: 4px 8px;
-  border: 1px solid var(--app-nav-border); border-radius: var(--app-radius-pill);
+  border: 0; border-radius: var(--app-radius-pill);
   corner-shape: round; overflow: visible;
   background: var(--app-nav-material); box-shadow: var(--app-shadow-nav);
   backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%);
@@ -198,7 +198,7 @@
   height: 100%;
   min-height: var(--app-nav-create-size);
   padding: 0;
-  border: 1px solid var(--app-nav-border);
+  border: 0;
   border-radius: 50%;
   background: var(--app-nav-material);
   box-shadow: var(--app-shadow-nav);

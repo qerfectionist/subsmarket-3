@@ -41,7 +41,7 @@ def clean_archive(db: Session) -> dict[str, int]:
     ).rowcount
     del_fam = db.execute(
         delete(FamilyRequest).where(
-            FamilyRequest.status.in_(["approved", "rejected", "cancelled"])
+            FamilyRequest.status.in_(["approved", "rejected", "cancelled", "expired"])
         )
     ).rowcount
     db.commit()

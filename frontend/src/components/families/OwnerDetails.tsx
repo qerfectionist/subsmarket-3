@@ -3,6 +3,7 @@ import {
   Button as AppButton,
   Typography
 } from "../ui";
+import { useSegmentSwitchSwipe } from "../../hooks/useSegmentSwitchSwipe";
 
 import { statusText } from "../../format";
 import type {
@@ -115,6 +116,12 @@ export function OwnerDetails({
     details.requests.length > 0 ? "requests" : "members"
   );
 
+  const switchSwipe = useSegmentSwitchSwipe<"requests" | "members" | "payments">({
+    items: (["requests", "members", "payments"] as const),
+    value: ownerTab,
+    onChange: setOwnerTab
+  });
+
   useEffect(() => {
     if (details.requests.length === 0 && ownerTab === "requests") {
       setOwnerTab("members");
@@ -124,9 +131,13 @@ export function OwnerDetails({
   return (
     <div className="owner-details">
       <div
+        ref={node => {
+          switchSwipe.switchRef.current = node;
+        }}
         className="owner-tabs segmented-control segmented-control-3"
         role="tablist"
         aria-label="Управление семьёй"
+        {...switchSwipe.handlers}
       >
         <AppButton
           type="button"

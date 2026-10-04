@@ -1,4 +1,4 @@
-/* Actions archive disclosure & active view layout */
+﻿/* Actions archive disclosure & active view layout */
 .actions-screen .app-panel-body {
   display: grid;
   grid-template-rows: auto 1fr;
@@ -134,7 +134,8 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   scrollbar-width: none;
@@ -144,9 +145,6 @@
 }
 .actions-archive-feed-scroll::-webkit-scrollbar {
   display: none;
-}
-.actions-archive-date-group {
-  scroll-snap-align: start;
 }
 
 /* ── Deal Resolution Actions (Canonical SubsMarket Inset Tray & Refined Hierarchy) ── */

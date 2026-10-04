@@ -15,6 +15,7 @@ import {
 } from "./index";
 import { useFeedCardSnap } from "./useFeedCardSnap";
 import { useCatalogSwipePager } from "./useCatalogSwipePager";
+import { useSegmentSwitchSwipe } from "../../hooks/useSegmentSwitchSwipe";
 import { MarketCatalogFilterBar } from "./MarketCatalogFilterBar";
 import { MarketPopularFeed } from "./MarketPopularFeed";
 
@@ -132,6 +133,8 @@ export function MarketCatalogView({
     catalogAnimationFrame,
     familyTypeSwitchRef,
     catalogWasSwiped,
+    setCatalogPosition,
+    animateCatalogTo,
     handleCatalogPointerDown,
     handleCatalogPointerMove,
     handleCatalogPointerEnd
@@ -141,6 +144,21 @@ export function MarketCatalogView({
     scrollRef,
     onSelectCatalogFilter,
     onOpenFamilyCatalog
+  });
+
+  const marketSwitchSwipe = useSegmentSwitchSwipe<FamilyType>({
+    items: (["subscription", "tariff"] as const),
+    value: familyType,
+    onChange: (nextType) => {
+      onSelectCatalogFilter("all");
+      onOpenFamilyCatalog(nextType);
+    },
+    onPositionChange: (pos, dragging) => {
+      setCatalogPosition(pos);
+      if (!dragging) {
+        animateCatalogTo(pos, 0, "gesture");
+      }
+    }
   });
 
   const openInvite = () => {
@@ -203,24 +221,13 @@ export function MarketCatalogView({
 
       {isCatalog ? (
         <nav
-          ref={familyTypeSwitchRef}
+          ref={(node) => {
+            familyTypeSwitchRef.current = node;
+            marketSwitchSwipe.switchRef.current = node;
+          }}
           className="sm-market-family-type-switch"
           aria-label="Тип семейных предложений"
-          style={
-            catalogPointerRef.current !== null || catalogAnimationFrame.current !== null
-              ? undefined
-              : ({ "--catalog-type-position": familyType === "tariff" ? 1 : 0 } as React.CSSProperties)
-          }
-          onPointerDown={handleCatalogPointerDown}
-          onPointerMove={handleCatalogPointerMove}
-          onPointerUp={event => handleCatalogPointerEnd(event)}
-          onPointerCancel={event => handleCatalogPointerEnd(event, true)}
-          onClickCapture={event => {
-            if (!catalogWasSwiped.current) return;
-            event.preventDefault();
-            event.stopPropagation();
-            catalogWasSwiped.current = false;
-          }}
+          {...marketSwitchSwipe.handlers}
         >
           <button
             type="button"

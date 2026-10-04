@@ -1,4 +1,5 @@
-import { forwardRef, useId, type CSSProperties, type ReactNode } from "react";
+import { forwardRef, useId, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useSegmentSwitchSwipe } from "../hooks/useSegmentSwitchSwipe";
 
 import {
   Button as AppButton,
@@ -97,17 +98,43 @@ export function Shell({
   );
 }
 
-export function FamilyTypeSwitch({
-  value,
-  onChange
-}: {
-  value: FamilyType;
-  onChange: (value: FamilyType) => void;
-}) {
-  const position = value === "subscription" ? 0 : 1;
+const familyTypeOptions = ["subscription", "tariff"] as const;
+
+export function FamilyTypeSwitch({ value, onChange }: { value: FamilyType; onChange: (value: FamilyType) => void }) {
+  const switchRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    switchRef.current?.style.setProperty(
+      "--family-type-position",
+      String(value === "subscription" ? 0 : 1)
+    );
+  }, [value]);
+
+  const switchSwipe = useSegmentSwitchSwipe<FamilyType>({
+    items: familyTypeOptions,
+    value,
+    onChange,
+    onPositionChange: (pos, dragging) => {
+      const el = switchRef.current;
+      if (!el) return;
+      el.style.setProperty("--family-type-position", String(pos));
+      if (dragging) el.setAttribute("data-scope-dragging", "true");
+      else el.removeAttribute("data-scope-dragging");
+    }
+  });
+
   return (
-    <div className="family-type-switch" role="group" aria-label="Тип семейного предложения" style={{ "--family-type-position": position } as CSSProperties}>
-      {(["subscription", "tariff"] as FamilyType[]).map((type) => (
+    <div
+      ref={(node) => {
+        switchRef.current = node;
+        switchSwipe.switchRef.current = node;
+      }}
+      className="family-type-switch"
+      role="group"
+      aria-label="Тип семейного предложения"
+      {...switchSwipe.handlers}
+    >
+      {familyTypeOptions.map((type) => (
         <AppButton
           key={type}
           type="button"
@@ -124,6 +151,8 @@ export function FamilyTypeSwitch({
     </div>
   );
 }
+
+const myProductScopes = ["families", "accounts", "gigabytes"] as const;
 
 export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
   value?: "families" | "accounts" | "gigabytes";
@@ -147,7 +176,32 @@ export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
   activateOnPointerDown = false,
   imperativePosition = false
 }, ref) {
-  const position = dragPosition ?? ["families", "accounts", "gigabytes"].indexOf(value);
+  const position = dragPosition ?? myProductScopes.indexOf(value);
+  const innerRef = useRef<HTMLDivElement | null>(null);
+
+  const switchSwipe = useSegmentSwitchSwipe<"families" | "accounts" | "gigabytes">({
+    items: myProductScopes,
+    value,
+    onChange: (nextValue) => onChange?.(nextValue),
+    onPositionChange: (pos, dragging) => {
+      const node = innerRef.current;
+      if (!node) return;
+      node.style.setProperty("--scope-position", String(pos));
+      if (dragging) {
+        node.dataset.scopeDragging = "true";
+      } else {
+        delete node.dataset.scopeDragging;
+      }
+    }
+  });
+
+  const setRef = (node: HTMLDivElement | null) => {
+    innerRef.current = node;
+    switchSwipe.switchRef.current = node;
+    if (typeof ref === "function") ref(node);
+    else if (ref) ref.current = node;
+  };
+
   const handlePointerDown = (nextValue: "families" | "accounts" | "gigabytes") => {
     if (activateOnPointerDown && nextValue !== value) onChange?.(nextValue);
   };
@@ -158,7 +212,7 @@ export const ProductScopeSwitch = forwardRef<HTMLDivElement, {
   const style = imperativePosition ? undefined : ({ "--scope-position": position } as CSSProperties);
 
   return (
-    <div ref={ref} className="product-scope-switch" role="group" aria-label="Разделы" style={style}>
+    <div ref={setRef} className="product-scope-switch" role="group" aria-label="Разделы" style={style} {...switchSwipe.handlers}>
       <AppButton
         type="button"
         size="sm"

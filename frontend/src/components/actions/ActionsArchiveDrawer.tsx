@@ -5,6 +5,7 @@ import { ActionsArchiveCard } from "./ActionsArchiveCard";
 import { EmptyState } from "../layout";
 import { SystemSymbol } from "../SystemSymbol";
 import { triggerTelegramImpact } from "../../telegram";
+import { useFeedSnap } from "../../hooks/useFeedSnap";
 import {
   type ActionsArchiveFilter,
   actionsArchiveFilterOptions,
@@ -55,6 +56,23 @@ export function ActionsArchiveDrawer({
     });
   };
 
+  const inboxFilteredItems = getFilteredArchiveItems("inbox");
+  const outboxFilteredItems = getFilteredArchiveItems("outbox");
+
+  const inboxArchiveFeedSnap = useFeedSnap({
+    enabled: isArchiveOpen && actionsTab === "inbox",
+    itemCount: inboxFilteredItems.length,
+    tailCardTarget: "first",
+    enableScrollSnap: false
+  });
+
+  const outboxArchiveFeedSnap = useFeedSnap({
+    enabled: isArchiveOpen && actionsTab === "outbox",
+    itemCount: outboxFilteredItems.length,
+    tailCardTarget: "first",
+    enableScrollSnap: false
+  });
+
   const activeFilteredArchiveItems = getFilteredArchiveItems(actionsTab);
 
   const renderArchiveCard = (item: ActionsArchiveItem, scope: ActionsTab) => (
@@ -69,7 +87,9 @@ export function ActionsArchiveDrawer({
   );
 
   const renderArchivePane = (scope: ActionsTab) => {
-    const items = getFilteredArchiveItems(scope);
+    const raw = scope === "inbox" ? inboxArchiveItems : outboxArchiveItems;
+    const items = scope === "inbox" ? inboxFilteredItems : outboxFilteredItems;
+    const snap = scope === "inbox" ? inboxArchiveFeedSnap : outboxArchiveFeedSnap;
     const groups: { dateHeader: string; items: ActionsArchiveItem[] }[] = [];
     const map = new Map<string, ActionsArchiveItem[]>();
     for (const item of items) {
@@ -87,6 +107,8 @@ export function ActionsArchiveDrawer({
       <div
         className="actions-archive-feed-scroll"
         data-testid="actions-archive-feed-scroll"
+        ref={snap.containerRef}
+        {...snap.scrollHandlers}
       >
         {items.length === 0 ? (
           <EmptyState
@@ -102,7 +124,11 @@ export function ActionsArchiveDrawer({
           >
             {selectedArchiveDayISO ? (
               <>
-                <p>Попробуйте выбрать другой день или сбросьте выбор даты.</p>
+                <span className="actions-empty-state-text">
+                  Выберите другой день
+                  <br />
+                  или сбросьте выбор даты
+                </span>
                 <AppButton
                   type="button"
                   size="sm"
@@ -111,15 +137,56 @@ export function ActionsArchiveDrawer({
                     triggerTelegramImpact("light");
                     setSelectedArchiveDayISO(null);
                   }}
-                  style={{ marginTop: 12 }}
                 >
                   Показать все дни
                 </AppButton>
               </>
+            ) : archiveFilter !== "all" && raw.length > 0 ? (
+              <>
+                <span className="actions-empty-state-text">
+                  В архиве есть другие заявки ({raw.length})
+                  <br />
+                  сбросьте фильтр статуса
+                </span>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+                  {raw.some((i) => i.status === "cancelled") && archiveFilter !== "cancelled" ? (
+                    <AppButton
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        triggerTelegramImpact("light");
+                        setArchiveFilter("cancelled");
+                      }}
+                    >
+                      Показать отклонённые
+                    </AppButton>
+                  ) : null}
+                  <AppButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      triggerTelegramImpact("light");
+                      setArchiveFilter("all");
+                    }}
+                  >
+                    Показать все ({raw.length})
+                  </AppButton>
+                </div>
+              </>
             ) : scope === "inbox" ? (
-              "Здесь будут отображаться завершённые и отклонённые входящие запросы."
+              <span className="actions-empty-state-text">
+                Завершённые сделки и&nbsp;запросы
+                <br />
+                появятся здесь
+              </span>
             ) : (
-              "Здесь будут отображаться ваши завершённые и закрытые исходящие заявки."
+              <span className="actions-empty-state-text">
+                Завершённые и&nbsp;отменённые заявки
+                <br />
+                появятся здесь
+              </span>
             )}
           </EmptyState>
         ) : (

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
-const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
+const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:5174";
 const outDir = "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212";
 
 test.use({
@@ -317,20 +317,23 @@ test("verify calendar-like expandable info disclosure on Gigabytes and Accounts"
 });
 
 test("verify category filter on accounts catalog: shows Все, Видео, AI, Музыка, Другое", async ({ page }) => {
+  // Create an AI listing via API
+  await page.request.post(`${apiUrl}/api/marketplace/accounts/listings`, {
+    headers: {
+      "X-Dev-Telegram-User-Id": "400010",
+      "X-Dev-Telegram-Username": "ai_seller",
+      "X-Dev-Telegram-First-Name": "AI Seller"
+    },
+    data: {
+      service_slug: "chatgpt",
+      title: "ChatGPT Plus на месяц",
+      price_kzt: 3990,
+      description: "AI аккаунт"
+    }
+  });
+
   await page.goto(appUrl, { waitUntil: "networkidle" });
   await page.getByTestId("market-buy-accounts").click({ force: true });
-  await page.waitForTimeout(400);
-
-  // Click "Продать аккаунт" to create an AI listing
-  await page.getByRole("button", { name: "Продать аккаунт" }).click({ force: true });
-  await page.waitForTimeout(300);
-  await page.getByLabel("Что продаёте").fill("ChatGPT Plus на месяц");
-  await page.getByLabel("Цена, ₸").fill("3990");
-  await page.getByRole("button", { name: "Опубликовать на 30 дней" }).click({ force: true });
-  await page.waitForTimeout(500);
-
-  // Return to catalog
-  await page.getByTestId("accounts-screen").getByRole("button", { name: "Назад" }).click({ force: true });
   await page.waitForTimeout(400);
 
   const filterBtn = page.getByTestId("account-category-filter-button");

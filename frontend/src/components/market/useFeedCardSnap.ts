@@ -28,17 +28,14 @@ export function useFeedCardSnap({
       const firstCard = cards[0];
       const lastCard = cards[cards.length - 1];
       const totalContentHeight = (lastCard.offsetTop + lastCard.offsetHeight) - firstCard.offsetTop;
-      if (cards.length <= 3) {
-        if (totalContentHeight <= container.clientHeight - 76) {
-          container.style.paddingBottom = "0px";
-        } else {
-          container.style.paddingBottom = "76px";
-        }
+      if (totalContentHeight <= container.clientHeight - 76) {
+        container.style.paddingBottom = "76px";
         return;
       }
-      const last3Card = cards[cards.length - 3];
-      const last3Height = (lastCard.offsetTop + lastCard.offsetHeight) - last3Card.offsetTop;
-      const diff = container.clientHeight - last3Height;
+      // Keep at least the last 2 cards visible when scrolled to the end of the feed
+      const referenceCard = cards.length >= 2 ? cards[cards.length - 2] : cards[0];
+      const tailHeight = (lastCard.offsetTop + lastCard.offsetHeight) - referenceCard.offsetTop;
+      const diff = container.clientHeight - tailHeight;
       const targetPadding = Math.max(76, diff);
       container.style.paddingBottom = `${Math.round(targetPadding)}px`;
     };
@@ -61,6 +58,9 @@ export function useFeedCardSnap({
 
     updateFeedPadding();
 
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    if (maxScrollTop <= 1) return;
+
     const currentScrollTop = container.scrollTop;
     if (currentScrollTop > 0 && currentScrollTop < 35) {
       container.scrollTo({ top: 0, behavior: "smooth" });
@@ -71,23 +71,22 @@ export function useFeedCardSnap({
     const cards = container.querySelectorAll<HTMLElement>(".sm-listing");
     if (!cards.length) return;
 
-    const maxSnapCardIndex = Math.max(0, cards.length - 3);
     let closestTargetScrollTop = currentScrollTop;
     let minDistance = Infinity;
 
-    cards.forEach((card, index) => {
-      if (cards.length >= 3 && index > maxSnapCardIndex) return;
-
+    cards.forEach((card) => {
       const cardRect = card.getBoundingClientRect();
       const distance = cardRect.top - containerRect.top;
+      const targetScroll = currentScrollTop + distance;
+      if (targetScroll < -10 || targetScroll > maxScrollTop + 10) return;
+
       if (Math.abs(distance) < Math.abs(minDistance)) {
         minDistance = distance;
-        closestTargetScrollTop = currentScrollTop + distance;
+        closestTargetScrollTop = targetScroll;
       }
     });
 
-    if (Math.abs(minDistance) >= 2 && Math.abs(minDistance) < 120) {
-      const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    if (Math.abs(minDistance) >= 2 && Math.abs(minDistance) < 140) {
       const target = Math.min(maxScrollTop, Math.max(0, Math.round(closestTargetScrollTop)));
       container.scrollTo({ top: target, behavior: "smooth" });
     }

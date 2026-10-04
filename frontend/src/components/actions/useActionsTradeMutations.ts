@@ -104,8 +104,8 @@ export function useActionsTradeMutations({
       await new Promise((resolve) => setTimeout(resolve, 450));
       setDevCards((prev) => ({
         ...prev,
-        sellerGb: prev.sellerGb.filter((r) => r.id !== id),
-        buyerGb: prev.buyerGb.filter((r) => r.id !== id)
+        sellerGb: prev.sellerGb.map((r) => (r.id === id ? { ...r, status: "rejected" } : r)),
+        buyerGb: prev.buyerGb.map((r) => (r.id === id ? { ...r, status: "rejected" } : r))
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -158,10 +158,11 @@ export function useActionsTradeMutations({
       setIsArchivePulsing(true);
       triggerTelegramImpact("light");
       await new Promise((resolve) => setTimeout(resolve, 450));
+      const finalStatus = outcome === "sold" ? "closed" : "rejected";
       setDevCards((prev) => ({
         ...prev,
-        sellerGb: prev.sellerGb.filter((r) => r.id !== id),
-        buyerGb: prev.buyerGb.filter((r) => r.id !== id)
+        sellerGb: prev.sellerGb.map((r) => (r.id === id ? { ...r, status: finalStatus } : r)),
+        buyerGb: prev.buyerGb.map((r) => (r.id === id ? { ...r, status: finalStatus } : r))
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -209,8 +210,8 @@ export function useActionsTradeMutations({
       await new Promise((resolve) => setTimeout(resolve, 450));
       setDevCards((prev) => ({
         ...prev,
-        sellerGb: prev.sellerGb.filter((r) => r.id !== id),
-        buyerGb: prev.buyerGb.filter((r) => r.id !== id)
+        sellerGb: prev.sellerGb.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r)),
+        buyerGb: prev.buyerGb.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r))
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -295,8 +296,8 @@ export function useActionsTradeMutations({
       await new Promise((resolve) => setTimeout(resolve, 450));
       setDevCards((prev) => ({
         ...prev,
-        sellerAccounts: prev.sellerAccounts.filter((r) => r.id !== id),
-        buyerAccounts: prev.buyerAccounts.filter((r) => r.id !== id)
+        sellerAccounts: prev.sellerAccounts.map((r) => (r.id === id ? { ...r, status: "rejected" } : r)),
+        buyerAccounts: prev.buyerAccounts.map((r) => (r.id === id ? { ...r, status: "rejected" } : r))
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -349,10 +350,11 @@ export function useActionsTradeMutations({
       setIsArchivePulsing(true);
       triggerTelegramImpact("light");
       await new Promise((resolve) => setTimeout(resolve, 450));
+      const finalStatus = outcome === "sold" ? "closed" : "rejected";
       setDevCards((prev) => ({
         ...prev,
-        sellerAccounts: prev.sellerAccounts.filter((r) => r.id !== id),
-        buyerAccounts: prev.buyerAccounts.filter((r) => r.id !== id)
+        sellerAccounts: prev.sellerAccounts.map((r) => (r.id === id ? { ...r, status: finalStatus } : r)),
+        buyerAccounts: prev.buyerAccounts.map((r) => (r.id === id ? { ...r, status: finalStatus } : r))
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -400,8 +402,8 @@ export function useActionsTradeMutations({
       await new Promise((resolve) => setTimeout(resolve, 450));
       setDevCards((prev) => ({
         ...prev,
-        sellerAccounts: prev.sellerAccounts.filter((r) => r.id !== id),
-        buyerAccounts: prev.buyerAccounts.filter((r) => r.id !== id)
+        sellerAccounts: prev.sellerAccounts.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r)),
+        buyerAccounts: prev.buyerAccounts.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r))
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -461,7 +463,7 @@ export function useActionsTradeMutations({
       await new Promise((resolve) => setTimeout(resolve, 450));
       setDevCards((prev) => ({
         ...prev,
-        buyerFamilies: prev.buyerFamilies.filter((r) => r.id !== id)
+        buyerFamilies: prev.buyerFamilies.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r))
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -507,7 +509,9 @@ export function useActionsTradeMutations({
       await new Promise((resolve) => setTimeout(resolve, 450));
       setDevCards((prev) => ({
         ...prev,
-        candidates: prev.candidates.filter((c) => c.request.id !== request.id)
+        candidates: prev.candidates.map((c) =>
+          c.request.id === request.id ? { ...c, request: { ...c.request, status: "approved" } } : c
+        )
       }));
       setTradeBusyId(null);
       setTimeout(() => {
@@ -555,7 +559,9 @@ export function useActionsTradeMutations({
       await new Promise((resolve) => setTimeout(resolve, 450));
       setDevCards((prev) => ({
         ...prev,
-        candidates: prev.candidates.filter((c) => c.request.id !== request.id)
+        candidates: prev.candidates.map((c) =>
+          c.request.id === request.id ? { ...c, request: { ...c.request, status: "rejected" } } : c
+        )
       }));
       setTradeBusyId(null);
       setTimeout(() => {

@@ -1,7 +1,13 @@
-/* Market, offer cards and navigation share the application foundations. */
+﻿/* Market, offer cards and navigation share the application foundations. */
 .market-shell {
   width: 100%;
-  min-height: 100dvh;
+  height: 100%;
+  height: var(--app-viewport-stable-height, 100dvh);
+  max-height: var(--app-viewport-stable-height, 100dvh);
+  box-sizing: border-box;
+  overflow: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
   background: var(--app-bg);
   color: var(--app-text);
   font-family: var(--app-font-family);
@@ -12,21 +18,25 @@
   gap: var(--app-space-4);
   max-width: var(--app-page-width);
   width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: calc(var(--app-space-6) + var(--app-inset-top)) calc(16px + var(--app-inset-right)) var(--app-nav-clearance) calc(16px + var(--app-inset-left));
   background: var(--app-bg);
   color: var(--app-text);
 }
 .subs-screen-scroll {
-  height: var(--app-viewport-stable-height, 100dvh);
+  height: 100%;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
   scroll-padding-bottom: var(--app-nav-clearance);
   scrollbar-width: none;
 }
 .sm-market-screen-home {
-  height: var(--app-viewport-stable-height, 100dvh);
+  height: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -87,7 +97,8 @@
   flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   scroll-snap-type: y proximity;

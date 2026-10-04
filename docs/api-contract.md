@@ -25,7 +25,7 @@ INVALID_CAPACITY
 INVALID_PERIOD
 REQUEST_ALREADY_PENDING
 REQUEST_REJECTED_PREVIOUSLY
-REQUEST_SELF_CANCEL_LIMIT_REACHED
+SELF_CANCEL_LIMIT_REACHED
 SERVICE_ACTIVE_REQUEST_LIMIT_REACHED
 REQUEST_EXPIRED
 REQUEST_NOT_PENDING
@@ -370,8 +370,9 @@ Backend проверяет:
 - семья видима и принимает заявки;
 - нет pending заявки в эту семью;
 - нет отказа в этой семье;
-- не исчерпан лимит двух самостоятельных отмен;
-- не превышен лимит трех pending заявок на этот сервис.
+- не исчерпан лимит двух самостоятельных отмен (`SELF_CANCEL_LIMIT_REACHED`);
+- не превышен лимит трех pending заявок на этот сервис;
+- заявка создается со сроком действия 5 часов (`expires_at = now + 5 hours`), после чего истекает.
 
 Ошибка при четвертой активной заявке:
 
@@ -675,17 +676,19 @@ Backend:
 
 Эти операции запускаются планировщиком, а не пользователем:
 
-- `expire_pending_family_requests`;
+- `expire_family_requests`;
 - `send_access_confirmation_reminders`;
-- `mark_first_payments_overdue`;
-- `mark_regular_payments_overdue`;
-- `send_payment_reminders`;
+- `mark_overdue_first_payments`;
+- `create_regular_payments`;
+- `activate_regular_payments`;
+- `send_regular_payment_reminders`;
+- `mark_overdue_regular_payments`;
 - `send_owner_payment_confirmation_reminders`;
-- `execute_member_removals`;
 - `close_due_families`;
-- `send_closing_acknowledgement_reminders`.
-- `send_marketplace_listing_expiry_reminders`;
-- `expire_marketplace_listings`.
+- `send_closing_acknowledgement_reminders`;
+- `cleanup_expired_idempotency_records`;
+- `expire_marketplace_listings`;
+- `send_marketplace_listing_expiry_reminders`.
 
 ### POST /api/internal/jobs/run-due
 

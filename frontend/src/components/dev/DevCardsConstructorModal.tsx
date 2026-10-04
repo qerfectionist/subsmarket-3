@@ -8,6 +8,8 @@ import {
   addDevAccountCard,
   addDevGbCard,
   addAllDevCategoriesSet,
+  addDevRejectedCard,
+  addAllDevRejectedSet,
   clearLocalDevCards,
   resetAndSeedServerCards,
   cleanAllServerCards,
@@ -108,6 +110,20 @@ export function DevCardsConstructorModal({
     toast.success({ title: `Все 3 категории (${scope === "inbox" ? "Входящие" : "Исходящие"}) добавлены` });
   };
 
+  const handleAddRejected = (category: "gb" | "account" | "family") => {
+    triggerTelegramImpact("light");
+    addDevRejectedCard(category, scope);
+    toast.success({
+      title: `Отклонённая заявка (${category === "gb" ? "ГБ" : category === "account" ? "аккаунт" : "семья"}) добавлена в архив`
+    });
+  };
+
+  const handleAddAllRejected = () => {
+    triggerTelegramImpact("medium");
+    addAllDevRejectedSet(scope);
+    toast.success({ title: `3 отклонённые заявки (${scope === "inbox" ? "Входящие" : "Исходящие"}) добавлены в архив` });
+  };
+
   const handleCreateCustom = () => {
     triggerTelegramImpact("light");
     if (customCategory === "family") {
@@ -186,7 +202,7 @@ export function DevCardsConstructorModal({
           <div className="dev-constructor-title-wrap">
             <span className="dev-constructor-title">⚡ Конструктор карточек</span>
             <span className="dev-constructor-badge">
-              Активно: {counts.total} ({counts.inbox} вх / {counts.outbox} исх)
+              Активно: {counts.activeTotal} · В архиве: {counts.archivedTotal}
             </span>
           </div>
           <button
@@ -227,7 +243,7 @@ export function DevCardsConstructorModal({
 
           {/* Quick Add Section */}
           <div className="dev-constructor-section">
-            <span className="dev-constructor-section-label">Быстрое создание карточек</span>
+            <span className="dev-constructor-section-label">Быстрое создание (Активные)</span>
             <div className="dev-constructor-grid">
               <button type="button" className="dev-action-card-btn" onClick={handleAddFamily}>
                 <span className="dev-card-btn-icon">👨‍👩‍👧</span>
@@ -243,7 +259,32 @@ export function DevCardsConstructorModal({
               </button>
               <button type="button" className="dev-action-card-btn" onClick={handleAddAll}>
                 <span className="dev-card-btn-icon">⚡</span>
-                <span>+ Все 3 категории</span>
+                <span>+ Все 3</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Rejected / Archive Section */}
+          <div className="dev-constructor-section">
+            <span className="dev-constructor-section-label">
+              {scope === "outbox" ? "Отклонённые мои заявки (В архив)" : "Отклонённые заявки (В архив)"}
+            </span>
+            <div className="dev-constructor-grid">
+              <button type="button" className="dev-action-card-btn is-danger-soft" onClick={() => handleAddRejected("family")}>
+                <span className="dev-card-btn-icon">❌</span>
+                <span>Семья</span>
+              </button>
+              <button type="button" className="dev-action-card-btn is-danger-soft" onClick={() => handleAddRejected("account")}>
+                <span className="dev-card-btn-icon">❌</span>
+                <span>Аккаунт</span>
+              </button>
+              <button type="button" className="dev-action-card-btn is-danger-soft" onClick={() => handleAddRejected("gb")}>
+                <span className="dev-card-btn-icon">❌</span>
+                <span>Трафик ГБ</span>
+              </button>
+              <button type="button" className="dev-action-card-btn is-danger-soft" onClick={handleAddAllRejected}>
+                <span className="dev-card-btn-icon">📦</span>
+                <span>Все 3 в архив</span>
               </button>
             </div>
           </div>

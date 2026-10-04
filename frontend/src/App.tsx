@@ -62,6 +62,7 @@ export function App() {
   const [gigabytesEntryId, setGigabytesEntryId] = useState<string | null>(null);
   const [accountsBackTab, setAccountsBackTab] = useState<Tab>("home");
   const [gigabytesBackTab, setGigabytesBackTab] = useState<Tab>("home");
+  const [createBackTab, setCreateBackTab] = useState<Tab>("home");
 
   useEffect(() => {
     if (tab !== "accounts") setAccountEntryId(null);
@@ -462,6 +463,7 @@ export function App() {
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
             changeFamilyType(nextType);
+            setCreateBackTab("home");
             setTab("create");
           }}
           resetToken={marketResetToken}
@@ -471,7 +473,7 @@ export function App() {
       {tab === "create" && (
         <AsyncContent query={servicesQuery}>
           <CreateFamilyScreen
-            onBack={() => setTab("home")}
+            onBack={() => setTab(createBackTab)}
             onCreateAccounts={() => {
               setAccountsBackTab("create");
               setAccountsEntryMode("create");
@@ -540,6 +542,11 @@ export function App() {
             setGigabytesBackTab("mine");
             setGigabytesEntryMode("create");
             setTab("gigabytes");
+          }}
+          onCreateFamily={() => {
+            changeFamilyType("subscription");
+            setCreateBackTab("mine");
+            setTab("create");
           }}
           onOpenMarket={() => setTab("home")}
         />
@@ -705,6 +712,9 @@ export function App() {
           }
           if (nextTab === "requests") {
             setActionsTab(null);
+          }
+          if (nextTab === "create") {
+            setCreateBackTab("home");
           }
           setTab(nextTab);
         }}

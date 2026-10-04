@@ -240,40 +240,21 @@ SubsMarket в этом движке является витриной, прин�
 ```text
 backend/
   src/
-    identity/
-      domain/
-      application/
-      infrastructure/
-      api/
-    catalog/
-      domain/
-      application/
-      infrastructure/
-      api/
-    families/
-      domain/
-      application/
-      infrastructure/
-      api/
-    marketplace/
-      domain/
-      application/
-      infrastructure/
-      api/
-    notifications/
-      application/
-      infrastructure/
-    audit/
-      application/
-      infrastructure/
-    shared/
-      money.py
-      time.py
-      errors.py
+    subsmarket/
+      core/           # config, database, datetime, idempotency, money, rate_limit, security
+      identity/       # telegram auth, users, models, api
+      catalog/        # services catalog, categories, models, api
+      families/       # family engine: creation, requests, members, payments, audit, models, api/
+      marketplace/    # listings, operators, requests for GB and accounts, models, api/
+      notifications/  # telegram dispatch, queues, models
+      jobs/           # background scheduler, lifecycle jobs, monitoring, api
+      bot/            # telegram webhook, entrypoint, set_webhook
+      ops/            # health, metrics, smoke tests
+      dev/            # seeders, demo flows, testing endpoints
 ```
 
-Внутри небольшого модуля папки можно объединять, если разделение не приносит
-пользы. Структура не должна порождать пустые интерфейсы и файлы.
+Модули организованы как модульный монолит: внутри модуля находятся `models.py`, `schemas.py`,
+`service.py` (или доменные подмодули) и `api/`. Структура не плодит искусственные слои.
 
 ## Правила зависимостей
 
@@ -282,7 +263,7 @@ backend/
 - `notifications` не меняет состояния семьи или объявления.
 - `catalog` предоставляет идентификаторы и ограничения, но не управляет
   семьями и объявлениями.
-- общая папка `shared` содержит только действительно общие примитивы.
+- модуль `core` содержит только действительно общие примитивы (конфигурация, время, деньги, БД).
 - SQLAlchemy-модели не используются как доменные сущности за пределами
   инфраструктурного слоя.
 - API-схемы не содержат бизнес-правил.

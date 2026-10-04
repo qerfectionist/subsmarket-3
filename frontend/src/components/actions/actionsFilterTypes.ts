@@ -38,14 +38,28 @@ export const actionsArchiveFilterOptions: readonly {
   { value: "cancelled", label: "Отклонённые", icon: "xmark" }
 ];
 
-export function isTradeRequestStatusMatch(status: string, filter: ActionsStatusFilter) {
-  const isActive = ["pending", "accepted"].includes(status);
+import { isRequestExpired } from "./useRequestTimeRemaining";
+
+export function isTradeRequestStatusMatch(
+  status: string,
+  filter: ActionsStatusFilter,
+  createdAt?: string | null,
+  expiresAt?: string | null
+) {
+  const isExpired = isRequestExpired(status, createdAt, expiresAt);
+  const isActive = !isExpired && ["pending", "accepted"].includes(status);
   if (filter === "all") return isActive;
   return filter === "pending" ? isActive : !isActive;
 }
 
-export function isFamilyRequestStatusMatch(status: string, filter: ActionsStatusFilter) {
-  const isActive = ["pending", "approved"].includes(status);
+export function isFamilyRequestStatusMatch(
+  status: string,
+  filter: ActionsStatusFilter,
+  createdAt?: string | null,
+  expiresAt?: string | null
+) {
+  const isExpired = isRequestExpired(status, createdAt, expiresAt);
+  const isActive = !isExpired && ["pending", "approved"].includes(status);
   if (filter === "all") return isActive;
   return filter === "pending" ? isActive : !isActive;
 }
