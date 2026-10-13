@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { SystemSymbol } from "../SystemSymbol";
 import type { MarketplaceListingRequest, AccountRequest } from "../../types";
 
 export function formatTradeKzt(value: number) {
@@ -38,18 +39,81 @@ export function isRequestExpired(
   return deadline <= now;
 }
 
-export function useRequestTimeRemaining(createdAt?: string | null, expiresAt?: string | null) {
+export function formatTimeRemainingHuman(diffMs: number): string {
+  if (diffMs <= 0) return "Срок истёк";
+  const totalSec = Math.floor(diffMs / 1000);
+  const hours = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+
+  if (hours > 0) {
+    if (hours === 1) return "1 час остался";
+    if (hours >= 2 && hours <= 4) return `${hours} часа осталось`;
+    return `${hours} часов осталось`;
+  }
+  if (mins > 0) {
+    return `${mins} мин осталось`;
+  }
+  return `${secs} сек осталось`;
+}
+
+export function resolveRequestExpiresAt(
+  createdAt?: string | null,
+  expiresAt?: string | null,
+  requestId?: string | null
+): string | null {
+  if (expiresAt) return expiresAt;
+  if (!requestId && !createdAt) return null;
+  if (typeof window === "undefined") return null;
+
+  const storageKey = requestId ? `sm_req_expiry_${requestId}` : null;
+  if (storageKey) {
+    try {
+      const cached = window.sessionStorage.getItem(storageKey);
+      if (cached) return cached;
+    } catch {
+      // ignore
+    }
+  }
+
+  const createdMs = createdAt ? parseTimestamp(createdAt) : Date.now();
+  const elapsedMs = Date.now() - createdMs;
+  // Response window: 15 minutes for pending trade requests
+  const deadlineMs =
+    elapsedMs > 0 && elapsedMs < 15 * 60 * 1000
+      ? createdMs + 15 * 60 * 1000
+      : Date.now() + 15 * 60 * 1000;
+  const iso = new Date(deadlineMs).toISOString();
+
+  if (storageKey) {
+    try {
+      window.sessionStorage.setItem(storageKey, iso);
+    } catch {
+      // ignore
+    }
+  }
+  return iso;
+}
+
+export function useRequestTimeRemaining(
+  createdAt?: string | null,
+  expiresAt?: string | null,
+  requestId?: string | null
+) {
+  const effectiveExpiresAt = resolveRequestExpiresAt(createdAt, expiresAt, requestId);
+
   const calculate = () => {
-    // Only requests with a designated expiresAt deadline have a countdown timer.
-    if (!expiresAt) return { text: "", progress: 1, isExpired: false };
+    if (!effectiveExpiresAt) {
+      return { text: "", humanText: "", progress: 1, isExpired: false };
+    }
     const now = Date.now();
     const start = createdAt ? parseTimestamp(createdAt) : 0;
-    const deadline = parseTimestamp(expiresAt);
-    const totalDuration = start && deadline > start ? deadline - start : 5 * 60 * 60 * 1000;
+    const deadline = parseTimestamp(effectiveExpiresAt);
+    const totalDuration = start && deadline > start ? deadline - start : 15 * 60 * 1000;
     const diffMs = deadline - now;
 
     if (diffMs <= 0) {
-      return { text: "Срок истёк", progress: 0, isExpired: true };
+      return { text: "Срок истёк", humanText: "Срок истёк", progress: 0, isExpired: true };
     }
 
     const progress = Math.max(0, Math.min(1, diffMs / totalDuration));
@@ -60,14 +124,15 @@ export function useRequestTimeRemaining(createdAt?: string | null, expiresAt?: s
 
     const pad = (n: number) => n.toString().padStart(2, "0");
     const text = `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+    const humanText = formatTimeRemainingHuman(diffMs);
 
-    return { text, progress, isExpired: false };
+    return { text, humanText, progress, isExpired: false };
   };
 
   const [data, setData] = useState(calculate);
 
   useEffect(() => {
-    if (!expiresAt) return;
+    if (!effectiveExpiresAt) return;
 
     const initial = calculate();
     setData(initial);
@@ -87,9 +152,34 @@ export function useRequestTimeRemaining(createdAt?: string | null, expiresAt?: s
       setData(next);
     }, 1000);
     return () => clearInterval(interval);
-  }, [createdAt, expiresAt]);
+  }, [createdAt, effectiveExpiresAt]);
 
   return data;
+}
+
+export function PendingRequestTimerBadge({
+  timeRemaining,
+  role = "seller"
+}: {
+  timeRemaining: { humanText?: string; text: string; isExpired?: boolean };
+  role?: "seller" | "buyer";
+}) {
+  if (timeRemaining.isExpired) {
+    return (
+      <span className="my-trade-request-status is-expired">
+        <SystemSymbol name="clock" size={12} className="my-trade-request-clock-icon" />
+        <span>{role === "seller" ? "Вы не ответили" : "Продавец не ответил"}</span>
+      </span>
+    );
+  }
+
+  const label = timeRemaining.humanText || timeRemaining.text;
+  return (
+    <span className="my-trade-request-status is-pending" title={`Осталось: ${label}`}>
+      <SystemSymbol name="clock" size={12} className="my-trade-request-clock-icon" />
+      <span>{label}</span>
+    </span>
+  );
 }
 
 export function CircularCountdownTimer({
@@ -137,12 +227,15 @@ export function CircularCountdownTimer({
   );
 }
 
-export function gbRequestStatus(status: MarketplaceListingRequest["status"]) {
+export function gbRequestStatus(status: MarketplaceListingRequest["status"], role?: "seller" | "buyer") {
+  if (status === "rejected") {
+    return role === "buyer" ? "Продавец отклонил" : "Вы отклонили";
+  }
   return (
     {
       pending: "Ждёт ответа",
       accepted: "Можно написать",
-      rejected: "Отклонена",
+      rejected: "Вы отклонили",
       cancelled: "Отменена",
       closed: "Закрыта",
       expired: "Срок истёк"
@@ -150,15 +243,18 @@ export function gbRequestStatus(status: MarketplaceListingRequest["status"]) {
   )[status];
 }
 
-export function accountRequestStatus(status: AccountRequest["status"]) {
+export function accountRequestStatus(status: AccountRequest["status"], role?: "seller" | "buyer") {
+  if (status === "rejected") {
+    return role === "buyer" ? "Продавец отклонил" : "Вы отклонили";
+  }
   return (
     {
       pending: "Ждёт ответа",
       accepted: "Принята",
-      rejected: "Отклонена",
+      rejected: "Вы отклонили",
       cancelled: "Отменена",
       closed: "Закрыта",
-      expired: "Истекла"
+      expired: "Срок истёк"
     } as const
   )[status];
 }

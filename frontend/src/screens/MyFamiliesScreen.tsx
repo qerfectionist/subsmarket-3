@@ -22,6 +22,7 @@ import {
   type MyFamilyRoleFilter,
   type MyProductScope
 } from "../components/families";
+import { ScrollToTopButton } from "../components/ScrollToTopButton";
 import { SystemSymbol } from "../components/SystemSymbol";
 import { EmptyState, Panel, ProductScopeSwitch } from "../components/layout";
 import { FamilyListSkeleton } from "../components/skeleton";
@@ -334,6 +335,12 @@ export function MyFamiliesScreen({
                 {isLoadingMoreFamilies ? "Загружаем семьи..." : "Показать ещё семьи"}
               </AppButton>
             ) : null}
+            {filteredFamilies.length > 0 && (
+              <ScrollToTopButton
+                containerRef={familiesFeedSnap.containerRef}
+                testId="my-families-scroll-to-top-btn"
+              />
+            )}
           </>
         )}
       </div>
@@ -417,8 +424,8 @@ export function MyFamiliesScreen({
                     <h2 className="my-family-section-title">Семьи</h2>
                     <span className="my-family-section-count">{filteredFamilies.length}</span>
                   </div>
-                  <FamilyRoleChip value={familyRoleFilter} onChange={setFamilyRoleFilter} />
                   <MyFamilyFilterChip value={familyFilter} onChange={setFamilyFilter} />
+                  <FamilyRoleChip value={familyRoleFilter} onChange={setFamilyRoleFilter} />
                 </div>
                 <div
                   id="my-family-calendar"
@@ -430,7 +437,9 @@ export function MyFamiliesScreen({
                     <PaymentCalendar families={filteredFamilies} />
                   </div>
                 </div>
-                {renderFamilySection()}
+                <div className="my-feed-wrap">
+                  {renderFamilySection()}
+                </div>
               </>
             );
           }}

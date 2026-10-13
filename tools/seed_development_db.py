@@ -23,7 +23,7 @@ from subsmarket.catalog.models import FamilyService
 from subsmarket.catalog.service import import_family_services
 from subsmarket.core.config import settings
 from subsmarket.core.database import SessionLocal, utcnow
-from subsmarket.families.models import Family, FamilyPayment
+from subsmarket.families.models import Family, FamilyMember, FamilyPayment
 from subsmarket.families.schemas import FamilyCreate
 from subsmarket.families.service import (
     approve_join_request,
@@ -106,17 +106,19 @@ def seed_families(db: Session, users: dict[str, User]) -> None:
             db.flush()
 
             # Member joins and gets access
-            req1 = create_join_request(db, yt_family.id, member)
+            req1 = create_join_request(db, member, yt_family.id)
             db.flush()
-            m1 = approve_join_request(db, req1.id, owner.id)
+            approve_join_request(db, owner, req1.id)
             db.flush()
-            mark_access_provided(db, yt_family.id, m1.id, owner.id)
-            db.flush()
-            confirm_access_received(db, yt_family.id, m1.id, member.id)
-            db.flush()
+            m1 = db.scalar(select(FamilyMember).where(FamilyMember.family_id == yt_family.id, FamilyMember.user_id == member.id))
+            if m1:
+                mark_access_provided(db, owner, m1.id)
+                db.flush()
+                confirm_access_received(db, member, m1.id)
+                db.flush()
 
             # Newbie sends pending join request
-            create_join_request(db, yt_family.id, newbie)
+            create_join_request(db, newbie, yt_family.id)
             db.flush()
 
     # 2. Spotify Family with reported payment waiting confirmation
@@ -137,19 +139,21 @@ def seed_families(db: Session, users: dict[str, User]) -> None:
             db.flush()
 
             # Member joins, gets access and reports payment
-            req2 = create_join_request(db, spot_family.id, member)
+            req2 = create_join_request(db, member, spot_family.id)
             db.flush()
-            m2 = approve_join_request(db, req2.id, owner.id)
+            approve_join_request(db, owner, req2.id)
             db.flush()
-            mark_access_provided(db, spot_family.id, m2.id, owner.id)
-            db.flush()
-            confirm_access_received(db, spot_family.id, m2.id, member.id)
-            db.flush()
-
-            payment = db.scalar(select(FamilyPayment).where(FamilyPayment.family_id == spot_family.id, FamilyPayment.member_id == m2.id))
-            if payment and payment.status == "pending":
-                report_payment_paid(db, payment.id, member.id)
+            m2 = db.scalar(select(FamilyMember).where(FamilyMember.family_id == spot_family.id, FamilyMember.user_id == member.id))
+            if m2:
+                mark_access_provided(db, owner, m2.id)
                 db.flush()
+                confirm_access_received(db, member, m2.id)
+                db.flush()
+
+                payment = db.scalar(select(FamilyPayment).where(FamilyPayment.family_id == spot_family.id, FamilyPayment.member_id == m2.id))
+                if payment and payment.status == "pending":
+                    report_payment_paid(db, member, payment.id)
+                    db.flush()
 
     # 3. Apple One Family owned by member
     if apple_service:
@@ -187,9 +191,8 @@ def seed_marketplace(db: Session, users: dict[str, User]) -> None:
                 id=uuid.uuid4(),
                 seller_user_id=owner.id,
                 operator_id=tele2.id,
-                gb_amount=Decimal("25.00"),
-                price_kzt=3000,
-                phone_prefix="+7 707",
+                price_per_gb_kzt=120,
+                description="Быстрая передача гигабайтов",
                 status="active",
                 expires_at=now + timedelta(days=7),
             )
@@ -201,9 +204,12 @@ def seed_marketplace(db: Session, users: dict[str, User]) -> None:
                 id=uuid.uuid4(),
                 listing_id=gb_listing.id,
                 buyer_user_id=buyer_aida.id,
-                buyer_phone="+7 707 123 4567",
+                operator_slug_snapshot=tele2.slug,
+                operator_name_snapshot=tele2.name,
+                amount_gb_snapshot=Decimal("25.00"),
+                price_per_gb_kzt_snapshot=120,
+                total_price_kzt_snapshot=3000,
                 status="pending",
-                expires_at=now + timedelta(hours=24),
             )
             db.add(req)
             db.flush()
@@ -230,8 +236,11 @@ def seed_marketplace(db: Session, users: dict[str, User]) -> None:
                 id=uuid.uuid4(),
                 listing_id=acc_listing.id,
                 buyer_user_id=buyer_serik.id,
+                service_slug_snapshot=chatgpt.slug,
+                service_name_snapshot=chatgpt.name,
+                title_snapshot=acc_listing.title,
+                price_kzt_snapshot=acc_listing.price_kzt,
                 status="pending",
-                expires_at=now + timedelta(hours=24),
             )
             db.add(req_acc)
             db.flush()

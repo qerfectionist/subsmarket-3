@@ -1,4 +1,5 @@
 import { AccountListingCard, FamilyListingCard, GigabytesListingCard } from "../ListingCard";
+import { ScrollToTopButton } from "../ScrollToTopButton";
 import { SystemSymbol } from "../SystemSymbol";
 import type { Offer } from "./types";
 
@@ -149,6 +150,9 @@ export function CatalogResultsPane({
           {isLoadingMoreFamilies ? "Загружаем…" : "Показать ещё"}
         </button>
       ) : null}
+      {displayed.length > 0 && (
+        <ScrollToTopButton testId="market-catalog-scroll-to-top-btn" />
+      )}
     </div>
   );
 }

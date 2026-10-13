@@ -1,0 +1,486 @@
+/* ==========================================================================
+   SubsMarket Master Family Card (Direct Tolan + Box Box Club Benchmark)
+   ========================================================================== */
+
+.mfc-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 14px 60px;
+  max-width: 410px;
+  margin: 0 auto;
+}
+
+/* Page Header */
+.mfc-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.mfc-page-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mfc-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-secondary-bg, #2C2C2E);
+  border: 1px solid var(--app-border, #38383A);
+  color: var(--app-text, #F5F5F7);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background 0.15s ease;
+  padding: 0;
+}
+.mfc-back-btn:active {
+  transform: scale(0.92);
+  background: var(--app-border, #38383A);
+}
+
+.mfc-page-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--app-text, #F5F5F7);
+  margin: 0;
+}
+
+.mfc-benchmark-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(100, 210, 255, 0.12);
+  color: #64D2FF;
+  border: 1px solid rgba(100, 210, 255, 0.25);
+}
+
+/* Mode Switcher (Owner vs Member view) */
+.mfc-mode-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--app-secondary-bg, #2C2C2E);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--app-border, #38383A);
+}
+
+.mfc-mode-tab {
+  height: 32px;
+  border-radius: 9px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--app-muted, #98989F);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.mfc-mode-tab.is-active {
+  background: var(--app-surface, #1C1C1E);
+  color: var(--app-text, #F5F5F7);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+}
+
+/* ==========================================================================
+   Master Card Component
+   ========================================================================== */
+
+.mfc-card {
+  background: #18181A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+/* Card Header */
+.mfc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mfc-service-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.mfc-service-icon-box {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mfc-service-texts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mfc-service-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mfc-service-type {
+  font-size: 0.8125rem;
+  color: #8E8E93;
+  margin-top: 2px;
+}
+
+.mfc-price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.mfc-price-val {
+  font-size: 1.1875rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.mfc-price-period {
+  font-size: 0.75rem;
+  color: #8E8E93;
+  margin-top: 1px;
+}
+
+/* Tolan-style Capacity Strip */
+.mfc-capacity-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.mfc-capacity-dots-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mfc-dots-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mfc-dot-seat {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.mfc-dot-seat.is-filled {
+  background: #30D158;
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.5);
+}
+
+.mfc-dot-seat.is-empty {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.mfc-capacity-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #E5E5EA;
+}
+
+.mfc-free-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(48, 209, 88, 0.14);
+  color: #30D158;
+  border: 1px solid rgba(48, 209, 88, 0.24);
+}
+
+/* Tolan Section Header */
+.mfc-section-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8E8E93;
+  margin: 4px 0 0;
+}
+
+/* Slots List */
+.mfc-slots-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+/* Single Slot Row */
+.mfc-slot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  gap: 10px;
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.mfc-slot-item:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mfc-slot-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mfc-slot-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mfc-avatar-frame {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #2C2C2E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #FFFFFF;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.mfc-avatar-frame.is-owner {
+  background: linear-gradient(135deg, #3A3A3C, #2C2C2E);
+  box-shadow: inset 0 0 0 1px rgba(255, 214, 10, 0.3);
+}
+
+.mfc-owner-crown {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.mfc-slot-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.mfc-slot-username-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mfc-slot-username {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mfc-owner-chip {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 214, 10, 0.16);
+  color: #FFD60A;
+  border: 1px solid rgba(255, 214, 10, 0.25);
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+
+.mfc-slot-subtext {
+  font-size: 0.75rem;
+  color: #8E8E93;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mfc-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mfc-status-dot.is-paid {
+  background: #30D158;
+  box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+}
+
+.mfc-status-dot.is-pending {
+  background: #FFD60A;
+  box-shadow: 0 0 6px rgba(255, 214, 10, 0.6);
+}
+
+/* Tolan Pill Action Button */
+.mfc-pill-btn {
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  color: #F5F5F7;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.mfc-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.mfc-pill-btn:active {
+  transform: scale(0.95);
+}
+
+.mfc-pill-btn.is-cta {
+  background: #FFFFFF;
+  color: #000000;
+  border: none;
+}
+.mfc-pill-btn.is-cta:hover {
+  background: #E5E5EA;
+}
+
+/* Tolan "Add Member" Empty Slot */
+.mfc-slot-item.is-empty {
+  cursor: pointer;
+}
+
+.mfc-empty-icon-frame {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(0, 122, 255, 0.5);
+  background: rgba(0, 122, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #007AFF;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.mfc-slot-item.is-empty:hover .mfc-empty-icon-frame {
+  border-color: #007AFF;
+  background: rgba(0, 122, 255, 0.12);
+  transform: scale(1.05);
+}
+
+.mfc-empty-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #E5E5EA;
+}
+
+.mfc-empty-subtext {
+  font-size: 0.75rem;
+  color: #8E8E93;
+}
+
+.mfc-pill-btn.is-invite {
+  background: #007AFF;
+  color: #FFFFFF;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+}
+.mfc-pill-btn.is-invite:hover {
+  background: #0066CC;
+}
+
+/* Tolan Bottom Trust Footer */
+.mfc-trust-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.mfc-trust-icon {
+  font-size: 14px;
+  color: #8E8E93;
+  flex-shrink: 0;
+}
+
+.mfc-trust-text {
+  font-size: 0.75rem;
+  color: #8E8E93;
+  line-height: 1.35;
+  margin: 0;
+}

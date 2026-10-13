@@ -1,4 +1,4 @@
-﻿.gb-owner-actions button,
+.gb-owner-actions button,
 .gb-request-actions button {
   align-items: center;
   background: var(--app-surface);
@@ -146,7 +146,7 @@ textarea {
   font: inherit;
 }
 
-.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item)) {
+.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item):not([class*="sc-"]):not(.showcase-chip):not([class*="mfc-"])) {
   border: 0;
   border-radius: var(--app-radius-md);
   background: var(--app-accent);
@@ -156,12 +156,12 @@ textarea {
   padding: 13px 16px;
 }
 
-.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item)):disabled {
+.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item):not([class*="mfc-"])):disabled {
   cursor: wait;
   opacity: 0.62;
 }
 
-.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item))[role="combobox"] {
+.app-shell :where(button:not(.button):not(.sm-listing):not(.subs-dock-item):not([class*="mfc-"]))[role="combobox"] {
   color: var(--app-text);
   font-weight: 500;
 }

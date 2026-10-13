@@ -1,4 +1,4 @@
-﻿/* Card archiving exit animation - Variant 3: Dissolve Up & Fade (Fintech / Apple) */
+/* Card archiving exit animation - Variant 3: Dissolve Up & Fade (Fintech / Apple) */
 @keyframes tradeCardArchiveOut {
   0% {
     opacity: 1;
@@ -249,7 +249,7 @@
   flex-wrap: wrap;
   padding: 10px 16px 14px;
   background: var(--app-surface-inset);
-  border-top: 1px solid var(--app-divider, rgba(255, 255, 255, 0.06));
+  border-top: none;
 }
 /* Prototype Styles */
 .timer-context-badge {

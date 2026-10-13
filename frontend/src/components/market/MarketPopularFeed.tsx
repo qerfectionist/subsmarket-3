@@ -1,5 +1,6 @@
 import type { Offer } from "./index";
 import { AccountListingCard, FamilyListingCard, GigabytesListingCard } from "../ListingCard";
+import { ScrollToTopButton } from "../ScrollToTopButton";
 import { SystemSymbol } from "../SystemSymbol";
 
 export type MarketPopularFeedProps = {
@@ -126,6 +127,9 @@ export function MarketPopularFeed({
           {isLoadingMoreFamilies ? "Загружаем…" : "Показать ещё"}
         </button>
       ) : null}
+      {displayed.length > 0 && (
+        <ScrollToTopButton testId="market-popular-scroll-to-top-btn" />
+      )}
     </>
   );
 }

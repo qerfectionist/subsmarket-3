@@ -33,6 +33,7 @@ import { useActionsFeedData } from "../components/actions/useActionsFeedData";
 import { ActionsArchiveDrawer } from "../components/actions/ActionsArchiveDrawer";
 import { ActionsFeedPane } from "../components/actions/ActionsFeedPanes";
 import { SystemSymbol } from "../components/SystemSymbol";
+import { populateAllStatusesShowcase } from "../utils/devCardsStore";
 import { Panel } from "../components/layout";
 import { FamilyListSkeleton } from "../components/skeleton";
 import { triggerTelegramSelection, triggerTelegramImpact } from "../telegram";
@@ -196,6 +197,21 @@ export function ActionsScreen({
         title="Заявки"
         action={
           <div className="actions-header-actions">
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                className="my-screen-context-action"
+                aria-label="Загрузить все статусы карточек"
+                title="Загрузить все статусы карточек (Showcase)"
+                data-testid="dev-showcase-quick-btn"
+                onClick={() => {
+                  triggerTelegramImpact("medium");
+                  populateAllStatusesShowcase();
+                }}
+              >
+                <span style={{ fontSize: "15px", lineHeight: 1 }}>🌈</span>
+              </button>
+            )}
             <button
               type="button"
               className={`my-screen-context-action${isArchiveOpen ? " is-active" : ""}${mutations.isArchivePulsing ? " is-receiving-item" : ""}`}

@@ -1,0 +1,154 @@
+{
+  "title": "SubsMarket Design Canvas · Mobbin References",
+  "nodes": [
+    {
+      "id": "frame-spotify-clean",
+      "type": "screenshot",
+      "x": 60,
+      "y": 80,
+      "width": 380,
+      "title": "Spotify iOS · Clean Bottom Navigation",
+      "subtitle": "Mobbin Verified · iOS 18",
+      "badge": "REFERENCE 1",
+      "badgeColor": "#1DB954",
+      "imageUrl": "/assets/spotify_bottom_bar/spotify_bottom_nav_clean.png",
+      "cropBottom": true
+    },
+    {
+      "id": "spec-spotify-clean",
+      "type": "spec",
+      "x": 480,
+      "y": 80,
+      "width": 340,
+      "title": "🔍 Анатомия Bottom Nav (Spotify)",
+      "badge": "SPECS",
+      "badgeColor": "#30D158",
+      "items": [
+        {
+          "label": "Сетка",
+          "value": "4 таба (Home, Search, Your Library, Create)"
+        },
+        {
+          "label": "Высота бара",
+          "value": "49px (+ 34px Home Indicator safe-area)"
+        },
+        {
+          "label": "Фон",
+          "value": "#000000 (с верхним fade-градиентом)"
+        },
+        {
+          "label": "Цвет активного",
+          "value": "#FFFFFF (font-weight: 700)"
+        },
+        {
+          "label": "Цвет неактивного",
+          "value": "#B3B3B3 (font-weight: 500)"
+        },
+        {
+          "label": "Размер шрифта",
+          "value": "10.5px (letter-spacing: 0.02em)"
+        },
+        {
+          "label": "Иконка",
+          "value": "24×24px (отступ до текста: 4px)"
+        }
+      ],
+      "code": "/* Spotify Bottom Bar CSS */\nbackground: linear-gradient(180deg, rgba(0,0,0,0) 0%, #000000 25%);\nheight: calc(49px + env(safe-area-inset-bottom, 20px));\npadding-bottom: env(safe-area-inset-bottom, 20px);"
+    },
+    {
+      "id": "frame-spotify-player",
+      "type": "screenshot",
+      "x": 880,
+      "y": 80,
+      "width": 380,
+      "title": "Spotify iOS · С мини-плеером (Now Playing)",
+      "subtitle": "Парящий виджет над навбаром",
+      "badge": "REFERENCE 2",
+      "badgeColor": "#0A84FF",
+      "imageUrl": "/assets/spotify_bottom_bar/spotify_with_miniplayer.png"
+    },
+    {
+      "id": "spec-spotify-player",
+      "type": "spec",
+      "x": 1300,
+      "y": 80,
+      "width": 360,
+      "title": "🎵 Анатомия Mini-Player",
+      "badge": "WIDGET SPECS",
+      "badgeColor": "#0A84FF",
+      "items": [
+        {
+          "label": "Позиционирование",
+          "value": "Floating над навбаром (отступ 8px)"
+        },
+        {
+          "label": "Высота плашки",
+          "value": "56px"
+        },
+        {
+          "label": "Скругление углов",
+          "value": "border-radius: 8px"
+        },
+        {
+          "label": "Цвет фона",
+          "value": "Адаптивный тинт (#282828 / tint обложки)"
+        },
+        {
+          "label": "Обложка трека",
+          "value": "40×40px (radius 4px)"
+        },
+        {
+          "label": "Таймлайн (снизу)",
+          "value": "Полоска 1.5px (white progress scrubber)"
+        }
+      ],
+      "code": "/* Mini-player capsule */\nposition: fixed;\nbottom: calc(56px + env(safe-area-inset-bottom));\nleft: 8px; right: 8px;\nheight: 56px;\nborder-radius: 8px;\nbackground: #282828;\nbox-shadow: 0 4px 16px rgba(0,0,0,0.5);"
+    },
+    {
+      "id": "note-adaptation",
+      "type": "note",
+      "x": 480,
+      "y": 480,
+      "width": 340,
+      "color": "#FFD60A",
+      "title": "💡 Как адаптировать в SubsMarket:",
+      "text": "1. **4 Таба SubsMarket:**\n   • Маркет (Главная)\n   • Мои (Семьи пользователя)\n   • Заявки (Actions)\n   • Создать (+)\n\n2. **Идея плавающего мини-виджета:**\n   • Вместо плеера показывать текущую активную семью пользователя или статус непрочитанной заявки!\n   • Тап по плашке мгновенно открывает детали семьи."
+    },
+    {
+      "id": "frame-spotify-library",
+      "type": "screenshot",
+      "x": 1720,
+      "y": 80,
+      "width": 380,
+      "title": "Spotify iOS · Экран медиатеки",
+      "subtitle": "Активное состояние таба 'Your Library'",
+      "badge": "REFERENCE 3",
+      "badgeColor": "#BF5AF2",
+      "imageUrl": "/assets/spotify_bottom_bar/spotify_library_active.png"
+    },
+    {
+      "id": "frame-zoom-player",
+      "type": "screenshot",
+      "x": 1300,
+      "y": 480,
+      "width": 360,
+      "title": "🔍 Крупный план: Mini-Player Capsule",
+      "subtitle": "56px плашка + обложка 40px + скраббер 1.5px",
+      "badge": "ZOOM 2X",
+      "badgeColor": "#30D158",
+      "imageUrl": "/assets/spotify_bottom_bar/spotify_miniplayer_zoom.png"
+    },
+    {
+      "id": "frame-zoom-nav",
+      "type": "screenshot",
+      "x": 880,
+      "y": 800,
+      "width": 380,
+      "title": "🔍 Крупный план: Bottom Navigation Bar",
+      "subtitle": "49px навбар + fade градиент + 34px safe area",
+      "badge": "ZOOM 2X",
+      "badgeColor": "#0A84FF",
+      "imageUrl": "/assets/spotify_bottom_bar/spotify_bottom_nav_zoom.png"
+    }
+  ]
+}

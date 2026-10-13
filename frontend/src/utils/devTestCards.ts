@@ -60,6 +60,7 @@ export interface DevCardCandidateOptions {
   username?: string;
   expiresInSeconds?: number;
   status?: "pending" | "approved" | "rejected" | "cancelled" | "expired";
+  createdAt?: string;
 }
 
 export interface DevCardAccountOptions {
@@ -67,6 +68,7 @@ export interface DevCardAccountOptions {
   username?: string;
   priceKzt?: number;
   status?: "pending" | "accepted" | "rejected" | "closed" | "cancelled" | "expired";
+  createdAt?: string;
 }
 
 export interface DevCardGbOptions {
@@ -74,6 +76,7 @@ export interface DevCardGbOptions {
   username?: string;
   amountGb?: number;
   status?: "pending" | "accepted" | "rejected" | "closed" | "cancelled" | "expired";
+  createdAt?: string;
 }
 
 export interface DevCardBuyerFamilyOptions {
@@ -81,6 +84,7 @@ export interface DevCardBuyerFamilyOptions {
   username?: string;
   expiresInSeconds?: number;
   status?: "pending" | "approved" | "rejected" | "cancelled" | "expired";
+  createdAt?: string;
 }
 
 export function createRandomDevCandidate(options?: DevCardCandidateOptions): { family: Family; request: OwnerFamilyRequest } {
@@ -117,7 +121,7 @@ export function createRandomDevCandidate(options?: DevCardCandidateOptions): { f
     },
     is_search_visible: true,
     service_variant: null,
-    created_at: new Date().toISOString()
+    created_at: options?.createdAt ?? new Date().toISOString()
   };
 
   const request: OwnerFamilyRequest = {
@@ -131,7 +135,7 @@ export function createRandomDevCandidate(options?: DevCardCandidateOptions): { f
     user_id: `test-user-${uid}`,
     status: options?.status ?? "pending",
     cancel_reason: null,
-    created_at: new Date().toISOString(),
+    created_at: options?.createdAt ?? new Date().toISOString(),
     expires_at: new Date(Date.now() + expiresIn).toISOString(),
     decided_at: null,
     cancelled_at: null,
@@ -167,7 +171,7 @@ export function createRandomDevAccountRequest(
     title: acc.title,
     price_kzt: options?.priceKzt ?? acc.price_kzt,
     counterparty_username: username,
-    created_at: new Date().toISOString(),
+    created_at: options?.createdAt ?? new Date().toISOString(),
     can_remind: false
   };
 }
@@ -194,7 +198,7 @@ export function createRandomDevGbRequest(
     price_per_gb_kzt: gb.price_per_gb_kzt,
     total_price_kzt: amount * gb.price_per_gb_kzt,
     counterparty_username: username,
-    created_at: new Date().toISOString(),
+    created_at: options?.createdAt ?? new Date().toISOString(),
     can_remind: false
   };
 }
@@ -220,12 +224,188 @@ export function createRandomDevBuyerFamilyRequest(
     user_id: "200001",
     status: options?.status ?? "pending",
     cancel_reason: null,
-    created_at: new Date().toISOString(),
+    created_at: options?.createdAt ?? new Date().toISOString(),
     expires_at: new Date(Date.now() + expiresIn).toISOString(),
     decided_at: null,
     cancelled_at: null,
     expired_at: null,
     member_share_kzt: srv.member_share_kzt,
     price_kzt: srv.member_share_kzt
+  };
+}
+
+export interface DevTestCardsState {
+  candidates: Array<{ family: Family; request: OwnerFamilyRequest }>;
+  sellerAccounts: AccountRequest[];
+  buyerAccounts: AccountRequest[];
+  sellerGb: MarketplaceListingRequest[];
+  buyerGb: MarketplaceListingRequest[];
+  buyerFamilies: FamilyRequest[];
+}
+
+export function createFullShowcaseDevCardsState(): DevTestCardsState {
+  const now = Date.now();
+  const freshNow = new Date(now).toISOString();
+  const expired1h = new Date(now - 60 * 60 * 1000).toISOString();
+  const archive1d = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+  const archive2d = new Date(now - 48 * 60 * 60 * 1000).toISOString();
+
+  return {
+    candidates: [
+      createRandomDevCandidate({
+        serviceSlug: "youtube",
+        username: "azamat_almaty",
+        expiresInSeconds: 4 * 3600,
+        status: "pending"
+      }),
+      createRandomDevCandidate({
+        serviceSlug: "spotify",
+        username: "sofia_m",
+        status: "rejected",
+        createdAt: archive1d
+      })
+    ],
+    sellerAccounts: [
+      createRandomDevAccountRequest("seller", {
+        serviceSlug: "canva",
+        username: "dana_buyer",
+        status: "accepted",
+        createdAt: freshNow
+      }),
+      createRandomDevAccountRequest("seller", {
+        serviceSlug: "telegram",
+        username: "yerassyl_7",
+        status: "pending",
+        createdAt: freshNow
+      }),
+      createRandomDevAccountRequest("seller", {
+        serviceSlug: "playstation",
+        username: "timur_dev",
+        status: "closed",
+        createdAt: archive1d
+      })
+    ],
+    sellerGb: [
+      createRandomDevGbRequest("seller", {
+        operatorSlug: "tele2",
+        username: "serik_buyer",
+        amountGb: 15,
+        status: "accepted",
+        createdAt: freshNow
+      }),
+      createRandomDevGbRequest("seller", {
+        operatorSlug: "altel",
+        username: "aida_buyer",
+        amountGb: 25,
+        status: "pending",
+        createdAt: freshNow
+      }),
+      createRandomDevGbRequest("seller", {
+        operatorSlug: "beeline",
+        username: "marat_buyer",
+        amountGb: 10,
+        status: "expired",
+        createdAt: expired1h
+      }),
+      createRandomDevGbRequest("seller", {
+        operatorSlug: "kcell",
+        username: "alex_kz",
+        amountGb: 20,
+        status: "closed",
+        createdAt: archive1d
+      }),
+      createRandomDevGbRequest("seller", {
+        operatorSlug: "tele2",
+        username: "daniyar_pro",
+        amountGb: 10,
+        status: "rejected",
+        createdAt: archive1d
+      }),
+      createRandomDevGbRequest("seller", {
+        operatorSlug: "altel",
+        username: "nurbol_88",
+        amountGb: 15,
+        status: "cancelled",
+        createdAt: archive2d
+      })
+    ],
+    buyerGb: [
+      createRandomDevGbRequest("buyer", {
+        operatorSlug: "kcell",
+        username: "daniyar_pro",
+        amountGb: 30,
+        status: "accepted",
+        createdAt: freshNow
+      }),
+      createRandomDevGbRequest("buyer", {
+        operatorSlug: "tele2",
+        username: "nurbol_88",
+        amountGb: 15,
+        status: "pending",
+        createdAt: freshNow
+      }),
+      createRandomDevGbRequest("buyer", {
+        operatorSlug: "altel",
+        username: "alex_kz",
+        amountGb: 20,
+        status: "expired",
+        createdAt: expired1h
+      }),
+      createRandomDevGbRequest("buyer", {
+        operatorSlug: "beeline",
+        username: "timur_dev",
+        amountGb: 10,
+        status: "closed",
+        createdAt: archive1d
+      }),
+      createRandomDevGbRequest("buyer", {
+        operatorSlug: "tele2",
+        username: "kamila_lux",
+        amountGb: 15,
+        status: "rejected",
+        createdAt: archive1d
+      }),
+      createRandomDevGbRequest("buyer", {
+        operatorSlug: "altel",
+        username: "sofia_m",
+        amountGb: 25,
+        status: "cancelled",
+        createdAt: archive2d
+      })
+    ],
+    buyerAccounts: [
+      createRandomDevAccountRequest("buyer", {
+        serviceSlug: "playstation",
+        username: "timur_dev",
+        status: "accepted",
+        createdAt: freshNow
+      }),
+      createRandomDevAccountRequest("buyer", {
+        serviceSlug: "chatgpt",
+        username: "kamila_lux",
+        status: "pending",
+        createdAt: freshNow
+      }),
+      createRandomDevAccountRequest("buyer", {
+        serviceSlug: "steam",
+        username: "dina_smart",
+        status: "closed",
+        createdAt: archive1d
+      })
+    ],
+    buyerFamilies: [
+      createRandomDevBuyerFamilyRequest({
+        serviceSlug: "spotify",
+        username: "kamila_lux",
+        expiresInSeconds: 4 * 3600,
+        status: "pending"
+      }),
+      createRandomDevBuyerFamilyRequest({
+        serviceSlug: "netflix",
+        username: "aigerim_k",
+        status: "rejected",
+        createdAt: archive1d
+      })
+    ]
   };
 }

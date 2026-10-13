@@ -1,0 +1,565 @@
+/* SubsMarket Card Design Showcase & Archetypes */
+.showcase-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 16px 80px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.showcase-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.showcase-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.showcase-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--app-text);
+  margin: 0;
+}
+
+.showcase-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--app-secondary-bg);
+  color: var(--app-info);
+  border: 1px solid var(--app-border);
+}
+
+.showcase-subtitle {
+  font-size: 0.875rem;
+  color: var(--app-muted);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.showcase-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.showcase-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.showcase-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: var(--app-secondary-bg);
+  color: var(--app-muted);
+  border: 1px solid var(--app-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.showcase-chip.is-active {
+  background: var(--app-text);
+  color: var(--app-bg);
+  border-color: var(--app-text);
+  font-weight: 600;
+}
+
+.sc-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-secondary-bg);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.sc-back-btn:active {
+  transform: scale(0.94);
+}
+
+/* Section label for each card */
+.showcase-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+.showcase-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.showcase-section-ref {
+  font-size: 0.75rem;
+  color: var(--app-muted);
+  font-weight: 500;
+}
+
+/* Master card frame */
+.sc-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--app-shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Card Header */
+.sc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sc-service-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sc-logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--app-surface-inset);
+}
+
+.sc-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sc-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--app-text);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-subtitle {
+  font-size: 0.8125rem;
+  color: var(--app-muted);
+  margin-top: 2px;
+}
+
+.sc-price-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.sc-price-val {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--app-text);
+  letter-spacing: -0.01em;
+}
+
+.sc-price-unit {
+  font-size: 0.75rem;
+  color: var(--app-muted);
+}
+
+/* Progress / Slots overview bar */
+.sc-capacity-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--app-surface-inset);
+  border-radius: 12px;
+  font-size: 0.8125rem;
+}
+
+.sc-capacity-text {
+  font-weight: 600;
+  color: var(--app-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-capacity-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: rgba(48, 209, 88, 0.16);
+  color: var(--app-success);
+}
+
+.sc-capacity-badge.is-urgent {
+  background: rgba(255, 214, 10, 0.16);
+  color: var(--app-warning);
+}
+
+/* Slots container */
+.sc-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Individual Slot Row */
+.sc-slot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--app-secondary-bg);
+  gap: 10px;
+  transition: background 0.15s ease;
+}
+
+.sc-slot-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sc-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #3a3a3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--app-text);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.sc-avatar-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--app-warning);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  border: 2px solid var(--app-surface);
+}
+
+.sc-slot-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.sc-slot-user {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--app-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-organizer-pill {
+  font-size: 0.6875rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 214, 10, 0.18);
+  color: var(--app-warning);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sc-slot-subtext {
+  font-size: 0.75rem;
+  color: var(--app-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.sc-dot.is-green { background: var(--app-success); box-shadow: 0 0 6px rgba(48, 209, 88, 0.4); }
+.sc-dot.is-yellow { background: var(--app-warning); }
+.sc-dot.is-gray { background: var(--app-muted); }
+
+/* Slot actions */
+.sc-slot-action-btn {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--app-text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.sc-slot-action-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.sc-slot-action-btn:active {
+  transform: scale(0.96);
+}
+
+.sc-slot-action-btn.is-primary {
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  font-weight: 600;
+}
+
+/* Empty / dashed slot */
+.sc-slot-row.is-empty {
+  background: transparent;
+  border: 1.5px dashed rgba(100, 210, 255, 0.35);
+  cursor: pointer;
+}
+.sc-slot-row.is-empty:hover {
+  border-color: var(--app-info);
+  background: rgba(100, 210, 255, 0.05);
+}
+
+.sc-empty-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(100, 210, 255, 0.12);
+  color: var(--app-info);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sc-empty-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--app-text);
+}
+
+.sc-empty-hint {
+  font-size: 0.75rem;
+  color: var(--app-muted);
+}
+
+/* Invariant security notice */
+.sc-security-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--app-surface-inset);
+  font-size: 0.75rem;
+  color: var(--app-muted);
+  line-height: 1.3;
+}
+
+/* Financial / Acorns Variant */
+.sc-hero-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sc-hero-price {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--app-text);
+}
+.sc-savings-tag {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(48, 209, 88, 0.18);
+  color: var(--app-success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sc-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: var(--app-surface-inset);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.sc-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #30d158, #64d2ff);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.sc-metric-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.sc-metric-cell {
+  background: var(--app-secondary-bg);
+  padding: 10px 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sc-metric-label {
+  font-size: 0.6875rem;
+  color: var(--app-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sc-metric-value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--app-text);
+}
+
+/* Trust / Vinted Variant */
+.sc-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sc-trust-tag {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sc-trust-tag.is-verified {
+  background: rgba(100, 210, 255, 0.15);
+  color: var(--app-info);
+  font-weight: 600;
+}
+
+.sc-cta-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  background: var(--app-accent);
+  color: var(--app-accent-text);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+.sc-cta-btn:active {
+  transform: scale(0.98);
+}
+
+/* Micro-actions / Box Box Club Variant */
+.sc-quick-actions-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.sc-quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: var(--app-secondary-bg);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sc-quick-action-btn:hover {
+  background: var(--app-border);
+}
+.sc-quick-action-btn:active {
+  transform: scale(0.96);
+}
+.sc-quick-action-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

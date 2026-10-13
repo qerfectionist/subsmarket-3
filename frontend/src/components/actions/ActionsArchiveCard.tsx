@@ -1,5 +1,6 @@
 import { ServiceLogo } from "../branding";
 import { SystemSymbol } from "../SystemSymbol";
+import { TradeRequestStatusIcon } from "./TradeRequestStatusIcon";
 import type { ActionsArchiveItem } from "../families";
 import type { ActionsTab } from "./ActionsScopePager";
 
@@ -34,10 +35,6 @@ export function ActionsArchiveCard({
           <strong title={item.title}>{item.title}</strong>
           <div className="actions-archive-card-sub">
             <span>{item.categoryLabel}</span>
-            <span className={`my-trade-request-status is-${item.status}`}>
-              <span className="my-trade-request-dot" aria-hidden />
-              <span>{item.statusLabel || (item.status === "successful" ? "Завершена" : "Отклонена")}</span>
-            </span>
           </div>
           {item.rejectionReason && (
             <span className="actions-archive-rejection-text">
@@ -45,13 +42,15 @@ export function ActionsArchiveCard({
             </span>
           )}
         </div>
-        <div className="sm-listing-price">
+        <div className="sm-listing-price sm-listing-price-col">
           {item.amountKzt != null ? (
             <strong
               className={`actions-archive-price${
-                item.status === "successful"
-                  ? (scope === "inbox" ? " is-positive" : "")
-                  : " is-cancelled"
+                item.status === "successful" && scope === "inbox"
+                  ? " is-positive"
+                  : item.status !== "successful"
+                    ? " is-cancelled"
+                    : ""
               }`}
             >
               {item.status === "successful" && scope === "inbox"
@@ -59,6 +58,25 @@ export function ActionsArchiveCard({
                 : `${item.amountKzt.toLocaleString("ru-RU")} ₸`}
             </strong>
           ) : null}
+          {(() => {
+            const isExpired = item.status === "expired" || item.statusLabel.toLowerCase().includes("не ответил");
+            const isRejected = item.status === "cancelled" && item.statusLabel.toLowerCase().includes("отклон");
+            const isCancelled = item.status === "cancelled" && !isRejected;
+            const isSuccess = item.status === "successful";
+            const statusClass = isExpired
+              ? "expired"
+              : isRejected
+                ? "rejected"
+                : isCancelled
+                  ? "cancelled"
+                  : "successful";
+            return (
+              <span className={`my-trade-request-status is-${statusClass}`}>
+                <TradeRequestStatusIcon status={statusClass} />
+                <span>{item.statusLabel || (isSuccess ? "Завершена" : "Отклонена")}</span>
+              </span>
+            );
+          })()}
         </div>
       </div>
 
@@ -82,7 +100,7 @@ export function ActionsArchiveCard({
         </span>
       </div>
 
-      {scope === "outbox" && item.status === "cancelled" ? (
+      {scope === "outbox" && (item.status === "cancelled" || item.status === "expired") ? (
         <div className="actions-archive-actions">
           <button
             type="button"

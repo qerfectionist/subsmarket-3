@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { Button as AppButton, useToast } from "../ui";
+import { ScrollToTopButton } from "../ScrollToTopButton";
 import { AccountListingCard, GigabytesListingCard } from "../ListingCard";
 import { FamilyTradeRequestCard } from "../TradeRequestCard";
 import { AsyncContent } from "../AsyncContent";
 import { SystemSymbol, type SystemSymbolName } from "../SystemSymbol";
+import { TradeRequestStatusIcon } from "../actions/TradeRequestStatusIcon";
 import { Badge, EmptyState } from "../layout";
 import { FamilyListSkeleton } from "../skeleton";
 import { useFeedSnap } from "../../hooks/useFeedSnap";
@@ -199,7 +201,7 @@ export function MyTradeRequestsSection({
                       {tradeRequestSubtitle(request)}
                     </span>
                     <span className={`my-trade-request-status is-${request.rawStatus}`}>
-                      <span className="my-trade-request-dot" aria-hidden />
+                      <TradeRequestStatusIcon status={request.rawStatus} />
                       <span>{request.status}</span>
                     </span>
                   </div>
@@ -442,11 +444,12 @@ export function MyAccountListingsSection({
             </div>
           </div>
         </div>
-        <div
-          className="my-feed-scroll"
-          ref={feedSnap.containerRef}
-          {...feedSnap.scrollHandlers}
-        >
+        <div className="my-feed-wrap">
+          <div
+            className="my-feed-scroll"
+            ref={feedSnap.containerRef}
+            {...feedSnap.scrollHandlers}
+          >
           {listings.length === 0 ? (
             <EmptyState
               className="my-family-empty-state"
@@ -505,8 +508,15 @@ export function MyAccountListingsSection({
               {query.isFetchingNextPage ? "Загружаем объявления..." : "Показать ещё объявления"}
             </AppButton>
           ) : null}
+          {filteredListings.length > 0 && (
+            <ScrollToTopButton
+              containerRef={feedSnap.containerRef}
+              testId="my-accounts-scroll-to-top-btn"
+            />
+          )}
         </div>
-      </section>
+      </div>
+    </section>
     </AsyncContent>
   );
 }
@@ -589,11 +599,12 @@ export function MyGigabytesSection({
           </div>
         </div>
 
-        <div
-          className="my-feed-scroll"
-          ref={feedSnap.containerRef}
-          {...feedSnap.scrollHandlers}
-        >
+        <div className="my-feed-wrap">
+          <div
+            className="my-feed-scroll"
+            ref={feedSnap.containerRef}
+            {...feedSnap.scrollHandlers}
+          >
           {listings.length === 0 ? (
             <EmptyState
               className="my-family-empty-state"
@@ -653,8 +664,15 @@ export function MyGigabytesSection({
               {listingsQuery.isFetchingNextPage ? "Загружаем объявления..." : "Показать ещё объявления"}
             </AppButton>
           ) : null}
+          {filteredListings.length > 0 && (
+            <ScrollToTopButton
+              containerRef={feedSnap.containerRef}
+              testId="my-gigabytes-scroll-to-top-btn"
+            />
+          )}
         </div>
-      </section>
+      </div>
+    </section>
     </AsyncContent>
   );
 }

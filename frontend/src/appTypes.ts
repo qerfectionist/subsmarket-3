@@ -8,4 +8,5 @@ export type Tab =
   | "requests"
   | "family"
   | "gigabytes"
-  | "accounts";
+  | "accounts"
+  | "cards-showcase";

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button as AppButton } from "./components/ui";
@@ -30,6 +30,7 @@ import { FamilyDetailsScreen } from "./screens/FamilyDetailsScreen";
 import { GigabytesScreen } from "./screens/GigabytesScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
 import { SearchScreen } from "./screens/SearchScreen";
+import { MasterFamilyCard } from "./components/cards-showcase/MasterFamilyCard";
 import type { FamilyCreate, FamilyType } from "./types";
 import {
   setTelegramBackButton,
@@ -57,7 +58,23 @@ const emptyCreateForm: FamilyCreate = {
 export function App() {
   const queryClient = useQueryClient();
   const [familyType, setFamilyType] = useState<FamilyType>("subscription");
-  const [tab, setTab] = useState<Tab>("home");
+  const [tab, setTab] = useState<Tab>(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const showcaseParam = searchParams.get("showcase");
+      if (showcaseParam === "1" || showcaseParam === "true") return "cards-showcase";
+
+      const targetParam = searchParams.get("tab") || searchParams.get("screen");
+      if (targetParam === "cards" || targetParam === "showcase") return "cards-showcase";
+      if (targetParam === "actions" || targetParam === "requests") return "requests";
+      if (targetParam === "my" || targetParam === "mine") return "mine";
+      if (targetParam === "market" || targetParam === "home") return "home";
+      if (targetParam === "create") return "create";
+
+      if (searchParams.has("actions_tab")) return "requests";
+    } catch {}
+    return "home";
+  });
   const [accountEntryId, setAccountEntryId] = useState<string | null>(null);
   const [gigabytesEntryId, setGigabytesEntryId] = useState<string | null>(null);
   const [accountsBackTab, setAccountsBackTab] = useState<Tab>("home");
@@ -71,7 +88,14 @@ export function App() {
 
   const [gigabytesEntryMode, setGigabytesEntryMode] = useState<"catalog" | "create" | "mine">("catalog");
   const [accountsEntryMode, setAccountsEntryMode] = useState<"catalog" | "create" | "mine">("catalog");
-  const [actionsTab, setActionsTab] = useState<"inbox" | "outbox" | null>(null);
+  const [actionsTab, setActionsTab] = useState<"inbox" | "outbox" | null>(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const act = searchParams.get("actions_tab");
+      if (act === "inbox" || act === "outbox") return act;
+    } catch {}
+    return null;
+  });
   const [marketResetToken, setMarketResetToken] = useState(0);
   const [selectedFamilyId, setSelectedFamilyId] = useState<string | null>(null);
   const [familyBackTab, setFamilyBackTab] = useState<Tab>("home");
@@ -104,6 +128,66 @@ export function App() {
       window.removeEventListener(DEV_CARDS_UPDATE_EVENT, handleCardsUpdate);
       window.removeEventListener(DEV_OPEN_CONSTRUCTOR_EVENT, handleOpenModal);
       window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    let actionsScrollTimeout: number | null = null;
+
+    const handleScrollCapture = (event: Event) => {
+      const target = event.target;
+      if (!target || !(target instanceof HTMLElement)) return;
+      const isScrolled = target.scrollTop > 2;
+      const current = target.getAttribute("data-scrolled") === "true";
+      if (isScrolled !== current) {
+        if (isScrolled) {
+          target.setAttribute("data-scrolled", "true");
+          target
+            .closest<HTMLElement>(
+              ".actions-scope-swipe-pane, .my-product-scope-swipe-pane, .my-feed-wrap, .sm-market-home-feed-wrap, .sm-market-catalog-swipe-viewport, .sm-market-catalog-stack, .gb-stack, .actions-archive-content, .my-calendar-disclosure, .family-details-page, .app-shell"
+            )
+            ?.setAttribute("data-scrolled", "true");
+        } else {
+          target.removeAttribute("data-scrolled");
+          target
+            .closest<HTMLElement>(
+              ".actions-scope-swipe-pane, .my-product-scope-swipe-pane, .my-feed-wrap, .sm-market-home-feed-wrap, .sm-market-catalog-swipe-viewport, .sm-market-catalog-stack, .gb-stack, .actions-archive-content, .my-calendar-disclosure, .family-details-page, .app-shell"
+            )
+            ?.removeAttribute("data-scrolled");
+        }
+      }
+
+      const actionsPane = target.closest<HTMLElement>(".actions-scope-swipe-pane");
+      if (actionsPane) {
+        if (isScrolled) {
+          target.setAttribute("data-scrolling", "true");
+          actionsPane.setAttribute("data-scrolling", "true");
+          if (actionsScrollTimeout) {
+            window.clearTimeout(actionsScrollTimeout);
+          }
+          actionsScrollTimeout = window.setTimeout(() => {
+            target.removeAttribute("data-scrolling");
+            actionsPane.removeAttribute("data-scrolling");
+            actionsScrollTimeout = null;
+          }, 200);
+        } else {
+          if (actionsScrollTimeout) {
+            window.clearTimeout(actionsScrollTimeout);
+            actionsScrollTimeout = null;
+          }
+          target.removeAttribute("data-scrolling");
+          actionsPane.removeAttribute("data-scrolling");
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollCapture, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScrollCapture, { capture: true });
+      if (actionsScrollTimeout) {
+        window.clearTimeout(actionsScrollTimeout);
+        actionsScrollTimeout = null;
+      }
     };
   }, []);
 
@@ -361,6 +445,7 @@ export function App() {
     tab === "create" ? "create" :
     "home";
   const shellTitle =
+    tab === "cards-showcase" ? "Варианты карточек" :
     tab === "search" ? (familyType === "tariff" ? "Семейные тарифы" : "Семейные подписки") :
     tab === "create" ? "Создать семью" :
     tab === "mine" ? "Мои" :
@@ -701,6 +786,10 @@ export function App() {
         />
       )}
 
+      {tab === "cards-showcase" && (
+        <MasterFamilyCard onBack={() => setTab("home")} />
+      )}
+
       <BottomNav
         active={bottomNavTab}
         onChange={(nextTab) => {
@@ -737,26 +826,12 @@ export function App() {
         }}
       />
 
-      {import.meta.env.DEV && (
-        <>
-          <button
-            type="button"
-            className="dev-floating-fab"
-            onClick={() => setIsDevCardsModalOpen(true)}
-            data-testid="dev-floating-fab-btn"
-            title="Конструктор карточек (Ctrl+Shift+D)"
-            aria-label="Конструктор карточек"
-          >
-            <span>⚡ Карточки</span>
-            {devCardsTotal > 0 ? (
-              <span className="dev-floating-fab-count">{devCardsTotal}</span>
-            ) : null}
-          </button>
-          <DevCardsConstructorModal
-            isOpen={isDevCardsModalOpen}
-            onClose={() => setIsDevCardsModalOpen(false)}
-          />
-        </>
+      {import.meta.env.DEV && tab !== "cards-showcase" && (
+        <DevCardsConstructorModal
+          isOpen={isDevCardsModalOpen}
+          onClose={() => setIsDevCardsModalOpen(false)}
+          onOpenShowcase={() => setTab("cards-showcase")}
+        />
       )}
     </Shell>
   );

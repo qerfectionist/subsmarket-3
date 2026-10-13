@@ -1,0 +1,62 @@
+[
+  {
+    "id": "card_tolan_slots",
+    "url": "https://mobbin.com/api/mcp/short/2hhERpNb",
+    "name": "Tolan - Family Member Slots"
+  },
+  {
+    "id": "card_greenlight_slots",
+    "url": "https://mobbin.com/api/mcp/short/SsTbfB9V",
+    "name": "Greenlight - Adult & Child Slots"
+  },
+  {
+    "id": "card_nordvpn_badge",
+    "url": "https://mobbin.com/api/mcp/short/LVl6FZiq",
+    "name": "NordVPN - Floating Badge Card"
+  },
+  {
+    "id": "card_acorns_expand",
+    "url": "https://mobbin.com/api/mcp/short/HtmYwQHD",
+    "name": "Acorns - Expandable Plan Card"
+  },
+  {
+    "id": "card_klarna_hero",
+    "url": "https://mobbin.com/api/mcp/short/Gl2R48Vv",
+    "name": "Klarna - Hero Benefit Card"
+  },
+  {
+    "id": "card_boxbox_capsule",
+    "url": "https://mobbin.com/api/mcp/short/0KEbPbkR",
+    "name": "Box Box Club - Dark Capsule Card"
+  },
+  {
+    "id": "card_vinted_p2p",
+    "url": "https://mobbin.com/api/mcp/short/tovagqx5",
+    "name": "Vinted - P2P Marketplace Grid"
+  },
+  {
+    "id": "card_nextdoor_p2p",
+    "url": "https://mobbin.com/api/mcp/short/nGuVAD5X",
+    "name": "Nextdoor - Community P2P Card"
+  },
+  {
+    "id": "card_lyft_plan",
+    "url": "https://mobbin.com/api/mcp/short/9ESbCO1b",
+    "name": "Lyft - Ride Pass Plan Card"
+  },
+  {
+    "id": "card_depop_listing",
+    "url": "https://mobbin.com/api/mcp/short/CiABLn9G",
+    "name": "Depop - Social Marketplace Card"
+  },
+  {
+    "id": "card_linktree_plan",
+    "url": "https://mobbin.com/api/mcp/short/7TIXYOPP",
+    "name": "Linktree - Tier Selection Card"
+  },
+  {
+    "id": "card_shopee_deal",
+    "url": "https://mobbin.com/api/mcp/short/e03EyhRD",
+    "name": "Shopee - Flash Deal P2P Card"
+  }
+]

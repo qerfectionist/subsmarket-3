@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Select, Typography } from "./ui";
 import { SystemSymbol } from "./SystemSymbol";
 import { DEV_TELEGRAM_USERS, type DevTelegramUser } from "../api";
-import { getTelegramPlatform, setDevPlatform } from "../telegram";
-import { countDevCards, DEV_CARDS_UPDATE_EVENT } from "../utils/devCardsStore";
+import { getTelegramPlatform, setDevPlatform, triggerTelegramImpact } from "../telegram";
+import { countDevCards, DEV_CARDS_UPDATE_EVENT, populateAllStatusesShowcase } from "../utils/devCardsStore";
+import { setNavStylePreference, type NavStyle } from "./BottomNav";
 import "../styles/dev-controls.css";
 
 export const DEV_OPEN_CONSTRUCTOR_EVENT = "subsmarket:open-dev-cards-modal";
@@ -54,6 +55,20 @@ export function DevUserSwitch({
   const handlePlatformChange = (p: string) => {
     setPlatformState(p);
     setDevPlatform(p as "ios" | "android" | "tdesktop" | "default");
+  };
+
+  const [navStyle, setNavStyle] = useState<NavStyle>(() => {
+    try {
+      return (localStorage.getItem("subsmarket.navStyle") as NavStyle) || "spotify";
+    } catch {
+      return "spotify";
+    }
+  });
+
+  const handleNavStyleChange = (s: string) => {
+    const val = s as NavStyle;
+    setNavStyle(val);
+    setNavStylePreference(val);
   };
 
   useEffect(() => {
@@ -146,8 +161,38 @@ export function DevUserSwitch({
               ]}
             />
           </div>
+          <div className="dev-panel-field">
+            <Typography as="span" variant="label" level={2}>
+              Навигация
+            </Typography>
+            <Select
+              value={navStyle}
+              onChange={handleNavStyleChange}
+              options={[
+                { value: "classic", label: "Classic (3+1 Dock)" },
+                { value: "spotify", label: "Spotify (Градиент 4 таба)" }
+              ]}
+            />
+          </div>
         </div>
-        <div className="dev-panel-footer">
+        <div className="dev-panel-footer" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <button
+            type="button"
+            className="dev-constructor-trigger-btn"
+            style={{
+              background: "linear-gradient(135deg, rgba(52, 199, 89, 0.2), rgba(0, 122, 255, 0.2))",
+              borderColor: "rgba(52, 199, 89, 0.45)"
+            }}
+            onClick={() => {
+              populateAllStatusesShowcase();
+              triggerTelegramImpact("medium");
+              setIsOpen(false);
+            }}
+            title="Заполнить карточками со всеми статусами"
+            data-testid="dev-populate-showcase-btn"
+          >
+            🌈 Показать все статусы
+          </button>
           <button
             type="button"
             className="dev-constructor-trigger-btn"

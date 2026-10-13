@@ -10,6 +10,8 @@ import {
   createRandomDevAccountRequest,
   createRandomDevGbRequest,
   createRandomDevBuyerFamilyRequest,
+  createFullShowcaseDevCardsState,
+  type DevTestCardsState,
   type DevCardCandidateOptions,
   type DevCardAccountOptions,
   type DevCardGbOptions,
@@ -17,17 +19,9 @@ import {
 } from "./devTestCards";
 import { cleanAllCardsApi, clearArchiveApi, resetAndSeedAllApi } from "../api/dev";
 
-export const DEV_TEST_CARDS_STORAGE_KEY = "sm_dev_test_cards_v3";
+export type { DevTestCardsState };
+export const DEV_TEST_CARDS_STORAGE_KEY = "sm_dev_test_cards_v4";
 export const DEV_CARDS_UPDATE_EVENT = "subsmarket:dev-cards-updated";
-
-export interface DevTestCardsState {
-  candidates: Array<{ family: Family; request: OwnerFamilyRequest }>;
-  sellerAccounts: AccountRequest[];
-  buyerAccounts: AccountRequest[];
-  sellerGb: MarketplaceListingRequest[];
-  buyerGb: MarketplaceListingRequest[];
-  buyerFamilies: FamilyRequest[];
-}
 
 export function createEmptyDevCardsState(): DevTestCardsState {
   return {
@@ -46,9 +40,17 @@ export function loadDevCards(): DevTestCardsState {
   }
   try {
     const raw = window.localStorage.getItem(DEV_TEST_CARDS_STORAGE_KEY);
-    if (!raw) return createEmptyDevCardsState();
+    if (!raw) {
+      const initial = createFullShowcaseDevCardsState();
+      try {
+        window.localStorage.setItem(DEV_TEST_CARDS_STORAGE_KEY, JSON.stringify(initial));
+      } catch {
+        // ignore
+      }
+      return initial;
+    }
     const parsed = JSON.parse(raw);
-    return {
+    const state: DevTestCardsState = {
       candidates: Array.isArray(parsed.candidates) ? parsed.candidates : [],
       sellerAccounts: Array.isArray(parsed.sellerAccounts) ? parsed.sellerAccounts : [],
       buyerAccounts: Array.isArray(parsed.buyerAccounts) ? parsed.buyerAccounts : [],
@@ -56,9 +58,32 @@ export function loadDevCards(): DevTestCardsState {
       buyerGb: Array.isArray(parsed.buyerGb) ? parsed.buyerGb : [],
       buyerFamilies: Array.isArray(parsed.buyerFamilies) ? parsed.buyerFamilies : []
     };
+    const total =
+      state.candidates.length +
+      state.sellerAccounts.length +
+      state.buyerAccounts.length +
+      state.sellerGb.length +
+      state.buyerGb.length +
+      state.buyerFamilies.length;
+    if (total === 0) {
+      const initial = createFullShowcaseDevCardsState();
+      try {
+        window.localStorage.setItem(DEV_TEST_CARDS_STORAGE_KEY, JSON.stringify(initial));
+      } catch {
+        // ignore
+      }
+      return initial;
+    }
+    return state;
   } catch {
-    return createEmptyDevCardsState();
+    return createFullShowcaseDevCardsState();
   }
+}
+
+export function populateAllStatusesShowcase(): DevTestCardsState {
+  const showcase = createFullShowcaseDevCardsState();
+  notifyDevCardsUpdated(showcase);
+  return showcase;
 }
 
 export function notifyDevCardsUpdated(cards: DevTestCardsState): void {

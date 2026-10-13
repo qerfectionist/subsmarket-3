@@ -38,7 +38,7 @@ export type ActionsArchiveItem = {
   rawDate?: string;
   serviceName?: string;
   serviceSlug?: string;
-  status: "successful" | "cancelled";
+  status: "successful" | "cancelled" | "expired";
   statusLabel: string;
   amountKzt?: number;
   rejectionReason?: string;

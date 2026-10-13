@@ -16,8 +16,60 @@ export function useFeedSnap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const isDraggingRef = useRef(false);
   const snapTimeoutRef = useRef<number | null>(null);
+  const scrollingTimeoutRef = useRef<number | null>(null);
+  const isScrolledRef = useRef(false);
+
+  const updateScrollAttribute = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const isScrolled = container.scrollTop > 2;
+    const pane = container.closest<HTMLElement>(
+      ".actions-scope-swipe-pane, .my-product-scope-swipe-pane, .my-feed-wrap, .sm-market-home-feed-wrap, .sm-market-catalog-swipe-viewport, .sm-market-catalog-stack, .gb-stack, .actions-archive-content, .my-calendar-disclosure"
+    );
+
+    if (isScrolled !== isScrolledRef.current) {
+      isScrolledRef.current = isScrolled;
+      if (isScrolled) {
+        container.setAttribute("data-scrolled", "true");
+        pane?.setAttribute("data-scrolled", "true");
+      } else {
+        container.removeAttribute("data-scrolled");
+        pane?.removeAttribute("data-scrolled");
+      }
+    }
+  }, []);
+
+  const markActiveScroll = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const isScrolled = container.scrollTop > 2;
+    const pane = container.closest<HTMLElement>(
+      ".actions-scope-swipe-pane, .my-product-scope-swipe-pane, .my-feed-wrap, .sm-market-home-feed-wrap, .sm-market-catalog-swipe-viewport, .sm-market-catalog-stack, .gb-stack, .my-calendar-disclosure"
+    );
+
+    if (isScrolled) {
+      container.setAttribute("data-scrolling", "true");
+      pane?.setAttribute("data-scrolling", "true");
+      if (scrollingTimeoutRef.current) {
+        window.clearTimeout(scrollingTimeoutRef.current);
+      }
+      scrollingTimeoutRef.current = window.setTimeout(() => {
+        container.removeAttribute("data-scrolling");
+        pane?.removeAttribute("data-scrolling");
+        scrollingTimeoutRef.current = null;
+      }, 200);
+    } else {
+      if (scrollingTimeoutRef.current) {
+        window.clearTimeout(scrollingTimeoutRef.current);
+        scrollingTimeoutRef.current = null;
+      }
+      container.removeAttribute("data-scrolling");
+      pane?.removeAttribute("data-scrolling");
+    }
+  }, []);
 
   const updatePadding = useCallback(() => {
+    updateScrollAttribute();
     const container = containerRef.current;
     if (!container || !enabled) return;
     const cards = container.querySelectorAll<HTMLElement>(".sm-listing");
@@ -49,7 +101,7 @@ export function useFeedSnap({
     const diff = container.clientHeight - tailHeight;
     const targetPadding = Math.max(76, diff);
     container.style.paddingBottom = `${Math.round(targetPadding)}px`;
-  }, [enabled, tailCardTarget]);
+  }, [enabled, tailCardTarget, updateScrollAttribute]);
 
   const snapToNearestCard = useCallback(() => {
     if (!enableScrollSnap) return;
@@ -120,19 +172,48 @@ export function useFeedSnap({
   }, [enabled, itemCount, updatePadding]);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    updateScrollAttribute();
+    const onScroll = () => {
+      updateScrollAttribute();
+      markActiveScroll();
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+      if (scrollingTimeoutRef.current) {
+        window.clearTimeout(scrollingTimeoutRef.current);
+        scrollingTimeoutRef.current = null;
+      }
+      container.removeAttribute("data-scrolling");
+      const pane = container.closest<HTMLElement>(
+        ".actions-scope-swipe-pane, .my-product-scope-swipe-pane, .my-feed-wrap, .sm-market-home-feed-wrap, .sm-market-catalog-swipe-viewport, .sm-market-catalog-stack, .gb-stack, .my-calendar-disclosure"
+      );
+      pane?.removeAttribute("data-scrolling");
+    };
+  }, [markActiveScroll, updateScrollAttribute]);
+
+  useEffect(() => {
     return () => {
       if (snapTimeoutRef.current) {
         window.clearTimeout(snapTimeoutRef.current);
         snapTimeoutRef.current = null;
       }
+      if (scrollingTimeoutRef.current) {
+        window.clearTimeout(scrollingTimeoutRef.current);
+        scrollingTimeoutRef.current = null;
+      }
     };
   }, []);
 
   const handleScroll = useCallback(() => {
+    updateScrollAttribute();
+    markActiveScroll();
     if (!enabled || isDraggingRef.current) return;
     if (snapTimeoutRef.current) window.clearTimeout(snapTimeoutRef.current);
     snapTimeoutRef.current = window.setTimeout(snapToNearestCard, 140);
-  }, [enabled, snapToNearestCard]);
+  }, [enabled, markActiveScroll, snapToNearestCard, updateScrollAttribute]);
 
   const handleTouchStart = useCallback(() => {
     isDraggingRef.current = true;

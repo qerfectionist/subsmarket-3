@@ -1,4 +1,5 @@
 import { Button as AppButton } from "../ui";
+import { ScrollToTopButton } from "../ScrollToTopButton";
 import { SystemSymbol } from "../SystemSymbol";
 import { AccountListingCard as ListingRow } from "../ListingCard";
 import type { AccountListing } from "../../types";
@@ -52,6 +53,9 @@ export function AccountsMyListingsView({
           {loadingMore ? "Загружаем…" : "Показать ещё"}
         </AppButton>
       ) : null}
+      {listings.length > 0 && (
+        <ScrollToTopButton testId="accounts-my-scroll-to-top-btn" />
+      )}
     </section>
   );
 }

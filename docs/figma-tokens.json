@@ -1,0 +1,1902 @@
+{
+  "collectionName": "SubsMarket iOS Design Tokens",
+  "modes": [
+    "Dark",
+    "Light"
+  ],
+  "tokens": [
+    {
+      "name": "color/bg",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-bg",
+      "values": {
+        "Dark": "#0f0f10",
+        "Light": "#f2f2f7"
+      }
+    },
+    {
+      "name": "color/surface",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-surface",
+      "values": {
+        "Dark": "#1c1c1e",
+        "Light": "#ffffff"
+      }
+    },
+    {
+      "name": "color/secondary/bg",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-secondary-bg",
+      "values": {
+        "Dark": "#2c2c2e",
+        "Light": "#e5e5ea"
+      }
+    },
+    {
+      "name": "color/surface/inset",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-surface-inset",
+      "values": {
+        "Dark": "#151516",
+        "Light": "#f2f2f7"
+      }
+    },
+    {
+      "name": "color/text",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-text",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/muted",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-muted",
+      "values": {
+        "Dark": "#98989f",
+        "Light": "#6e6e73"
+      }
+    },
+    {
+      "name": "color/placeholder",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-placeholder",
+      "values": {
+        "Dark": "#8e8e93",
+        "Light": "#6e6e73"
+      }
+    },
+    {
+      "name": "color/accent",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/accent/text",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent-text",
+      "values": {
+        "Dark": "#1c1c1e",
+        "Light": "#ffffff"
+      }
+    },
+    {
+      "name": "color/accent/hover",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent-hover",
+      "values": {
+        "Dark": "#d1d1d6",
+        "Light": "#3a3a3c"
+      }
+    },
+    {
+      "name": "color/accent/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent-soft",
+      "values": {
+        "Dark": "#2c2c2e",
+        "Light": "#e5e5ea"
+      }
+    },
+    {
+      "name": "color/link",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-link",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/info",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-info",
+      "values": {
+        "Dark": "#64d2ff",
+        "Light": "#007aff"
+      }
+    },
+    {
+      "name": "color/info/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-info-soft",
+      "values": {
+        "Dark": "#08264a",
+        "Light": "#e4f0ff"
+      }
+    },
+    {
+      "name": "color/success",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-success",
+      "values": {
+        "Dark": "#30d158",
+        "Light": "#248a3d"
+      }
+    },
+    {
+      "name": "color/success/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-success-soft",
+      "values": {
+        "Dark": "#193822",
+        "Light": "#e4f5e8"
+      }
+    },
+    {
+      "name": "color/warning",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-warning",
+      "values": {
+        "Dark": "#ffd60a",
+        "Light": "#9a6700"
+      }
+    },
+    {
+      "name": "color/warning/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-warning-soft",
+      "values": {
+        "Dark": "#3b3211",
+        "Light": "#fff4cc"
+      }
+    },
+    {
+      "name": "color/danger",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-danger",
+      "values": {
+        "Dark": "#ff453a",
+        "Light": "#d70015"
+      }
+    },
+    {
+      "name": "color/danger/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-danger-soft",
+      "values": {
+        "Dark": "#45201f",
+        "Light": "#ffe5e7"
+      }
+    },
+    {
+      "name": "color/raspberry",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-raspberry",
+      "values": {
+        "Dark": "#ff375f",
+        "Light": "#ff2d55"
+      }
+    },
+    {
+      "name": "color/raspberry/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-raspberry-soft",
+      "values": {
+        "Dark": "#4a1b2a",
+        "Light": "#ffe5ec"
+      }
+    },
+    {
+      "name": "color/raspberry/bright",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-raspberry-bright",
+      "values": {
+        "Dark": "#ff5577",
+        "Light": "#ff4f73"
+      }
+    },
+    {
+      "name": "color/banner/purple",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-banner-purple",
+      "values": {
+        "Dark": "#756bd8",
+        "Light": "#655dc5"
+      }
+    },
+    {
+      "name": "color/banner/blue",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-banner-blue",
+      "values": {
+        "Dark": "#2943a8",
+        "Light": "#3151b8"
+      }
+    },
+    {
+      "name": "color/category/tariff",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-tariff",
+      "values": {
+        "Dark": "#64d2ff",
+        "Light": "#007aff"
+      }
+    },
+    {
+      "name": "color/category/subscription",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-subscription",
+      "values": {
+        "Dark": "#bf5af2",
+        "Light": "#af52de"
+      }
+    },
+    {
+      "name": "color/category/gigabytes",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-gigabytes",
+      "values": {
+        "Dark": "#30d158",
+        "Light": "#248a3d"
+      }
+    },
+    {
+      "name": "color/category/accounts",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-accounts",
+      "values": {
+        "Dark": "#ff9f0a",
+        "Light": "#c93400"
+      }
+    },
+    {
+      "name": "color/category/icon/gradient/start",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-icon-gradient-start",
+      "values": {
+        "Dark": "#ffffff",
+        "Light": "#636366"
+      }
+    },
+    {
+      "name": "color/category/icon/gradient/mid",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-icon-gradient-mid",
+      "values": {
+        "Dark": "#d1d1d6",
+        "Light": "#8e8e93"
+      }
+    },
+    {
+      "name": "color/category/icon/gradient/end",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-icon-gradient-end",
+      "values": {
+        "Dark": "#8e8e93",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-border",
+      "values": {
+        "Dark": "#38383a",
+        "Light": "#d1d1d6"
+      }
+    },
+    {
+      "name": "color/border/strong",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-border-strong",
+      "values": {
+        "Dark": "#8e8e93",
+        "Light": "#8e8e93"
+      }
+    },
+    {
+      "name": "color/focus",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-focus",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/glass",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-glass",
+      "values": {
+        "Dark": "rgb(28 28 30 / 88%)",
+        "Light": "rgb(255 255 255 / 88%)"
+      }
+    },
+    {
+      "name": "color/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-shadow",
+      "values": {
+        "Dark": "0 12px 40px #00000045",
+        "Light": "0 12px 40px #00000014"
+      }
+    },
+    {
+      "name": "color/shadow/sm",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-shadow-sm",
+      "values": {
+        "Dark": "0 1px 2px #00000014",
+        "Light": "0 1px 2px #00000014"
+      }
+    },
+    {
+      "name": "color/shadow/nav",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-shadow-nav",
+      "values": {
+        "Dark": "0 8px 32px #00000040",
+        "Light": "0 8px 32px #00000015"
+      }
+    },
+    {
+      "name": "misc/action/banner/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-action-banner-bg",
+      "values": {
+        "Dark": "var(--app-surface)",
+        "Light": "var(--app-surface)"
+      }
+    },
+    {
+      "name": "color/action/banner/subtitle",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-action-banner-subtitle",
+      "values": {
+        "Dark": "rgb(245 245 247 / 68%)",
+        "Light": "rgb(28 28 30 / 68%)"
+      }
+    },
+    {
+      "name": "color/action/banner/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-action-banner-border",
+      "values": {
+        "Dark": "rgb(255 255 255 / 10%)",
+        "Light": "rgb(28 28 30 / 10%)"
+      }
+    },
+    {
+      "name": "color/action/banner/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-action-banner-shadow",
+      "values": {
+        "Dark": "0 10px 28px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 10%)",
+        "Light": "0 10px 28px rgb(0 0 0 / 12%), inset 0 1px 0 rgb(255 255 255 / 70%)"
+      }
+    },
+    {
+      "name": "color/control/material",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-control-material",
+      "values": {
+        "Dark": "rgb(44 44 46 / 76%)",
+        "Light": "rgb(255 255 255 / 76%)"
+      }
+    },
+    {
+      "name": "color/control/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-control-border",
+      "values": {
+        "Dark": "rgb(255 255 255 / 9%)",
+        "Light": "rgb(28 28 30 / 10%)"
+      }
+    },
+    {
+      "name": "color/control/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-control-shadow",
+      "values": {
+        "Dark": "0 6px 18px rgb(0 0 0 / 16%), inset 0 1px 0 rgb(255 255 255 / 7%)",
+        "Light": "0 6px 18px rgb(0 0 0 / 8%), inset 0 1px 0 rgb(255 255 255 / 75%)"
+      }
+    },
+    {
+      "name": "color/nav/material",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-material",
+      "values": {
+        "Dark": "rgb(44 44 46 / 76%)",
+        "Light": "rgb(255 255 255 / 76%)"
+      }
+    },
+    {
+      "name": "color/nav/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-border",
+      "values": {
+        "Dark": "transparent",
+        "Light": "transparent"
+      }
+    },
+    {
+      "name": "color/nav/active",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-active",
+      "values": {
+        "Dark": "rgb(90 90 93 / 72%)",
+        "Light": "rgb(255 255 255 / 86%)"
+      }
+    },
+    {
+      "name": "color/nav/active/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-active-shadow",
+      "values": {
+        "Dark": "inset 0 1px 0 rgb(255 255 255 / 10%), 0 2px 8px rgb(0 0 0 / 12%)",
+        "Light": "inset 0 1px 0 rgb(255 255 255 / 85%), 0 2px 8px rgb(0 0 0 / 8%)"
+      }
+    },
+    {
+      "name": "color/nav/active/icon",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-active-icon",
+      "values": {
+        "Dark": "#ffffff",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/nav/fade/color",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-fade-color",
+      "values": {
+        "Dark": "#000000",
+        "Light": "var(--app-bg)"
+      }
+    },
+    {
+      "name": "misc/bottom/bar/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-bottom-bar-bg",
+      "values": {
+        "Dark": "var(--app-surface)",
+        "Light": "var(--app-surface)"
+      }
+    },
+    {
+      "name": "misc/header/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-header-bg",
+      "values": {
+        "Dark": "var(--app-bg)",
+        "Light": "var(--app-bg)"
+      }
+    },
+    {
+      "name": "misc/subtitle",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-subtitle",
+      "values": {
+        "Dark": "var(--app-muted)",
+        "Light": "var(--app-muted)"
+      }
+    },
+    {
+      "name": "misc/section/header",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-section-header",
+      "values": {
+        "Dark": "var(--app-text)",
+        "Light": "var(--app-text)"
+      }
+    },
+    {
+      "name": "misc/strong/control/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-strong-control-bg",
+      "values": {
+        "Dark": "var(--app-accent)",
+        "Light": "var(--app-accent)"
+      }
+    },
+    {
+      "name": "misc/strong/control/text",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-strong-control-text",
+      "values": {
+        "Dark": "var(--app-accent-text)",
+        "Light": "var(--app-accent-text)"
+      }
+    },
+    {
+      "name": "misc/font/family",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-font-family",
+      "values": {
+        "Dark": "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", \"SF Pro\", system-ui, sans-serif",
+        "Light": "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", \"SF Pro\", system-ui, sans-serif"
+      }
+    },
+    {
+      "name": "typography/weight/regular",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-regular",
+      "values": {
+        "Dark": 400,
+        "Light": 400
+      }
+    },
+    {
+      "name": "typography/weight/medium",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-medium",
+      "values": {
+        "Dark": 500,
+        "Light": 500
+      }
+    },
+    {
+      "name": "typography/weight/semibold",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-semibold",
+      "values": {
+        "Dark": 600,
+        "Light": 600
+      }
+    },
+    {
+      "name": "typography/weight/bold",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-bold",
+      "values": {
+        "Dark": 700,
+        "Light": 700
+      }
+    },
+    {
+      "name": "typography/size/screen",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-screen",
+      "values": {
+        "Dark": "1.75rem",
+        "Light": "1.75rem"
+      }
+    },
+    {
+      "name": "typography/size/section",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-section",
+      "values": {
+        "Dark": "1.375rem",
+        "Light": "1.375rem"
+      }
+    },
+    {
+      "name": "typography/size/card",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-card",
+      "values": {
+        "Dark": "1.0625rem",
+        "Light": "1.0625rem"
+      }
+    },
+    {
+      "name": "typography/size/body",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-body",
+      "values": {
+        "Dark": "1.0625rem",
+        "Light": "1.0625rem"
+      }
+    },
+    {
+      "name": "typography/size/caption",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-caption",
+      "values": {
+        "Dark": ".9375rem",
+        "Light": ".9375rem"
+      }
+    },
+    {
+      "name": "typography/size/label",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-label",
+      "values": {
+        "Dark": ".8125rem",
+        "Light": ".8125rem"
+      }
+    },
+    {
+      "name": "typography/leading/screen",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-screen",
+      "values": {
+        "Dark": 1.21,
+        "Light": 1.21
+      }
+    },
+    {
+      "name": "typography/leading/section",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-section",
+      "values": {
+        "Dark": 1.27,
+        "Light": 1.27
+      }
+    },
+    {
+      "name": "typography/leading/card",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-card",
+      "values": {
+        "Dark": 1.3,
+        "Light": 1.3
+      }
+    },
+    {
+      "name": "typography/leading/body",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-body",
+      "values": {
+        "Dark": 1.3,
+        "Light": 1.3
+      }
+    },
+    {
+      "name": "typography/leading/caption",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-caption",
+      "values": {
+        "Dark": 1.33,
+        "Light": 1.33
+      }
+    },
+    {
+      "name": "typography/leading/label",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-label",
+      "values": {
+        "Dark": 1.38,
+        "Light": 1.38
+      }
+    },
+    {
+      "name": "space/1",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-1",
+      "values": {
+        "Dark": 4,
+        "Light": 4
+      }
+    },
+    {
+      "name": "space/2",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-2",
+      "values": {
+        "Dark": 8,
+        "Light": 8
+      }
+    },
+    {
+      "name": "space/3",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-3",
+      "values": {
+        "Dark": 12,
+        "Light": 12
+      }
+    },
+    {
+      "name": "space/4",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-4",
+      "values": {
+        "Dark": 16,
+        "Light": 16
+      }
+    },
+    {
+      "name": "space/5",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-5",
+      "values": {
+        "Dark": 20,
+        "Light": 20
+      }
+    },
+    {
+      "name": "space/6",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-6",
+      "values": {
+        "Dark": 24,
+        "Light": 24
+      }
+    },
+    {
+      "name": "space/8",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-8",
+      "values": {
+        "Dark": 32,
+        "Light": 32
+      }
+    },
+    {
+      "name": "radius/sm",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-sm",
+      "values": {
+        "Dark": 12,
+        "Light": 12
+      }
+    },
+    {
+      "name": "radius/md",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-md",
+      "values": {
+        "Dark": 16,
+        "Light": 16
+      }
+    },
+    {
+      "name": "radius/lg",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-lg",
+      "values": {
+        "Dark": 24,
+        "Light": 24
+      }
+    },
+    {
+      "name": "radius/xl",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-xl",
+      "values": {
+        "Dark": 32,
+        "Light": 32
+      }
+    },
+    {
+      "name": "radius/pill",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-pill",
+      "values": {
+        "Dark": 999,
+        "Light": 999
+      }
+    },
+    {
+      "name": "motion/duration/press",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-duration-press",
+      "values": {
+        "Dark": "140ms",
+        "Light": "140ms"
+      }
+    },
+    {
+      "name": "motion/duration/reveal",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-duration-reveal",
+      "values": {
+        "Dark": "220ms",
+        "Light": "220ms"
+      }
+    },
+    {
+      "name": "misc/touch/min",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-touch-min",
+      "values": {
+        "Dark": "44px",
+        "Light": "44px"
+      }
+    },
+    {
+      "name": "misc/segment/gap",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-segment-gap",
+      "values": {
+        "Dark": "4px",
+        "Light": "4px"
+      }
+    },
+    {
+      "name": "misc/segment/padding",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-segment-padding",
+      "values": {
+        "Dark": "4px",
+        "Light": "4px"
+      }
+    },
+    {
+      "name": "misc/page/width",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-page-width",
+      "values": {
+        "Dark": "480px",
+        "Light": "480px"
+      }
+    },
+    {
+      "name": "color/nav/height",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-height",
+      "values": {
+        "Dark": "64px",
+        "Light": "64px"
+      }
+    },
+    {
+      "name": "color/nav/create/size",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-create-size",
+      "values": {
+        "Dark": "56px",
+        "Light": "56px"
+      }
+    },
+    {
+      "name": "color/nav/clearance",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-clearance",
+      "values": {
+        "Dark": "calc(var(--app-nav-height) + 32px + var(--app-inset-bottom))",
+        "Light": "calc(var(--app-nav-height) + 32px + var(--app-inset-bottom))"
+      }
+    },
+    {
+      "name": "color/nav/fade/height",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-fade-height",
+      "values": {
+        "Dark": "clamp(128px, calc(19dvh + var(--app-inset-bottom)), 164px)",
+        "Light": "clamp(128px, calc(19dvh + var(--app-inset-bottom)), 164px)"
+      }
+    },
+    {
+      "name": "misc/safe/area/top",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-safe-area-top",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/safe/area/right",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-safe-area-right",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/safe/area/bottom",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-safe-area-bottom",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    }
+  ],
+  "totalExtracted": 110,
+  "allTokens": [
+    {
+      "name": "color/bg",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-bg",
+      "values": {
+        "Dark": "#0f0f10",
+        "Light": "#f2f2f7"
+      }
+    },
+    {
+      "name": "color/surface",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-surface",
+      "values": {
+        "Dark": "#1c1c1e",
+        "Light": "#ffffff"
+      }
+    },
+    {
+      "name": "color/secondary/bg",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-secondary-bg",
+      "values": {
+        "Dark": "#2c2c2e",
+        "Light": "#e5e5ea"
+      }
+    },
+    {
+      "name": "color/surface/inset",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-surface-inset",
+      "values": {
+        "Dark": "#151516",
+        "Light": "#f2f2f7"
+      }
+    },
+    {
+      "name": "color/text",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-text",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/muted",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-muted",
+      "values": {
+        "Dark": "#98989f",
+        "Light": "#6e6e73"
+      }
+    },
+    {
+      "name": "color/placeholder",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-placeholder",
+      "values": {
+        "Dark": "#8e8e93",
+        "Light": "#6e6e73"
+      }
+    },
+    {
+      "name": "color/accent",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/accent/text",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent-text",
+      "values": {
+        "Dark": "#1c1c1e",
+        "Light": "#ffffff"
+      }
+    },
+    {
+      "name": "color/accent/hover",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent-hover",
+      "values": {
+        "Dark": "#d1d1d6",
+        "Light": "#3a3a3c"
+      }
+    },
+    {
+      "name": "color/accent/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-accent-soft",
+      "values": {
+        "Dark": "#2c2c2e",
+        "Light": "#e5e5ea"
+      }
+    },
+    {
+      "name": "color/link",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-link",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/info",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-info",
+      "values": {
+        "Dark": "#64d2ff",
+        "Light": "#007aff"
+      }
+    },
+    {
+      "name": "color/info/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-info-soft",
+      "values": {
+        "Dark": "#08264a",
+        "Light": "#e4f0ff"
+      }
+    },
+    {
+      "name": "color/success",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-success",
+      "values": {
+        "Dark": "#30d158",
+        "Light": "#248a3d"
+      }
+    },
+    {
+      "name": "color/success/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-success-soft",
+      "values": {
+        "Dark": "#193822",
+        "Light": "#e4f5e8"
+      }
+    },
+    {
+      "name": "color/warning",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-warning",
+      "values": {
+        "Dark": "#ffd60a",
+        "Light": "#9a6700"
+      }
+    },
+    {
+      "name": "color/warning/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-warning-soft",
+      "values": {
+        "Dark": "#3b3211",
+        "Light": "#fff4cc"
+      }
+    },
+    {
+      "name": "color/danger",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-danger",
+      "values": {
+        "Dark": "#ff453a",
+        "Light": "#d70015"
+      }
+    },
+    {
+      "name": "color/danger/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-danger-soft",
+      "values": {
+        "Dark": "#45201f",
+        "Light": "#ffe5e7"
+      }
+    },
+    {
+      "name": "color/raspberry",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-raspberry",
+      "values": {
+        "Dark": "#ff375f",
+        "Light": "#ff2d55"
+      }
+    },
+    {
+      "name": "color/raspberry/soft",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-raspberry-soft",
+      "values": {
+        "Dark": "#4a1b2a",
+        "Light": "#ffe5ec"
+      }
+    },
+    {
+      "name": "color/raspberry/bright",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-raspberry-bright",
+      "values": {
+        "Dark": "#ff5577",
+        "Light": "#ff4f73"
+      }
+    },
+    {
+      "name": "color/banner/purple",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-banner-purple",
+      "values": {
+        "Dark": "#756bd8",
+        "Light": "#655dc5"
+      }
+    },
+    {
+      "name": "color/banner/blue",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-banner-blue",
+      "values": {
+        "Dark": "#2943a8",
+        "Light": "#3151b8"
+      }
+    },
+    {
+      "name": "color/category/tariff",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-tariff",
+      "values": {
+        "Dark": "#64d2ff",
+        "Light": "#007aff"
+      }
+    },
+    {
+      "name": "color/category/subscription",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-subscription",
+      "values": {
+        "Dark": "#bf5af2",
+        "Light": "#af52de"
+      }
+    },
+    {
+      "name": "color/category/gigabytes",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-gigabytes",
+      "values": {
+        "Dark": "#30d158",
+        "Light": "#248a3d"
+      }
+    },
+    {
+      "name": "color/category/accounts",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-accounts",
+      "values": {
+        "Dark": "#ff9f0a",
+        "Light": "#c93400"
+      }
+    },
+    {
+      "name": "color/category/icon/gradient/start",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-icon-gradient-start",
+      "values": {
+        "Dark": "#ffffff",
+        "Light": "#636366"
+      }
+    },
+    {
+      "name": "color/category/icon/gradient/mid",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-icon-gradient-mid",
+      "values": {
+        "Dark": "#d1d1d6",
+        "Light": "#8e8e93"
+      }
+    },
+    {
+      "name": "color/category/icon/gradient/end",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-category-icon-gradient-end",
+      "values": {
+        "Dark": "#8e8e93",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-border",
+      "values": {
+        "Dark": "#38383a",
+        "Light": "#d1d1d6"
+      }
+    },
+    {
+      "name": "color/border/strong",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-border-strong",
+      "values": {
+        "Dark": "#8e8e93",
+        "Light": "#8e8e93"
+      }
+    },
+    {
+      "name": "color/focus",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-focus",
+      "values": {
+        "Dark": "#f5f5f7",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/glass",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-glass",
+      "values": {
+        "Dark": "rgb(28 28 30 / 88%)",
+        "Light": "rgb(255 255 255 / 88%)"
+      }
+    },
+    {
+      "name": "color/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-shadow",
+      "values": {
+        "Dark": "0 12px 40px #00000045",
+        "Light": "0 12px 40px #00000014"
+      }
+    },
+    {
+      "name": "color/shadow/sm",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-shadow-sm",
+      "values": {
+        "Dark": "0 1px 2px #00000014",
+        "Light": "0 1px 2px #00000014"
+      }
+    },
+    {
+      "name": "color/shadow/nav",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-shadow-nav",
+      "values": {
+        "Dark": "0 8px 32px #00000040",
+        "Light": "0 8px 32px #00000015"
+      }
+    },
+    {
+      "name": "misc/action/banner/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-action-banner-bg",
+      "values": {
+        "Dark": "var(--app-surface)",
+        "Light": "var(--app-surface)"
+      }
+    },
+    {
+      "name": "color/action/banner/subtitle",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-action-banner-subtitle",
+      "values": {
+        "Dark": "rgb(245 245 247 / 68%)",
+        "Light": "rgb(28 28 30 / 68%)"
+      }
+    },
+    {
+      "name": "color/action/banner/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-action-banner-border",
+      "values": {
+        "Dark": "rgb(255 255 255 / 10%)",
+        "Light": "rgb(28 28 30 / 10%)"
+      }
+    },
+    {
+      "name": "color/action/banner/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-action-banner-shadow",
+      "values": {
+        "Dark": "0 10px 28px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 10%)",
+        "Light": "0 10px 28px rgb(0 0 0 / 12%), inset 0 1px 0 rgb(255 255 255 / 70%)"
+      }
+    },
+    {
+      "name": "color/control/material",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-control-material",
+      "values": {
+        "Dark": "rgb(44 44 46 / 76%)",
+        "Light": "rgb(255 255 255 / 76%)"
+      }
+    },
+    {
+      "name": "color/control/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-control-border",
+      "values": {
+        "Dark": "rgb(255 255 255 / 9%)",
+        "Light": "rgb(28 28 30 / 10%)"
+      }
+    },
+    {
+      "name": "color/control/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-control-shadow",
+      "values": {
+        "Dark": "0 6px 18px rgb(0 0 0 / 16%), inset 0 1px 0 rgb(255 255 255 / 7%)",
+        "Light": "0 6px 18px rgb(0 0 0 / 8%), inset 0 1px 0 rgb(255 255 255 / 75%)"
+      }
+    },
+    {
+      "name": "color/nav/material",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-material",
+      "values": {
+        "Dark": "rgb(44 44 46 / 76%)",
+        "Light": "rgb(255 255 255 / 76%)"
+      }
+    },
+    {
+      "name": "color/nav/border",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-border",
+      "values": {
+        "Dark": "transparent",
+        "Light": "transparent"
+      }
+    },
+    {
+      "name": "color/nav/active",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-active",
+      "values": {
+        "Dark": "rgb(90 90 93 / 72%)",
+        "Light": "rgb(255 255 255 / 86%)"
+      }
+    },
+    {
+      "name": "color/nav/active/shadow",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-active-shadow",
+      "values": {
+        "Dark": "inset 0 1px 0 rgb(255 255 255 / 10%), 0 2px 8px rgb(0 0 0 / 12%)",
+        "Light": "inset 0 1px 0 rgb(255 255 255 / 85%), 0 2px 8px rgb(0 0 0 / 8%)"
+      }
+    },
+    {
+      "name": "color/nav/active/icon",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-active-icon",
+      "values": {
+        "Dark": "#ffffff",
+        "Light": "#1c1c1e"
+      }
+    },
+    {
+      "name": "color/nav/fade/color",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-fade-color",
+      "values": {
+        "Dark": "#000000",
+        "Light": "var(--app-bg)"
+      }
+    },
+    {
+      "name": "misc/bottom/bar/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-bottom-bar-bg",
+      "values": {
+        "Dark": "var(--app-surface)",
+        "Light": "var(--app-surface)"
+      }
+    },
+    {
+      "name": "misc/header/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-header-bg",
+      "values": {
+        "Dark": "var(--app-bg)",
+        "Light": "var(--app-bg)"
+      }
+    },
+    {
+      "name": "misc/subtitle",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-subtitle",
+      "values": {
+        "Dark": "var(--app-muted)",
+        "Light": "var(--app-muted)"
+      }
+    },
+    {
+      "name": "misc/section/header",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-section-header",
+      "values": {
+        "Dark": "var(--app-text)",
+        "Light": "var(--app-text)"
+      }
+    },
+    {
+      "name": "misc/strong/control/bg",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-strong-control-bg",
+      "values": {
+        "Dark": "var(--app-accent)",
+        "Light": "var(--app-accent)"
+      }
+    },
+    {
+      "name": "misc/strong/control/text",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-strong-control-text",
+      "values": {
+        "Dark": "var(--app-accent-text)",
+        "Light": "var(--app-accent-text)"
+      }
+    },
+    {
+      "name": "misc/font/family",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-font-family",
+      "values": {
+        "Dark": "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", \"SF Pro\", system-ui, sans-serif",
+        "Light": "-apple-system, BlinkMacSystemFont, \"SF Pro Display\", \"SF Pro Text\", \"SF Pro\", system-ui, sans-serif"
+      }
+    },
+    {
+      "name": "typography/weight/regular",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-regular",
+      "values": {
+        "Dark": 400,
+        "Light": 400
+      }
+    },
+    {
+      "name": "typography/weight/medium",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-medium",
+      "values": {
+        "Dark": 500,
+        "Light": 500
+      }
+    },
+    {
+      "name": "typography/weight/semibold",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-semibold",
+      "values": {
+        "Dark": 600,
+        "Light": 600
+      }
+    },
+    {
+      "name": "typography/weight/bold",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-weight-bold",
+      "values": {
+        "Dark": 700,
+        "Light": 700
+      }
+    },
+    {
+      "name": "typography/size/screen",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-screen",
+      "values": {
+        "Dark": "1.75rem",
+        "Light": "1.75rem"
+      }
+    },
+    {
+      "name": "typography/size/section",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-section",
+      "values": {
+        "Dark": "1.375rem",
+        "Light": "1.375rem"
+      }
+    },
+    {
+      "name": "typography/size/card",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-card",
+      "values": {
+        "Dark": "1.0625rem",
+        "Light": "1.0625rem"
+      }
+    },
+    {
+      "name": "typography/size/body",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-body",
+      "values": {
+        "Dark": "1.0625rem",
+        "Light": "1.0625rem"
+      }
+    },
+    {
+      "name": "typography/size/caption",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-caption",
+      "values": {
+        "Dark": ".9375rem",
+        "Light": ".9375rem"
+      }
+    },
+    {
+      "name": "typography/size/label",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-size-label",
+      "values": {
+        "Dark": ".8125rem",
+        "Light": ".8125rem"
+      }
+    },
+    {
+      "name": "typography/leading/screen",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-screen",
+      "values": {
+        "Dark": 1.21,
+        "Light": 1.21
+      }
+    },
+    {
+      "name": "typography/leading/section",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-section",
+      "values": {
+        "Dark": 1.27,
+        "Light": 1.27
+      }
+    },
+    {
+      "name": "typography/leading/card",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-card",
+      "values": {
+        "Dark": 1.3,
+        "Light": 1.3
+      }
+    },
+    {
+      "name": "typography/leading/body",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-body",
+      "values": {
+        "Dark": 1.3,
+        "Light": 1.3
+      }
+    },
+    {
+      "name": "typography/leading/caption",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-caption",
+      "values": {
+        "Dark": 1.33,
+        "Light": 1.33
+      }
+    },
+    {
+      "name": "typography/leading/label",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-leading-label",
+      "values": {
+        "Dark": 1.38,
+        "Light": 1.38
+      }
+    },
+    {
+      "name": "space/1",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-1",
+      "values": {
+        "Dark": 4,
+        "Light": 4
+      }
+    },
+    {
+      "name": "space/2",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-2",
+      "values": {
+        "Dark": 8,
+        "Light": 8
+      }
+    },
+    {
+      "name": "space/3",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-3",
+      "values": {
+        "Dark": 12,
+        "Light": 12
+      }
+    },
+    {
+      "name": "space/4",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-4",
+      "values": {
+        "Dark": 16,
+        "Light": 16
+      }
+    },
+    {
+      "name": "space/5",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-5",
+      "values": {
+        "Dark": 20,
+        "Light": 20
+      }
+    },
+    {
+      "name": "space/6",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-6",
+      "values": {
+        "Dark": 24,
+        "Light": 24
+      }
+    },
+    {
+      "name": "space/8",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-space-8",
+      "values": {
+        "Dark": 32,
+        "Light": 32
+      }
+    },
+    {
+      "name": "radius/sm",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-sm",
+      "values": {
+        "Dark": 12,
+        "Light": 12
+      }
+    },
+    {
+      "name": "radius/md",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-md",
+      "values": {
+        "Dark": 16,
+        "Light": 16
+      }
+    },
+    {
+      "name": "radius/lg",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-lg",
+      "values": {
+        "Dark": 24,
+        "Light": 24
+      }
+    },
+    {
+      "name": "radius/xl",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-xl",
+      "values": {
+        "Dark": 32,
+        "Light": 32
+      }
+    },
+    {
+      "name": "radius/pill",
+      "resolvedType": "FLOAT",
+      "description": "CSS variable --app-radius-pill",
+      "values": {
+        "Dark": 999,
+        "Light": 999
+      }
+    },
+    {
+      "name": "motion/duration/press",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-duration-press",
+      "values": {
+        "Dark": "140ms",
+        "Light": "140ms"
+      }
+    },
+    {
+      "name": "motion/duration/reveal",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-duration-reveal",
+      "values": {
+        "Dark": "220ms",
+        "Light": "220ms"
+      }
+    },
+    {
+      "name": "misc/touch/min",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-touch-min",
+      "values": {
+        "Dark": "44px",
+        "Light": "44px"
+      }
+    },
+    {
+      "name": "misc/segment/gap",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-segment-gap",
+      "values": {
+        "Dark": "4px",
+        "Light": "4px"
+      }
+    },
+    {
+      "name": "misc/segment/padding",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-segment-padding",
+      "values": {
+        "Dark": "4px",
+        "Light": "4px"
+      }
+    },
+    {
+      "name": "misc/page/width",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-page-width",
+      "values": {
+        "Dark": "480px",
+        "Light": "480px"
+      }
+    },
+    {
+      "name": "color/nav/height",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-height",
+      "values": {
+        "Dark": "64px",
+        "Light": "64px"
+      }
+    },
+    {
+      "name": "color/nav/create/size",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-create-size",
+      "values": {
+        "Dark": "56px",
+        "Light": "56px"
+      }
+    },
+    {
+      "name": "color/nav/clearance",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-clearance",
+      "values": {
+        "Dark": "calc(var(--app-nav-height) + 32px + var(--app-inset-bottom))",
+        "Light": "calc(var(--app-nav-height) + 32px + var(--app-inset-bottom))"
+      }
+    },
+    {
+      "name": "color/nav/fade/height",
+      "resolvedType": "COLOR",
+      "description": "CSS variable --app-nav-fade-height",
+      "values": {
+        "Dark": "clamp(128px, calc(19dvh + var(--app-inset-bottom)), 164px)",
+        "Light": "clamp(128px, calc(19dvh + var(--app-inset-bottom)), 164px)"
+      }
+    },
+    {
+      "name": "misc/safe/area/top",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-safe-area-top",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/safe/area/right",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-safe-area-right",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/safe/area/bottom",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-safe-area-bottom",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/safe/area/left",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-safe-area-left",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/content/safe/area/top",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-content-safe-area-top",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/content/safe/area/right",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-content-safe-area-right",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/content/safe/area/bottom",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-content-safe-area-bottom",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/content/safe/area/left",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-content-safe-area-left",
+      "values": {
+        "Dark": "0px",
+        "Light": "0px"
+      }
+    },
+    {
+      "name": "misc/inset/top",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-inset-top",
+      "values": {
+        "Dark": "calc(var(--app-content-safe-area-top) + max(var(--app-safe-area-top), env(safe-area-inset-top, 0px)))",
+        "Light": "calc(var(--app-content-safe-area-top) + max(var(--app-safe-area-top), env(safe-area-inset-top, 0px)))"
+      }
+    },
+    {
+      "name": "misc/inset/bottom",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-inset-bottom",
+      "values": {
+        "Dark": "calc(var(--app-content-safe-area-bottom) + max(var(--app-safe-area-bottom), env(safe-area-inset-bottom, 0px)))",
+        "Light": "calc(var(--app-content-safe-area-bottom) + max(var(--app-safe-area-bottom), env(safe-area-inset-bottom, 0px)))"
+      }
+    },
+    {
+      "name": "misc/inset/left",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-inset-left",
+      "values": {
+        "Dark": "calc(var(--app-content-safe-area-left) + max(var(--app-safe-area-left), env(safe-area-inset-left, 0px)))",
+        "Light": "calc(var(--app-content-safe-area-left) + max(var(--app-safe-area-left), env(safe-area-inset-left, 0px)))"
+      }
+    },
+    {
+      "name": "misc/inset/right",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-inset-right",
+      "values": {
+        "Dark": "calc(var(--app-content-safe-area-right) + max(var(--app-safe-area-right), env(safe-area-inset-right, 0px)))",
+        "Light": "calc(var(--app-content-safe-area-right) + max(var(--app-safe-area-right), env(safe-area-inset-right, 0px)))"
+      }
+    },
+    {
+      "name": "misc/viewport/stable/height",
+      "resolvedType": "STRING",
+      "description": "CSS variable --app-viewport-stable-height",
+      "values": {
+        "Dark": "100dvh",
+        "Light": "100dvh"
+      }
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import {
   type ReactNode
 } from "react";
 import { AccountListingCard, FamilyListingCard, GigabytesListingCard } from "../ListingCard";
+import { ScrollToTopButton } from "../ScrollToTopButton";
 import { Ios27CategoryMenu } from "../Ios27CategoryMenu";
 import { SystemSymbol } from "../SystemSymbol";
 import type { FamilyType } from "../../types";
@@ -115,6 +116,8 @@ export function MarketHomeView({
     isFeedScrolledRef.current = false;
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
+      scrollRef.current.removeAttribute("data-scrolled");
+      scrollRef.current.closest<HTMLElement>(".sm-market-home-feed-wrap")?.removeAttribute("data-scrolled");
     }
   }, [marketFilter, resetToken, scrollRef]);
 
@@ -499,11 +502,20 @@ export function MarketHomeView({
           ref={scrollRef}
           className={`sm-market-home-feed-scroll${!isHeaderCollapsed ? " is-locked" : ""}`}
           onScroll={event => {
-            const top = event.currentTarget.scrollTop;
+            const container = event.currentTarget;
+            const top = container.scrollTop;
             const isScrolled = top > 2;
             if (isScrolled !== isFeedScrolledRef.current) {
               isFeedScrolledRef.current = isScrolled;
               setIsFeedScrolled(isScrolled);
+              const wrap = container.closest<HTMLElement>(".sm-market-home-feed-wrap");
+              if (isScrolled) {
+                container.setAttribute("data-scrolled", "true");
+                wrap?.setAttribute("data-scrolled", "true");
+              } else {
+                container.removeAttribute("data-scrolled");
+                wrap?.removeAttribute("data-scrolled");
+              }
             }
             onScroll?.(top);
             if (top > 12 && !isHeaderCollapsed) {
@@ -604,6 +616,16 @@ export function MarketHomeView({
                 {isLoadingMoreFamilies ? "Загружаем…" : "Показать ещё"}
               </button>
             ) : null}
+            {displayed.length > 0 && (
+              <ScrollToTopButton
+                onClick={() => {
+                  scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+                  setIsHeaderCollapsed(false);
+                  setIsFeedScrolled(false);
+                }}
+                testId="market-home-scroll-to-top-btn"
+              />
+            )}
           </section>
         </div>
       </div>

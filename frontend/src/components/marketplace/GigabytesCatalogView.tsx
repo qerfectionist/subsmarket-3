@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useFeedSnap } from "../../hooks/useFeedSnap";
 import { Button as AppButton } from "../ui";
+import { ScrollToTopButton } from "../ScrollToTopButton";
 import { GigabytesListingCard as ListingRow } from "../ListingCard";
 import { FilterMenu, type FilterMenuOption } from "../FilterMenu";
 import { SystemSymbol } from "../SystemSymbol";
@@ -182,64 +183,73 @@ export function GigabytesCatalogView({
         </div>
       </div>
 
-      <div
-        className="sm-market-catalog-feed-scroll"
-        ref={feedSnap.containerRef}
-        {...feedSnap.scrollHandlers}
-      >
-        {loading ? (
-          <div className="sm-market-family-list" aria-label="Загружаем объявления" role="status">
-            {[0, 1, 2].map((n) => (
-              <div key={n} className="sm-listing-skeleton" aria-hidden>
-                <span />
-                <div />
-                <span />
-              </div>
-            ))}
-          </div>
-        ) : null}
+      <div className="my-feed-wrap">
+        <div
+          className="sm-market-catalog-feed-scroll"
+          ref={feedSnap.containerRef}
+          {...feedSnap.scrollHandlers}
+        >
+          {loading ? (
+            <div className="sm-market-family-list" aria-label="Загружаем объявления" role="status">
+              {[0, 1, 2].map((n) => (
+                <div key={n} className="sm-listing-skeleton" aria-hidden>
+                  <span />
+                  <div />
+                  <span />
+                </div>
+              ))}
+            </div>
+          ) : null}
 
-        {!loading && displayedListings.length === 0 ? (
-          <div className="sm-market-empty" data-testid="gigabytes-catalog-empty">
-            <SystemSymbol name="magnifyingglass" size={28} />
-            <h3>{searchTerm ? "Ничего не найдено" : "Доступных гигабайтов пока нет"}</h3>
-            <p>
-              {searchTerm
-                ? "Попробуйте изменить поисковый запрос или сбросить фильтры."
-                : "Можно опубликовать первое предложение или вернуться позже."}
-            </p>
-            <div className="sm-market-empty-actions">
-              <button
-                type="button"
-                className="sm-market-button sm-market-button-secondary"
-                onClick={() => (searchTerm ? onSearchTerm("") : void onRefresh?.())}
-              >
-                {searchTerm ? "Сбросить поиск" : "Обновить"}
-              </button>
-              {!searchTerm ? (
+          {!loading && displayedListings.length === 0 ? (
+            <div className="sm-market-empty" data-testid="gigabytes-catalog-empty">
+              <SystemSymbol name="magnifyingglass" size={28} />
+              <h3>{searchTerm ? "Ничего не найдено" : "Доступных гигабайтов пока нет"}</h3>
+              <p>
+                {searchTerm
+                  ? "Попробуйте изменить поисковый запрос или сбросить фильтры."
+                  : "Можно опубликовать первое предложение или вернуться позже."}
+              </p>
+              <div className="sm-market-empty-actions">
                 <button
                   type="button"
-                  className="sm-market-button sm-market-button-primary"
-                  onClick={onCreate}
+                  className="sm-market-button sm-market-button-secondary"
+                  onClick={() => (searchTerm ? onSearchTerm("") : void onRefresh?.())}
                 >
-                  Продать ГБ
+                  {searchTerm ? "Сбросить поиск" : "Обновить"}
                 </button>
-              ) : null}
+                {!searchTerm ? (
+                  <button
+                    type="button"
+                    className="sm-market-button sm-market-button-primary"
+                    onClick={onCreate}
+                  >
+                    Продать ГБ
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="sm-market-family-list">
-            {displayedListings.map((listing) => (
-              <ListingRow key={listing.id} listing={listing} onClick={() => onListing(listing.id)} />
-            ))}
-          </div>
-        )}
+          ) : (
+            <div className="sm-market-family-list">
+              {displayedListings.map((listing) => (
+                <ListingRow key={listing.id} listing={listing} onClick={() => onListing(listing.id)} />
+              ))}
+            </div>
+          )}
 
-        {hasMore ? (
-          <AppButton type="button" variant="tertiary" fullWidth disabled={loadingMore} onClick={onLoadMore}>
-            {loadingMore ? "Загружаем…" : "Показать ещё"}
-          </AppButton>
-        ) : null}
+          {hasMore ? (
+            <AppButton type="button" variant="tertiary" fullWidth disabled={loadingMore} onClick={onLoadMore}>
+              {loadingMore ? "Загружаем…" : "Показать ещё"}
+            </AppButton>
+          ) : null}
+
+          {displayedListings.length > 0 && (
+            <ScrollToTopButton
+              containerRef={feedSnap.containerRef}
+              testId="gigabytes-catalog-scroll-to-top-btn"
+            />
+          )}
+        </div>
       </div>
     </section>
   );

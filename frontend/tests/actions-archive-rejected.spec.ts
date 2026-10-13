@@ -17,11 +17,8 @@ test("adds and displays rejected outbox requests in archive and constructor", as
   await nav.getByRole("button", { name: "Заявки", exact: true }).click({ force: true });
   await expect(page.getByTestId("actions-screen")).toBeVisible();
 
-  // 2. Open Dev Constructor "⚡ Карточки"
-  const devFab = page.getByTestId("dev-floating-fab-btn");
-  await expect(devFab).toBeVisible();
-  await devFab.click({ force: true });
-
+  // 2. Open Dev Constructor via shortcut
+  await page.keyboard.press("Control+Shift+D");
   const devModal = page.getByRole("dialog", { name: "Конструктор карточек" });
   await expect(devModal).toBeVisible();
 
@@ -60,7 +57,7 @@ test("adds and displays rejected outbox requests in archive and constructor", as
   const archiveList = page.getByTestId("actions-archive-list");
   await expect(archiveList).toBeVisible();
 
-  const rejectedBadges = page.locator(".my-trade-request-status:has-text('Отклонена'), .my-trade-request-status:has-text('Отклонён')");
+  const rejectedBadges = page.locator(".my-trade-request-status:has-text('отклонил'), .my-trade-request-status:has-text('Отклонена'), .my-trade-request-status:has-text('Отклонён')");
   await expect(rejectedBadges.first()).toBeVisible();
 
   // Visual snapshot 1: Archive with rejected cards
@@ -115,5 +112,42 @@ test("adds and displays rejected outbox requests in archive and constructor", as
   // Visual snapshot 3: Rejected filter active with cards
   await page.screenshot({
     path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_archive_rejected_filter_active.png"
+  });
+});
+
+test("adds and displays rejected inbox requests showing 'Вы отклонили'", async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.clear());
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+
+  const nav = page.getByRole("navigation", { name: "Главная навигация" });
+  await nav.getByRole("button", { name: "Заявки", exact: true }).click({ force: true });
+  await expect(page.getByTestId("actions-screen")).toBeVisible();
+
+  await page.keyboard.press("Control+Shift+D");
+  const devModal = page.getByRole("dialog", { name: "Конструктор карточек" });
+  await expect(devModal).toBeVisible();
+
+  // Scope is inbox by default, click 'Все 3 в архив'
+  const addAllRejectedBtn = devModal.getByRole("button", { name: "Все 3 в архив" });
+  await expect(addAllRejectedBtn).toBeVisible();
+  await addAllRejectedBtn.click({ force: true });
+
+  const closeBtn = devModal.getByRole("button", { name: "Закрыть" });
+  await closeBtn.click({ force: true });
+  await expect(devModal).toHaveCount(0);
+
+  const archiveToggle = page.getByTestId("actions-archive-trigger");
+  await expect(archiveToggle).toBeVisible();
+  await archiveToggle.click({ force: true });
+
+  const archiveDisclosure = page.locator("#actions-archive-disclosure");
+  await expect(archiveDisclosure).toHaveClass(/is-open/);
+
+  // Check that badges show 'Вы отклонили'
+  const rejectedBadges = page.locator(".my-trade-request-status:has-text('Вы отклонили')");
+  await expect(rejectedBadges.first()).toBeVisible();
+
+  await page.screenshot({
+    path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_archive_inbox_rejected_cards.png"
   });
 });

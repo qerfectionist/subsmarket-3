@@ -46,6 +46,7 @@ export function useActionsArchiveItems({
       const expired = isRequestExpired(req.status, req.created_at);
       if (["closed", "cancelled", "rejected", "expired"].includes(req.status) || expired) {
         const isSuccess = req.status === "closed";
+        const isExpired = !isSuccess && (req.status === "expired" || (req.status !== "rejected" && req.status !== "cancelled" && expired));
         items.push({
           id: `gb-${req.id}`,
           title: `${formatTradeGb(req.amount_gb)} ГБ · ${req.operator_name}`,
@@ -59,14 +60,14 @@ export function useActionsArchiveItems({
           date: req.created_at ? formatDate(req.created_at) : "",
           dateTime: req.created_at ? formatDateTime(req.created_at) : "",
           rawDate: req.created_at ?? "",
-          status: isSuccess ? "successful" : "cancelled",
+          status: isSuccess ? "successful" : isExpired ? "expired" : "cancelled",
           statusLabel: isSuccess
             ? "Завершена"
             : req.status === "rejected"
-              ? "Отклонена"
+              ? "Вы отклонили"
               : req.status === "cancelled"
                 ? "Отменена"
-                : "Вы не ответили, срок истёк",
+                : "Вы не ответили",
           amountKzt: req.total_price_kzt
         });
       }
@@ -75,6 +76,7 @@ export function useActionsArchiveItems({
       const expired = isRequestExpired(req.status, req.created_at);
       if (["closed", "cancelled", "rejected", "expired"].includes(req.status) || expired) {
         const isSuccess = req.status === "closed";
+        const isExpired = !isSuccess && (req.status === "expired" || (req.status !== "rejected" && req.status !== "cancelled" && expired));
         items.push({
           id: `acc-${req.id}`,
           title: formatArchiveAccountTitle(req.service_name, req.title),
@@ -88,14 +90,14 @@ export function useActionsArchiveItems({
           date: req.created_at ? formatDate(req.created_at) : "",
           dateTime: req.created_at ? formatDateTime(req.created_at) : "",
           rawDate: req.created_at ?? "",
-          status: isSuccess ? "successful" : "cancelled",
+          status: isSuccess ? "successful" : isExpired ? "expired" : "cancelled",
           statusLabel: isSuccess
             ? "Завершена"
             : req.status === "rejected"
-              ? "Отклонён"
+              ? "Вы отклонили"
               : req.status === "cancelled"
-                ? "Отменён"
-                : "Вы не ответили, срок истёк",
+                ? "Отменена"
+                : "Вы не ответили",
           amountKzt: req.price_kzt
         });
       }
@@ -108,6 +110,7 @@ export function useActionsArchiveItems({
         const expired = isRequestExpired(req.status, req.created_at, req.expires_at);
         if (["approved", "rejected", "cancelled", "expired"].includes(req.status) || expired) {
           const isSuccess = req.status === "approved";
+          const isExpired = !isSuccess && (req.status === "expired" || (req.status !== "rejected" && req.status !== "cancelled" && expired));
           const price = req.member_share_kzt ?? family.member_share_kzt;
           items.push({
             id: `fam-req-${req.id}`,
@@ -122,14 +125,14 @@ export function useActionsArchiveItems({
             date: req.created_at ? formatDate(req.created_at) : "",
             dateTime: req.created_at ? formatDateTime(req.created_at) : "",
             rawDate: req.created_at ?? "",
-            status: isSuccess ? "successful" : "cancelled",
+            status: isSuccess ? "successful" : isExpired ? "expired" : "cancelled",
             statusLabel: isSuccess
               ? "Принята"
               : req.status === "rejected"
-                ? "Отклонена"
+                ? "Вы отклонили"
                 : req.status === "cancelled"
                   ? "Отменена"
-                  : "Вы не ответили, срок истёк",
+                  : "Вы не ответили",
             amountKzt: price != null ? price : undefined
           });
         }
@@ -143,6 +146,7 @@ export function useActionsArchiveItems({
             const expired = isRequestExpired(req.status, req.created_at, req.expires_at);
             if (["approved", "rejected", "cancelled", "expired"].includes(req.status) || expired) {
               const isSuccess = req.status === "approved";
+              const isExpired = !isSuccess && (req.status === "expired" || (req.status !== "rejected" && req.status !== "cancelled" && expired));
               const price = req.member_share_kzt ?? fam.family.member_share_kzt;
               items.push({
                 id: `fam-req-${req.id}`,
@@ -157,14 +161,14 @@ export function useActionsArchiveItems({
                 date: req.created_at ? formatDate(req.created_at) : "",
                 dateTime: req.created_at ? formatDateTime(req.created_at) : "",
                 rawDate: req.created_at ?? "",
-                status: isSuccess ? "successful" : "cancelled",
+                status: isSuccess ? "successful" : isExpired ? "expired" : "cancelled",
                 statusLabel: isSuccess
                   ? "Принята"
                   : req.status === "rejected"
-                    ? "Отклонена"
+                    ? "Вы отклонили"
                     : req.status === "cancelled"
                       ? "Отменена"
-                      : "Вы не ответили, срок истёк",
+                      : "Вы не ответили",
                 amountKzt: price != null ? price : undefined
               });
             }
@@ -181,6 +185,7 @@ export function useActionsArchiveItems({
       const expired = isRequestExpired(req.status, req.created_at);
       if (["closed", "cancelled", "rejected", "expired"].includes(req.status) || expired) {
         const isSuccess = req.status === "closed";
+        const isExpired = !isSuccess && (req.status === "expired" || (req.status !== "rejected" && req.status !== "cancelled" && expired));
         items.push({
           id: `gb-${req.id}`,
           originalId: req.id,
@@ -197,14 +202,14 @@ export function useActionsArchiveItems({
           date: req.created_at ? formatDate(req.created_at) : "",
           dateTime: req.created_at ? formatDateTime(req.created_at) : "",
           rawDate: req.created_at ?? "",
-          status: isSuccess ? "successful" : "cancelled",
+          status: isSuccess ? "successful" : isExpired ? "expired" : "cancelled",
           statusLabel: isSuccess
             ? "Завершена"
             : req.status === "rejected"
-              ? "Отклонена"
+              ? "Продавец отклонил"
               : req.status === "cancelled"
                 ? "Отменена"
-                : "Продавец не ответил, срок истёк",
+                : "Продавец не ответил",
           amountKzt: req.total_price_kzt
         });
       }
@@ -213,6 +218,7 @@ export function useActionsArchiveItems({
       const expired = isRequestExpired(req.status, req.created_at);
       if (["closed", "cancelled", "rejected", "expired"].includes(req.status) || expired) {
         const isSuccess = req.status === "closed";
+        const isExpired = !isSuccess && (req.status === "expired" || (req.status !== "rejected" && req.status !== "cancelled" && expired));
         items.push({
           id: `acc-${req.id}`,
           originalId: req.id,
@@ -228,14 +234,14 @@ export function useActionsArchiveItems({
           date: req.created_at ? formatDate(req.created_at) : "",
           dateTime: req.created_at ? formatDateTime(req.created_at) : "",
           rawDate: req.created_at ?? "",
-          status: isSuccess ? "successful" : "cancelled",
+          status: isSuccess ? "successful" : isExpired ? "expired" : "cancelled",
           statusLabel: isSuccess
             ? "Завершена"
             : req.status === "rejected"
-              ? "Отклонён"
+              ? "Продавец отклонил"
               : req.status === "cancelled"
-                ? "Отменён"
-                : "Продавец не ответил, срок истёк",
+                ? "Отменена"
+                : "Продавец не ответил",
           amountKzt: req.price_kzt
         });
       }
@@ -244,6 +250,7 @@ export function useActionsArchiveItems({
       const expired = isRequestExpired(req.status, req.created_at, req.expires_at);
       if (["approved", "rejected", "cancelled", "expired"].includes(req.status) || expired) {
         const isSuccess = req.status === "approved";
+        const isExpired = !isSuccess && (req.status === "expired" || (req.status !== "rejected" && req.status !== "cancelled" && expired));
         const price = req.member_share_kzt ?? req.price_kzt;
         items.push({
           id: `fam-req-${req.id}`,
@@ -259,14 +266,14 @@ export function useActionsArchiveItems({
           date: req.created_at ? formatDate(req.created_at) : "",
           dateTime: req.created_at ? formatDateTime(req.created_at) : "",
           rawDate: req.created_at ?? "",
-          status: isSuccess ? "successful" : "cancelled",
+          status: isSuccess ? "successful" : isExpired ? "expired" : "cancelled",
           statusLabel: isSuccess
             ? "Принята"
             : req.status === "rejected"
-              ? "Отклонена"
+              ? "Продавец отклонил"
               : req.status === "cancelled"
                 ? "Отменена"
-                : "Владелец не ответил, срок истёк",
+                : "Продавец не ответил",
           amountKzt: price != null ? price : undefined
         });
       }

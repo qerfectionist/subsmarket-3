@@ -223,7 +223,7 @@ def seed_test_incoming(db: Session | None = None) -> dict[str, int]:
                         user_id=buyers["aida_buyer"].id,
                         status="pending",
                         created_at=now - timedelta(minutes=1),
-                        expires_at=now + timedelta(hours=5),
+                        expires_at=now + timedelta(hours=2),
                     )
                 )
                 counts["families"] += 1
@@ -397,7 +397,7 @@ def seed_test_incoming(db: Session | None = None) -> dict[str, int]:
                         user_id=user.id,
                         status="pending",
                         created_at=now - timedelta(minutes=1),
-                        expires_at=now + timedelta(hours=5),
+                        expires_at=now + timedelta(hours=2),
                     )
                 )
                 db.add(

@@ -1,0 +1,162 @@
+/* ─── Dynamic Island Capsule (Cash App / iOS 18 Mobbin Pattern) ─── */
+.market-island-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 6px 0 14px;
+  position: relative;
+  z-index: 10;
+}
+
+.market-island-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 14px 0 12px;
+  background: color-mix(in srgb, var(--app-surface, #1c1c1e) 82%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: none;
+  outline: none;
+  border-radius: var(--app-radius-pill, 9999px);
+  box-shadow: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--app-text, #f5f5f7);
+  transition: transform var(--app-duration-press, 140ms) cubic-bezier(0.2, 0.8, 0.2, 1),
+              background-color 0.18s ease;
+  max-width: calc(100% - 24px);
+}
+
+.market-island-pill:hover {
+  background: color-mix(in srgb, var(--app-surface, #1c1c1e) 94%, transparent);
+}
+
+.market-island-pill:active {
+  transform: scale(0.96);
+  background: var(--app-secondary-bg, #2c2c2e);
+}
+
+.market-island-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: market-island-pulse 2s infinite ease-in-out;
+}
+
+.market-island-dot[data-tone="raspberry"],
+.market-island-dot[data-tone="danger"] {
+  background: #ff453a;
+  box-shadow: 0 0 8px rgba(255, 69, 58, 0.6);
+}
+
+.market-island-dot[data-tone="warning"] {
+  background: #ffd60a;
+  box-shadow: 0 0 8px rgba(255, 214, 10, 0.6);
+}
+
+.market-island-dot[data-tone="success"] {
+  background: #30d158;
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.6);
+}
+
+.market-island-dot[data-tone="info"],
+.market-island-dot:not([data-tone]) {
+  background: #64d2ff;
+  box-shadow: 0 0 8px rgba(100, 210, 255, 0.6);
+}
+
+@keyframes market-island-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 1;
+  }
+}
+
+.market-island-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.market-island-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--app-text, #f5f5f7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.market-island-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--app-muted, #98989f);
+  flex-shrink: 0;
+}
+
+.market-island-chevron {
+  flex-shrink: 0;
+  opacity: 0.65;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.market-island-pill:hover .market-island-chevron {
+  opacity: 1;
+  transform: translateX(1px);
+}
+
+.market-island-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--app-muted, #98989f);
+  margin-left: 2px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.market-island-dismiss:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--app-text, #fff);
+}
+
+/* Light Mode */
+[data-theme="light"] .market-island-pill {
+  background: color-mix(in srgb, var(--app-surface, #ffffff) 88%, transparent);
+  color: rgba(0, 0, 0, 0.85);
+  box-shadow: none;
+}
+
+[data-theme="light"] .market-island-title {
+  color: #1c1c1e;
+}
+
+[data-theme="light"] .market-island-badge {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] .market-island-dismiss {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.6);
+}

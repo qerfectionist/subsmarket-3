@@ -1,0 +1,1 @@
+"""SubsMarket MCP Server package."""

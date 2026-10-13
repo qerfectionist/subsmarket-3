@@ -309,7 +309,18 @@ export function MarketCatalogView({
                   onScroll={
                     paneType === familyType
                       ? event => {
-                          onScroll?.(event.currentTarget.scrollTop);
+                          const container = event.currentTarget;
+                          const top = container.scrollTop;
+                          const isScrolled = top > 2;
+                          const viewport = container.closest<HTMLElement>(".sm-market-catalog-swipe-viewport");
+                          if (isScrolled) {
+                            container.setAttribute("data-scrolled", "true");
+                            viewport?.setAttribute("data-scrolled", "true");
+                          } else {
+                            container.removeAttribute("data-scrolled");
+                            viewport?.removeAttribute("data-scrolled");
+                          }
+                          onScroll?.(top);
                           if (!isFeedDraggingRef.current) {
                             if (snapTimeoutRef.current) {
                               window.clearTimeout(snapTimeoutRef.current);
@@ -357,7 +368,18 @@ export function MarketCatalogView({
             className="sm-market-catalog-feed-scroll"
             ref={scrollRef}
             onScroll={event => {
-              onScroll?.(event.currentTarget.scrollTop);
+              const container = event.currentTarget;
+              const top = container.scrollTop;
+              const isScrolled = top > 2;
+              const stack = container.closest<HTMLElement>(".sm-market-catalog-stack, .sm-market-family-section");
+              if (isScrolled) {
+                container.setAttribute("data-scrolled", "true");
+                stack?.setAttribute("data-scrolled", "true");
+              } else {
+                container.removeAttribute("data-scrolled");
+                stack?.removeAttribute("data-scrolled");
+              }
+              onScroll?.(top);
               if (!isFeedDraggingRef.current) {
                 if (snapTimeoutRef.current) {
                   window.clearTimeout(snapTimeoutRef.current);

@@ -1,4 +1,4 @@
-﻿/* Screen composition. Values come from tokens.css; controls live in ui.css. */
+/* Screen composition. Values come from tokens.css; controls live in ui.css. */
 html, body, #root {
   width: 100%;
   height: 100%;
@@ -40,6 +40,33 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   background: var(--app-bg); color: var(--app-text);
   font-size: var(--app-size-body); line-height: var(--app-leading-body);
   letter-spacing: 0; scroll-padding-bottom: var(--app-nav-clearance);
+  position: relative;
+}
+.app-shell::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(38px + var(--app-inset-top));
+  background: linear-gradient(
+    to bottom,
+    var(--app-bg, #0f0f10) 0%,
+    color-mix(in srgb, var(--app-bg, #0f0f10) 85%, transparent) 35%,
+    color-mix(in srgb, var(--app-bg, #0f0f10) 45%, transparent) 65%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 180ms cubic-bezier(0.2, 0, 0, 1);
+  will-change: opacity;
+}
+.app-shell[data-scrolled="true"]::before {
+  opacity: 1;
+}
+.app-shell:has(.actions-screen)::before {
+  opacity: 0 !important;
 }
 .app-shell :where(button:not(.sm-listing):not(.subs-dock-item)) {
   min-height: 44px; border-radius: var(--app-radius-pill);
@@ -519,36 +546,44 @@ article.my-trade-request:active {
   stroke: var(--app-warning);
   transition: stroke-dashoffset 0.3s ease;
 }
-.my-trade-request-status.is-pending {
-  color: var(--app-warning);
+.my-trade-request-status .my-trade-request-status-icon,
+.my-trade-request-status .my-trade-request-clock-icon {
+  color: currentColor;
+  opacity: 0.95;
+  flex-shrink: 0;
 }
-.my-trade-request-status.is-pending .my-trade-request-dot {
-  background: var(--app-warning);
+.my-trade-request-status.is-pending {
+  color: var(--app-warning, #ff9f0a);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+  gap: 5px;
 }
 .my-trade-request-status.is-accepted,
-.my-trade-request-status.is-approved {
-  color: var(--app-success);
+.my-trade-request-status.is-approved,
+.my-trade-request-status.is-successful,
+.my-trade-request-status.is-closed {
+  color: var(--app-success, #34c759);
+  font-weight: 500;
+  gap: 5px;
 }
 .my-trade-request-status.is-accepted .my-trade-request-dot,
 .my-trade-request-status.is-approved .my-trade-request-dot,
-.my-trade-request-status.is-successful .my-trade-request-dot {
-  background: var(--app-success);
-}
-.my-trade-request-status.is-closed {
-  color: var(--app-muted);
-}
+.my-trade-request-status.is-successful .my-trade-request-dot,
 .my-trade-request-status.is-closed .my-trade-request-dot {
-  background: var(--app-muted);
+  background: var(--app-success, #34c759);
 }
 .my-trade-request-status.is-rejected,
 .my-trade-request-status.is-cancelled,
 .my-trade-request-status.is-expired {
-  color: var(--app-danger, #ef4444);
+  color: var(--app-raspberry, #ff375f);
+  font-weight: 500;
+  gap: 5px;
 }
 .my-trade-request-status.is-rejected .my-trade-request-dot,
 .my-trade-request-status.is-cancelled .my-trade-request-dot,
 .my-trade-request-status.is-expired .my-trade-request-dot {
-  background: var(--app-danger, #ef4444);
+  background: var(--app-raspberry, #ff375f);
 }
 
 .sm-listing-price.sm-listing-price-col {
@@ -566,6 +601,20 @@ article.my-trade-request:active {
   line-height: 1.2;
   font-weight: 500;
   gap: 5px;
+}
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-rejected,
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-cancelled,
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-expired {
+  color: var(--app-raspberry, #ff375f) !important;
+}
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-successful,
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-approved,
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-accepted,
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-closed {
+  color: var(--app-success, #34c759) !important;
+}
+.sm-listing-price.sm-listing-price-col .my-trade-request-status.is-pending {
+  color: var(--app-warning, #ff9f0a) !important;
 }
 .sm-listing-price.sm-listing-price-col .my-trade-request-dot {
   width: 5px;

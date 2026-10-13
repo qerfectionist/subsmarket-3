@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobbin Banner Design Patterns · SubsMarket 3.0</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0b0b0c;
+      --surface: #18181a;
+      --surface-elevated: #222226;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f5f5f7;
+      --muted: #8e8e93;
+      --accent: #2997ff;
+      --green: #30d158;
+      --orange: #ff9f0a;
+      --purple: #bf5af2;
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 36px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .header {
+      text-align: center;
+      max-width: 600px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: rgba(41, 151, 255, 0.15);
+      color: var(--accent);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      max-width: 1200px;
+      width: 100%;
+    }
+    .device-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 20px;
+      width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+    }
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pattern-tag {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .source-tag {
+      font-size: 11px;
+      background: rgba(255,255,255,0.06);
+      padding: 3px 8px;
+      border-radius: 6px;
+      color: #e5e5ea;
+    }
+    .pattern-title {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .screen-mock {
+      background: #000;
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
+      min-height: 190px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* 1. Peek Carousel */
+    .peek-container {
+      display: flex;
+      gap: 10px;
+      overflow: hidden;
+      margin: 0 -16px;
+      padding: 0 16px;
+    }
+    .peek-card {
+      flex: 0 0 280px;
+      background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .peek-card-next {
+      flex: 0 0 50px;
+      background: #1c1c1e;
+      border-radius: 16px;
+      opacity: 0.4;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* 2. Hero Benefit Card */
+    .hero-card {
+      background: linear-gradient(135deg, #2b1147 0%, #15092a 60%, #0d061a 100%);
+      border: 1px solid rgba(191, 90, 242, 0.3);
+      border-radius: 18px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::after {
+      content: "💎";
+      position: absolute;
+      right: 12px;
+      bottom: 8px;
+      font-size: 46px;
+      opacity: 0.9;
+      filter: drop-shadow(0 6px 16px rgba(191,90,242,0.4));
+    }
+    .hero-title {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+    .hero-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 12px;
+    }
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+      color: #000;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: none;
+    }
+
+    /* 3. Island Pill */
+    .island-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 0;
+    }
+    .island-pill {
+      background: rgba(30, 30, 32, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 6px 16px 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: #ff453a;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #ff453a;
+    }
+    .island-text {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #fff;
+    }
+    .island-chevron {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* 4. Split Tiles 1x2 */
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .split-tile {
+      background: #18181b;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 94px;
+    }
+    .split-tile.highlight {
+      background: linear-gradient(135deg, rgba(48,209,88,0.12) 0%, rgba(24,24,27,0.8) 100%);
+      border-color: rgba(48,209,88,0.25);
+    }
+    .split-icon {
+      font-size: 20px;
+    }
+    .split-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+    .split-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    /* 5. Tonal Notice Strip */
+    .notice-strip {
+      background: rgba(255, 214, 10, 0.08);
+      border-left: 3px solid #ffd60a;
+      border-radius: 8px 12px 12px 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .notice-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .notice-icon {
+      font-size: 16px;
+      color: #ffd60a;
+    }
+    .notice-text {
+      font-size: 12px;
+      line-height: 1.35;
+      color: #f5f5f7;
+    }
+    .notice-close {
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .desc {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .desc strong {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="badge">Mobbin Design System · Verified Patterns</div>
+    <h1>5 вариантов баннеров для SubsMarket</h1>
+    <p class="subtitle">Сравнение топовых паттернов из реальных мобильных приложений (Revolut, Klarna, Cash App, Wise, Linear) адаптированных под SubsMarket</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- Card 1 -->
+    <div class="device-card">
+      <div class="device-header">
+        <span class="pattern-tag">Паттерн #1</span>
+        <span class="source-tag">Revolut / Spotify</span>
+      </div>
+      <div class="pattern-title">Card Peek Carousel</div>
+      <div class="screen-mock">
+        <div class="peek-container">
+          <div class="peek-card">
+            <div>
+              <div style="font-size:10px; color:#ff9f0a; font-weight:700; text-transform:uppercase; margin-bottom:2px;">Выгода</div>
+              <div style="font-size:13.5px; font-weight:600; color:#fff;">Семьи подписок от 190 ₸</div>
+              <div style="font-size:11px; color:#8e8e93; margin-top:2px;">Доступ без переплат</div>
+            </div>
+            <div style="font-size:26px;">🎬</div>
+          </div>
+          <div class="peek-card-next"></div>
+        </div>
+      </div>
+      <div class="desc">
+        <strong>Виден следующий край:</strong> подсказывает пользователю горизонтальный жест свайпа без принуждения смотреть на индикатор точек.
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="device-card">
+      <div class="device-header">
+        <span class="pattern-tag">Паттерн #2</span>
+        <span class="source-tag">Klarna / Apple Card</span>
+      </div>
+      <div class="pattern-title">Hero Benefit Card с CTA</div>
+      <div class="screen-mock">
+        <div class="hero-card">
+          <div class="hero-title">Экономьте до 80%<br>на подписках</div>
+          <div class="hero-desc">Делите тариф с другими в 1 клик</div>
+          <button class="hero-btn">Найти семью →</button>
+        </div>
+      </div>
+      <div class="desc">
+        <strong>Максимальная конверсия:</strong> крупный градиент, фокус на ценности и моментальное действие внутри карточки без лишних слов.
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="device-card">
+      <div class="device-header">
+        <span class="pattern-tag">Паттерн #3</span>
+        <span class="source-tag">Cash App / iOS 18</span>
+      </div>
+      <div class="pattern-title">Dynamic Island Capsule</div>
+      <div class="screen-mock">
+        <div class="island-wrap">
+          <div class="island-pill">
+            <div class="pulse-dot"></div>
+            <div class="island-text">2 заявки требуют решения</div>
+            <div class="island-chevron">›</div>
+          </div>
+        </div>
+      </div>
+      <div class="desc">
+        <strong>Ультра-компактно (36px):</strong> сохраняет максимум пространства для каталога карточек, матовое стекло Apple Capsule.
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="device-card">
+      <div class="device-header">
+        <span class="pattern-tag">Паттерн #4</span>
+        <span class="source-tag">Wise / Shopee</span>
+      </div>
+      <div class="pattern-title">Split Dual Tiles (1×2)</div>
+      <div class="screen-mock">
+        <div class="split-grid">
+          <div class="split-tile">
+            <div class="split-icon">🍿</div>
+            <div>
+              <div class="split-title">Ищу семью</div>
+              <div class="split-sub">от 190 ₸/мес</div>
+            </div>
+          </div>
+          <div class="split-tile highlight">
+            <div class="split-icon">⚡</div>
+            <div>
+              <div class="split-title">Продать ГБ</div>
+              <div class="split-sub">моментально</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="desc">
+        <strong>Сегментация в 1 тап:</strong> разделяет два сценария (покупатель vs продавец) прямо на первом экране.
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="device-card">
+      <div class="device-header">
+        <span class="pattern-tag">Паттерн #5</span>
+        <span class="source-tag">Linear / Monzo</span>
+      </div>
+      <div class="pattern-title">Tonal Notice Strip</div>
+      <div class="screen-mock">
+        <div class="notice-strip">
+          <div class="notice-left">
+            <span class="notice-icon">🛡️</span>
+            <div class="notice-text"><strong>Сначала доступ, потом оплата.</strong><br>Проверяйте семью перед переводом.</div>
+          </div>
+          <span class="notice-close">✕</span>
+        </div>
+      </div>
+      <div class="desc">
+        <strong>Строгий нативный алерт:</strong> плоский флэт без тяжелых теней и рамок, легко скрывается в 1 клик.
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

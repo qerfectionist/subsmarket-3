@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { SystemSymbol } from "../SystemSymbol";
+import { TradeRequestStatusIcon } from "./TradeRequestStatusIcon";
 import { ServiceLogo } from "../branding";
 import { formatAccountTitle } from "../../format";
 import { openTelegramUser } from "../../telegram";
 import type { AccountRequest } from "../../types";
 import { TradeRequestSellerActions, TradeRequestCancelButton } from "../TradeRequestSellerActions";
+import { UserAvatar } from "../UserAvatar";
 import {
   formatTradeKzt,
   useRequestTimeRemaining,
   useRequestContacted,
   CircularCountdownTimer,
+  PendingRequestTimerBadge,
   accountRequestStatus
 } from "./useRequestTimeRemaining";
 
@@ -34,7 +37,7 @@ export function AccountTradeRequestCard({
   onClose?: (id: string, outcome: "sold" | "not_sold") => void;
   onRemind?: (id: string) => void;
 }) {
-  const timeRemaining = useRequestTimeRemaining(request.created_at);
+  const timeRemaining = useRequestTimeRemaining(request.created_at, null, request.id);
   const { hasContacted, markContacted } = useRequestContacted(request.id);
   const [isCancellingCountdown, setIsCancellingCountdown] = useState(false);
   const hasActions =
@@ -63,22 +66,20 @@ export function AccountTradeRequestCard({
           <strong>{formatTradeKzt(request.price_kzt)}</strong>
           {timerPrototype === 3 ? (
             <span>разово</span>
-          ) : timerPrototype === 4 && isPendingTimer ? (
-            <span className="trade-timer-sub-price">
-              <span className="trade-timer-sub-dot" aria-hidden />
-              <span>{timeRemaining.text}</span>
-            </span>
           ) : null}
         </div>
       </div>
 
       <div className="sm-listing-footer">
         <span className="sm-market-family-owner">
-          <span className="sm-market-family-owner-avatar" aria-hidden>
-            {request.counterparty_username
-              ? request.counterparty_username.slice(0, 1).toUpperCase()
-              : (request.role === "seller" ? "П" : "П")}
-          </span>
+          <UserAvatar
+            name={
+              request.counterparty_username
+                ? `@${request.counterparty_username.replace(/^@/, "")}`
+                : (request.role === "seller" ? "Покупатель" : "Продавец")
+            }
+            size={24}
+          />
           <span className="sm-market-family-avatar-name">
             {request.counterparty_username ? (
               <span className="sm-market-family-avatar-label">
@@ -92,46 +93,41 @@ export function AccountTradeRequestCard({
           </span>
         </span>
         {isPendingTimer ? (
-          timerPrototype === 4 ? (
-            <span className="my-trade-request-status is-pending">
-              <span className="my-trade-request-dot" aria-hidden />
-              <span>{request.role === "buyer" ? "Ждём ответа" : "Ждёт ответа"}</span>
-            </span>
-          ) : timerPrototype === 2 ? (
+          timerPrototype === 2 ? (
             <span className="timer-context-badge">
               <span className="timer-context-label">{request.role === "buyer" ? "Ждём ответа" : "Осталось"}</span>
               <CircularCountdownTimer
                 text={timeRemaining.text}
                 progress={timeRemaining.progress}
-                label={accountRequestStatus(request.status)}
+                label={accountRequestStatus(request.status, request.role)}
               />
             </span>
           ) : (
-            <CircularCountdownTimer
-              text={timeRemaining.text}
-              progress={timeRemaining.progress}
-              label={accountRequestStatus(request.status)}
-            />
+            <PendingRequestTimerBadge timeRemaining={timeRemaining} role={request.role} />
           )
-        ) : (
-          <span
-            className={`my-trade-request-status is-${timeRemaining.isExpired && request.status === "pending" ? "expired" : request.status}`}
-          >
-            <span className="my-trade-request-dot" aria-hidden />
-            <span>
-              {timeRemaining.isExpired && request.status === "pending"
-                ? "Срок истёк"
-                : accountRequestStatus(request.status)}
+        ) : (() => {
+          const isExpired = (timeRemaining.isExpired && request.status === "pending") || request.status === "expired";
+          const effectiveStatus = isExpired ? "expired" : request.status;
+          return (
+            <span className={`my-trade-request-status is-${effectiveStatus}`}>
+              <TradeRequestStatusIcon status={effectiveStatus} />
+              <span>
+                {isExpired
+                  ? request.role === "buyer"
+                    ? "Продавец не ответил"
+                    : "Вы не ответили"
+                  : accountRequestStatus(request.status, request.role)}
+              </span>
             </span>
-          </span>
-        )}
+          );
+        })()}
       </div>
 
-      {hasActions ? (
+      {hasActions && !timeRemaining.isExpired ? (
         <div className={`gb-request-actions my-trade-request-actions${request.role === "seller" && request.status === "accepted" ? " is-deal-resolution" : ""}`}>
           {request.role === "seller" && request.status === "pending" ? (
             <TradeRequestSellerActions
-              busy={busy || timeRemaining.isExpired}
+              busy={busy}
               onAccept={() => onAccept?.(request.id)}
               onReject={() => onReject?.(request.id)}
             />

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useFeedSnap } from "../../hooks/useFeedSnap";
 import { Button as AppButton } from "../ui";
+import { ScrollToTopButton } from "../ScrollToTopButton";
 import { AccountListingCard as ListingRow } from "../ListingCard";
 import { FilterMenu, type FilterMenuOption } from "../FilterMenu";
 import { SystemSymbol } from "../SystemSymbol";
@@ -252,67 +253,76 @@ export function AccountsCatalogView({
         </div>
       </div>
 
-      <div
-        className="sm-market-catalog-feed-scroll"
-        ref={feedSnap.containerRef}
-        {...feedSnap.scrollHandlers}
-      >
-        {loading ? (
-          <div className="sm-market-family-list" aria-label="Загружаем объявления" role="status">
-            {[0, 1, 2].map((n) => (
-              <div key={n} className="sm-listing-skeleton" aria-hidden>
-                <span />
-                <div />
-                <span />
-              </div>
-            ))}
-          </div>
-        ) : displayedListings.length === 0 ? (
-          <div className="sm-market-empty" data-testid="account-catalog-empty">
-            <SystemSymbol name="magnifyingglass" size={28} />
-            <h3>{searchTerm ? "Ничего не найдено" : "Доступных аккаунтов пока нет"}</h3>
-            <p>
-              {searchTerm
-                ? "Попробуйте изменить поисковый запрос или сбросить фильтры."
-                : "Можно опубликовать первое предложение или вернуться позже."}
-            </p>
-            <div className="sm-market-empty-actions">
-              <button
-                type="button"
-                className="sm-market-button sm-market-button-secondary"
-                onClick={() => (searchTerm ? onSearchTerm("") : void onRefresh?.())}
-              >
-                {searchTerm ? "Сбросить поиск" : "Обновить"}
-              </button>
-              {!searchTerm ? (
+      <div className="my-feed-wrap">
+        <div
+          className="sm-market-catalog-feed-scroll"
+          ref={feedSnap.containerRef}
+          {...feedSnap.scrollHandlers}
+        >
+          {loading ? (
+            <div className="sm-market-family-list" aria-label="Загружаем объявления" role="status">
+              {[0, 1, 2].map((n) => (
+                <div key={n} className="sm-listing-skeleton" aria-hidden>
+                  <span />
+                  <div />
+                  <span />
+                </div>
+              ))}
+            </div>
+          ) : displayedListings.length === 0 ? (
+            <div className="sm-market-empty" data-testid="account-catalog-empty">
+              <SystemSymbol name="magnifyingglass" size={28} />
+              <h3>{searchTerm ? "Ничего не найдено" : "Доступных аккаунтов пока нет"}</h3>
+              <p>
+                {searchTerm
+                  ? "Попробуйте изменить поисковый запрос или сбросить фильтры."
+                  : "Можно опубликовать первое предложение или вернуться позже."}
+              </p>
+              <div className="sm-market-empty-actions">
                 <button
                   type="button"
-                  className="sm-market-button sm-market-button-primary"
-                  onClick={onCreate}
+                  className="sm-market-button sm-market-button-secondary"
+                  onClick={() => (searchTerm ? onSearchTerm("") : void onRefresh?.())}
                 >
-                  Продать аккаунт
+                  {searchTerm ? "Сбросить поиск" : "Обновить"}
                 </button>
-              ) : null}
+                {!searchTerm ? (
+                  <button
+                    type="button"
+                    className="sm-market-button sm-market-button-primary"
+                    onClick={onCreate}
+                  >
+                    Продать аккаунт
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="sm-market-family-list">
-            {displayedListings.map((item) => (
-              <ListingRow key={item.id} listing={item} onClick={() => onListing(item.id)} />
-            ))}
-          </div>
-        )}
+          ) : (
+            <div className="sm-market-family-list">
+              {displayedListings.map((item) => (
+                <ListingRow key={item.id} listing={item} onClick={() => onListing(item.id)} />
+              ))}
+            </div>
+          )}
 
-        {hasMore ? (
-          <AppButton
-            variant="tertiary"
-            fullWidth
-            disabled={loadingMore}
-            onClick={onLoadMore}
-          >
-            {loadingMore ? "Загружаем…" : "Показать ещё"}
-          </AppButton>
-        ) : null}
+          {hasMore ? (
+            <AppButton
+              variant="tertiary"
+              fullWidth
+              disabled={loadingMore}
+              onClick={onLoadMore}
+            >
+              {loadingMore ? "Загружаем…" : "Показать ещё"}
+            </AppButton>
+          ) : null}
+
+          {displayedListings.length > 0 && (
+            <ScrollToTopButton
+              containerRef={feedSnap.containerRef}
+              testId="accounts-catalog-scroll-to-top-btn"
+            />
+          )}
+        </div>
       </div>
     </section>
   );

@@ -26,9 +26,39 @@
   color: var(--app-success, #30d158);
 }
 .actions-archive-card .actions-archive-price.is-cancelled {
-  color: var(--app-muted, rgba(255, 255, 255, 0.38));
-  text-decoration: line-through;
+  color: var(--app-muted, rgba(255, 255, 255, 0.45));
   font-weight: 500;
+}
+.actions-archive-card .sm-listing-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 4px;
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 0;
+}
+.actions-archive-card .sm-listing-price .my-trade-request-status {
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 500;
+  gap: 5px;
+  white-space: nowrap;
+}
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-rejected,
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-cancelled,
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-expired {
+  color: var(--app-raspberry, #ff375f) !important;
+}
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-successful,
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-approved,
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-accepted,
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-closed {
+  color: var(--app-success, #34c759) !important;
+}
+.actions-archive-card .sm-listing-price .my-trade-request-status.is-pending {
+  color: var(--app-warning, #ff9f0a) !important;
 }
 .actions-archive-card .actions-archive-rejection-text {
   font-size: 12px;

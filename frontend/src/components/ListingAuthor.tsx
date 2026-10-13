@@ -1,5 +1,5 @@
-import { useState } from "react";
 import type { PublicOwner } from "../types";
+import { UserAvatar } from "./UserAvatar";
 
 type ListingAuthorOwner = Pick<PublicOwner, "avatar_name"> & {
   photo_url?: string | null;
@@ -28,24 +28,16 @@ export function ListingAuthor({ owner, className = "", isOwner = false }: {
   className?: string;
   isOwner?: boolean;
 }) {
-  const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
-  const initial = owner.avatar_name.trim().slice(0, 1).toUpperCase() || "?";
   const presence = getListingPresence(owner.avatar_name);
   return (
     <span aria-label={`Автор объявления ${owner.avatar_name}${presence ? `, ${presence === "online" ? "онлайн" : "оффлайн"}` : ""}`}
       className={`sm-market-family-owner ${className}`.trim()}>
-      <span aria-hidden className="sm-market-family-owner-avatar">
-        {owner.photo_url && failedPhoto !== owner.photo_url ? (
-          <img alt="" src={owner.photo_url} onError={() => setFailedPhoto(owner.photo_url!)} />
-        ) : initial}
-        {presence ? (
-          <span
-            aria-hidden
-            className={`sm-market-owner-presence is-${presence}`}
-            title={presence === "online" ? "Онлайн" : "Оффлайн"}
-          />
-        ) : null}
-      </span>
+      <UserAvatar
+        name={owner.avatar_name}
+        photoUrl={owner.photo_url}
+        size={24}
+        presence={presence}
+      />
       <span className="sm-market-family-avatar-name">
         <span className="sm-market-family-avatar-label">
           {isOwner ? "Вы организатор" : owner.avatar_name}

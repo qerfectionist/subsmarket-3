@@ -1,0 +1,164 @@
+/* ==========================================================================
+   Spotify Atmospheric Gradient Navigation Bar (Full-Bleed 4-Tab Scrim)
+   ========================================================================== */
+
+.subs-dock--spotify {
+  position: fixed;
+  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-page-width);
+  bottom: 0 !important;
+  padding: 24px 0 0 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+  isolation: isolate;
+  pointer-events: none;
+  font-family: var(--app-font-family);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(18, 18, 18, 0.40) 18%,
+    rgba(18, 18, 18, 0.88) 45%,
+    rgba(18, 18, 18, 0.98) 72%,
+    #121212 100%
+  ) !important;
+  padding-bottom: calc(max(var(--app-safe-area-bottom), env(safe-area-inset-bottom, 0px)) + 16px) !important;
+}
+
+:root.tma-light .subs-dock--spotify {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(242, 242, 247, 0.40) 18%,
+    rgba(242, 242, 247, 0.90) 45%,
+    rgba(242, 242, 247, 0.98) 72%,
+    #f2f2f7 100%
+  ) !important;
+}
+
+.subs-dock--spotify::before,
+.subs-dock--spotify::after {
+  display: none !important;
+}
+
+.subs-dock-surface--spotify {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  width: 100% !important;
+  min-height: 56px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 2px 6px 0 6px !important;
+  gap: 0 !important;
+  pointer-events: auto !important;
+}
+
+.subs-dock--spotify .subs-dock-create {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 54px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.subs-dock--spotify .subs-dock-create .subs-dock-item {
+  width: 100% !important;
+  height: 54px !important;
+}
+
+.subs-dock--spotify .subs-dock-item {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 54px !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: var(--app-muted, #a7a7a7) !important;
+  transition: color 0.15s ease, transform 0.1s ease !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+}
+
+.subs-dock--spotify .subs-dock-item[data-active="true"] {
+  color: var(--app-text, #ffffff) !important;
+}
+
+.subs-dock--spotify .subs-dock-item:active {
+  transform: scale(0.94);
+}
+
+:root .subs-dock--spotify .subs-dock-label,
+:root[data-ios27-layout="on"] .subs-dock--spotify .subs-dock-label,
+:root[data-hig-review="on"] .subs-dock--spotify .subs-dock-label,
+.subs-dock--spotify .subs-dock-label {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.15 !important;
+  color: inherit !important;
+  display: block !important;
+  text-align: center !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.subs-dock--spotify .subs-dock-item[data-active="true"] .subs-dock-label {
+  color: var(--app-text, #ffffff) !important;
+  font-weight: 600 !important;
+}
+
+.subs-dock--spotify .subs-dock-icon {
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+.subs-dock--spotify .subs-dock-icon svg {
+  width: 26px !important;
+  height: 26px !important;
+  display: block !important;
+}
+
+.subs-dock--spotify .subs-dock-badge {
+  position: absolute !important;
+  top: -3px !important;
+  right: -7px !important;
+  min-width: 16px !important;
+  height: 16px !important;
+  padding: 0 4px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  background: var(--app-raspberry, #ff3b30) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

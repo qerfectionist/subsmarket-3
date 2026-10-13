@@ -39,6 +39,7 @@ export {
 
 export { ScreenEventPulse } from "./ScreenEventPulse";
 export { MarketBannerCarousel, DEV_BANNER_ITEMS } from "./MarketBanners";
+export { MarketIslandBanner } from "./MarketIslandBanner";
 export { MarketTile, CategoryIconGradientDefs, IconButton, BannerIcon } from "./MarketTiles";
 export { MarketFilterMenu, MarketFilterMenu as FilterMenu } from "./MarketFilterMenu";
 export { CatalogResultsPane } from "./CatalogResultsPane";

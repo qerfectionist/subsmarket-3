@@ -46,10 +46,10 @@ export function isTradeRequestStatusMatch(
   createdAt?: string | null,
   expiresAt?: string | null
 ) {
-  const isExpired = isRequestExpired(status, createdAt, expiresAt);
-  const isActive = !isExpired && ["pending", "accepted"].includes(status);
-  if (filter === "all") return isActive;
-  return filter === "pending" ? isActive : !isActive;
+  const isExpired = status === "expired" || isRequestExpired(status, createdAt, expiresAt);
+  const isFresh = !isExpired && ["pending", "accepted"].includes(status);
+  if (filter === "all") return isFresh || status === "expired" || isExpired;
+  return filter === "pending" ? isFresh : (isExpired || !["pending", "accepted"].includes(status));
 }
 
 export function isFamilyRequestStatusMatch(

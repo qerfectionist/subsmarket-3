@@ -13,6 +13,7 @@ __pycache__/
 data/research/
 backups/
 *.db
+*.exe
 
 node_modules/
 dist/
@@ -28,3 +29,4 @@ Thumbs.db
 .gemini/
 fix.js
 add_test_requests*.py
+scripts/cockpit-*

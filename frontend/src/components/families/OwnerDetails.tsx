@@ -18,6 +18,7 @@ import { ownerMemberHint, paymentKindText } from "../../labels";
 import { OwnerMemberRemovalControl } from "./OwnerMemberRemovalControl";
 import { OwnerPrepaymentControl } from "./OwnerPrepaymentControl";
 import { PaymentList } from "./PaymentList";
+import { UserAvatar } from "../UserAvatar";
 
 function OwnerPanel({
   title,
@@ -46,29 +47,34 @@ function OwnerListRow({
   title,
   subtitle,
   description,
+  avatar,
   children
 }: {
   title: string;
   subtitle?: string;
   description?: string;
+  avatar?: ReactNode;
   children?: ReactNode;
 }) {
   return (
     <article className="owner-list-row">
-      <div>
-        <Typography as="strong" variant="subtitle" level={3}>
-          {title}
-        </Typography>
-        {subtitle ? (
-          <Typography as="p" variant="body" level={3}>
-            {subtitle}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {avatar}
+        <div style={{ minWidth: 0 }}>
+          <Typography as="strong" variant="subtitle" level={3}>
+            {title}
           </Typography>
-        ) : null}
-        {description ? (
-          <Typography as="small" variant="body" level={4}>
-            {description}
-          </Typography>
-        ) : null}
+          {subtitle ? (
+            <Typography as="p" variant="body" level={3}>
+              {subtitle}
+            </Typography>
+          ) : null}
+          {description ? (
+            <Typography as="small" variant="body" level={4}>
+              {description}
+            </Typography>
+          ) : null}
+        </div>
       </div>
       {children ? <div className="row-actions">{children}</div> : null}
     </article>
@@ -198,6 +204,7 @@ export function OwnerDetails({
           {details.requests.map((request) => (
             <OwnerListRow
               key={request.id}
+              avatar={<UserAvatar name={`@${request.candidate.username}`} size={36} />}
               title={`@${request.candidate.username}`}
               subtitle={request.candidate.first_name}
               description="Кандидат ждет решения владельца."
@@ -236,6 +243,7 @@ export function OwnerDetails({
           {nonOwnerMembers.map((member) => (
             <div className="member-block" key={member.id}>
               <OwnerListRow
+                avatar={<UserAvatar name={`@${member.user.username}`} size={36} />}
                 title={`@${member.user.username} · участник`}
                 subtitle={statusText(member.status)}
                 description={ownerMemberHint(member.status)}
@@ -306,6 +314,7 @@ export function OwnerDetails({
           {pendingPayments.map(({ member, payment }) => (
             <OwnerListRow
               key={payment.id}
+              avatar={<UserAvatar name={`@${member.user.username}`} size={36} />}
               title={`@${member.user.username} · ${payment.amount_kzt.toLocaleString("ru-KZ")} ₸`}
               subtitle={`${paymentKindText(payment.kind)} · ${statusText(payment.status)}`}
               description="Проверьте перевод вне SubsMarket и подтвердите вручную."

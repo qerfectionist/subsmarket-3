@@ -1,5 +1,5 @@
 import { Icon, type IconProps } from "@iconify/react";
-import addDuotone from "@iconify-icons/solar/add-bold-duotone";
+import addBold from "@iconify-icons/solar/add-bold";
 import altArrowLeftDuotone from "@iconify-icons/solar/alt-arrow-left-bold-duotone";
 import altArrowUpDuotone from "@iconify-icons/solar/alt-arrow-up-bold-duotone";
 import arrowLeftDuotone from "@iconify-icons/solar/arrow-left-bold-duotone";
@@ -11,7 +11,8 @@ import checklistDuotone from "@iconify-icons/solar/checklist-bold-duotone";
 import chatRoundLineDuotone from "@iconify-icons/solar/chat-round-line-bold-duotone";
 import clipboardListDuotone from "@iconify-icons/solar/clipboard-list-bold-duotone";
 import cloudDuotone from "@iconify-icons/solar/cloud-bold-duotone";
-import closeDuotone from "@iconify-icons/solar/close-bold-duotone";
+import closeBold from "@iconify-icons/solar/close-bold";
+import closeCircleDuotone from "@iconify-icons/solar/close-circle-bold-duotone";
 import crownDuotone from "@iconify-icons/solar/crown-bold-duotone";
 import dangerCircleDuotone from "@iconify-icons/solar/danger-circle-bold-duotone";
 import filterDuotone from "@iconify-icons/solar/filter-bold-duotone";
@@ -82,13 +83,14 @@ const SYSTEM_SYMBOLS = {
   "person.crop.circle.fill": userCircleDuotone,
   pencil: penDuotone,
   "play.rectangle": playCircleDuotone,
-  plus: addDuotone,
+  plus: addBold,
   "square.grid.2x2": widget2Duotone,
   "square.grid.2x2.fill": widget2Duotone,
   "round-sort-vertical": roundSortVerticalDuotone,
   sort: sortDuotone,
   tuning: tuning2Duotone,
-  xmark: closeDuotone
+  xmark: closeBold,
+  "xmark.circle": closeCircleDuotone
 } as const;
 
 export type SystemSymbolName = keyof typeof SYSTEM_SYMBOLS;

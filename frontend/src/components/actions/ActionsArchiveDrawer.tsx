@@ -13,6 +13,7 @@ import {
   getArchiveDateHeader,
   formatArchiveCardDate
 } from "./actionsFilterTypes";
+import { ActionsScrollToTopButton } from "./ActionsScrollToTopButton";
 
 export interface ActionsArchiveDrawerProps {
   isArchiveOpen: boolean;
@@ -50,7 +51,13 @@ export function ActionsArchiveDrawer({
   const getFilteredArchiveItems = (scope: ActionsTab) => {
     const raw = scope === "inbox" ? inboxArchiveItems : outboxArchiveItems;
     return raw.filter((item) => {
-      if (archiveFilter !== "all" && item.status !== archiveFilter) return false;
+      if (archiveFilter !== "all") {
+        if (archiveFilter === "cancelled") {
+          if (item.status !== "cancelled" && item.status !== "expired") return false;
+        } else if (item.status !== archiveFilter) {
+          return false;
+        }
+      }
       if (selectedArchiveDayISO && !(item.rawDate || "").startsWith(selectedArchiveDayISO)) return false;
       return true;
     });
@@ -149,7 +156,7 @@ export function ActionsArchiveDrawer({
                   сбросьте фильтр статуса
                 </span>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
-                  {raw.some((i) => i.status === "cancelled") && archiveFilter !== "cancelled" ? (
+                  {raw.some((i) => i.status === "cancelled" || i.status === "expired") && archiveFilter !== "cancelled" ? (
                     <AppButton
                       type="button"
                       size="sm"
@@ -199,6 +206,10 @@ export function ActionsArchiveDrawer({
                 </div>
               </div>
             ))}
+            <ActionsScrollToTopButton
+              containerRef={snap.containerRef}
+              testId="actions-archive-scroll-to-top-btn"
+            />
           </div>
         )}
       </div>

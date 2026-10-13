@@ -23,6 +23,7 @@ import type {
   MyFamily
 } from "../../types";
 import { triggerTelegramImpact } from "../../telegram";
+import { ActionsScrollToTopButton } from "./ActionsScrollToTopButton";
 
 export interface ActionsFeedPanesProps {
   scope: ActionsTab;
@@ -220,6 +221,11 @@ export function ActionsFeedPane({
                 )}
               </section>
             )}
+
+            <ActionsScrollToTopButton
+              containerRef={inboxFeedSnap.containerRef}
+              testId="actions-inbox-scroll-to-top-btn"
+            />
           </div>
         )}
       </div>
@@ -339,6 +345,11 @@ export function ActionsFeedPane({
               />
             </section>
           )}
+
+          <ActionsScrollToTopButton
+            containerRef={outboxFeedSnap.containerRef}
+            testId="actions-outbox-scroll-to-top-btn"
+          />
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ import {
   addAllDevCategoriesSet,
   addDevRejectedCard,
   addAllDevRejectedSet,
+  populateAllStatusesShowcase,
   clearLocalDevCards,
   resetAndSeedServerCards,
   cleanAllServerCards,
@@ -29,6 +30,7 @@ import "../../styles/dev-constructor-modal.css";
 export interface DevCardsConstructorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenShowcase?: () => void;
 }
 
 const TIMER_OPTIONS = [
@@ -41,7 +43,8 @@ const TIMER_OPTIONS = [
 
 export function DevCardsConstructorModal({
   isOpen,
-  onClose
+  onClose,
+  onOpenShowcase
 }: DevCardsConstructorModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -142,6 +145,12 @@ export function DevCardsConstructorModal({
     }
   };
 
+  const handlePopulateShowcase = () => {
+    triggerTelegramImpact("medium");
+    populateAllStatusesShowcase();
+    toast.success({ title: "Все статусы загружены в карточки и архив!" });
+  };
+
   const handleClearLocal = () => {
     triggerTelegramImpact("medium");
     clearLocalDevCards();
@@ -215,6 +224,66 @@ export function DevCardsConstructorModal({
             ✕
           </button>
         </div>
+
+        <div style={{ padding: "10px 18px 0" }}>
+          <button
+            type="button"
+            style={{
+              width: "100%",
+              padding: "11px 14px",
+              background: "linear-gradient(135deg, rgba(52, 199, 89, 0.22), rgba(0, 122, 255, 0.22))",
+              border: "1px solid rgba(52, 199, 89, 0.45)",
+              borderRadius: "12px",
+              color: "var(--app-text, #fff)",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between"
+            }}
+            onClick={handlePopulateShowcase}
+            data-testid="dev-populate-showcase-btn"
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>🌈</span>
+              <span>Заполнить всеми статусами сразу</span>
+            </span>
+            <span style={{ color: "var(--app-success, #34c759)" }}>Загрузить →</span>
+          </button>
+        </div>
+
+        {onOpenShowcase && (
+          <div style={{ padding: "10px 18px 0" }}>
+            <button
+              type="button"
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                background: "linear-gradient(135deg, rgba(100, 210, 255, 0.15), rgba(191, 90, 242, 0.15))",
+                border: "1px solid rgba(100, 210, 255, 0.35)",
+                borderRadius: "12px",
+                color: "var(--app-text, #fff)",
+                fontSize: "13px",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between"
+              }}
+              onClick={() => {
+                onClose();
+                onOpenShowcase();
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>🎨</span>
+                <span>Витрина вариантов карточек (Showcase)</span>
+              </span>
+              <span style={{ color: "var(--app-info, #64d2ff)" }}>Открыть →</span>
+            </button>
+          </div>
+        )}
 
         <div className="dev-constructor-body">
           {/* Scope Selector */}
