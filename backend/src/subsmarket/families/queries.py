@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from subsmarket.families._internal import (
     ACTIVE_MEMBER_STATUSES,
     ACTIVE_REQUEST_STATUS,
+    _active_request_count_for_service,
     _asc_datetime_uuid_condition,
     _desc_availability_datetime_uuid_condition,
     _desc_datetime_uuid_condition,
@@ -662,6 +663,33 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
             request is None or request.status not in {ACTIVE_REQUEST_STATUS, "rejected"}
         )
     )
+    if can_request:
+        restriction = db.get(
+            FamilyRequestRestriction,
+            {"family_id": family.id, "user_id": user.id},
+        )
+        if restriction is not None:
+            can_request = False
+        else:
+            self_cancel_count = (
+                db.scalar(
+                    select(func.count(FamilyRequest.id))
+                    .where(FamilyRequest.family_id == family.id)
+                    .where(FamilyRequest.user_id == user.id)
+                    .where(FamilyRequest.status == "cancelled")
+                    .where(FamilyRequest.cancel_reason == "user_cancelled")
+                )
+                or 0
+            )
+            if self_cancel_count >= 2:
+                can_request = False
+            elif (
+                _active_request_count_for_service(
+                    db, user_id=user.id, service_id=family.service_id
+                )
+                >= 3
+            ):
+                can_request = False
 
     return FamilyViewOut(
         family=to_family_out(

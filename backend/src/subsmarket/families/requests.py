@@ -62,6 +62,8 @@ def create_join_request(
     locked_user = db.scalar(select(User).where(User.id == user_id).with_for_update())
     if locked_user is None:
         raise RuntimeError("Family candidate disappeared during request creation")
+    if not locked_user.username:
+        raise HTTPException(status_code=409, detail="TELEGRAM_USERNAME_REQUIRED")
 
     family = _get_joinable_family(db, family_id)
     if family.owner_user_id == user_id:

@@ -1012,7 +1012,7 @@ def test_owner_payment_confirmation_reminders_follow_schedule_and_stop(
     assert send_owner_payment_confirmation_reminders(db) == 0
 
 
-def test_owner_payment_confirmation_reminders_catch_up_in_order(
+def test_owner_payment_confirmation_reminders_sends_only_latest_when_delayed(
     db: Session, subscription_service: FamilyService
 ) -> None:
     owner = make_user(db, 176)
@@ -1024,23 +1024,16 @@ def test_owner_payment_confirmation_reminders_catch_up_in_order(
     member.status = "payment_due"
     db.commit()
 
-    expected_events = [
-        "payment_confirmation_reminder_10m_owner",
-        "payment_confirmation_reminder_20m_owner",
-        "payment_confirmation_reminder_40m_owner",
-    ]
-    for event_type in expected_events:
-        assert send_owner_payment_confirmation_reminders(db) == 1
-        assert (
-            db.scalar(
-                select(NotificationJob).where(
-                    NotificationJob.recipient_user_id == owner.id,
-                    NotificationJob.event_type == event_type,
-                )
+    assert send_owner_payment_confirmation_reminders(db) == 1
+    assert (
+        db.scalar(
+            select(NotificationJob).where(
+                NotificationJob.recipient_user_id == owner.id,
+                NotificationJob.event_type == "payment_confirmation_reminder_40m_owner",
             )
-            is not None
         )
-
+        is not None
+    )
     assert send_owner_payment_confirmation_reminders(db) == 0
 
 
@@ -1437,3 +1430,129 @@ def test_owner_always_occupies_one_family_slot(
     db.refresh(family)
     assert family.active_members_count == 1
     assert family.status == "active"
+
+
+def test_create_join_request_requires_telegram_username(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 301)
+    candidate_no_user = User(
+        telegram_user_id=930101,
+        username="",
+        first_name="NoUsername",
+    )
+    db.add(candidate_no_user)
+    db.commit()
+    db.refresh(candidate_no_user)
+
+    family = make_family(db, owner, subscription_service)
+
+    with pytest.raises(HTTPException) as exc:
+        create_join_request(db, candidate_no_user, family.id)
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "TELEGRAM_USERNAME_REQUIRED"
+
+
+def test_get_family_view_can_request_respects_restrictions_and_limits(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 302)
+    candidate = make_user(db, 303)
+    family = make_family(db, owner, subscription_service)
+
+    # Initial state: can_request is True
+    assert get_family_view(db, candidate, family.id).can_request is True
+
+    # 1. FamilyRequestRestriction
+    restriction = FamilyRequestRestriction(
+        family_id=family.id,
+        user_id=candidate.id,
+        reason="owner_declined",
+    )
+    db.add(restriction)
+    db.commit()
+    assert get_family_view(db, candidate, family.id).can_request is False
+
+    db.delete(restriction)
+    db.commit()
+    assert get_family_view(db, candidate, family.id).can_request is True
+
+    # 2. self_cancel_count >= 2
+    for _ in range(2):
+        req = FamilyRequest(
+            family_id=family.id,
+            user_id=candidate.id,
+            status="cancelled",
+            cancel_reason="user_cancelled",
+            expires_at=utcnow() + timedelta(hours=2),
+        )
+        db.add(req)
+    db.commit()
+    assert get_family_view(db, candidate, family.id).can_request is False
+
+    # Reset cancelled requests
+    for req in db.scalars(
+        select(FamilyRequest).where(
+            FamilyRequest.family_id == family.id,
+            FamilyRequest.user_id == candidate.id,
+        )
+    ).all():
+        db.delete(req)
+    db.commit()
+    assert get_family_view(db, candidate, family.id).can_request is True
+
+    # 3. _active_request_count_for_service >= 3
+    other_owners = [make_user(db, 310 + i) for i in range(3)]
+    other_families = [
+        make_family(db, o, subscription_service) for o in other_owners
+    ]
+    for of in other_families:
+        create_join_request(db, candidate, of.id)
+
+    # Candidate now has 3 active requests for subscription_service
+    assert get_family_view(db, candidate, family.id).can_request is False
+
+
+def test_update_family_price_kz_timezone(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    from subsmarket.core.database import KAZAKHSTAN_TIMEZONE, kz_today
+
+    owner = make_user(db, 304)
+    family = make_family(db, owner, subscription_service)
+
+    today_kz = kz_today()
+    # Updated earlier in the same month in KZ timezone
+    same_month_dt = datetime(
+        today_kz.year, today_kz.month, 1, 12, 0, tzinfo=KAZAKHSTAN_TIMEZONE
+    )
+    family.price_updated_at = same_month_dt
+    db.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        update_family_price(
+            db,
+            owner,
+            family.id,
+            FamilyPriceUpdate(total_price_kzt=4500),
+        )
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "FAMILY_PRICE_ALREADY_UPDATED"
+
+    # Updated in previous month
+    prev_month = 12 if today_kz.month == 1 else today_kz.month - 1
+    prev_year = today_kz.year - 1 if today_kz.month == 1 else today_kz.year
+    prev_month_dt = datetime(
+        prev_year, prev_month, 1, 12, 0, tzinfo=KAZAKHSTAN_TIMEZONE
+    )
+    family.price_updated_at = prev_month_dt
+    db.commit()
+
+    updated = update_family_price(
+        db,
+        owner,
+        family.id,
+        FamilyPriceUpdate(total_price_kzt=4500),
+    )
+    assert updated.total_price_kzt == 4500

@@ -32,6 +32,7 @@ def _regular_payment_exists(
         db.scalar(
             select(FamilyPayment.id)
             .where(FamilyPayment.member_id == member_id)
+            .where(FamilyPayment.status != "cancelled")
             .where(FamilyPayment.period_start == period_start)
             .where(FamilyPayment.period_end == period_end)
         )

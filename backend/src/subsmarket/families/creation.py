@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -7,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from subsmarket.catalog.models import FamilyService
-from subsmarket.core.database import utcnow
+from subsmarket.core.database import KAZAKHSTAN_TIMEZONE, kz_today, utcnow
 from subsmarket.core.idempotency import claim_idempotency, complete_idempotency
 from subsmarket.families._internal import (
     ACTIVE_OWNER_FAMILY_STATUSES,
@@ -197,12 +198,17 @@ def update_family_price(
         raise HTTPException(status_code=409, detail="FAMILY_PRICE_NOT_EDITABLE")
 
     now = utcnow()
-    if (
-        family.price_updated_at
-        and family.price_updated_at.year == now.year
-        and family.price_updated_at.month == now.month
-    ):
-        raise HTTPException(status_code=409, detail="FAMILY_PRICE_ALREADY_UPDATED")
+    today_kz = kz_today()
+    if family.price_updated_at:
+        dt = family.price_updated_at
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        price_updated_kz = dt.astimezone(KAZAKHSTAN_TIMEZONE).date()
+        if (
+            price_updated_kz.year == today_kz.year
+            and price_updated_kz.month == today_kz.month
+        ):
+            raise HTTPException(status_code=409, detail="FAMILY_PRICE_ALREADY_UPDATED")
 
     old_total_price = family.total_price_kzt
     old_member_share = family.member_share_kzt

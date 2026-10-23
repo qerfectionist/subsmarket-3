@@ -202,7 +202,7 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
             )
             continue
 
-        for minutes in (10, 20, 40):
+        for minutes in (40, 20, 10):
             if elapsed < timedelta(minutes=minutes):
                 continue
             created = _enqueue_payment_notification_once(
@@ -216,7 +216,13 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
                 ),
             )
             notification_count += created
-            if created:
+            if created or _payment_notification_exists(
+                db,
+                recipient_user_id=payment.family.owner_user_id,
+                event_type=f"payment_confirmation_reminder_{minutes}m_owner",
+                payment_id=payment.id,
+                reminder_date=None,
+            ):
                 break
 
     if notification_count:

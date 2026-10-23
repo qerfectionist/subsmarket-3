@@ -13,7 +13,6 @@ from subsmarket.families._internal import (
     ACTIVE_MEMBER_STATUSES,
     _get_member_for_update,
     _get_payment_for_update,
-    _payment_period_exists,
     _period_count_label,
 )
 from subsmarket.families.audit import record_family_audit_event
@@ -229,10 +228,41 @@ def create_member_prepayment(db: Session, user: User, member_id: UUID) -> Family
 
     period_start = family.next_payment_date
     period_end = add_payment_period(period_start, family.period)
-    if _payment_period_exists(db, member.id, period_start, period_end):
-        raise HTTPException(status_code=409, detail="MEMBER_PREPAYMENT_LIMIT_REACHED")
+    existing_payment = db.scalar(
+        select(FamilyPayment)
+        .where(FamilyPayment.member_id == member.id)
+        .where(FamilyPayment.status != "cancelled")
+        .where(FamilyPayment.period_start == period_start)
+        .where(FamilyPayment.period_end == period_end)
+    )
 
     now = utcnow()
+    if existing_payment is not None:
+        if existing_payment.status == "scheduled":
+            existing_payment.kind = "prepaid"
+            existing_payment.status = "due"
+            existing_payment.requisites_opened_at = now
+            record_family_audit_event(
+                db,
+                family_id=family.id,
+                action="family_prepayment_created",
+                actor_user_id=user.id,
+                target_user_id=member.user_id,
+                target_member_id=member.id,
+                target_payment_id=existing_payment.id,
+                new_status=existing_payment.status,
+                details={
+                    "period_start": period_start.isoformat(),
+                    "period_end": period_end.isoformat(),
+                    "amount_kzt": existing_payment.amount_kzt,
+                    "converted_from_scheduled": True,
+                },
+            )
+            db.flush()
+            db.refresh(existing_payment)
+            return existing_payment
+        raise HTTPException(status_code=409, detail="MEMBER_PREPAYMENT_LIMIT_REACHED")
+
     payment = FamilyPayment(
         family_id=family.id,
         member_id=member.id,
@@ -299,7 +329,37 @@ def record_owner_prepaid_periods(
     period_start = family.next_payment_date
     while len(created) < data.periods:
         period_end = add_payment_period(period_start, family.period)
-        if not _payment_period_exists(db, member.id, period_start, period_end):
+        existing_payment = db.scalar(
+            select(FamilyPayment)
+            .where(FamilyPayment.member_id == member.id)
+            .where(FamilyPayment.status != "cancelled")
+            .where(FamilyPayment.period_start == period_start)
+            .where(FamilyPayment.period_end == period_end)
+        )
+        if existing_payment is not None:
+            if existing_payment.status == "scheduled":
+                existing_payment.kind = "prepaid"
+                existing_payment.status = "paid"
+                existing_payment.reported_paid_at = now
+                existing_payment.confirmed_paid_at = now
+                record_family_audit_event(
+                    db,
+                    family_id=family.id,
+                    action="family_prepayment_recorded_by_owner",
+                    actor_user_id=user.id,
+                    target_user_id=member.user_id,
+                    target_member_id=member.id,
+                    target_payment_id=existing_payment.id,
+                    new_status=existing_payment.status,
+                    details={
+                        "period_start": period_start.isoformat(),
+                        "period_end": period_end.isoformat(),
+                        "amount_kzt": existing_payment.amount_kzt,
+                        "converted_from_scheduled": True,
+                    },
+                )
+                created.append(existing_payment)
+        else:
             payment = FamilyPayment(
                 family_id=family.id,
                 member_id=member.id,

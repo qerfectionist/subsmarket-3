@@ -70,10 +70,7 @@ export function AccountsScreen({
   const originMode: ScreenMode = initialListingId ? "catalog" : initialMode;
 
   const servicesQuery = useAccountServices();
-  const listingsQuery = useAccountListings(
-    category === "all" ? null : category,
-    sort === "all" ? "recent" : sort
-  );
+  const listingsQuery = useAccountListings(null, sort === "all" ? "recent" : sort);
   const myListingsQuery = useMyAccountListings();
   const listingQuery = useAccountListing(mode === "detail" ? selectedId : null);
   const createListing = useCreateAccountListing();
