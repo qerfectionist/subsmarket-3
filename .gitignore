@@ -16,6 +16,7 @@ backups/
 *.exe
 *.zip
 *_full.txt
+full_code.txt
 repomix-output.*
 repomix-*.txt
 

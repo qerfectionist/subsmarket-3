@@ -1,0 +1,4 @@
+#!/bin/sh
+# Auto-update Google Drive context on each commit in background
+node scripts/bundle-ai-context.mjs > /dev/null 2>&1 &
+exit 0

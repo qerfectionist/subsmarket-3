@@ -1,0 +1,54 @@
+{
+  "output": {
+    "filePath": "full_code.txt",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": true,
+    "showLineNumbers": true,
+    "topFilesLength": 10
+  },
+  "include": [
+    "backend/src/**/*",
+    "backend/alembic/**/*",
+    "backend/tests/**/*",
+    "frontend/src/**/*",
+    "frontend/package.json",
+    "docs/**/*",
+    "scripts/**/*",
+    "package.json",
+    "AGENTS.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "assets/**",
+      "backups/**",
+      "data/**",
+      "output/**",
+      "scratch/**",
+      "test-results/**",
+      "playwright-report/**",
+      "docs/**/*.html",
+      "docs/**/*.json",
+      "docs/research/**",
+      "docs/prototypes/**",
+      "frontend/.tmp-**",
+      "**/*.png",
+      "**/*.jpg",
+      "**/*.jpeg",
+      "**/*.svg",
+      "**/*.ico",
+      "**/*.gif",
+      "**/*.woff*",
+      "**/*.ttf",
+      "**/*.db",
+      "**/*.sqlite*",
+      "**/*.lock",
+      "**/*.min.js",
+      "**/*.min.css",
+      "full_code.txt",
+      "ai_context.txt"
+    ]
+  }
+}

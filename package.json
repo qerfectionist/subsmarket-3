@@ -47,6 +47,8 @@
     "scout": "node scripts/scout.mjs",
     "mcp:profile": "node scripts/mcp-profile.mjs",
     "audit:ast": "node scripts/ast-audit.mjs",
+    "bundle:ai": "node scripts/bundle-ai-context.mjs",
+    "watch:ai": "node scripts/watch-ai-context.mjs",
     "check:diff": "git diff --check",
     "check": "npm run backend:lint && npm run backend:compile && npm run backend:test && npm run check:error-labels && npm run build && npm run test:ui && npm run scheduler:check && npm run check:diff"
   }
