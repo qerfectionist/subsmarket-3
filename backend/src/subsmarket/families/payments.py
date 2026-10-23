@@ -730,10 +730,15 @@ def cancel_scheduled_payments(
     actor_user_id: UUID | None = None,
     member_id: UUID | None = None,
 ) -> int:
+    target_statuses = (
+        {"scheduled", "due", "overdue", "payment_reported"}
+        if reason in {"member_left", "member_removed", "family_closed"}
+        else {"scheduled"}
+    )
     stmt = (
         select(FamilyPayment)
         .where(FamilyPayment.family_id == family_id)
-        .where(FamilyPayment.status == "scheduled")
+        .where(FamilyPayment.status.in_(target_statuses))
     )
     if member_id is not None:
         stmt = stmt.where(FamilyPayment.member_id == member_id)

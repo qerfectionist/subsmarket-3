@@ -655,7 +655,8 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
         .order_by(FamilyRequest.created_at.desc())
     )
     can_request = (
-        family.owner_user_id != user.id
+        bool(user.username)
+        and family.owner_user_id != user.id
         and membership is None
         and family.status == "active"
         and family.active_members_count < family.max_members

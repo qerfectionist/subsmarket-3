@@ -1556,3 +1556,94 @@ def test_update_family_price_kz_timezone(
         FamilyPriceUpdate(total_price_kzt=4500),
     )
     assert updated.total_price_kzt == 4500
+
+
+def test_create_family_requires_telegram_username(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner_no_username = User(
+        telegram_user_id=930999,
+        username="",
+        first_name="NoUserOwner",
+    )
+    db.add(owner_no_username)
+    db.commit()
+
+    with pytest.raises(HTTPException) as exc:
+        create_family(
+            db,
+            owner_no_username,
+            FamilyCreate(
+                service_id=subscription_service.id,
+                total_price_kzt=3000,
+                max_members=3,
+                payment_day=15,
+                next_payment_date=date(2026, 11, 15),
+                payment_bank="kaspi",
+                payment_phone="+7 777 111 2233",
+            ),
+        )
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "TELEGRAM_USERNAME_REQUIRED"
+
+
+def test_get_family_view_can_request_requires_telegram_username(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 350)
+    family = make_family(db, owner, subscription_service)
+
+    candidate_no_user = User(
+        telegram_user_id=930998,
+        username="",
+        first_name="CandidateNoUser",
+    )
+    db.add(candidate_no_user)
+    db.commit()
+
+    view = get_family_view(db, candidate_no_user, family.id)
+    assert view.can_request is False
+
+
+def test_member_leave_and_remove_cancels_all_open_payments(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 351)
+    candidate = make_user(db, 352)
+    family = make_family(db, owner, subscription_service)
+
+    req = create_join_request(db, candidate, family.id)
+    approve_join_request(db, owner, req.id)
+    member = db.scalar(
+        select(FamilyMember).where(
+            FamilyMember.family_id == family.id,
+            FamilyMember.user_id == candidate.id,
+        )
+    )
+    assert member is not None
+    mark_access_provided(db, owner, member.id)
+    access_result = confirm_access_received(db, candidate, member.id)
+    first_payment = db.get(FamilyPayment, access_result.payment.id)
+    assert first_payment is not None
+
+    # First payment is in "due" status
+    assert first_payment.status == "due"
+
+    # Enqueue a pending notification for this payment
+    job = NotificationJob(
+        recipient_user_id=candidate.id,
+        event_type="first_payment_due_member",
+        payload={"payment_id": str(first_payment.id), "family_id": str(family.id)},
+        status="pending",
+    )
+    db.add(job)
+    db.commit()
+
+    # Member leaves family
+    leave_family(db, candidate, member.id)
+
+    db.refresh(first_payment)
+    db.refresh(job)
+    assert first_payment.status == "cancelled"
+    assert first_payment.cancel_reason == "member_left"
+    assert job.status == "cancelled"

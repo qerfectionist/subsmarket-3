@@ -54,6 +54,8 @@ def mark_overdue_first_payments(db: Session) -> tuple[int, int]:
             .where(FamilyPayment.kind == "first")
             .where(FamilyPayment.status == "due")
             .where(FamilyPayment.due_at <= now)
+            .where(Family.status.in_({"active", "full", "closing"}))
+            .where(FamilyMember.status.in_({"payment_due", "active"}))
             .order_by(FamilyPayment.due_at.asc())
             .limit(settings.job_batch_size)
             .with_for_update(of=FamilyPayment, skip_locked=True)
@@ -206,12 +208,18 @@ def activate_regular_payments(db: Session) -> tuple[int, int]:
     payments = list(
         db.scalars(
             select(FamilyPayment)
+            .join(FamilyPayment.family)
             .join(FamilyPayment.member)
-            .options(contains_eager(FamilyPayment.member))
+            .options(
+                contains_eager(FamilyPayment.family),
+                contains_eager(FamilyPayment.member),
+            )
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status == "scheduled")
             .where(FamilyPayment.due_at <= now)
             .where(FamilyPayment.due_at > now - timedelta(hours=24))
+            .where(Family.status.in_({"active", "full", "closing"}))
+            .where(FamilyMember.status.in_({"active", "payment_due"}))
             .order_by(FamilyPayment.due_at.asc())
             .limit(settings.job_batch_size)
             .with_for_update(of=(FamilyPayment, FamilyMember), skip_locked=True)
@@ -274,6 +282,8 @@ def mark_overdue_regular_payments(db: Session) -> tuple[int, int]:
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status.in_({"scheduled", "due"}))
             .where(FamilyPayment.due_at <= now - timedelta(hours=24))
+            .where(Family.status.in_({"active", "full", "closing"}))
+            .where(FamilyMember.status.in_({"payment_due", "active"}))
             .order_by(FamilyPayment.due_at.asc())
             .limit(settings.job_batch_size)
             .with_for_update(of=(FamilyPayment, FamilyMember), skip_locked=True)

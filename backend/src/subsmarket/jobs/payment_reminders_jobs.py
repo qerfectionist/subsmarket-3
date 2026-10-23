@@ -171,9 +171,15 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
         db.scalars(
             select(FamilyPayment)
             .join(FamilyPayment.family)
-            .options(contains_eager(FamilyPayment.family))
+            .join(FamilyPayment.member)
+            .options(
+                contains_eager(FamilyPayment.family),
+                contains_eager(FamilyPayment.member),
+            )
             .where(FamilyPayment.status == "payment_reported")
             .where(FamilyPayment.reported_paid_at.is_not(None))
+            .where(Family.status != "closed")
+            .where(FamilyMember.status.in_({"payment_due", "active"}))
             .order_by(FamilyPayment.reported_paid_at.asc())
             .limit(_job_scan_limit())
             .with_for_update(of=FamilyPayment, skip_locked=True)

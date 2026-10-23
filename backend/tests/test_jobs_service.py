@@ -38,6 +38,7 @@ from subsmarket.jobs.service import (
     run_due_jobs,
     send_access_confirmation_reminders,
     send_closing_acknowledgement_reminders,
+    send_owner_payment_confirmation_reminders,
     send_regular_payment_reminders,
 )
 from subsmarket.models import import_models
@@ -575,3 +576,97 @@ def test_closing_reminder_repeats_daily_until_member_acknowledges(
 
     assert member.closing_acknowledged_at is not None
     assert send_closing_acknowledgement_reminders(db) == 0
+
+
+def test_mark_overdue_first_payments_ignores_inactive_members(
+    db: Session,
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 701)
+    candidate = make_user(db, 702)
+    family = make_family(db, owner, service)
+    member = add_member(db, family, candidate, status="left")
+
+    now = utcnow()
+    payment = FamilyPayment(
+        family_id=family.id,
+        member_id=member.id,
+        kind="first",
+        status="due",
+        amount_kzt=1000,
+        period="1m",
+        period_start=now.date(),
+        period_end=now.date() + timedelta(days=30),
+        due_at=now - timedelta(hours=1),
+    )
+    db.add(payment)
+    db.commit()
+
+    processed_count, notif_count = mark_overdue_first_payments(db)
+    assert processed_count == 0
+    assert notif_count == 0
+
+    db.refresh(payment)
+    assert payment.status == "due"
+
+
+def test_activate_regular_payments_ignores_closed_families(
+    db: Session,
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 703)
+    candidate = make_user(db, 704)
+    family = make_family(db, owner, service)
+    family.status = "closed"
+    member = add_member(db, family, candidate, status="active")
+
+    now = utcnow()
+    payment = FamilyPayment(
+        family_id=family.id,
+        member_id=member.id,
+        kind="regular",
+        status="scheduled",
+        amount_kzt=1000,
+        period="1m",
+        period_start=now.date(),
+        period_end=now.date() + timedelta(days=30),
+        due_at=now - timedelta(minutes=10),
+    )
+    db.add(payment)
+    db.commit()
+
+    processed_count, notif_count = activate_regular_payments(db)
+    assert processed_count == 0
+    assert notif_count == 0
+
+    db.refresh(payment)
+    assert payment.status == "scheduled"
+
+
+def test_send_owner_payment_confirmation_reminders_ignores_closed_families(
+    db: Session,
+) -> None:
+    service = make_service(db)
+    owner = make_user(db, 705)
+    candidate = make_user(db, 706)
+    family = make_family(db, owner, service)
+    family.status = "closed"
+    member = add_member(db, family, candidate, status="active")
+
+    now = utcnow()
+    payment = FamilyPayment(
+        family_id=family.id,
+        member_id=member.id,
+        kind="regular",
+        status="payment_reported",
+        reported_paid_at=now - timedelta(minutes=45),
+        amount_kzt=1000,
+        period="1m",
+        period_start=now.date(),
+        period_end=now.date() + timedelta(days=30),
+        due_at=now - timedelta(hours=2),
+    )
+    db.add(payment)
+    db.commit()
+
+    assert send_owner_payment_confirmation_reminders(db) == 0

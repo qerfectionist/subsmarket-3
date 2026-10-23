@@ -45,6 +45,9 @@ def create_family(
     *,
     idempotency_key: str | None = None,
 ) -> Family:
+    if not user.username:
+        raise HTTPException(status_code=409, detail="TELEGRAM_USERNAME_REQUIRED")
+
     user_id = user.id
     claim = claim_idempotency(
         db,
