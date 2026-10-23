@@ -19,6 +19,7 @@ from subsmarket.jobs.schemas import (
     NotificationFailureSample,
     NotificationQueueStatus,
 )
+from subsmarket.marketplace.account_models import MarketplaceAccountListing
 from subsmarket.marketplace.models import MarketplaceListing
 from subsmarket.notifications.models import NotificationJob
 
@@ -127,9 +128,13 @@ def _due_backlog_status(
         first_payments_overdue=_count(
             db,
             select(FamilyPayment.id)
+            .join(FamilyPayment.family)
+            .join(FamilyPayment.member)
             .where(FamilyPayment.kind == "first")
             .where(FamilyPayment.status == "due")
-            .where(FamilyPayment.due_at <= now),
+            .where(FamilyPayment.due_at <= now)
+            .where(Family.status.in_({"active", "full", "closing"}))
+            .where(FamilyMember.status.in_({"payment_due", "active"})),
         ),
         regular_payment_creation_due=_count(
             db,
@@ -151,23 +156,35 @@ def _due_backlog_status(
         regular_payments_to_activate=_count(
             db,
             select(FamilyPayment.id)
+            .join(FamilyPayment.family)
+            .join(FamilyPayment.member)
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status == "scheduled")
             .where(FamilyPayment.due_at <= now)
-            .where(FamilyPayment.due_at > now - timedelta(hours=24)),
+            .where(FamilyPayment.due_at > now - timedelta(hours=24))
+            .where(Family.status.in_({"active", "full", "closing"}))
+            .where(FamilyMember.status.in_({"payment_due", "active"})),
         ),
         regular_payments_overdue=_count(
             db,
             select(FamilyPayment.id)
+            .join(FamilyPayment.family)
+            .join(FamilyPayment.member)
             .where(FamilyPayment.kind == "regular")
             .where(FamilyPayment.status.in_({"scheduled", "due"}))
-            .where(FamilyPayment.due_at <= now - timedelta(hours=24)),
+            .where(FamilyPayment.due_at <= now - timedelta(hours=24))
+            .where(Family.status.in_({"active", "full", "closing"}))
+            .where(FamilyMember.status.in_({"payment_due", "active"})),
         ),
         owner_payment_confirmations_waiting=_count(
             db,
             select(FamilyPayment.id)
+            .join(FamilyPayment.family)
+            .join(FamilyPayment.member)
             .where(FamilyPayment.status == "payment_reported")
-            .where(FamilyPayment.reported_paid_at <= now - timedelta(minutes=10)),
+            .where(FamilyPayment.reported_paid_at <= now - timedelta(minutes=10))
+            .where(Family.status.in_({"active", "full", "closing"}))
+            .where(FamilyMember.status.in_({"payment_due", "active"})),
         ),
         closing_acknowledgements_due=_count(
             db,
@@ -195,11 +212,19 @@ def _due_backlog_status(
             .where(Family.status == "closing")
             .where(Family.closes_at <= now),
         ),
-        marketplace_listings_due=_count(
-            db,
-            select(MarketplaceListing.id)
-            .where(MarketplaceListing.status.in_({"active", "paused"}))
-            .where(MarketplaceListing.expires_at <= now),
+        marketplace_listings_due=(
+            _count(
+                db,
+                select(MarketplaceListing.id)
+                .where(MarketplaceListing.status.in_({"active", "paused"}))
+                .where(MarketplaceListing.expires_at <= now),
+            )
+            + _count(
+                db,
+                select(MarketplaceAccountListing.id)
+                .where(MarketplaceAccountListing.status.in_({"active", "paused"}))
+                .where(MarketplaceAccountListing.expires_at <= now),
+            )
         ),
         per_step_capacity=per_step_capacity,
     )

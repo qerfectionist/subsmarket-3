@@ -259,6 +259,7 @@ def close_due_families(db: Session) -> tuple[int, int]:
             db,
             family_id=family.id,
             reason="family_closed",
+            include_open=True,
         )
         record_family_audit_event(
             db,

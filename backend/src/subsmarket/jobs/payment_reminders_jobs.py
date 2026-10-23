@@ -178,7 +178,7 @@ def send_owner_payment_confirmation_reminders(db: Session) -> int:
             )
             .where(FamilyPayment.status == "payment_reported")
             .where(FamilyPayment.reported_paid_at.is_not(None))
-            .where(Family.status != "closed")
+            .where(Family.status.in_({"active", "full", "closing"}))
             .where(FamilyMember.status.in_({"payment_due", "active"}))
             .order_by(FamilyPayment.reported_paid_at.asc())
             .limit(_job_scan_limit())

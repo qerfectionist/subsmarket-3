@@ -118,6 +118,7 @@ def leave_family(db: Session, user: User, member_id: UUID) -> FamilyMember:
         member_id=member.id,
         reason="member_left",
         actor_user_id=user.id,
+        include_open=True,
     )
     record_family_audit_event(
         db,
@@ -197,6 +198,7 @@ def remove_member(
         member_id=member.id,
         reason="member_removed",
         actor_user_id=user.id,
+        include_open=True,
     )
     record_family_audit_event(
         db,
@@ -283,6 +285,7 @@ def close_family(
             family_id=family.id,
             reason="family_closing",
             actor_user_id=user.id,
+            include_open=False,
         )
         _cancel_pending_requests_for_closing_family(db, family.id)
         record_family_audit_event(

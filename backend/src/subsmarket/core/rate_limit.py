@@ -457,6 +457,11 @@ def _telegram_user_id(
     # The development auth adapter uses this header instead of signed initData.
     # It is deliberately ignored outside development.
     dev_user_id = request.headers.get("x-dev-telegram-user-id")
-    if settings.is_development and dev_user_id and dev_user_id.isdecimal():
+    if (
+        settings.is_development
+        and settings.dev_auth_enabled
+        and dev_user_id
+        and dev_user_id.isdecimal()
+    ):
         return dev_user_id if int(dev_user_id) > 0 else None
     return None

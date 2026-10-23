@@ -662,26 +662,6 @@ export function App() {
             setTab("family");
           }}
           {...familyActionHandlers}
-          marketplaceSalesActionCount={marketplaceSalesActionCount}
-          marketplacePurchaseActionCount={marketplacePurchaseActionCount}
-          accountSalesActionCount={accountSalesActionCount}
-          accountPurchaseActionCount={accountPurchaseActionCount}
-          onOpenMarketplaceSalesActions={() => {
-            setActionsTab("inbox");
-            setTab("requests");
-          }}
-          onOpenMarketplacePurchaseActions={() => {
-            setActionsTab("outbox");
-            setTab("requests");
-          }}
-          onOpenAccountSalesActions={() => {
-            setActionsTab("inbox");
-            setTab("requests");
-          }}
-          onOpenAccountPurchaseActions={() => {
-            setActionsTab("outbox");
-            setTab("requests");
-          }}
         />
       )}
 

@@ -316,9 +316,11 @@ def test_jobs_status_reports_notification_and_due_backlogs(
     request.expires_at = utcnow() - timedelta(minutes=1)
     member = add_member(db, family, candidate, status="awaiting_confirmation")
     member.access_provided_at = utcnow() - timedelta(hours=25)
+    paying_user = make_user(db, 232)
+    paying_member = add_member(db, family, paying_user, status="payment_due")
     first_payment = FamilyPayment(
         family_id=family.id,
-        member_id=member.id,
+        member_id=paying_member.id,
         kind="first",
         status="due",
         amount_kzt=family.member_share_kzt,

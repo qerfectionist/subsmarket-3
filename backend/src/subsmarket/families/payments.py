@@ -729,10 +729,11 @@ def cancel_scheduled_payments(
     reason: str,
     actor_user_id: UUID | None = None,
     member_id: UUID | None = None,
+    include_open: bool = False,
 ) -> int:
     target_statuses = (
         {"scheduled", "due", "overdue", "payment_reported"}
-        if reason in {"member_left", "member_removed", "family_closed"}
+        if include_open or reason in {"member_left", "member_removed", "family_closed"}
         else {"scheduled"}
     )
     stmt = (

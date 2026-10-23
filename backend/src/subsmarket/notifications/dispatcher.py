@@ -6,7 +6,7 @@ from typing import Any, Protocol
 
 import httpx
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from subsmarket.core.config import settings
 from subsmarket.core.database import utcnow
@@ -191,6 +191,7 @@ def _dispatch_notification_batch(
     jobs = list(
         db.scalars(
             select(NotificationJob)
+            .options(joinedload(NotificationJob.recipient))
             .where(
                 NotificationJob.status == "pending",
                 NotificationJob.available_at <= now,
@@ -200,7 +201,7 @@ def _dispatch_notification_batch(
                 NotificationJob.created_at.asc(),
             )
             .limit(limit)
-            .with_for_update(skip_locked=True)
+            .with_for_update(of=NotificationJob, skip_locked=True)
         ).all()
     )
     logger.info(
