@@ -273,8 +273,6 @@ def _set_listing_status(
     if target == "active" and not listing.operator.is_active:
         raise HTTPException(status_code=409, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
     if require_unexpired and as_utc(listing.expires_at) <= utcnow():
-        listing.status = "expired"
-        db.flush()
         raise HTTPException(
             status_code=409, detail="MARKETPLACE_LISTING_RENEW_REQUIRED"
         )

@@ -13,7 +13,9 @@ import { bankLabels, familyTypeLabels, periodLabels } from "../labels";
 import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 
 const PHONE_RE = /^\+?7\d{10}$/;
-const TODAY = new Date().toISOString().split("T")[0];
+function getTodayKz(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
+}
 
 const WIZARD_STEPS = [
   { id: "service", label: "Сервис" },
@@ -49,7 +51,7 @@ function validateForm(form: FamilyCreate, service: FamilyService | null): FieldE
   if (form.payment_day < 1 || form.payment_day > 31) {
     errors.payment_day = "День от 1 до 31";
   }
-  if (form.next_payment_date && form.next_payment_date < TODAY) {
+  if (form.next_payment_date && form.next_payment_date < getTodayKz()) {
     errors.next_payment_date = "Дата не может быть в прошлом";
   }
   if (service && form.max_members > service.max_members) {

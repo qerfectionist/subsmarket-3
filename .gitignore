@@ -14,6 +14,10 @@ data/research/
 backups/
 *.db
 *.exe
+*.zip
+*_full.txt
+repomix-output.*
+repomix-*.txt
 
 node_modules/
 dist/

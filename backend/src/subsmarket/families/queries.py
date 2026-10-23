@@ -24,6 +24,8 @@ from subsmarket.families.models import (
     FamilyRequestRestriction,
 )
 from subsmarket.families.pagination import (
+    cursor_datetime,
+    cursor_uuid,
     decode_cursor,
     encode_cursor,
 )
@@ -434,8 +436,8 @@ def list_my_families_page(
     )
     if cursor:
         payload = decode_cursor(cursor)
-        joined_at = payload.get("joined_at")
-        member_id = payload.get("id")
+        joined_at = cursor_datetime(payload, "joined_at")
+        member_id = cursor_uuid(payload, "id")
         stmt = stmt.where(
             or_(
                 FamilyMember.joined_at < joined_at,
@@ -809,8 +811,8 @@ def list_family_members_page(
     )
     if cursor:
         payload = decode_cursor(cursor)
-        joined_at = payload.get("joined_at")
-        member_id = payload.get("id")
+        joined_at = cursor_datetime(payload, "joined_at")
+        member_id = cursor_uuid(payload, "id")
         stmt = stmt.where(
             or_(
                 FamilyMember.joined_at > joined_at,

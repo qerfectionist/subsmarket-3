@@ -210,8 +210,6 @@ def _set_status(
     if target == "active" and not listing.service.is_active:
         raise HTTPException(status_code=409, detail="ACCOUNT_SERVICE_UNAVAILABLE")
     if require_unexpired and as_utc(listing.expires_at) <= utcnow():
-        listing.status = "expired"
-        db.flush()
         raise HTTPException(status_code=409, detail="ACCOUNT_LISTING_RENEW_REQUIRED")
     if listing.status == target:
         complete_idempotency(

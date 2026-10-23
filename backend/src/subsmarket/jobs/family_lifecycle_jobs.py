@@ -99,7 +99,7 @@ def expire_family_requests(db: Session) -> tuple[int, int]:
             payload={
                 "family_id": str(request.family_id),
                 "request_id": str(request.id),
-                "message": "Заявка истекла. Владелец не ответил за 24 часа.",
+                "message": "Заявка истекла. Владелец не ответил за 2 часа.",
             },
         )
         notification_count += 1
@@ -111,7 +111,7 @@ def expire_family_requests(db: Session) -> tuple[int, int]:
                 "family_id": str(request.family_id),
                 "request_id": str(request.id),
                 "message": (
-                    "Заявка участника истекла, так как вы не ответили за 24 часа."
+                    "Заявка участника истекла, так как вы не ответили за 2 часа."
                 ),
             },
         )

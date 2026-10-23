@@ -16,7 +16,7 @@ import {
   useResumeAccountListing,
   useUpdateAccountListing
 } from "../hooks/useApi";
-import { triggerTelegramImpact } from "../telegram";
+import { showTelegramConfirm, triggerTelegramImpact } from "../telegram";
 import type {
   AccountListing,
   AccountListingCreate,
@@ -70,7 +70,10 @@ export function AccountsScreen({
   const originMode: ScreenMode = initialListingId ? "catalog" : initialMode;
 
   const servicesQuery = useAccountServices();
-  const listingsQuery = useAccountListings(null, sort === "all" ? "recent" : sort);
+  const listingsQuery = useAccountListings(
+    category === "all" ? null : category,
+    sort === "all" ? "recent" : sort
+  );
   const myListingsQuery = useMyAccountListings();
   const listingQuery = useAccountListing(mode === "detail" ? selectedId : null);
   const createListing = useCreateAccountListing();
@@ -307,6 +310,10 @@ export function AccountsScreen({
               )
             }
             onArchive={async (id) => {
+              const confirmed = await showTelegramConfirm(
+                "Убрать объявление окончательно? Неотвеченные заявки закроются."
+              );
+              if (!confirmed) return;
               await run(
                 "account-archive",
                 () => archiveListing.mutateAsync(id),

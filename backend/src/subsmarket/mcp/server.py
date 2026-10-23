@@ -72,6 +72,7 @@ async def list_active_families(limit: int = 5) -> list[dict[str, Any]]:
     """List recent active families with available member slots."""
     try:
         from sqlalchemy import select
+        from sqlalchemy.orm import joinedload
 
         from subsmarket.core.database import SessionLocal
         from subsmarket.families.models import Family
@@ -79,22 +80,28 @@ async def list_active_families(limit: int = 5) -> list[dict[str, Any]]:
         with SessionLocal() as db:
             families = list(
                 db.scalars(
-                    select(Family).order_by(Family.created_at.desc()).limit(limit)
+                    select(Family)
+                    .options(joinedload(Family.service))
+                    .order_by(Family.created_at.desc())
+                    .limit(limit)
                 ).all()
             )
             if families:
                 return [
                     {
                         "id": str(f.id),
-                        "service": f.service_name or "Custom",
+                        "service": (
+                            (f.service.name if f.service else f.plan_name)
+                            or "Custom"
+                        ),
                         "family_type": f.family_type,
-                        "price_kzt": f.price_kzt,
+                        "price_kzt": f.member_share_kzt,
                         "status": f.status,
                     }
                     for f in families
                 ]
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed querying active families: %s", exc)
 
     return [
         {
@@ -121,6 +128,36 @@ async def list_active_families(limit: int = 5) -> list[dict[str, Any]]:
 @mcp_server.tool()
 async def list_marketplace_listings(category: str = "all") -> list[dict[str, Any]]:
     """Get active marketplace listings for GB traffic and account sharing."""
+    try:
+        from sqlalchemy import select
+        from sqlalchemy.orm import joinedload
+
+        from subsmarket.core.database import SessionLocal
+        from subsmarket.marketplace.models import MarketplaceListing
+
+        with SessionLocal() as db:
+            query = (
+                select(MarketplaceListing)
+                .options(joinedload(MarketplaceListing.operator))
+                .where(MarketplaceListing.status == "active")
+                .order_by(MarketplaceListing.published_at.desc())
+                .limit(10)
+            )
+            listings = list(db.scalars(query).all())
+            if listings:
+                return [
+                    {
+                        "id": str(lst.id),
+                        "type": lst.listing_type,
+                        "operator": lst.operator.name if lst.operator else "Unknown",
+                        "price_per_gb_kzt": lst.price_per_gb_kzt,
+                        "status": lst.status,
+                    }
+                    for lst in listings
+                ]
+    except Exception as exc:
+        logger.warning("Failed querying marketplace listings: %s", exc)
+
     return [
         {
             "id": "lst_gb_1",
@@ -185,9 +222,9 @@ async def ban_user(
 
 def run_server(host: str = "127.0.0.1", port: int = 8003) -> None:
     security = TransportSecuritySettings(
-        enable_dns_rebinding_protection=False,
-        allowed_hosts=["*"],
-        allowed_origins=["*"],
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[f"{host}:{port}", f"localhost:{port}", host, "localhost"],
+        allowed_origins=[f"http://{host}:{port}", f"http://localhost:{port}"],
     )
     mcp_server.run(
         transport="streamable-http",
