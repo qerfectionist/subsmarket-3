@@ -56,6 +56,7 @@ from subsmarket.families.payments import (  # noqa: F401
 from subsmarket.families.queries import (  # noqa: F401
     get_family_by_id,
     get_family_view,
+    get_visible_family,
     list_family_audit_logs,
     list_family_audit_logs_page,
     list_family_member_payments,

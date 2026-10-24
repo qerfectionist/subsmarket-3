@@ -19,6 +19,7 @@ from subsmarket.families._internal import (
 from subsmarket.families.models import (
     Family,
     FamilyAuditLog,
+    FamilyInvite,
     FamilyMember,
     FamilyPayment,
     FamilyRequest,
@@ -634,10 +635,81 @@ def list_family_member_payments(
     ]
 
 
-def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
+def active_invite_matches(
+    db: Session,
+    family_id: UUID,
+    invite_code: str | None,
+) -> bool:
+    """Return True when the code is the family's current active invite."""
+    if not invite_code:
+        return False
+    return (
+        db.scalar(
+            select(FamilyInvite.id)
+            .where(FamilyInvite.family_id == family_id)
+            .where(FamilyInvite.status == "active")
+            .where(FamilyInvite.code == invite_code)
+        )
+        is not None
+    )
+
+
+def family_visible_to_user(
+    db: Session,
+    user: User,
+    family: Family,
+    *,
+    invite_code: str | None = None,
+) -> bool:
+    """Hidden families are visible only to people already linked to them.
+
+    Outsiders need the current invite code: knowing the family id from an old,
+    rotated or disabled invite is not enough.
+    """
+    if family.is_search_visible or family.owner_user_id == user.id:
+        return True
+    if active_invite_matches(db, family.id, invite_code):
+        return True
+    has_membership = db.scalar(
+        select(FamilyMember.id)
+        .where(FamilyMember.family_id == family.id)
+        .where(FamilyMember.user_id == user.id)
+        .limit(1)
+    )
+    if has_membership is not None:
+        return True
+    has_request = db.scalar(
+        select(FamilyRequest.id)
+        .where(FamilyRequest.family_id == family.id)
+        .where(FamilyRequest.user_id == user.id)
+        .limit(1)
+    )
+    return has_request is not None
+
+
+def get_visible_family(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    invite_code: str | None = None,
+) -> Family:
     family = get_family_by_id(db, family_id)
-    if family is None:
+    if family is None or not family_visible_to_user(
+        db, user, family, invite_code=invite_code
+    ):
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    return family
+
+
+def get_family_view(
+    db: Session,
+    user: User,
+    family_id: UUID,
+    *,
+    invite_code: str | None = None,
+) -> FamilyViewOut:
+    family = get_visible_family(db, user, family_id, invite_code=invite_code)
 
     membership = db.scalar(
         select(FamilyMember)
@@ -654,6 +726,7 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
         .where(FamilyRequest.user_id == user.id)
         .order_by(FamilyRequest.created_at.desc())
     )
+
     can_request = (
         bool(user.username)
         and family.owner_user_id != user.id
@@ -664,6 +737,12 @@ def get_family_view(db: Session, user: User, family_id: UUID) -> FamilyViewOut:
             request is None or request.status not in {ACTIVE_REQUEST_STATUS, "rejected"}
         )
     )
+    if (
+        can_request
+        and not family.is_search_visible
+        and not active_invite_matches(db, family.id, invite_code)
+    ):
+        can_request = False
     if can_request:
         restriction = db.get(
             FamilyRequestRestriction,

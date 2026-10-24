@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
-const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:5174";
+const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
 const outDir = "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212";
 
 test.use({

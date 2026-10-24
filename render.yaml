@@ -3,7 +3,7 @@ services:
     name: subsmarket-api
     runtime: python
     rootDir: backend
-    buildCommand: python -m pip install --upgrade pip && python -m pip install -e .
+    buildCommand: python -m pip install --upgrade pip && python -m pip install -c constraints.txt -e .
     preDeployCommand: python -m subsmarket.ops.check_deploy_config && alembic upgrade head && python -m subsmarket.catalog.seed
     startCommand: uvicorn subsmarket.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /ready

@@ -64,12 +64,23 @@ export function getFamilies(familyType?: FamilyType): Promise<Family[]> {
   return collectCursorItems((cursor) => getFamiliesPage({ familyType, cursor }));
 }
 
-export function getFamilyView(familyId: string): Promise<FamilyView> {
-  return request<FamilyView>(`/api/families/${familyId}/view`);
+// Hidden families open only with their current invite code. Remember the code
+// the user arrived with so the details view and the join request can send it.
+const familyInviteCodes = new Map<string, string>();
+
+function inviteCodeQuery(familyId: string): string {
+  const code = familyInviteCodes.get(familyId);
+  return code ? `?invite_code=${encodeURIComponent(code)}` : "";
 }
 
-export function getFamilyByInviteCode(code: string): Promise<FamilyView> {
-  return request<FamilyView>(`/api/families/invites/${code}`);
+export function getFamilyView(familyId: string): Promise<FamilyView> {
+  return request<FamilyView>(`/api/families/${familyId}/view${inviteCodeQuery(familyId)}`);
+}
+
+export async function getFamilyByInviteCode(code: string): Promise<FamilyView> {
+  const view = await request<FamilyView>(`/api/families/invites/${code}`);
+  familyInviteCodes.set(view.family.id, code);
+  return view;
 }
 
 export function getFamilyInvite(familyId: string): Promise<FamilyInvite | null> {
@@ -164,7 +175,7 @@ export function acknowledgeFamilyClosing(familyId: string): Promise<FamilyMember
 export function createFamilyRequest(familyId: string): Promise<FamilyRequest> {
   return postIdempotent<FamilyRequest>(
     `family_request.create:${familyId}`,
-    `/api/families/${familyId}/requests`
+    `/api/families/${familyId}/requests${inviteCodeQuery(familyId)}`
   );
 }
 

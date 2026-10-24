@@ -1529,3 +1529,85 @@ def test_family_by_id_requires_telegram_auth_in_production(
 
     assert response.status_code == 401
     assert response.json()["detail"] == "TELEGRAM_INIT_DATA_REQUIRED"
+
+
+def test_hidden_family_opens_only_with_current_invite_code(
+    client: TestClient,
+    service: FamilyService,
+) -> None:
+    owner = auth_headers(950001, "hidden_owner", "Owner")
+    stranger = auth_headers(950002, "hidden_stranger", "Stranger")
+    invitee = auth_headers(950003, "hidden_invitee", "Invitee")
+    old_link_holder = auth_headers(950004, "hidden_old_link", "Old")
+    family_id = create_family_via_api(client, service, owner)
+    first_code = client.post(f"/api/families/{family_id}/invite", headers=owner).json()[
+        "code"
+    ]
+    hidden = client.patch(
+        f"/api/families/{family_id}/visibility",
+        headers=owner,
+        json={"is_search_visible": False},
+    )
+    assert hidden.status_code == 200
+
+    # Knowing the id without the code reveals nothing and allows nothing.
+    for path in (f"/api/families/{family_id}", f"/api/families/{family_id}/view"):
+        response = client.get(path, headers=stranger)
+        assert response.status_code == 404
+        assert response.json()["detail"] == "FAMILY_NOT_FOUND"
+    no_code = client.post(f"/api/families/{family_id}/requests", headers=stranger)
+    assert no_code.status_code == 409
+    assert no_code.json()["detail"] == "FAMILY_NOT_JOINABLE"
+
+    # The old link holder opened the family while the first code was active.
+    resolved = client.get(
+        f"/api/families/invites/{first_code}", headers=old_link_holder
+    )
+    assert resolved.status_code == 200
+    assert resolved.json()["can_request"] is True
+
+    rotated = client.post(f"/api/families/{family_id}/invite/rotate", headers=owner)
+    assert rotated.status_code == 200
+    second_code = rotated.json()["code"]
+
+    stale = client.post(
+        f"/api/families/{family_id}/requests",
+        headers=old_link_holder,
+        params={"invite_code": first_code},
+    )
+    assert stale.status_code == 409
+    assert stale.json()["detail"] == "FAMILY_NOT_JOINABLE"
+    stale_view = client.get(
+        f"/api/families/{family_id}/view",
+        headers=old_link_holder,
+        params={"invite_code": first_code},
+    )
+    assert stale_view.status_code == 404
+
+    view = client.get(
+        f"/api/families/{family_id}/view",
+        headers=invitee,
+        params={"invite_code": second_code},
+    )
+    assert view.status_code == 200
+    assert view.json()["can_request"] is True
+    joined = client.post(
+        f"/api/families/{family_id}/requests",
+        headers=invitee,
+        params={"invite_code": second_code},
+    )
+    assert joined.status_code == 201
+
+    # Once linked by a request, the candidate keeps seeing the family.
+    linked_view = client.get(f"/api/families/{family_id}/view", headers=invitee)
+    assert linked_view.status_code == 200
+    assert linked_view.json()["my_request"]["status"] == "pending"
+    assert client.get(f"/api/families/{family_id}", headers=owner).status_code == 200
+
+    malformed = client.get(
+        f"/api/families/{family_id}/view",
+        headers=stranger,
+        params={"invite_code": "abc"},
+    )
+    assert malformed.status_code == 400
+    assert malformed.json()["detail"] == "INVALID_FAMILY_INVITE_CODE"

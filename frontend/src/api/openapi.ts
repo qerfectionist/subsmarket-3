@@ -1524,40 +1524,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dev/reset-demo-data": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reset Demo Data */
-        post: operations["reset_demo_data_api_dev_reset_demo_data_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/dev/seed-account-orders": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Seed Account Orders */
-        post: operations["seed_account_orders_api_dev_seed_account_orders_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2147,6 +2113,10 @@ export interface components {
             cancelled_at: string | null;
             /** Expired At */
             expired_at: string | null;
+            /** Member Share Kzt */
+            member_share_kzt?: number | null;
+            /** Price Kzt */
+            price_kzt?: number | null;
         };
         /** FamilyRequestPageOut */
         FamilyRequestPageOut: {
@@ -2577,6 +2547,10 @@ export interface components {
             cancelled_at: string | null;
             /** Expired At */
             expired_at: string | null;
+            /** Member Share Kzt */
+            member_share_kzt?: number | null;
+            /** Price Kzt */
+            price_kzt?: number | null;
             candidate: components["schemas"]["RequestUserOut"];
         };
         /** OwnerFamilyRequestPageOut */
@@ -3303,7 +3277,9 @@ export interface operations {
     };
     post_family_request_api_families__family_id__requests_post: {
         parameters: {
-            query?: never;
+            query?: {
+                invite_code?: string | null;
+            };
             header?: {
                 "Idempotency-Key"?: string | null;
                 "x-telegram-init-data"?: string | null;
@@ -4579,7 +4555,9 @@ export interface operations {
     };
     get_family_detail_view_api_families__family_id__view_get: {
         parameters: {
-            query?: never;
+            query?: {
+                invite_code?: string | null;
+            };
             header?: {
                 "x-telegram-init-data"?: string | null;
                 "x-dev-telegram-user-id"?: number | null;
@@ -4693,7 +4671,9 @@ export interface operations {
     };
     get_family_api_families__family_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                invite_code?: string | null;
+            };
             header?: {
                 "x-telegram-init-data"?: string | null;
                 "x-dev-telegram-user-id"?: number | null;
@@ -6242,50 +6222,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reset_demo_data_api_dev_reset_demo_data_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
-                };
-            };
-        };
-    };
-    seed_account_orders_api_dev_seed_account_orders_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: number;
-                    };
                 };
             };
         };

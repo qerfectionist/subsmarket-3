@@ -75,7 +75,7 @@ email. Mini App фиксирует получение доступа, но не 
 
 ```powershell
 python -m venv backend\.venv
-.\backend\.venv\Scripts\python.exe -m pip install -e "backend[dev]"
+.\backend\.venv\Scripts\python.exe -m pip install -c backend\constraints.txt -e "backend[dev]"
 npm --prefix frontend install
 ```
 

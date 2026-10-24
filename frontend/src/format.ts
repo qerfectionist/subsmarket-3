@@ -215,7 +215,7 @@ function validationErrorMessage(item: unknown) {
     return "Укажите номер телефона для оплаты. Номера карт и IBAN запрещены.";
   }
   if (field === "total_price_kzt") {
-    return "Укажите общую цену подписки больше нуля.";
+    return "Укажите общую цену подписки от 1 до 1 000 000 ₸.";
   }
   if (field === "max_members") {
     return "Проверьте количество участников.";
@@ -224,7 +224,7 @@ function validationErrorMessage(item: unknown) {
     return "День оплаты должен быть от 1 до 31.";
   }
   if (field === "next_payment_date") {
-    return "Проверьте дату следующей оплаты.";
+    return "Дата следующей оплаты должна быть не раньше сегодня и не дальше чем через год.";
   }
 
   if (typeof payload.msg === "string") {

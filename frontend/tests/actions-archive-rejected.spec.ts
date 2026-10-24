@@ -44,6 +44,8 @@ test("adds and displays rejected outbox requests in archive and constructor", as
   // 5. Open Archive
   const archiveToggle = page.getByTestId("actions-archive-trigger");
   await expect(archiveToggle).toBeVisible();
+  // The success toast sits over the header and swallows taps until it hides.
+  await expect(page.locator(".ui-toast")).toHaveCount(0, { timeout: 6000 });
   await archiveToggle.click({ force: true });
 
   const archiveDisclosure = page.locator("#actions-archive-disclosure");
@@ -138,6 +140,8 @@ test("adds and displays rejected inbox requests showing 'Вы отклонили
 
   const archiveToggle = page.getByTestId("actions-archive-trigger");
   await expect(archiveToggle).toBeVisible();
+  // The success toast sits over the header and swallows taps until it hides.
+  await expect(page.locator(".ui-toast")).toHaveCount(0, { timeout: 6000 });
   await archiveToggle.click({ force: true });
 
   const archiveDisclosure = page.locator("#actions-archive-disclosure");

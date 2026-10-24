@@ -83,8 +83,10 @@ test("outbox family requests do not duplicate organizer label", async ({ page })
   await expect(page.getByText("@netflix_owner")).toBeVisible();
   await expect(page.locator(".trade-counterparty-role:has-text('Организатор')")).toHaveCount(0);
 
-  // Verify that prices are displayed instead of date
-  await expect(page.getByText("1 200 ₸")).toBeVisible();
-  await expect(page.getByText("850 ₸")).toBeVisible();
-  await expect(page.getByText("600 ₸")).toBeVisible();
+  // Verify that prices are displayed instead of date. Approved requests are also
+  // rendered (hidden) in the archive list, so look only at the active section.
+  const activeRequests = page.getByTestId("my-requests-section");
+  await expect(activeRequests.getByText("1 200 ₸")).toBeVisible();
+  await expect(activeRequests.getByText("850 ₸")).toBeVisible();
+  await expect(activeRequests.getByText("600 ₸")).toBeVisible();
 });

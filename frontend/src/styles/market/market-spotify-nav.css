@@ -40,6 +40,13 @@
   ) !important;
 }
 
+/* The base rule above forces display:flex, which beat the generic
+   "[data-keyboard-open] .subs-dock { display: none }" and left the dock
+   covering inputs while the on-screen keyboard is open. */
+[data-keyboard-open] .subs-dock--spotify {
+  display: none !important;
+}
+
 .subs-dock--spotify::before,
 .subs-dock--spotify::after {
   display: none !important;

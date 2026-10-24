@@ -1670,6 +1670,24 @@
             }
           },
           {
+            "name": "invite_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Invite Code"
+            }
+          },
+          {
             "name": "Idempotency-Key",
             "in": "header",
             "required": false,
@@ -5812,6 +5830,24 @@
             }
           },
           {
+            "name": "invite_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Invite Code"
+            }
+          },
+          {
             "name": "x-telegram-init-data",
             "in": "header",
             "required": false,
@@ -6188,6 +6224,24 @@
               "type": "string",
               "format": "uuid",
               "title": "Family Id"
+            }
+          },
+          {
+            "name": "invite_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Invite Code"
             }
           },
           {
@@ -10908,56 +10962,6 @@
           }
         }
       }
-    },
-    "/api/dev/reset-demo-data": {
-      "post": {
-        "tags": [
-          "dev"
-        ],
-        "summary": "Reset Demo Data",
-        "operationId": "reset_demo_data_api_dev_reset_demo_data_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object",
-                  "title": "Response Reset Demo Data Api Dev Reset Demo Data Post"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/dev/seed-account-orders": {
-      "post": {
-        "tags": [
-          "dev"
-        ],
-        "summary": "Seed Account Orders",
-        "operationId": "seed_account_orders_api_dev_seed_account_orders_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "integer"
-                  },
-                  "type": "object",
-                  "title": "Response Seed Account Orders Api Dev Seed Account Orders Post"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -11787,6 +11791,7 @@
           },
           "total_price_kzt": {
             "type": "integer",
+            "maximum": 1000000.0,
             "exclusiveMinimum": 0.0,
             "title": "Total Price Kzt"
           },
@@ -12519,6 +12524,7 @@
         "properties": {
           "total_price_kzt": {
             "type": "integer",
+            "maximum": 1000000.0,
             "exclusiveMinimum": 0.0,
             "title": "Total Price Kzt"
           }
@@ -12647,6 +12653,28 @@
               }
             ],
             "title": "Expired At"
+          },
+          "member_share_kzt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Share Kzt"
+          },
+          "price_kzt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Kzt"
           }
         },
         "type": "object",
@@ -13977,6 +14005,28 @@
               }
             ],
             "title": "Expired At"
+          },
+          "member_share_kzt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Share Kzt"
+          },
+          "price_kzt": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Kzt"
           },
           "candidate": {
             "$ref": "#/components/schemas/RequestUserOut"

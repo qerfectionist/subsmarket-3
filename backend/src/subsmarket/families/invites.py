@@ -117,7 +117,7 @@ def resolve_family_invite(
     family = invite.family
     if invite.status != "active" or family.status in {"closing", "closed"}:
         raise HTTPException(status_code=410, detail="FAMILY_INVITE_INACTIVE")
-    return get_family_view(db, user, family.id)
+    return get_family_view(db, user, family.id, invite_code=code)
 
 
 def normalize_family_invite_code(value: str) -> str:

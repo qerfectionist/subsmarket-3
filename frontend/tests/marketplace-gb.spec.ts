@@ -78,7 +78,15 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await notificationsButton.click({ force: true });
   await expect(page.getByTestId("marketplace-actions-card")).toBeVisible();
   await waitForNetworkQuiet(page);
-  await expect(page.getByTestId("circular-countdown-timer").or(page.getByText("Ждёт ответа"))).toBeVisible();
+  // Pending requests now show a text countdown ("14 мин осталось") by default.
+  const sellerCard = page.getByTestId("marketplace-actions-card");
+  await expect(
+    sellerCard
+      .getByTestId("circular-countdown-timer")
+      .or(sellerCard.getByText("Ждёт ответа"))
+      .or(sellerCard.getByText(/осталось/))
+      .first()
+  ).toBeVisible();
   await page.getByRole("button", { name: "Принять" }).click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Можно написать", { exact: true })).toBeVisible();

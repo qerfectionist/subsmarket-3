@@ -62,13 +62,15 @@ function onTunnelReady(url) {
   console.log(`  3. Вставь URL: ${mcpEndpoint}`);
   console.log("  4. Нажми Connect!");
   console.log("--------------------------------------------------------");
-  console.log("💡 Доступные инструменты (Tools) в этом MCP:");
-  console.log("  • get_platform_stats      - сводка платформы (юзеры, сделки)");
-  console.log("  • get_system_health       - статус серверов и очередей");
-  console.log("  • list_active_families    - список семей и свободных мест");
-  console.log("  • list_marketplace_listings - объявления ГБ и аккаунтов");
-  console.log("  • analyze_user_dispute    - проверка споров и риска");
-  console.log("  • ban_user                - бан мошенников (с защитой confirm)");
+  console.log("💡 Доступные инструменты (Tools) в этом MCP (только чтение):");
+  console.log("  • get_platform_stats      - число пользователей, семей и объявлений");
+  console.log("  • get_system_health       - доступна ли база данных");
+  console.log("  • list_active_families    - последние семьи и свободные места");
+  console.log("  • list_marketplace_listings - последние объявления ГБ");
+  console.log("--------------------------------------------------------");
+  console.log("⚠️  У MCP-сервера нет авторизации: любой, у кого есть эта ссылка,");
+  console.log("   видит данные из базы, указанной в DATABASE_URL. Не публикуйте");
+  console.log("   ссылку и не запускайте туннель с production-базой.");
   console.log("========================================================\n");
 }
 

@@ -34,9 +34,22 @@ class NotificationSendError(RuntimeError):
         self.retry_after_seconds = retry_after_seconds
 
 
+TELEGRAM_SEND_TIMEOUT_SECONDS = 10.0
+# A claimed job is hidden from other dispatchers for this long per message in
+# the batch, so a slow batch cannot be picked up twice by a parallel run.
+CLAIM_LEASE_SECONDS_PER_JOB = 15
+MIN_CLAIM_LEASE_SECONDS = 300
+
+
 class TelegramBotSender:
-    def __init__(self, bot_token: str | None = None) -> None:
+    def __init__(
+        self,
+        bot_token: str | None = None,
+        *,
+        client: httpx.Client | None = None,
+    ) -> None:
         self.bot_token = bot_token or settings.telegram_bot_token
+        self.client = client
 
     def send_message(self, telegram_user_id: int, text: str) -> None:
         if not self.bot_token:
@@ -46,15 +59,16 @@ class TelegramBotSender:
                 retry_after_seconds=300,
             )
 
+        post = self.client.post if self.client is not None else httpx.post
         try:
-            response = httpx.post(
+            response = post(
                 f"https://api.telegram.org/bot{self.bot_token}/sendMessage",
                 json=build_send_message_payload(
                     telegram_user_id,
                     text,
                     mini_app_url=settings.telegram_mini_app_url,
                 ),
-                timeout=10.0,
+                timeout=TELEGRAM_SEND_TIMEOUT_SECONDS,
             )
         except httpx.HTTPError as exc:
             raise NotificationSendError(
@@ -152,24 +166,48 @@ def dispatch_pending_notifications(
         if max_batches is None
         else max_batches
     )
-    active_sender = sender or TelegramBotSender()
+    if sender is None:
+        # One connection pool for the whole run instead of a TLS handshake
+        # per message.
+        with httpx.Client(timeout=TELEGRAM_SEND_TIMEOUT_SECONDS) as client:
+            return _dispatch_batches(
+                db,
+                limit=active_limit,
+                max_batches=active_max_batches,
+                sender=TelegramBotSender(client=client),
+            )
+    return _dispatch_batches(
+        db,
+        limit=active_limit,
+        max_batches=active_max_batches,
+        sender=sender,
+    )
+
+
+def _dispatch_batches(
+    db: Session,
+    *,
+    limit: int,
+    max_batches: int,
+    sender: NotificationSender,
+) -> DispatchNotificationsResult:
     total_selected = 0
     total_sent = 0
     total_retried = 0
     total_failed = 0
 
-    for batch_number in range(1, active_max_batches + 1):
+    for batch_number in range(1, max_batches + 1):
         result = _dispatch_notification_batch(
             db,
-            limit=active_limit,
+            limit=limit,
             batch_number=batch_number,
-            sender=active_sender,
+            sender=sender,
         )
         total_selected += result.selected
         total_sent += result.sent
         total_retried += result.retried
         total_failed += result.failed
-        if result.selected < active_limit:
+        if result.selected < limit:
             break
 
     return DispatchNotificationsResult(
@@ -216,8 +254,19 @@ def _dispatch_notification_batch(
     retried = 0
     failed = 0
 
+    # Claim the batch and commit before talking to Telegram: row locks are
+    # released at once, and the lease keeps parallel runs off these jobs.
+    lease_seconds = max(
+        MIN_CLAIM_LEASE_SECONDS,
+        len(jobs) * CLAIM_LEASE_SECONDS_PER_JOB,
+    )
+    lease_until = now + timedelta(seconds=lease_seconds)
     for job in jobs:
         job.attempts += 1
+        job.available_at = lease_until
+    db.commit()
+
+    for job in jobs:
         try:
             message = notification_message(job)
             sender.send_message(job.recipient.telegram_user_id, message)
@@ -285,8 +334,10 @@ def _dispatch_notification_batch(
             job.failed_at = None
             job.error = None
             sent += 1
+        # Persist each result right away: a crash later in the batch must not
+        # roll back messages that already reached Telegram.
+        db.commit()
 
-    db.commit()
     logger.info(
         "Notification dispatch completed",
         extra={

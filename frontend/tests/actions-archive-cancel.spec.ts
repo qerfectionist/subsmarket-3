@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
-const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:5174";
+const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
 
 test.use({
   deviceScaleFactor: 2,

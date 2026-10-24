@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
-
-def as_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-    return value.astimezone(UTC)
-
+# Kept for existing marketplace imports; the helper lives in core.database.
+from subsmarket.core.database import as_utc
 
 __all__ = ["as_utc"]

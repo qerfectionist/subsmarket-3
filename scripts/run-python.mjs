@@ -15,7 +15,7 @@ if (!existsSync(python)) {
   console.error(
     `Python venv not found at ${python}. Create it with:\n` +
       `  python -m venv backend/.venv\n` +
-      `  ${python} -m pip install -e "backend/[dev]"`
+      `  ${python} -m pip install -c backend/constraints.txt -e "backend/[dev]"`
   );
   process.exit(1);
 }

@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 FamilyPeriod = Literal["monthly", "yearly"]
 PaymentBank = Literal["kaspi", "halyk", "freedom", "jusan"]
@@ -22,7 +22,7 @@ class FamilyCreate(BaseModel):
     plan_name: str | None = Field(default=None, max_length=120)
     period: FamilyPeriod = "monthly"
     max_members: int = Field(ge=2, le=8)
-    total_price_kzt: int = Field(gt=0)
+    total_price_kzt: int = Field(gt=0, le=1_000_000)
     payment_day: int = Field(ge=1, le=31)
     next_payment_date: date
     description: str | None = Field(default=None, max_length=1000)
@@ -30,18 +30,42 @@ class FamilyCreate(BaseModel):
     payment_bank: PaymentBank
     payment_phone: str = Field(min_length=6, max_length=32)
 
+    @field_validator("next_payment_date")
+    @classmethod
+    def validate_next_payment_date(cls, value: date) -> date:
+        from subsmarket.core.database import kz_today
+
+        today = kz_today()
+        if value < today:
+            raise ValueError("NEXT_PAYMENT_DATE_IN_PAST")
+        if (value - today).days > 366:
+            raise ValueError("NEXT_PAYMENT_DATE_TOO_FAR")
+        return value
+
 
 class FamilyDescriptionUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=1000)
 
 
 class FamilyPriceUpdate(BaseModel):
-    total_price_kzt: int = Field(gt=0)
+    total_price_kzt: int = Field(gt=0, le=1_000_000)
 
 
 class FamilyPaymentDayUpdate(BaseModel):
     payment_day: int = Field(ge=1, le=31)
     next_payment_date: date
+
+    @field_validator("next_payment_date")
+    @classmethod
+    def validate_next_payment_date(cls, value: date) -> date:
+        from subsmarket.core.database import kz_today
+
+        today = kz_today()
+        if value < today:
+            raise ValueError("NEXT_PAYMENT_DATE_IN_PAST")
+        if (value - today).days > 366:
+            raise ValueError("NEXT_PAYMENT_DATE_TOO_FAR")
+        return value
 
 
 class FamilyVisibilityUpdate(BaseModel):

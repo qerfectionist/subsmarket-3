@@ -59,6 +59,7 @@ export const errorLabels: Record<string, string> = {
   SELF_CANCEL_LIMIT_REACHED: "Вы уже дважды отменяли заявку в эту семью. Повторная заявка недоступна.",
   FAMILY_REQUEST_NOT_FOUND: "Заявка не найдена.",
   FAMILY_REQUEST_NOT_PENDING: "Эта заявка уже не ожидает решения.",
+  FAMILY_REQUEST_EXPIRED: "Срок действия заявки истёк.",
   ONLY_OWNER_CAN_VIEW_REQUESTS: "Заявки может смотреть только владелец семьи.",
   ONLY_OWNER_CAN_APPROVE_REQUEST: "Принять заявку может только владелец семьи.",
   ONLY_OWNER_CAN_REJECT_REQUEST: "Отклонить заявку может только владелец семьи.",

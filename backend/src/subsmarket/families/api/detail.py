@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Query
+from fastapi import Depends, Query
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import get_db
@@ -10,6 +10,7 @@ from subsmarket.families.api.deps import (
     MAX_CURSOR_LENGTH,
     MAX_PAGE_OFFSET,
     get_current_user,
+    optional_invite_code,
 )
 from subsmarket.families.schemas import (
     FamilyAuditLogOut,
@@ -18,8 +19,8 @@ from subsmarket.families.schemas import (
     FamilyViewOut,
 )
 from subsmarket.families.service import (
-    get_family_by_id,
     get_family_view,
+    get_visible_family,
     list_family_audit_logs,
     list_family_audit_logs_page,
     to_audit_log_out,
@@ -29,10 +30,11 @@ from subsmarket.families.service import (
 
 def get_family_detail_view(
     family_id: UUID,
+    invite_code: str | None = Depends(optional_invite_code),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyViewOut:
-    return get_family_view(db, user, family_id)
+    return get_family_view(db, user, family_id, invite_code=invite_code)
 
 
 def get_family_audit_log(
@@ -76,10 +78,9 @@ def get_family_audit_log_page(
 
 def get_family(
     family_id: UUID,
+    invite_code: str | None = Depends(optional_invite_code),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyOut:
-    family = get_family_by_id(db, family_id)
-    if family is None:
-        raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
+    family = get_visible_family(db, user, family_id, invite_code=invite_code)
     return to_family_out(family)

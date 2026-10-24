@@ -34,6 +34,18 @@ export function createEmptyDevCardsState(): DevTestCardsState {
   };
 }
 
+// The dev showcase fills empty storage with demo cards so the screens are never
+// blank while designing. Automated browsers (Playwright sets
+// navigator.webdriver) must start from real backend data instead, otherwise
+// every test that clears storage sees dozens of fake cards.
+function isAutomatedBrowser(): boolean {
+  return typeof navigator !== "undefined" && navigator.webdriver === true;
+}
+
+function initialDevCardsState(): DevTestCardsState {
+  return isAutomatedBrowser() ? createEmptyDevCardsState() : createFullShowcaseDevCardsState();
+}
+
 export function loadDevCards(): DevTestCardsState {
   if (typeof window === "undefined") {
     return createEmptyDevCardsState();
@@ -41,7 +53,7 @@ export function loadDevCards(): DevTestCardsState {
   try {
     const raw = window.localStorage.getItem(DEV_TEST_CARDS_STORAGE_KEY);
     if (!raw) {
-      const initial = createFullShowcaseDevCardsState();
+      const initial = initialDevCardsState();
       try {
         window.localStorage.setItem(DEV_TEST_CARDS_STORAGE_KEY, JSON.stringify(initial));
       } catch {
@@ -66,7 +78,7 @@ export function loadDevCards(): DevTestCardsState {
       state.buyerGb.length +
       state.buyerFamilies.length;
     if (total === 0) {
-      const initial = createFullShowcaseDevCardsState();
+      const initial = initialDevCardsState();
       try {
         window.localStorage.setItem(DEV_TEST_CARDS_STORAGE_KEY, JSON.stringify(initial));
       } catch {
@@ -76,7 +88,7 @@ export function loadDevCards(): DevTestCardsState {
     }
     return state;
   } catch {
-    return createFullShowcaseDevCardsState();
+    return initialDevCardsState();
   }
 }
 

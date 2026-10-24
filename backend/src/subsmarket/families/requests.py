@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from subsmarket.core.database import utcnow
+from subsmarket.core.database import as_utc, utcnow
 from subsmarket.core.idempotency import claim_idempotency, complete_idempotency
 from subsmarket.families._internal import (
     ACTIVE_MEMBER_STATUSES,
@@ -24,15 +24,27 @@ from subsmarket.families.models import (
     FamilyRequest,
     FamilyRequestRestriction,
 )
+from subsmarket.families.queries import active_invite_matches
 from subsmarket.identity.models import User
 from subsmarket.notifications.service import enqueue_notification
 
 
-def _get_joinable_family(db: Session, family_id: UUID) -> Family:
+def _get_joinable_family(
+    db: Session,
+    family_id: UUID,
+    *,
+    invite_code: str | None = None,
+) -> Family:
     family = db.scalar(select(Family).where(Family.id == family_id).with_for_update())
     if family is None:
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     if family.status != "active" or family.active_members_count >= family.max_members:
+        raise HTTPException(status_code=409, detail="FAMILY_NOT_JOINABLE")
+    # A hidden family accepts requests only with its current invite code, so
+    # rotating or disabling the invite closes the door for old links.
+    if not family.is_search_visible and not active_invite_matches(
+        db, family.id, invite_code
+    ):
         raise HTTPException(status_code=409, detail="FAMILY_NOT_JOINABLE")
     return family
 
@@ -43,6 +55,7 @@ def create_join_request(
     family_id: UUID,
     *,
     idempotency_key: str | None = None,
+    invite_code: str | None = None,
 ) -> FamilyRequest:
     user_id = user.id
     claim = claim_idempotency(
@@ -65,7 +78,7 @@ def create_join_request(
     if not locked_user.username:
         raise HTTPException(status_code=409, detail="TELEGRAM_USERNAME_REQUIRED")
 
-    family = _get_joinable_family(db, family_id)
+    family = _get_joinable_family(db, family_id, invite_code=invite_code)
     if family.owner_user_id == user_id:
         raise HTTPException(status_code=400, detail="OWNER_CANNOT_REQUEST_OWN_FAMILY")
 
@@ -176,6 +189,8 @@ def cancel_join_request(
         raise HTTPException(status_code=404, detail="FAMILY_REQUEST_NOT_FOUND")
     if request.status != ACTIVE_REQUEST_STATUS:
         raise HTTPException(status_code=409, detail="FAMILY_REQUEST_NOT_PENDING")
+    if request.expires_at and as_utc(request.expires_at) <= utcnow():
+        raise HTTPException(status_code=409, detail="FAMILY_REQUEST_EXPIRED")
 
     old_status = request.status
     request.status = "cancelled"
@@ -228,6 +243,8 @@ def reject_join_request(db: Session, user: User, request_id: UUID) -> FamilyRequ
         raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_REJECT_REQUEST")
     if request.status != ACTIVE_REQUEST_STATUS:
         raise HTTPException(status_code=409, detail="FAMILY_REQUEST_NOT_PENDING")
+    if request.expires_at and as_utc(request.expires_at) <= utcnow():
+        raise HTTPException(status_code=409, detail="FAMILY_REQUEST_EXPIRED")
 
     old_status = request.status
     request.status = "rejected"
@@ -289,6 +306,8 @@ def approve_join_request(db: Session, user: User, request_id: UUID) -> FamilyReq
         raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_APPROVE_REQUEST")
     if request.status != ACTIVE_REQUEST_STATUS:
         raise HTTPException(status_code=409, detail="FAMILY_REQUEST_NOT_PENDING")
+    if request.expires_at and as_utc(request.expires_at) <= utcnow():
+        raise HTTPException(status_code=409, detail="FAMILY_REQUEST_EXPIRED")
     if family.status != "active" or family.active_members_count >= family.max_members:
         raise HTTPException(status_code=409, detail="FAMILY_NOT_JOINABLE")
 

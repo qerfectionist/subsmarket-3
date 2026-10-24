@@ -58,7 +58,8 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByTestId("family-type-tariff")).toBeVisible();
   await expect(page.getByTestId("market-buy-gigabytes")).toBeVisible();
   await expect(page.getByTestId("market-buy-accounts")).toBeVisible();
-  await expect(page.locator('nav[aria-label="Главная навигация"] button')).toHaveCount(3);
+  // The default Spotify-style dock keeps "Создать" inside the nav: 4 buttons.
+  await expect(page.locator('nav[aria-label="Главная навигация"] button')).toHaveCount(4);
 
   await openCreate(page);
   await expect(page.getByTestId("create-family-form")).toBeVisible();

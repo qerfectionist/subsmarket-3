@@ -10,6 +10,7 @@ from subsmarket.families.api.deps import (
     MAX_CURSOR_LENGTH,
     MAX_PAGE_OFFSET,
     get_current_user,
+    optional_invite_code,
 )
 from subsmarket.families.schemas import (
     FamilyRequestOut,
@@ -31,6 +32,7 @@ from subsmarket.families.service import (
 def post_family_request(
     family_id: UUID,
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    invite_code: str | None = Depends(optional_invite_code),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ) -> FamilyRequestOut:
@@ -39,6 +41,7 @@ def post_family_request(
         user,
         family_id,
         idempotency_key=idempotency_key,
+        invite_code=invite_code,
     )
     return to_family_request_out(request)
 

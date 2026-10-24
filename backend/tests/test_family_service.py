@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime, time, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -22,6 +23,7 @@ from subsmarket.families.schemas import (
     FamilyCreate,
     FamilyPaymentDayUpdate,
     FamilyPriceUpdate,
+    FamilyVisibilityUpdate,
     PrepaymentPeriodsCreate,
 )
 from subsmarket.families.service import (
@@ -1647,3 +1649,74 @@ def test_member_leave_and_remove_cancels_all_open_payments(
     assert first_payment.status == "cancelled"
     assert first_payment.cancel_reason == "member_left"
     assert job.status == "cancelled"
+
+
+def test_cannot_create_family_with_past_date(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    with pytest.raises(ValidationError):
+        FamilyCreate(
+            service_id=subscription_service.id,
+            period="monthly",
+            max_members=3,
+            total_price_kzt=3800,
+            payment_day=15,
+            next_payment_date=date.today() - timedelta(days=1),
+            description="Past date family",
+            payment_bank="kaspi",
+            payment_phone="+77001234567",
+        )
+
+
+def test_cannot_approve_or_reject_expired_join_request(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    owner = make_user(db, 392)
+    candidate = make_user(db, 393)
+    family = make_family(db, owner, subscription_service)
+
+    req = create_join_request(db, candidate, family.id)
+    req.expires_at = utcnow() - timedelta(hours=1)
+    db.flush()
+
+    with pytest.raises(HTTPException) as exc:
+        approve_join_request(db, owner, req.id)
+    assert exc.value.status_code == 409
+    assert exc.value.detail == "FAMILY_REQUEST_EXPIRED"
+
+    with pytest.raises(HTTPException) as exc_reject:
+        reject_join_request(db, owner, req.id)
+    assert exc_reject.value.status_code == 409
+    assert exc_reject.value.detail == "FAMILY_REQUEST_EXPIRED"
+
+    with pytest.raises(HTTPException) as exc_cancel:
+        cancel_join_request(db, candidate, req.id)
+    assert exc_cancel.value.status_code == 409
+    assert exc_cancel.value.detail == "FAMILY_REQUEST_EXPIRED"
+
+
+def test_hidden_family_requires_active_invite(
+    db: Session, subscription_service: FamilyService
+) -> None:
+    from subsmarket.families.creation import update_family_visibility
+    from subsmarket.families.invites import create_family_invite, disable_family_invite
+
+    owner = make_user(db, 394)
+    outsider = make_user(db, 395)
+    family = make_family(db, owner, subscription_service)
+
+    update_family_visibility(
+        db, owner, family.id, FamilyVisibilityUpdate(is_search_visible=False)
+    )
+    create_family_invite(db, owner, family.id)
+    disable_family_invite(db, owner, family.id)
+
+    with pytest.raises(HTTPException) as exc_view:
+        get_family_view(db, outsider, family.id)
+    assert exc_view.value.status_code == 404
+    assert exc_view.value.detail == "FAMILY_NOT_FOUND"
+
+    with pytest.raises(HTTPException) as exc_join:
+        create_join_request(db, outsider, family.id)
+    assert exc_join.value.status_code == 409
+    assert exc_join.value.detail == "FAMILY_NOT_JOINABLE"

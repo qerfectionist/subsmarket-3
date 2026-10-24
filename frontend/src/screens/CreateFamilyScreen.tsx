@@ -13,6 +13,9 @@ import { bankLabels, familyTypeLabels, periodLabels } from "../labels";
 import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 
 const PHONE_RE = /^\+?7\d{10}$/;
+// Mirrors the backend limit in FamilyCreate.total_price_kzt.
+const MAX_FAMILY_PRICE_KZT = 1_000_000;
+
 function getTodayKz(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
 }
@@ -47,6 +50,8 @@ function validateForm(form: FamilyCreate, service: FamilyService | null): FieldE
   }
   if (form.total_price_kzt <= 0) {
     errors.total_price_kzt = "Цена должна быть больше нуля";
+  } else if (form.total_price_kzt > MAX_FAMILY_PRICE_KZT) {
+    errors.total_price_kzt = "Цена не может быть больше 1 000 000 ₸";
   }
   if (form.payment_day < 1 || form.payment_day > 31) {
     errors.payment_day = "День от 1 до 31";

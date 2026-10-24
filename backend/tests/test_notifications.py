@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from subsmarket.core.config import settings
-from subsmarket.core.database import Base, utcnow
+from subsmarket.core.database import Base, as_utc, utcnow
 from subsmarket.identity.models import User
 from subsmarket.models import import_models
 from subsmarket.notifications.dispatcher import (
@@ -376,3 +376,83 @@ def test_telegram_sender_uses_retry_after_from_rate_limit(
     assert exc.value.permanent is False
     assert exc.value.retry_after_seconds == 17
     assert str(exc.value) == "TELEGRAM_SEND_FAILED 429: Too Many Requests"
+
+
+class WorkerKilled(BaseException):
+    """Simulates the process dying in the middle of a dispatch batch."""
+
+
+class DyingSender:
+    def __init__(self) -> None:
+        self.messages: list[tuple[int, str]] = []
+
+    def send_message(self, telegram_user_id: int, text: str) -> None:
+        if self.messages:
+            raise WorkerKilled
+        self.messages.append((telegram_user_id, text))
+
+
+def test_dispatch_keeps_sent_messages_when_worker_dies_mid_batch(
+    db: Session,
+) -> None:
+    user = make_user(db)
+    first = make_notification(db, user, payload={"message": "First"})
+    second = make_notification(db, user, payload={"message": "Second"})
+    sender = DyingSender()
+
+    with pytest.raises(WorkerKilled):
+        dispatch_pending_notifications(db, sender=sender)
+    db.rollback()
+
+    db.refresh(first)
+    db.refresh(second)
+    # The message that reached Telegram stays sent and is never repeated.
+    assert first.status == "sent"
+    assert sender.messages == [(user.telegram_user_id, "First")]
+    # The in-flight message stays claimed for the lease, then is retried.
+    assert second.status == "pending"
+    assert second.attempts == 1
+    assert as_utc(second.available_at) > utcnow() + timedelta(minutes=4)
+
+    retry_sender = FakeSender()
+    immediate = dispatch_pending_notifications(db, sender=retry_sender)
+    assert immediate.selected == 0
+    assert retry_sender.messages == []
+
+
+def test_dispatch_reuses_one_http_client_per_run(
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    user = make_user(db)
+    make_notification(db, user, payload={"message": "First"})
+    make_notification(db, user, payload={"message": "Second"})
+    clients: list[object] = []
+    sent_texts: list[str] = []
+
+    class RecordingClient:
+        def __init__(self, **kwargs: object) -> None:
+            clients.append(self)
+
+        def __enter__(self) -> RecordingClient:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            return None
+
+        def post(self, url: str, **kwargs: object) -> httpx.Response:
+            payload = kwargs["json"]
+            assert isinstance(payload, dict)
+            sent_texts.append(str(payload["text"]))
+            return httpx.Response(200, json={"ok": True})
+
+    monkeypatch.setattr(
+        "subsmarket.notifications.dispatcher.httpx.Client", RecordingClient
+    )
+    monkeypatch.setattr(settings, "telegram_bot_token", "123456:test")
+
+    result = dispatch_pending_notifications(db)
+
+    assert result.sent == 2
+    assert len(clients) == 1
+    assert sent_texts == ["First", "Second"]

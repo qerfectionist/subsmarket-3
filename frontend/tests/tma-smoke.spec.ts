@@ -114,7 +114,8 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await expect(page.getByTestId("family-type-tariff")).toBeVisible();
   const bottomNav = page.getByRole("navigation", { name: "Главная навигация" });
   await expect(bottomNav).toBeVisible();
-  await expect(bottomNav.locator("button")).toHaveCount(3);
+  // The default Spotify-style dock keeps "Создать" inside the nav: 4 buttons.
+  await expect(bottomNav.locator("button")).toHaveCount(4);
   await expect(bottomNav).toContainText("Маркет");
   await expect(bottomNav).toContainText("Мои");
   await expect(bottomNav).toContainText("Заявки");
@@ -376,7 +377,7 @@ test("My sections switch tabs via mobile touch swipe sequence", async ({ page })
   });
 });
 
-test("My scope indicator starts with content on click", async ({ page }) => {
+test("My scope indicator moves to the tapped segment and content follows", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page
     .getByRole("navigation", { name: "Главная навигация" })
@@ -388,20 +389,28 @@ test("My scope indicator starts with content on click", async ({ page }) => {
   const accountsButton = scopeSwitch.getByRole("button", { name: "Аккаунты", exact: true });
   await accountsButton.dispatchEvent("click");
 
+  // Since the swipe rework a tap is not a drag: the capsule lands on the tapped
+  // segment at once and the content pane springs after it.
   const motion = await readScopeMotion(scopeSwitch);
-
-  expect(motion.isMoving).toBe(true);
-  expect(Math.abs(motion.indicatorPosition - motion.contentPosition)).toBeLessThan(0.02);
+  expect(motion.isMoving).toBe(false);
+  expect(motion.position).toBe(1);
+  expect(motion.indicatorPosition).toBeCloseTo(1, 2);
+  expect(motion.contentPosition).toBeGreaterThan(0);
   expect(motion.transitionDuration).toBe("0s");
   await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
 
   await waitForScopeSettled(scopeSwitch, 1);
-  const settledMotion = await readScopeMotion(scopeSwitch);
-  expect(Math.abs(settledMotion.indicatorPosition - settledMotion.contentPosition)).toBeLessThan(0.01);
-  expect(settledMotion.transitionDuration).toBe("0s");
+  // The capsule is already in place; wait for the content spring to catch up.
+  await expect
+    .poll(async () => {
+      const settled = await readScopeMotion(scopeSwitch);
+      return Math.abs(settled.indicatorPosition - settled.contentPosition);
+    })
+    .toBeLessThan(0.01);
+  expect((await readScopeMotion(scopeSwitch)).transitionDuration).toBe("0s");
 });
 
-test("My scope indicator responds on pointer down", async ({ page }) => {
+test("My scope switches on release, not on pointer down", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page
     .getByRole("navigation", { name: "Главная навигация" })
@@ -416,6 +425,8 @@ test("My scope indicator responds on pointer down", async ({ page }) => {
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
 
+  // Pointer down only starts tracking a possible swipe; the segment switches on
+  // release, so nothing moves while the finger is still down.
   const motion = await readScopeMotion(scopeSwitch);
   const appearance = await scopeSwitch.evaluate((element) => ({
     transitionDuration: getComputedStyle(element, "::before").transitionDuration,
@@ -444,11 +455,10 @@ test("My scope indicator responds on pointer down", async ({ page }) => {
       : null
   }));
   await page.mouse.up();
-  expect(motion.isMoving).toBe(true);
-  // Абсолютная позиция зависит от задержки протокола: пружина успевает доехать
-  // до 0.7 за время round-trip, поэтому проверяем инвариант, не зависящий от
-  // фазы анимации, — капсула и контент едут синхронно.
-  expect(Math.abs(motion.indicatorPosition - motion.contentPosition)).toBeLessThan(0.02);
+  expect(motion.isMoving).toBe(false);
+  expect(motion.indicatorPosition).toBeCloseTo(0, 2);
+  expect(motion.contentPosition).toBeCloseTo(0, 2);
+  await expect(accountsButton).toHaveAttribute("aria-pressed", "true");
   expect(appearance.transitionDuration).toBe("0s");
   // Индикатор «Моих» выровнен с Маркетом и использует токен подсветки навигации.
   expect(appearance.indicatorShadow).toBe(appearance.tokenIndicatorShadow);

@@ -73,6 +73,9 @@ test("own families and actions use the same surfaces", async ({ page }, info) =>
   await page.evaluate(() => localStorage.setItem("subsmarket.devTelegramUser", "200001"));
   // The initialization script resets storage on navigation, so use the real switch.
   await page.getByRole("navigation", { name: "Главная навигация" }).getByRole("button", { name: "Мои", exact: true }).click();
+  // The dev panel starts collapsed behind the "+" button.
+  const devToggle = page.getByTestId("dev-controls-toggle");
+  if (await devToggle.isVisible()) await devToggle.click();
   await page.getByTestId("dev-user-select").locator("select").selectOption("200001");
   await expect(page.getByTestId("market-screen")).toBeVisible();
   await page.getByRole("navigation", { name: "Главная навигация" }).getByRole("button", { name: "Мои", exact: true }).click();
@@ -272,7 +275,7 @@ test("market cards; mobile search opens the selected offer", async ({ page }, in
 
 test("navigation and creation share tokens in both themes", async ({ page }, info) => {
   for (const theme of ["dark", "light"]) {
-    await page.goto(appUrl + "?theme=" + theme);
+    await page.goto(appUrl + "?nav=classic&theme=" + theme);
     const nav = page.getByRole("navigation", { name: "Главная навигация" });
     await expect(nav).toBeVisible();
     const geometry = await page.locator(".subs-dock-surface").evaluate(el => ({
@@ -280,7 +283,9 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
       corner: getComputedStyle(el).getPropertyValue("corner-shape"),
       height: el.getBoundingClientRect().height
     }));
-    expect(geometry).toEqual({ radius: "999px", corner: "round", height: 56 });
+    // Newer Chromium serializes `corner-shape: round` as its equivalent superellipse(1).
+    expect(["round", "superellipse(1)"]).toContain(geometry.corner);
+    expect({ radius: geometry.radius, height: geometry.height }).toEqual({ radius: "999px", height: 56 });
     const fade = await page.locator(".subs-dock").evaluate(el => {
       const style = getComputedStyle(el, "::before");
       return { content: style.content, backgroundImage: style.backgroundImage, height: parseFloat(style.height) };
@@ -313,12 +318,12 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
 });
 
 test("iOS layout pass can be disabled without changing the screen behavior", async ({ page }) => {
-  await page.goto(appUrl + "?theme=dark&ios27=off");
+  await page.goto(appUrl + "?nav=classic&theme=dark&ios27=off");
   await expect(page.locator("html")).toHaveAttribute("data-ios27-layout", "off");
   await expect(page.locator(".subs-dock-surface")).toHaveCSS("height", "64px");
   await expect(page.locator(".subs-dock-create > .subs-dock-item")).toHaveCSS("width", "56px");
 
-  await page.goto(appUrl + "?theme=dark");
+  await page.goto(appUrl + "?nav=classic&theme=dark");
   await expect(page.locator("html")).toHaveAttribute("data-ios27-layout", "on");
   await expect(page.locator(".subs-dock-surface")).toHaveCSS("height", "56px");
   await expect(page.locator(".subs-dock-create > .subs-dock-item")).toHaveCSS("width", "52px");
@@ -326,7 +331,7 @@ test("iOS layout pass can be disabled without changing the screen behavior", asy
 
 test("iOS layout pass adapts the dock and hero blocks in short landscape view", async ({ page }) => {
   await page.setViewportSize({ width: 667, height: 375 });
-  await page.goto(appUrl + "?menu=classic&theme=dark");
+  await page.goto(appUrl + "?nav=classic&menu=classic&theme=dark");
   await expect(page.locator(".subs-dock-surface")).toHaveCSS("height", "52px");
   await expect(page.locator(".subs-dock-create > .subs-dock-item")).toHaveCSS("width", "48px");
   await expect(page.locator(".sm-market-service-tile").first()).toHaveCSS("min-height", "60px");

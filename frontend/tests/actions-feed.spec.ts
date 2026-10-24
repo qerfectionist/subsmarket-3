@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readSegmentIndicatorGeometry } from "./motion-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
-const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:5174";
+const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
 
 test.use({
   deviceScaleFactor: 1,
@@ -222,7 +222,7 @@ test("Actions expired requests do not hang in active feed and are placed in arch
       buyerGb: [],
       buyerFamilies: []
     };
-    localStorage.setItem("sm_dev_test_cards_v3", JSON.stringify(expiredDevCards));
+    localStorage.setItem("sm_dev_test_cards_v4", JSON.stringify(expiredDevCards));
   }, { sixHoursAgo, fiveHoursAgo });
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
@@ -255,7 +255,7 @@ test("Actions expired requests do not hang in active feed and are placed in arch
   await expect(archiveItems).toHaveCount(2);
   await expect(page.getByText("Telegram Premium")).toBeVisible();
   await expect(page.getByText("Apple One")).toBeVisible();
-  await expect(page.getByText("Вы не ответили, срок истёк").first()).toBeVisible();
+  await expect(page.getByText("Вы не ответили").first()).toBeVisible();
   await expect(page.getByText("3 490 ₸")).toBeVisible();
 
   await page.screenshot({
@@ -265,7 +265,7 @@ test("Actions expired requests do not hang in active feed and are placed in arch
 
 test("Actions empty state copywriting is clean and verified visually", async ({ page }, testInfo) => {
   await page.addInitScript(() => {
-    localStorage.removeItem("sm_dev_test_cards_v3");
+    localStorage.removeItem("sm_dev_test_cards_v4");
   });
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
