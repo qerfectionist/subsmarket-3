@@ -1,84 +1,27 @@
-import { useCallback, useState, type Dispatch, FormEvent, SetStateAction } from "react";
-import {
-  Button as AppButton,
-  Input,
-  Select,
-  TextArea
-} from "../components/ui";
-
+import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { Button as AppButton, ListItem } from "../components/ui";
 import { FamilyTypeSwitch, Panel, ProductScopeSwitch } from "../components/layout";
-import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
+import { ServiceLogo } from "../components/branding";
+import { SystemSymbol } from "../components/SystemSymbol";
+import { CreateFamilySectionFields } from "../components/families/CreateFamilySections";
+import {
+  CREATE_SECTIONS,
+  SECTION_HINTS,
+  SECTION_LEADS,
+  firstSectionError,
+  isSectionDone,
+  pluralRu,
+  sectionHasErrors,
+  sectionSummary,
+  validateCreateForm,
+  type CreateSection
+} from "../components/families/createFamilyForm";
+import { useTelegramBackButton, useTelegramMainButton } from "../hooks/useTelegramAppEffects";
+import { canUseTelegramMainButton } from "../telegram";
 import { serviceTitle } from "../format";
-import { bankLabels, familyTypeLabels, periodLabels } from "../labels";
 import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 
-const PHONE_RE = /^\+?7\d{10}$/;
-// Mirrors the backend limit in FamilyCreate.total_price_kzt.
-const MAX_FAMILY_PRICE_KZT = 1_000_000;
-
-function getTodayKz(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
-}
-
-const WIZARD_STEPS = [
-  { id: "service", label: "Сервис" },
-  { id: "terms", label: "Условия" },
-  { id: "payment", label: "Оплата" },
-  { id: "details", label: "Описание" }
-] as const;
-
-type WizardStep = (typeof WIZARD_STEPS)[number]["id"];
-
-interface FieldErrors {
-  plan_name?: string;
-  payment_phone?: string;
-  total_price_kzt?: string;
-  payment_day?: string;
-  next_payment_date?: string;
-  max_members?: string;
-}
-
-function validateForm(form: FamilyCreate, service: FamilyService | null): FieldErrors {
-  const errors: FieldErrors = {};
-  if (service?.family_type === "tariff" && !form.plan_name?.trim()) {
-    errors.plan_name = "Укажите название тарифа";
-  }
-  if (!form.payment_phone.trim()) {
-    errors.payment_phone = "Укажите номер телефона для оплаты";
-  } else if (!PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
-    errors.payment_phone = "Формат: +7 и 10 цифр (например, +77001234567)";
-  }
-  if (form.total_price_kzt <= 0) {
-    errors.total_price_kzt = "Цена должна быть больше нуля";
-  } else if (form.total_price_kzt > MAX_FAMILY_PRICE_KZT) {
-    errors.total_price_kzt = "Цена не может быть больше 1 000 000 ₸";
-  }
-  if (form.payment_day < 1 || form.payment_day > 31) {
-    errors.payment_day = "День от 1 до 31";
-  }
-  if (form.next_payment_date && form.next_payment_date < getTodayKz()) {
-    errors.next_payment_date = "Дата не может быть в прошлом";
-  }
-  if (service && form.max_members > service.max_members) {
-    errors.max_members = `Максимум для этого сервиса: ${service.max_members}`;
-  }
-  return errors;
-}
-
-function stepErrors(step: WizardStep, errors: FieldErrors) {
-  if (step === "service") {
-    return "plan_name" in errors;
-  }
-  if (step === "terms") {
-    return ["total_price_kzt", "payment_day", "next_payment_date", "max_members"].some(
-      (key) => key in errors
-    );
-  }
-  if (step === "payment") {
-    return "payment_phone" in errors;
-  }
-  return false;
-}
+const REQUIRED_SECTIONS = CREATE_SECTIONS.filter((item) => item.required).map((item) => item.id);
 
 export function CreateFamilyScreen({
   familyType,
@@ -107,383 +50,244 @@ export function CreateFamilyScreen({
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
   onSubmit: (event: FormEvent) => void;
 }) {
-  const [step, setStep] = useState<WizardStep>("service");
-  const stepIndex = WIZARD_STEPS.findIndex((item) => item.id === step);
-  const memberShare = calculatePreviewShare(
-    createForm.total_price_kzt,
-    createForm.max_members
-  );
-  const freeMemberSlots = Math.max(0, createForm.max_members - 1);
-  const errors = validateForm(createForm, service);
-  const hasErrors = Object.keys(errors).length > 0;
-  const canAdvance = !stepErrors(step, errors);
+  const [openSection, setOpenSection] = useState<CreateSection | null>(null);
+  const [visited, setVisited] = useState<ReadonlySet<CreateSection>>(() => new Set());
+  const errors = validateCreateForm(createForm, service);
+  const serviceName = service ? serviceTitle(service) : null;
 
-  function goNext() {
-    const next = WIZARD_STEPS[stepIndex + 1];
-    if (next) setStep(next.id);
+  const isDone = (section: CreateSection, seen: ReadonlySet<CreateSection> = visited) =>
+    isSectionDone(section, errors, seen, createForm);
+  const unfinished = REQUIRED_SECTIONS.filter((section) => !isDone(section));
+  const ready = unfinished.length === 0 && Object.keys(errors).length === 0;
+
+  /** Where «Далее» leads from the open section: the next required section left. */
+  function nextAfter(section: CreateSection): CreateSection | null {
+    const seen = new Set(visited).add(section);
+    const order = REQUIRED_SECTIONS;
+    const start = order.indexOf(section);
+    const rotated = [...order.slice(start + 1), ...order.slice(0, Math.max(start, 0))];
+    return rotated.find((item) => !isDone(item, seen)) ?? null;
   }
 
-  const goBack = useCallback(() => {
-    const prev = WIZARD_STEPS[stepIndex - 1];
-    if (prev) setStep(prev.id);
-  }, [stepIndex]);
+  function leaveSection(goTo: CreateSection | null) {
+    if (openSection) {
+      const section = openSection;
+      setVisited((current) => new Set(current).add(section));
+    }
+    setOpenSection(goTo);
+  }
 
-  useTelegramBackButton(true, () => stepIndex > 0 ? goBack() : onBack());
+  useTelegramBackButton(true, () => (openSection ? leaveSection(null) : onBack()));
+
+  function changeFamilyType(next: FamilyType) {
+    // A new type swaps the service list, so the checked sections start over.
+    setVisited(new Set());
+    onChangeFamilyType(next);
+  }
 
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
-    if (step !== "details") {
-      if (canAdvance) {
-        goNext();
-      }
+    if (openSection) {
+      // Enter inside a section moves on instead of creating the family.
+      if (!sectionHasErrors(openSection, errors)) leaveSection(nextAfter(openSection));
       return;
     }
-    if (hasErrors) {
-      return;
-    }
-    onSubmit(event);
+    if (ready && busy === null) onSubmit(event);
   }
 
-  const submitDisabled =
-    busy !== null ||
-    servicesCount === 0 ||
-    (step === "details" ? hasErrors : !canAdvance);
-  const submitLabel =
-    step === "details" ? "Создать семью" : canAdvance ? "Далее" : "Исправьте поля";
+  const openMeta = openSection ? CREATE_SECTIONS.find((item) => item.id === openSection) : null;
+  const nextSection = openSection ? nextAfter(openSection) : null;
+
+  // Inside Telegram the main action moves to the native bottom button; the page
+  // keeps its own buttons for the browser and tests.
+  const [nativeMainButton] = useState(canUseTelegramMainButton);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const mainAction = openSection
+    ? {
+        label: nextSection ? "Далее" : "Готово",
+        disabled: sectionHasErrors(openSection, errors),
+        run: () => leaveSection(nextSection)
+      }
+    : ready
+      ? {
+          label: "Создать семью",
+          disabled: busy !== null || servicesCount === 0,
+          run: () => formRef.current?.requestSubmit()
+        }
+      : { label: "Продолжить", disabled: false, run: () => setOpenSection(unfinished[0] ?? null) };
+  useTelegramMainButton({
+    visible: nativeMainButton,
+    label: mainAction.label,
+    onClick: () => {
+      if (!mainAction.disabled) mainAction.run();
+    },
+    isPending: busy !== null,
+    disabled: mainAction.disabled
+  });
 
   return (
     <Panel title="Создать семью">
       <div className="screen-body-inset">
-      <ProductScopeSwitch value="families" onChange={value => {
-        if (value === "accounts") onCreateAccounts();
-        if (value === "gigabytes") onCreateGigabytes();
-      }} />
-      <FamilyTypeSwitch value={familyType} onChange={onChangeFamilyType} />
+        {openSection === null ? (
+          <>
+            <ProductScopeSwitch
+              value="families"
+              onChange={(value) => {
+                if (value === "accounts") onCreateAccounts();
+                if (value === "gigabytes") onCreateGigabytes();
+              }}
+            />
+            <FamilyTypeSwitch value={familyType} onChange={changeFamilyType} />
+          </>
+        ) : null}
 
-      <div className="wizard-progress" aria-hidden>
-        <div
-          className="wizard-progress-bar"
-          style={{ width: `${((stepIndex + 1) / WIZARD_STEPS.length) * 100}%` }}
-        />
-      </div>
-
-      <ol className="wizard-steps" aria-label="Шаги создания семьи">
-        {WIZARD_STEPS.map((item, index) => (
-          <li
-            key={item.id}
-            className={
-              index < stepIndex
-                ? "wizard-step wizard-step-done"
-                : index === stepIndex
-                  ? "wizard-step wizard-step-current"
-                  : "wizard-step"
-            }
-            aria-current={index === stepIndex ? "step" : undefined}
-          >
-            <span className="wizard-step-index">{index + 1}</span>
-            <span className="wizard-step-label">{item.label}</span>
-          </li>
-        ))}
-      </ol>
-
-      <div className="create-preview" data-testid="create-share-preview">
-        <div>
-          <span>Участник платит</span>
-          <strong>{formatKzt(memberShare)}</strong>
-        </div>
-        <div>
-          <span>Свободных мест</span>
-          <strong>{freeMemberSlots}</strong>
-        </div>
-        <p>
-          Владелец входит в лимит. Общая цена делится на всех и округляется вверх
-          до 50 ₸.
-        </p>
-      </div>
-
-      <form className="form-grid" data-testid="create-family-form" onSubmit={handleFormSubmit}>
-        <div className={step === "service" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <div className="ui-field">
-              <label htmlFor="create-service">Сервис</label>
-              <Select
-                id="create-service"
-                required
-                data-testid="create-service-select"
-                value={createForm.service_id}
-                placeholder="Сервис"
-                options={typedServices.map((item) => ({
-                  value: item.id,
-                  label: serviceTitle(item)
-                }))}
-                onChange={(value) => {
-                  const nextService = typedServices.find(
-                    (item) => item.id === value
-                  );
-                  onChangeForm((current) => ({
-                    ...current,
-                    service_id: value,
-                    max_members: Math.min(
-                      current.max_members,
-                      nextService?.max_members ?? 8
-                    )
-                  }));
+        <form
+          ref={formRef}
+          className="form-grid"
+          data-testid="create-family-form"
+          onSubmit={handleFormSubmit}
+        >
+          {openSection === null || !openMeta ? (
+            <>
+              <p className="create-hub-status" data-testid="create-hub-status">
+                {unfinished.length === 0
+                  ? "Всё заполнено, можно создавать"
+                  : `Осталось ${unfinished.length} ${pluralRu(unfinished.length, "раздел", "раздела", "разделов")}`}
+              </p>
+              <div className="family-overview-card create-hub-card">
+                <ol className="create-hub-list" aria-label="Разделы семьи">
+                  {CREATE_SECTIONS.map((item, index) => {
+                    const done = isDone(item.id);
+                    const error = visited.has(item.id)
+                      ? firstSectionError(item.id, errors)
+                      : undefined;
+                    const state = done ? "done" : error ? "error" : "todo";
+                    const description = done
+                      ? sectionSummary(item.id, createForm, serviceName)
+                      : (error ?? SECTION_HINTS[item.id]);
+                    const showLogo = item.id === "service" && service && done;
+                    return (
+                      <li key={item.id}>
+                        <ListItem
+                          data-testid={`create-section-${item.id}`}
+                          data-state={state}
+                          className={`create-hub-row create-hub-row-${state}`}
+                          label={item.title}
+                          description={description}
+                          startAdornment={
+                            showLogo ? (
+                              <ServiceLogo
+                                serviceSlug={service.slug}
+                                serviceName={service.name}
+                                familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
+                                size={32}
+                                loading="eager"
+                              />
+                            ) : done ? (
+                              <span className="create-hub-check">
+                                <SystemSymbol name="checkmark" size={26} />
+                              </span>
+                            ) : (
+                              <span className="wizard-step-index">{index + 1}</span>
+                            )
+                          }
+                          endAdornment={
+                            state === "error" ? (
+                              <SystemSymbol
+                                name="exclamationmark.circle"
+                                size={20}
+                                className="create-hub-error-icon"
+                              />
+                            ) : (
+                              <SystemSymbol
+                                name="chevron.forward"
+                                size={18}
+                                className="create-hub-chevron"
+                              />
+                            )
+                          }
+                          onClick={() => setOpenSection(item.id)}
+                        />
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+              <div className="create-wizard-footer">
+                {nativeMainButton ? null : (
+                  <div className="wizard-nav">
+                    {ready ? (
+                      <AppButton
+                        key="submit"
+                        type="submit"
+                        data-testid="create-family-submit"
+                        disabled={busy !== null || servicesCount === 0}
+                      >
+                        Создать семью
+                      </AppButton>
+                    ) : (
+                      <AppButton
+                        key="continue"
+                        type="button"
+                        data-testid="create-family-continue"
+                        onClick={() => setOpenSection(unfinished[0] ?? null)}
+                      >
+                        Продолжить
+                      </AppButton>
+                    )}
+                  </div>
+                )}
+                <small className="field-helper create-hub-note">
+                  Сервис, период оплаты, число мест и правила после создания не поменять.
+                </small>
+              </div>
+            </>
+          ) : (
+            <div className="wizard-pane wizard-pane-active" data-create-section={openSection}>
+              <div className="create-section-head">
+                <h2>{openMeta.title}</h2>
+                <p>{SECTION_LEADS[openSection]}</p>
+              </div>
+              <CreateFamilySectionFields
+                section={openSection}
+                familyType={familyType}
+                typedServices={typedServices}
+                form={createForm}
+                errors={errors}
+                service={service}
+                onChangeForm={onChangeForm}
+                onServicePicked={(planMissing) => {
+                  if (!planMissing) leaveSection(nextAfter("service"));
                 }}
               />
-            </div>
-            <div className="half ui-field">
-              <label htmlFor="create-period">Период оплаты</label>
-              <Select
-                id="create-period"
-                data-testid="create-period-select"
-                value={createForm.period}
-                placeholder="Период"
-                options={(service?.supported_periods ?? ["monthly"]).map((period) => ({
-                  value: period,
-                  label: periodLabels[period]
-                }))}
-                onChange={(value) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    period: value as FamilyCreate["period"]
-                  }))
-                }
-              />
-            </div>
-            {familyType === "tariff" ? (
-              <div>
-                <Input
-                  required
-                  label="Название тарифа"
-                  data-testid="create-plan-name-input"
-                  error={Boolean(errors.plan_name)}
-                  value={createForm.plan_name ?? ""}
-                  onChange={(event) =>
-                    onChangeForm((current) => ({
-                      ...current,
-                      plan_name: event.target.value
-                    }))
-                  }
-                />
-                {errors.plan_name ? (
-                  <small className="field-error" role="alert" aria-live="polite">
-                    {errors.plan_name}
-                  </small>
-                ) : (
-                  <small className="field-helper">Например, Семейный 5+</small>
-                )}
-              </div>
-            ) : null}
-        </div>
-
-        <div className={step === "terms" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <div className="half">
-              <Input
-                label="Всего мест"
-                min={2}
-                max={service?.max_members ?? 8}
-                data-testid="create-max-members-input"
-                inputMode="numeric"
-                type="number"
-                error={Boolean(errors.max_members)}
-                value={createForm.max_members}
-                onChange={(event) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    max_members: Number(event.target.value)
-                  }))
-                }
-              />
-              {errors.max_members ? (
-                <small className="field-error" role="alert" aria-live="polite">
-                  {errors.max_members}
-                </small>
-              ) : null}
-            </div>
-            <div className="half">
-              <Input
-                label="Общая цена, ₸"
-                min={1}
-                data-testid="create-total-price-input"
-                inputMode="numeric"
-                type="number"
-                error={Boolean(errors.total_price_kzt)}
-                value={createForm.total_price_kzt}
-                onChange={(event) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    total_price_kzt: Number(event.target.value)
-                  }))
-                }
-              />
-              {errors.total_price_kzt ? (
-                <small className="field-error" role="alert" aria-live="polite">
-                  {errors.total_price_kzt}
-                </small>
-              ) : null}
-            </div>
-            <div className="half">
-              <Input
-                label="День оплаты"
-                min={1}
-                max={31}
-                data-testid="create-payment-day-input"
-                inputMode="numeric"
-                type="number"
-                error={Boolean(errors.payment_day)}
-                value={createForm.payment_day}
-                onChange={(event) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    payment_day: Number(event.target.value)
-                  }))
-                }
-              />
-              {errors.payment_day ? (
-                <small className="field-error" role="alert" aria-live="polite">
-                  {errors.payment_day}
-                </small>
-              ) : null}
-            </div>
-            <div className="half">
-              <Input
-                label="Следующая дата оплаты"
-                data-testid="create-next-payment-date-input"
-                type="date"
-                error={Boolean(errors.next_payment_date)}
-                value={createForm.next_payment_date}
-                onChange={(event) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    next_payment_date: event.target.value
-                  }))
-                }
-              />
-              {errors.next_payment_date ? (
-                <small className="field-error" role="alert" aria-live="polite">
-                  {errors.next_payment_date}
-                </small>
-              ) : null}
-            </div>
-        </div>
-
-        <div className={step === "payment" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <div className="half ui-field">
-              <label htmlFor="create-bank">Банк</label>
-              <Select
-                id="create-bank"
-                data-testid="create-bank-select"
-                value={createForm.payment_bank}
-                placeholder="Банк"
-                options={Object.entries(bankLabels).map(([value, label]) => ({
-                  value,
-                  label
-                }))}
-                onChange={(value) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    payment_bank: value as FamilyCreate["payment_bank"]
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <Input
-                required
-                label="Номер телефона для оплаты"
-                data-testid="create-payment-phone-input"
-                inputMode="tel"
-                error={Boolean(errors.payment_phone)}
-                value={createForm.payment_phone}
-                onChange={(event) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    payment_phone: event.target.value
-                  }))
-                }
-              />
-              {errors.payment_phone ? (
-                <small className="field-error" role="alert" aria-live="polite">
-                  {errors.payment_phone}
-                </small>
-              ) : (
-                <small className="field-helper">
-                  Только номер телефона для Kaspi, Halyk, Freedom или Jusan. Номер
-                  карты и IBAN нельзя указывать.
-                </small>
+              {nativeMainButton ? null : (
+                <div className="create-wizard-footer">
+                  <div className="wizard-nav">
+                    <AppButton
+                      key="back"
+                      type="button"
+                      variant="secondary"
+                      data-testid="create-family-back"
+                      onClick={() => leaveSection(null)}
+                    >
+                      К разделам
+                    </AppButton>
+                    <AppButton
+                      key="done"
+                      type="button"
+                      data-testid="create-section-done"
+                      disabled={sectionHasErrors(openSection, errors)}
+                      onClick={() => leaveSection(nextSection)}
+                    >
+                      {nextSection ? "Далее" : "Готово"}
+                    </AppButton>
+                  </div>
+                </div>
               )}
             </div>
-        </div>
-
-        <div className={step === "details" ? "wizard-pane wizard-pane-active" : "wizard-pane"}>
-            <div className="wide">
-              <TextArea
-                label="Описание"
-                data-testid="create-description-input"
-                rows={3}
-                value={createForm.description ?? ""}
-                onChange={(event) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    description: event.target.value
-                  }))
-                }
-              />
-            </div>
-            <div className="wide">
-              <TextArea
-                label="Правила владельца"
-                data-testid="create-owner-rules-input"
-                rows={3}
-                value={createForm.owner_rules ?? ""}
-                onChange={(event) =>
-                  onChangeForm((current) => ({
-                    ...current,
-                    owner_rules: event.target.value
-                  }))
-                }
-              />
-            </div>
-            <div className="wide summary">
-              Реквизиты увидит только участник после подтверждения доступа. Номера
-              карт и IBAN запрещены.
-            </div>
-        </div>
-
-        <div className="create-wizard-footer">
-          <div className="wizard-nav">
-            {stepIndex > 0 ? (
-              <AppButton
-                type="button"
-                variant="secondary"
-                data-testid="create-family-back"
-                onClick={goBack}
-              >
-                Назад
-              </AppButton>
-            ) : null}
-            <AppButton
-              type={step === "details" ? "submit" : "button"}
-              data-testid="create-family-submit"
-              disabled={submitDisabled}
-              onClick={step === "details" ? undefined : goNext}
-            >
-              {submitLabel}
-            </AppButton>
-          </div>
-        </div>
-      </form>
+          )}
+        </form>
       </div>
     </Panel>
   );
-}
-
-function calculatePreviewShare(totalPriceKzt: number, maxMembers: number) {
-  if (totalPriceKzt <= 0 || maxMembers <= 0) {
-    return 0;
-  }
-  return Math.ceil(Math.ceil(totalPriceKzt / maxMembers) / 50) * 50;
-}
-
-function formatKzt(value: number) {
-  return new Intl.NumberFormat("ru-KZ").format(value) + " ₸";
 }

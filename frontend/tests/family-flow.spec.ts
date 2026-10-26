@@ -63,6 +63,7 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await openCreate(page);
   await expect(page.getByTestId("create-family-form")).toBeVisible();
+  await openCreateSection(page, "price");
   await expect(page.getByTestId("create-share-preview")).toContainText("650 ₸");
   await fillCreateField(page, "create-total-price-input", "3990");
   await fillCreateField(page, "create-max-members-input", "4");
@@ -255,20 +256,152 @@ test("create family form validates phone in real time", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
 
-  // Missing fields on later steps must not block navigation from service selection.
-  await expect(page.getByTestId("create-family-submit")).toBeEnabled();
+  // Nothing is ticked until the owner looks at it; the main button leads to the next section.
+  await expect(page.getByTestId("create-hub-status")).toContainText("Осталось 4 раздела");
+  await expect(page.getByTestId("create-family-submit")).toHaveCount(0);
+  await expect(page.getByTestId("create-family-continue")).toBeEnabled();
 
   await fillCreateField(page, "create-payment-phone-input", "123");
   await expect(page.locator(".field-error")).toBeVisible();
   await expect(page.locator(".field-error")).toContainText("Формат");
+  await expect(page.getByTestId("create-section-done")).toBeDisabled();
 
   await fillCreateField(page, "create-payment-phone-input", "+77001234567");
   await expect(page.locator(".field-error")).toHaveCount(0);
+  await backToCreateSections(page);
+  await expect(page.getByTestId("create-section-payment")).toHaveAttribute("data-state", "done");
 
   await fillCreateField(page, "create-total-price-input", "0");
   await expect(page.locator(".field-error")).toBeVisible();
   await expect(page.locator(".field-error")).toContainText("больше нуля");
-  await expect(page.getByTestId("create-family-submit")).toBeDisabled();
+  await expect(page.getByTestId("create-section-done")).toBeDisabled();
+  await backToCreateSections(page);
+  await expect(page.getByTestId("create-section-price")).toHaveAttribute("data-state", "error");
+  await expect(page.getByTestId("create-section-price")).toContainText("больше нуля");
+  await expect(page.getByTestId("create-family-submit")).toHaveCount(0);
+});
+
+test("create family picks a service from the logo list and moves on", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await openCreate(page);
+  await page.getByTestId("create-family-continue").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.locator('[data-create-section="service"]')).toBeVisible();
+  const options = page.locator('[data-testid^="create-service-option-"]');
+  await expect(options.first()).toBeVisible();
+  const second = options.nth(1);
+  const name = (await second.locator("strong").innerText()).trim();
+  await second.evaluate((element) => (element as HTMLElement).click());
+  await expect(page.locator('[data-create-section="price"]')).toBeVisible();
+  await backToCreateSections(page);
+  await expect(page.getByTestId("create-section-service")).toHaveAttribute("data-state", "done");
+  await expect(page.getByTestId("create-section-service")).toContainText(name);
+  await expect(page.getByTestId("create-section-service").locator(".service-logo")).toHaveCount(1);
+});
+
+test("create family enter key moves to the next section, not the family", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await openCreate(page);
+  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await page.getByTestId("create-payment-phone-input").press("Enter");
+  await expect(page.locator('[data-create-section="payment"]')).toHaveCount(0);
+  await expect(page.getByTestId("family-workspace")).toHaveCount(0);
+  await backToCreateSections(page);
+  await expect(page.getByTestId("create-section-payment")).toHaveAttribute("data-state", "done");
+  await expect(page.getByTestId("create-family-submit")).toHaveCount(0);
+});
+
+test("inside Telegram the native main button drives family creation", async ({ page }) => {
+  await page.route("https://telegram.org/js/telegram-web-app.js*", (route) => route.abort());
+  // The fake initData switches the app into Telegram mode; API calls keep using dev auth.
+  await page.route(`${apiUrl}/**`, (route) => {
+    const headers = { ...route.request().headers() };
+    delete headers["x-telegram-init-data"];
+    route.continue({
+      headers: {
+        ...headers,
+        "X-Dev-Telegram-User-Id": "200001",
+        "X-Dev-Telegram-Username": "demo_owner",
+        "X-Dev-Telegram-First-Name": "Demo Owner"
+      }
+    });
+  });
+  await page.addInitScript(() => {
+    const noop = () => {};
+    const state = { text: "", visible: false, enabled: true, handlers: [] as (() => void)[] };
+    (window as unknown as { __mainButton: typeof state }).__mainButton = state;
+    (window as unknown as { Telegram: unknown }).Telegram = {
+      WebApp: {
+        initData: "query_id=e2e",
+        initDataUnsafe: {},
+        colorScheme: "dark",
+        version: "8.0",
+        viewportHeight: 844,
+        viewportStableHeight: 844,
+        themeParams: {},
+        isVersionAtLeast: () => true,
+        ready: noop,
+        expand: noop,
+        setHeaderColor: noop,
+        setBackgroundColor: noop,
+        setBottomBarColor: noop,
+        disableVerticalSwipes: noop,
+        enableVerticalSwipes: noop,
+        enableClosingConfirmation: noop,
+        disableClosingConfirmation: noop,
+        onEvent: noop,
+        offEvent: noop,
+        BackButton: { show: noop, hide: noop, onClick: noop, offClick: noop },
+        MainButton: {
+          setText: (text: string) => { state.text = text; },
+          setParams: noop,
+          show: () => { state.visible = true; },
+          hide: () => { state.visible = false; },
+          enable: () => { state.enabled = true; },
+          disable: () => { state.enabled = false; },
+          showProgress: noop,
+          hideProgress: noop,
+          onClick: (fn: () => void) => { state.handlers.push(fn); },
+          offClick: (fn: () => void) => { state.handlers = state.handlers.filter((h) => h !== fn); }
+        }
+      }
+    };
+  });
+  const mainButton = () =>
+    page.evaluate(() => {
+      const s = (window as unknown as { __mainButton: { text: string; visible: boolean; enabled: boolean; handlers: unknown[] } }).__mainButton;
+      return { text: s.text, visible: s.visible, enabled: s.enabled, handlers: s.handlers.length };
+    });
+  const pressMainButton = () =>
+    page.evaluate(() => {
+      const s = (window as unknown as { __mainButton: { handlers: (() => void)[] } }).__mainButton;
+      s.handlers.forEach((fn) => fn());
+    });
+
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await openCreate(page);
+  await expect.poll(mainButton).toEqual({ text: "Продолжить", visible: true, enabled: true, handlers: 1 });
+  await expect(page.getByTestId("create-family-continue")).toHaveCount(0);
+
+  await pressMainButton();
+  await expect(page.locator('[data-create-section="service"]')).toBeVisible();
+  await expect(page.getByTestId("create-section-done")).toHaveCount(0);
+  await expect.poll(mainButton).toMatchObject({ text: "Далее", visible: true, handlers: 1 });
+
+  for (const section of ["price", "schedule", "payment"]) {
+    await pressMainButton();
+    await expect(page.locator(`[data-create-section="${section}"]`)).toBeVisible();
+  }
+  await expect.poll(mainButton).toMatchObject({ text: "Готово", enabled: false });
+  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
+  await expect.poll(mainButton).toMatchObject({ text: "Готово", enabled: true, handlers: 1 });
+  await pressMainButton();
+
+  await expect(page.getByTestId("create-hub-status")).toContainText("Всё заполнено");
+  await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: true, handlers: 1 });
+  await pressMainButton();
+  await waitForNetworkQuiet(page);
+  await expect(page.getByTestId("family-workspace")).toHaveCount(1);
+  await expect.poll(mainButton).toMatchObject({ visible: false, handlers: 0 });
 });
 
 test("requisite phone is masked until revealed", async ({ page }) => {
@@ -473,19 +606,55 @@ test("successful mutation shows success and refreshes owner details once", async
   await expect(page.getByTestId("access-provided-button")).toBeVisible();
 });
 
-const CREATE_FIELD_STEP: Record<string, number> = {
-  "create-service-select": 0,
-  "create-period-select": 0,
-  "create-plan-name-input": 0,
-  "create-max-members-input": 1,
-  "create-total-price-input": 1,
-  "create-payment-day-input": 1,
-  "create-next-payment-date-input": 1,
-  "create-bank-select": 2,
-  "create-payment-phone-input": 2,
-  "create-description-input": 3,
-  "create-owner-rules-input": 3
+const CREATE_FIELD_SECTION: Record<string, string> = {
+  "create-plan-name-input": "service",
+  "create-max-members-input": "price",
+  "create-total-price-input": "price",
+  "create-payment-day-input": "schedule",
+  "create-next-payment-date-input": "schedule",
+  "create-payment-phone-input": "payment",
+  "create-description-input": "details",
+  "create-owner-rules-input": "details"
 };
+
+async function openCreateSection(page: Page, section: string) {
+  const pane = page.locator(`[data-create-section="${section}"]`);
+  if ((await pane.count()) > 0) {
+    return;
+  }
+  await backToCreateSections(page);
+  await page
+    .getByTestId(`create-section-${section}`)
+    .evaluate((element) => (element as HTMLElement).click());
+  await expect(pane).toBeVisible();
+}
+
+async function backToCreateSections(page: Page) {
+  const back = page.getByTestId("create-family-back");
+  if ((await back.count()) > 0) {
+    await back.evaluate((element) => (element as HTMLElement).click());
+  }
+  await expect(page.getByTestId("create-hub-status")).toBeVisible();
+}
+
+async function fillCreateField(page: Page, testId: string, value: string) {
+  await openCreateSection(page, CREATE_FIELD_SECTION[testId] ?? "service");
+  await page.getByTestId(testId).fill(value);
+}
+
+async function submitCreateFamily(page: Page) {
+  const submit = page.getByTestId("create-family-submit");
+  for (let attempt = 0; attempt < 12 && (await submit.count()) === 0; attempt += 1) {
+    const next = page.getByTestId("create-section-done");
+    const target = (await next.count()) > 0 ? next : page.getByTestId("create-family-continue");
+    await expect(target).toBeEnabled();
+    await target.evaluate((element) => (element as HTMLElement).click());
+  }
+  await expect(submit).toBeEnabled();
+  await submit.scrollIntoViewIfNeeded();
+  await submit.evaluate((element) => (element as HTMLElement).click());
+  await waitForNetworkQuiet(page);
+}
 
 async function createFamilyForOwner(page: Page) {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
@@ -526,41 +695,8 @@ function dismissNextDialog(page: Page) {
   page.once("dialog", (dialog) => void dialog.dismiss());
 }
 
-async function fillCreateField(page: Page, testId: string, value: string) {
-  await goToCreateWizardStep(page, CREATE_FIELD_STEP[testId] ?? 0);
-  await page.getByTestId(testId).fill(value);
-}
 
-async function goToCreateWizardStep(page: Page, targetStep: number) {
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    const currentStep = Number.parseInt(
-      await page.locator(".wizard-step-current .wizard-step-index").innerText(),
-      10
-    );
-    if (currentStep - 1 === targetStep) {
-      return;
-    }
-    if (currentStep - 1 < targetStep) {
-      await page
-        .getByTestId("create-family-submit")
-        .evaluate((element) => (element as HTMLElement).click());
-      await page.waitForTimeout(80);
-      continue;
-    }
-    await page
-      .getByTestId("create-family-back")
-      .evaluate((element) => (element as HTMLElement).click());
-    await page.waitForTimeout(80);
-  }
-}
 
-async function submitCreateFamily(page: Page) {
-  await goToCreateWizardStep(page, 3);
-  const submit = page.getByTestId("create-family-submit");
-  await submit.scrollIntoViewIfNeeded();
-  await submit.evaluate((element) => (element as HTMLElement).click());
-  await waitForNetworkQuiet(page);
-}
 
 async function switchDevUser(page: Page, userId: string) {
   await waitForNetworkQuiet(page);

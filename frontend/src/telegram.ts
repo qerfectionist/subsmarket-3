@@ -291,6 +291,11 @@ export function isTelegramMiniApp() {
   return Boolean(getTelegramInitData());
 }
 
+/** The native bottom button exists inside Telegram from Bot API 6.1. */
+export function canUseTelegramMainButton() {
+  return isTelegramMiniApp() && Boolean(webApp()?.MainButton) && supportsWebAppVersion("6.1");
+}
+
 export function initTelegramShell() {
   const app = webApp();
   applyTelegramTheme();

@@ -30,8 +30,8 @@ const BRAND_BY_SLUG: Record<string, ServiceBrand> = {
   qino: { color: "#6C5CE7", iconSlug: null, category: "video_streaming", monogram: "Q" },
   okko: { color: "#111111", iconSlug: null, category: "video_streaming", monogram: "O" },
   amediateka: { color: "#E31E24", iconSlug: null, category: "video_streaming", monogram: "A" },
-  "prime-video": { color: "#00A8E1", iconSlug: "prime", category: "video_streaming", monogram: "P" },
-  "disney-plus": { color: "#113CCF", iconSlug: "disneyplus", category: "video_streaming", monogram: "D+" },
+  "prime-video": { color: "#00A8E1", iconSlug: null, category: "video_streaming", monogram: "P" },
+  "disney-plus": { color: "#113CCF", iconSlug: null, category: "video_streaming", monogram: "D+" },
   crunchyroll: { color: "#F47521", iconSlug: "crunchyroll", category: "video_streaming", monogram: "CR" },
   "ilook-tv": { color: "#2563EB", iconSlug: null, category: "video_streaming", monogram: "iL" },
 

@@ -58,55 +58,58 @@ async function openCreate(page: Page) {
   await expect(page.getByTestId("create-family-form")).toBeVisible();
 }
 
-const CREATE_FIELD_STEP: Record<string, number> = {
-  "create-service-select": 0,
-  "create-period-select": 0,
-  "create-plan-name-input": 0,
-  "create-max-members-input": 1,
-  "create-total-price-input": 1,
-  "create-payment-day-input": 1,
-  "create-next-payment-date-input": 1,
-  "create-bank-select": 2,
-  "create-payment-phone-input": 2,
-  "create-description-input": 3,
-  "create-owner-rules-input": 3
+const CREATE_FIELD_SECTION: Record<string, string> = {
+  "create-plan-name-input": "service",
+  "create-max-members-input": "price",
+  "create-total-price-input": "price",
+  "create-payment-day-input": "schedule",
+  "create-next-payment-date-input": "schedule",
+  "create-payment-phone-input": "payment",
+  "create-description-input": "details",
+  "create-owner-rules-input": "details"
 };
 
-async function goToCreateWizardStep(page: Page, targetStep: number) {
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    const currentStep = Number.parseInt(
-      await page.locator(".wizard-step-current .wizard-step-index").innerText(),
-      10
-    );
-    if (currentStep - 1 === targetStep) {
-      return;
-    }
-    if (currentStep - 1 < targetStep) {
-      await page
-        .getByTestId("create-family-submit")
-        .evaluate((element) => (element as HTMLElement).click());
-      await page.waitForTimeout(80);
-      continue;
-    }
-    await page
-      .getByTestId("create-family-back")
-      .evaluate((element) => (element as HTMLElement).click());
-      await page.waitForTimeout(80);
+async function openCreateSection(page: Page, section: string) {
+  const pane = page.locator(`[data-create-section="${section}"]`);
+  if ((await pane.count()) > 0) {
+    return;
   }
+  await backToCreateSections(page);
+  await page
+    .getByTestId(`create-section-${section}`)
+    .evaluate((element) => (element as HTMLElement).click());
+  await expect(pane).toBeVisible();
+}
+
+async function backToCreateSections(page: Page) {
+  const back = page.getByTestId("create-family-back");
+  if ((await back.count()) > 0) {
+    await back.evaluate((element) => (element as HTMLElement).click());
+  }
+  await expect(page.getByTestId("create-hub-status")).toBeVisible();
 }
 
 async function fillCreateField(page: Page, testId: string, value: string) {
-  await goToCreateWizardStep(page, CREATE_FIELD_STEP[testId] ?? 0);
+  await openCreateSection(page, CREATE_FIELD_SECTION[testId] ?? "service");
   await page.getByTestId(testId).fill(value);
 }
 
 async function submitCreateFamily(page: Page) {
-  await goToCreateWizardStep(page, 3);
   const submit = page.getByTestId("create-family-submit");
+  for (let attempt = 0; attempt < 12 && (await submit.count()) === 0; attempt += 1) {
+    const next = page.getByTestId("create-section-done");
+    const target = (await next.count()) > 0 ? next : page.getByTestId("create-family-continue");
+    await expect(target).toBeEnabled();
+    await target.evaluate((element) => (element as HTMLElement).click());
+  }
+  await expect(submit).toBeEnabled();
   await submit.scrollIntoViewIfNeeded();
   await submit.evaluate((element) => (element as HTMLElement).click());
   await waitForNetworkQuiet(page);
 }
+
+
+
 
 async function switchDevUser(page: Page, userId: string) {
   await waitForNetworkQuiet(page);

@@ -18,7 +18,8 @@ import { countDevCards, DEV_CARDS_UPDATE_EVENT } from "./utils/devCardsStore";
 import { DEV_OPEN_CONSTRUCTOR_EVENT } from "./components/DevControls";
 import { AsyncContent } from "./components/AsyncContent";
 import { ViewportMetrics } from "./components/ViewportMetrics";
-import { formatError, futureDateISO, normalizeText } from "./format";
+import { formatError, normalizeText } from "./format";
+import { nextPaymentDateFor } from "./components/families/createFamilyForm";
 import { useCreateFamily, useRefreshTelegramProfile } from "./hooks/useApi";
 import { useAppQueries } from "./hooks/useAppQueries";
 import { useTouchScrollLock } from "./hooks/useTouchScrollLock";
@@ -48,7 +49,7 @@ const emptyCreateForm: FamilyCreate = {
   max_members: 6,
   total_price_kzt: 3800,
   payment_day: 15,
-  next_payment_date: futureDateISO(30),
+  next_payment_date: nextPaymentDateFor(15),
   description: "",
   owner_rules: "",
   payment_bank: "kaspi",

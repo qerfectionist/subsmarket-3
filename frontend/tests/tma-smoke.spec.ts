@@ -156,7 +156,7 @@ test("Mini App renders market, create, my, and family details", async ({ page })
 
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
-  await expect(page.getByTestId("create-share-preview")).toBeVisible();
+  await expect(page.getByTestId("create-section-service")).toBeVisible();
   await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click({ force: true });
   await page.getByTestId("accounts-screen").getByRole("button", { name: "Назад" }).click();
   await expect(page.getByTestId("create-family-form")).toBeVisible();

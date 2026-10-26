@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import {
   hideTelegramMainButton,
@@ -46,15 +46,25 @@ export function useTelegramMainButton({
   isPending: boolean;
   disabled: boolean;
 }) {
+  // The handler changes on every render; a stable wrapper keeps the native
+  // button from being re-registered (and blinking) on each keystroke.
+  const handlerRef = useRef(onClick);
+  useLayoutEffect(() => {
+    handlerRef.current = onClick;
+  });
+  const handler = useCallback(() => handlerRef.current(), []);
+
   useEffect(() => {
-    if (!visible) {
-      hideTelegramMainButton();
-      return;
-    }
-    const cleanup = setTelegramMainButton(label, onClick, {
+    if (!visible) return;
+    return setTelegramMainButton(label, handler, {
       progress: isPending,
       disabled: disabled || isPending
     });
-    return () => { cleanup(); hideTelegramMainButton(); };
-  }, [disabled, isPending, label, onClick, visible]);
+  }, [disabled, handler, isPending, label, visible]);
+
+  // Hide only when the button goes away, not on every label change.
+  useEffect(() => {
+    if (!visible) return;
+    return () => hideTelegramMainButton();
+  }, [visible]);
 }

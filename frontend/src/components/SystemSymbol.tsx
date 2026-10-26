@@ -1,6 +1,8 @@
 import { Icon, type IconProps } from "@iconify/react";
 import addBold from "@iconify-icons/solar/add-bold";
+import minusBold from "@iconify-icons/solar/minus-bold";
 import altArrowLeftDuotone from "@iconify-icons/solar/alt-arrow-left-bold-duotone";
+import altArrowRightLinear from "@iconify-icons/solar/alt-arrow-right-linear";
 import altArrowUpDuotone from "@iconify-icons/solar/alt-arrow-up-bold-duotone";
 import arrowLeftDuotone from "@iconify-icons/solar/arrow-left-bold-duotone";
 import bellRingDuotone from "@iconify-icons/solar/bell-ring-bold-duotone";
@@ -58,6 +60,7 @@ const SYSTEM_SYMBOLS = {
   checklist: checklistDuotone,
   "clipboard.list": clipboardListDuotone,
   "chevron.backward": altArrowLeftDuotone,
+  "chevron.forward": altArrowRightLinear,
   "chevron.up": altArrowUpDuotone,
   clock: clockCircleDuotone,
   cloud: cloudDuotone,
@@ -84,6 +87,7 @@ const SYSTEM_SYMBOLS = {
   pencil: penDuotone,
   "play.rectangle": playCircleDuotone,
   plus: addBold,
+  minus: minusBold,
   "square.grid.2x2": widget2Duotone,
   "square.grid.2x2.fill": widget2Duotone,
   "round-sort-vertical": roundSortVerticalDuotone,
