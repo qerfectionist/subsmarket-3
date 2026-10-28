@@ -45,6 +45,17 @@ def test_family_catalog_keeps_subscriptions_and_tariffs_separate(db: Session) ->
         "activ-family-tariff",
     }
     assert "kcell-family-tariff" not in tariff_slugs
+    subscription_slugs = {service.slug for service in subscriptions}
+    assert "apple-one" not in subscription_slugs
+    icloud = next(
+        service for service in subscriptions if service.slug == "icloud-plus-2tb"
+    )
+    assert icloud.variant is None
+    assert icloud.service_metadata["included_services"] == [
+        "iCloud+",
+        "Apple TV",
+        "Apple Arcade",
+    ]
     assert all(service.category == "mobile_tariffs" for service in tariffs)
     assert all(service.supported_periods == ["monthly"] for service in tariffs)
 

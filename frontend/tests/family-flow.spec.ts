@@ -124,7 +124,7 @@ test("owner and member complete the first payment family flow", async ({ page })
   await expect(page.getByText("Заявка отправлена", { exact: true }).first()).toBeVisible();
   await expect(page.getByTestId("owner-chat-button")).toHaveCount(0);
   await openNav(page, 3);
-  await expect(page.getByTestId("request-card")).toContainText("Apple One");
+  await expect(page.getByTestId("request-card")).toContainText("Google One");
   await expect(page.getByTestId("request-owner-chat-button")).toHaveCount(0);
 
   await switchDevUser(page, "200001");

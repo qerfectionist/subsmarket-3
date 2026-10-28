@@ -20,7 +20,6 @@ export const DEFAULT_FAMILY_VARIANTS: Record<string, string> = {
   "disney+": "Premium",
   "disney plus": "Premium",
   "disney-plus": "Premium",
-  "icloud+": "2 ТБ",
   duolingo: "Super",
   mybook: "Премиум",
   "microsoft 365": "Family",

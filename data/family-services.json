@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-15",
+  "updated_at": "2026-10-28",
   "currency": "KZT",
   "engine": "family",
   "source": "user_market_research",
@@ -189,15 +189,20 @@
       "variant": null,
       "category": "cloud_productivity",
       "subcategory": "bundle",
-      "status": "pending_verification"
+      "status": "disabled"
     },
     {
       "id": "icloud-plus-2tb",
       "name": "iCloud+",
-      "variant": "2 ТБ",
+      "variant": null,
       "category": "cloud_productivity",
       "subcategory": "cloud_storage",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "included_services": [
+        "iCloud+",
+        "Apple TV",
+        "Apple Arcade"
+      ]
     },
     {
       "id": "google-one",
