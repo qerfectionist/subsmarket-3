@@ -56,6 +56,15 @@ def test_family_catalog_keeps_subscriptions_and_tariffs_separate(db: Session) ->
         "Apple TV",
         "Apple Arcade",
     ]
+    assert icloud.service_metadata["join_contact"] == "apple_id"
+    seats = {service.slug: service.max_members for service in subscriptions}
+    assert seats["yandex-plus"] == 4
+    assert seats["ivi"] == 5
+    assert seats["youtube-premium"] == 6
+    assert "disney-plus" not in seats
+    activ = next(s for s in tariffs if s.slug == "activ-family-tariff")
+    assert activ.max_members == 7
+    assert "Семейный 5+" in activ.service_metadata["tariff_hints"]
     assert all(service.category == "mobile_tariffs" for service in tariffs)
     assert all(service.supported_periods == ["monthly"] for service in tariffs)
 

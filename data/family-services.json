@@ -11,7 +11,14 @@
       "variant": "Premium",
       "category": "video_streaming",
       "subcategory": "international",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 5,
+      "sharing": "shared_account",
+      "join_contact": "none",
+      "rules": [
+        "Работает в одной домашней сети",
+        "Одновременно смотрят до 4 человек"
+      ]
     },
     {
       "id": "youtube-premium",
@@ -22,15 +29,28 @@
       "status": "pending_verification",
       "included_services": [
         "YouTube Music"
+      ],
+      "max_members": 6,
+      "join_contact": "gmail",
+      "rules": [
+        "Сменить семью Google можно раз в 12 месяцев",
+        "Все участники указаны с одним адресом",
+        "Участник из той же страны, что и владелец"
       ]
     },
     {
       "id": "hbo-max",
       "name": "HBO Max",
-      "variant": null,
+      "variant": "Премиум",
       "category": "video_streaming",
       "subcategory": "international",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 4,
+      "sharing": "shared_account",
+      "join_contact": "none",
+      "rules": [
+        "Одновременно смотрят до 4 человек"
+      ]
     },
     {
       "id": "yandex-plus",
@@ -43,6 +63,12 @@
         "Кинопоиск",
         "Яндекс Музыка",
         "Яндекс Книги"
+      ],
+      "max_members": 4,
+      "join_contact": "none",
+      "rules": [
+        "Владелец пришлёт ссылку-приглашение",
+        "Если у вас уже есть Плюс, он заменится семейным, оплаченные дни вернутся после выхода"
       ]
     },
     {
@@ -54,6 +80,11 @@
       "status": "pending_verification",
       "aliases": [
         "Ivi"
+      ],
+      "max_members": 5,
+      "join_contact": "phone",
+      "rules": [
+        "Приглашение действует 24 часа"
       ]
     },
     {
@@ -62,7 +93,10 @@
       "variant": null,
       "category": "video_streaming",
       "subcategory": "cis",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 5,
+      "sharing": "shared_account",
+      "join_contact": "none"
     },
     {
       "id": "qino",
@@ -70,7 +104,10 @@
       "variant": null,
       "category": "video_streaming",
       "subcategory": "cis",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 5,
+      "sharing": "shared_account",
+      "join_contact": "none"
     },
     {
       "id": "okko",
@@ -89,6 +126,12 @@
       "status": "pending_verification",
       "aliases": [
         "Amediateka"
+      ],
+      "max_members": 2,
+      "sharing": "shared_account",
+      "join_contact": "none",
+      "rules": [
+        "Одновременно смотрят до 2 человек"
       ]
     },
     {
@@ -97,7 +140,13 @@
       "variant": null,
       "category": "video_streaming",
       "subcategory": "international",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 3,
+      "sharing": "shared_account",
+      "join_contact": "none",
+      "rules": [
+        "Одновременно смотрят до 3 человек"
+      ]
     },
     {
       "id": "disney-plus",
@@ -105,7 +154,7 @@
       "variant": null,
       "category": "video_streaming",
       "subcategory": "international",
-      "status": "pending_verification",
+      "status": "disabled",
       "aliases": [
         "Disney"
       ]
@@ -135,6 +184,13 @@
       "status": "pending_verification",
       "aliases": [
         "Spotify Premium"
+      ],
+      "max_members": 6,
+      "join_contact": "none",
+      "rules": [
+        "Сменить семейный план можно раз в 12 месяцев",
+        "Spotify попросит адрес владельца — его пришлют в чате семьи",
+        "Участник из той же страны, что и владелец"
       ]
     },
     {
@@ -143,7 +199,12 @@
       "variant": null,
       "category": "music_audio",
       "subcategory": "music",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 6,
+      "join_contact": "apple_id",
+      "rules": [
+        "Перейти в другую семью Apple можно раз в год"
+      ]
     },
     {
       "id": "duolingo-super",
@@ -151,7 +212,12 @@
       "variant": "Super",
       "category": "education_books",
       "subcategory": "education",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 6,
+      "join_contact": "none",
+      "rules": [
+        "Владелец пришлёт ссылку-приглашение"
+      ]
     },
     {
       "id": "duolingo-max",
@@ -159,7 +225,12 @@
       "variant": "Max",
       "category": "education_books",
       "subcategory": "education",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 6,
+      "join_contact": "none",
+      "rules": [
+        "Владелец пришлёт ссылку-приглашение"
+      ]
     },
     {
       "id": "mybook-premium",
@@ -181,6 +252,11 @@
         "Excel",
         "PowerPoint",
         "OneDrive"
+      ],
+      "max_members": 6,
+      "join_contact": "email",
+      "rules": [
+        "Приглашение нужно принять за 48 часов"
       ]
     },
     {
@@ -202,6 +278,11 @@
         "iCloud+",
         "Apple TV",
         "Apple Arcade"
+      ],
+      "max_members": 6,
+      "join_contact": "apple_id",
+      "rules": [
+        "Перейти в другую семью Apple можно раз в год"
       ]
     },
     {
@@ -210,7 +291,14 @@
       "variant": null,
       "category": "cloud_productivity",
       "subcategory": "cloud_storage",
-      "status": "pending_verification"
+      "status": "pending_verification",
+      "max_members": 6,
+      "join_contact": "gmail",
+      "rules": [
+        "Сменить семью Google можно раз в 12 месяцев",
+        "Нужен личный Gmail, не рабочий",
+        "Участник из той же страны, что и владелец"
+      ]
     },
     {
       "id": "kaspersky-standard",
@@ -255,6 +343,15 @@
       "max_members": 6,
       "supported_periods": [
         "monthly"
+      ],
+      "join_contact": "phone",
+      "rules": [
+        "Только номера Beeline"
+      ],
+      "tariff_hints": [
+        "Премиум Семья х2",
+        "Премиум Семья х4",
+        "Премиум Семья х6"
       ]
     },
     {
@@ -265,9 +362,20 @@
       "category": "mobile_tariffs",
       "subcategory": "mobile_operator",
       "status": "pending_verification",
-      "max_members": 6,
+      "max_members": 7,
       "supported_periods": [
         "monthly"
+      ],
+      "join_contact": "phone",
+      "rules": [
+        "Один номер может быть только в одной семье"
+      ],
+      "tariff_hints": [
+        "Семейный 2+",
+        "Семейный 5+",
+        "Семейный + 3 SIM",
+        "Семейный + 4 SIM",
+        "Семейный + 6 SIM"
       ]
     },
     {
@@ -278,9 +386,15 @@
       "category": "mobile_tariffs",
       "subcategory": "mobile_operator",
       "status": "pending_verification",
-      "max_members": 6,
+      "max_members": 7,
       "supported_periods": [
         "monthly"
+      ],
+      "join_contact": "phone",
+      "tariff_hints": [
+        "Моя семья 3",
+        "Моя семья 5",
+        "Моя семья 7"
       ]
     },
     {
@@ -304,9 +418,18 @@
       "category": "mobile_tariffs",
       "subcategory": "mobile_operator",
       "status": "pending_verification",
-      "max_members": 6,
+      "max_members": 7,
       "supported_periods": [
         "monthly"
+      ],
+      "join_contact": "phone",
+      "rules": [
+        "Номер другого оператора можно перенести в activ, сохранив номер"
+      ],
+      "tariff_hints": [
+        "Семейный 3",
+        "Семейный 5+",
+        "Семейный 7+"
       ]
     }
   ]
