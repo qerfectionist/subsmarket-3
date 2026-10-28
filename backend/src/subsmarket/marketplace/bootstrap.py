@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import utcnow
+from subsmarket.marketplace.account_catalog import ACCOUNT_CATALOG
 from subsmarket.marketplace.account_models import MarketplaceAccountService
 from subsmarket.marketplace.models import MarketplaceOperator
 from subsmarket.marketplace.operator_catalog import OPERATOR_FIELDS, OPERATOR_RULES
@@ -30,16 +31,10 @@ def ensure_development_marketplace_catalog(db: Session) -> int:
 
 def _ensure_account_services(db: Session) -> int:
     existing = set(db.scalars(select(MarketplaceAccountService.slug)).all())
-    services = (
-        ("chatgpt", "ChatGPT"),
-        ("gemini", "Gemini"),
-        ("grok", "Grok"),
-        ("canva", "Canva"),
-    )
     missing = [
-        MarketplaceAccountService(slug=slug, name=name, is_active=True)
-        for slug, name in services
-        if slug not in existing
+        MarketplaceAccountService(slug=entry.slug, name=entry.name, is_active=True)
+        for entry in ACCOUNT_CATALOG
+        if entry.slug not in existing
     ]
     if missing:
         db.add_all(missing)

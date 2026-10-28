@@ -772,11 +772,21 @@ API доступен в production при `MARKETPLACE_ACCOUNTS_ENABLED=true`. �
 действует 30 дней. Платформа не хранит реквизиты аккаунта и не подтверждает
 оплату или передачу доступа.
 
-- `GET /api/marketplace/accounts/services` - активные сервисы;
+- `GET /api/marketplace/accounts/services` - сервисы из каталога официальных тарифов
+  с `plans[]` (`code`, `name`, `full_name`, `periods` в месяцах), `deliveries[]`
+  и `keywords[]` для поиска;
 - `GET /api/marketplace/accounts/listings` - cursor-каталог с фильтром и сортировкой;
 - `GET /api/marketplace/accounts/listings/me` - объявления продавца;
-- `POST /api/marketplace/accounts/listings` - опубликовать объявление;
-- `PATCH /api/marketplace/accounts/listings/{id}` - изменить название, цену или описание;
+- `POST /api/marketplace/accounts/listings` - опубликовать объявление:
+  `service_slug`, `plan_code`, `period_months`, `delivery`
+  (`own_account|ready_account`), `price_kzt`. Свободного текста нет: название
+  собирается на сервере, например «ChatGPT Plus · 1 месяц, на аккаунт
+  покупателя». Ошибки: `ACCOUNT_PLAN_UNAVAILABLE`, `ACCOUNT_PERIOD_UNAVAILABLE`,
+  `ACCOUNT_DELIVERY_UNAVAILABLE`;
+- `PATCH /api/marketplace/accounts/listings/{id}` - изменить тариф, срок, способ
+  передачи или цену. У объявлений без тарифа (созданных до каталога) тариф
+  указывают целиком, иначе `ACCOUNT_PLAN_REQUIRED`; старое описание при этом
+  удаляется;
 - `POST /api/marketplace/accounts/listings/{id}/pause|resume|renew|archive` - управление публикацией;
 - `POST /api/marketplace/accounts/listings/{id}/requests` - заявка покупателя;
 - `GET /api/marketplace/accounts/requests/me?role=buyer|seller` - заявки пользователя;

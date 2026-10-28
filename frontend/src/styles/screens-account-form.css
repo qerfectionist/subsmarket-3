@@ -1,0 +1,214 @@
+/* Sell an account: service search and ribbon, delivery, plan row and sheet. */
+.account-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--app-radius-md);
+  background: var(--app-secondary-bg);
+  color: var(--app-muted);
+}
+
+.gb-form .account-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text);
+  font: inherit;
+  box-shadow: none;
+  outline: none;
+}
+
+.account-service-ribbon {
+  display: flex;
+  gap: 8px;
+  margin: 0 -16px;
+  padding: 8px 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 16px;
+}
+
+.account-service-ribbon::-webkit-scrollbar {
+  display: none;
+}
+
+.gb-form .account-service-tile {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: center;
+  gap: 6px;
+  width: 84px;
+  padding: 10px 6px;
+  border: 2px solid transparent;
+  border-radius: var(--app-radius-md);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-size-label);
+  line-height: var(--app-leading-label);
+  text-align: center;
+  box-shadow: none;
+  scroll-snap-align: start;
+}
+
+.gb-form .account-service-tile[aria-checked="true"] {
+  border-color: var(--app-text);
+  font-weight: var(--app-weight-semibold);
+}
+
+.account-segmented {
+  display: flex;
+  gap: var(--app-segment-gap);
+  padding: var(--app-segment-padding);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-surface);
+}
+
+.gb-form .account-segmented > button,
+.account-sheet .account-segmented > button {
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: transparent;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: var(--app-size-caption);
+  box-shadow: none;
+}
+
+.gb-form .account-segmented > button[aria-checked="true"],
+.account-sheet .account-segmented > button[aria-checked="true"] {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font-weight: var(--app-weight-semibold);
+}
+
+.gb-form .account-plan-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--app-radius-md);
+  background: var(--app-secondary-bg);
+  color: var(--app-muted);
+  font: inherit;
+  text-align: left;
+  box-shadow: none;
+}
+
+.account-plan-row-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.account-plan-row-copy strong {
+  color: var(--app-text);
+}
+
+.account-plan-row-copy span {
+  font-size: var(--app-size-caption);
+}
+
+.account-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(0 0 0 / 45%);
+}
+
+.account-sheet {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  border-radius: var(--app-radius-lg) var(--app-radius-lg) 0 0;
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+.account-sheet h2 {
+  margin: 0;
+  font-size: var(--app-size-section);
+}
+
+.account-sheet p {
+  margin: 0;
+}
+
+.account-sheet-handle {
+  justify-self: center;
+  width: 36px;
+  height: 5px;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-border);
+}
+
+.account-plan-list {
+  display: grid;
+  overflow: hidden;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface);
+}
+
+.account-plan-list > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--app-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--app-text);
+  font: inherit;
+  text-align: left;
+  box-shadow: none;
+}
+
+.account-plan-list > button:last-child {
+  border-bottom: 0;
+}
+
+.account-plan-list > button span {
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+}
+
+.account-plan-list > button[aria-checked="true"] {
+  background: var(--app-surface-inset);
+}
+
+.account-plan-list > button[aria-checked="true"] strong::before {
+  content: "✓ ";
+}
+
+.gb-detail-meta-row {
+  flex-wrap: wrap;
+}
+
+.account-form .gb-preview-copy strong {
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+}

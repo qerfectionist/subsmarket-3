@@ -11,6 +11,12 @@ from sqlalchemy.orm import Session, joinedload
 from subsmarket.core.config import settings
 from subsmarket.core.database import utcnow
 from subsmarket.identity.models import User
+from subsmarket.marketplace.account_catalog import (
+    ACCOUNT_CATALOG,
+    catalog_service,
+    find_plan,
+    plan_full_name,
+)
 from subsmarket.marketplace.account_models import (
     MarketplaceAccountListing,
     MarketplaceAccountRequest,
@@ -18,8 +24,10 @@ from subsmarket.marketplace.account_models import (
 )
 from subsmarket.marketplace.account_schemas import (
     AccountListingOut,
+    AccountPlanOut,
     AccountRequestOut,
     AccountServiceOut,
+    AccountServiceRef,
 )
 from subsmarket.marketplace.owners import to_marketplace_listing_owner
 from subsmarket.marketplace.pagination import (
@@ -41,7 +49,34 @@ def list_active_account_services(db: Session) -> list[AccountServiceOut]:
         .where(MarketplaceAccountService.is_active.is_(True))
         .order_by(MarketplaceAccountService.name.asc())
     ).all()
-    return [AccountServiceOut.model_validate(row) for row in rows]
+    # Only services with official plans can take new listings; catalog order.
+    order = {entry.slug: index for index, entry in enumerate(ACCOUNT_CATALOG)}
+    rows = sorted(
+        (row for row in rows if row.slug in order), key=lambda row: order[row.slug]
+    )
+    return [to_account_service_out(row) for row in rows]
+
+
+def to_account_service_out(service: MarketplaceAccountService) -> AccountServiceOut:
+    entry = catalog_service(service.slug)
+    if entry is None:
+        return AccountServiceOut(id=service.id, slug=service.slug, name=service.name)
+    return AccountServiceOut(
+        id=service.id,
+        slug=service.slug,
+        name=service.name,
+        plans=[
+            AccountPlanOut(
+                code=plan.code,
+                name=plan.name,
+                full_name=plan_full_name(service.name, plan),
+                periods=list(plan.periods),
+            )
+            for plan in entry.plans
+        ],
+        deliveries=list(entry.deliveries),
+        keywords=list(entry.keywords),
+    )
 
 
 def get_account_listing_view(
@@ -210,11 +245,15 @@ def to_account_listing_out(
         )
     return AccountListingOut(
         id=listing.id,
-        service=AccountServiceOut.model_validate(listing.service),
+        service=AccountServiceRef.model_validate(listing.service),
         owner=to_marketplace_listing_owner(listing.seller),
         title=listing.title,
         price_kzt=listing.price_kzt,
         description=listing.description,
+        plan_code=listing.plan_code,
+        plan_name=_plan_name(listing),
+        period_months=listing.period_months,
+        delivery=listing.delivery,
         status=listing.status,
         is_owner=listing.seller_user_id == user_id,
         can_renew=can_renew,
@@ -224,6 +263,13 @@ def to_account_listing_out(
         created_at=listing.created_at,
         updated_at=listing.updated_at,
     )
+
+
+def _plan_name(listing: MarketplaceAccountListing) -> str | None:
+    if listing.plan_code is None:
+        return None
+    plan = find_plan(listing.service.slug, listing.plan_code)
+    return plan_full_name(listing.service.name, plan) if plan else None
 
 
 def to_account_request_out(
@@ -242,8 +288,8 @@ def to_account_request_out(
     telegram_draft = None
     if is_seller and username and request.status == "accepted":
         telegram_draft = (
-            "Здравствуйте! Вы оставили заявку на покупку "
-            f"{request.title_snapshot} в SubsMarket."
+            "Здравствуйте! Вы оставили заявку в SubsMarket: "
+            f"«{request.title_snapshot}»."
         )
     reminder_available_at = None
     can_remind = False
@@ -364,4 +410,5 @@ __all__ = [
     "list_my_account_requests_page",
     "to_account_listing_out",
     "to_account_request_out",
+    "to_account_service_out",
 ]

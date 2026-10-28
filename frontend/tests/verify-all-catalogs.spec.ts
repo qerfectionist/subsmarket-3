@@ -326,9 +326,10 @@ test("verify category filter on accounts catalog: shows Все, Видео, AI, 
     },
     data: {
       service_slug: "chatgpt",
-      title: "ChatGPT Plus на месяц",
-      price_kzt: 3990,
-      description: "AI аккаунт"
+      plan_code: "plus",
+      period_months: 1,
+      delivery: "own_account",
+      price_kzt: 3990
     }
   });
 

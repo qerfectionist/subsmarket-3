@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AsyncContent } from "../components/AsyncContent";
 import { SystemSymbol } from "../components/SystemSymbol";
 import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
-import { formatError, normalizeText } from "../format";
+import { formatError } from "../format";
 import {
   useAccountListing,
   useAccountListings,
@@ -29,14 +29,16 @@ import {
   AccountsMyListingsView,
   type AccountCategoryFilter
 } from "../components/marketplace";
+import { findPlan, selectionForService } from "../components/marketplace/accountPlans";
 
 type ScreenMode = "catalog" | "detail" | "create" | "mine";
 
 const EMPTY_FORM: AccountListingCreate = {
   service_slug: "chatgpt",
-  title: "",
-  price_kzt: 3990,
-  description: null
+  plan_code: "plus",
+  period_months: 1,
+  delivery: "own_account",
+  price_kzt: 3990
 };
 
 const screenTitle = (mode: ScreenMode) =>
@@ -114,28 +116,35 @@ export function AccountsScreen({
 
   function startCreate() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM, service_slug: services[0]?.slug ?? "chatgpt" });
+    setForm(services[0] ? selectionForService(EMPTY_FORM, services[0]) : EMPTY_FORM);
     setMode("create");
   }
 
   function startEdit(listing: AccountListing) {
     setEditingId(listing.id);
-    setForm({
-      service_slug: listing.service.slug,
-      title: listing.title,
-      price_kzt: listing.price_kzt,
-      description: listing.description ?? null
-    });
+    const service = services.find((item) => item.slug === listing.service.slug);
+    const base: AccountListingCreate = { ...EMPTY_FORM, price_kzt: listing.price_kzt };
+    // Listings made before the catalog have no plan: the seller picks one now.
+    const known = service && findPlan(service, listing.plan_code) && listing.period_months && listing.delivery;
+    setForm(
+      known
+        ? {
+            ...base,
+            service_slug: listing.service.slug,
+            plan_code: listing.plan_code ?? "",
+            period_months: listing.period_months ?? 1,
+            delivery: listing.delivery ?? "own_account"
+          }
+        : service
+          ? selectionForService(base, service)
+          : { ...base, service_slug: listing.service.slug }
+    );
     setMode("create");
   }
 
   async function submitListing(event: React.FormEvent) {
     event.preventDefault();
-    const payload: AccountListingCreate = {
-      ...form,
-      title: form.title.trim(),
-      description: normalizeText(form.description)
-    };
+    const payload: AccountListingCreate = { ...form };
     await run(
       editingId ? "account-update" : "account-create",
       async () => {
@@ -143,9 +152,10 @@ export function AccountsScreen({
           const updated = await updateListing.mutateAsync({
             id: editingId,
             payload: {
-              title: payload.title,
-              price_kzt: payload.price_kzt,
-              description: payload.description
+              plan_code: payload.plan_code,
+              period_months: payload.period_months,
+              delivery: payload.delivery,
+              price_kzt: payload.price_kzt
             }
           });
           setSelectedId(updated.id);

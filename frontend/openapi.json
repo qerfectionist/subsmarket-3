@@ -11353,39 +11353,45 @@
             "pattern": "^[a-z0-9-]+$",
             "title": "Service Slug"
           },
-          "title": {
+          "plan_code": {
             "type": "string",
-            "maxLength": 100,
-            "minLength": 2,
-            "title": "Title"
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "title": "Plan Code"
+          },
+          "period_months": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Period Months"
+          },
+          "delivery": {
+            "type": "string",
+            "enum": [
+              "own_account",
+              "ready_account"
+            ],
+            "title": "Delivery"
           },
           "price_kzt": {
             "type": "integer",
             "maximum": 10000000.0,
             "minimum": 1.0,
             "title": "Price Kzt"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 500
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "service_slug",
-          "title",
+          "plan_code",
+          "period_months",
+          "delivery",
           "price_kzt"
         ],
-        "title": "AccountListingCreate"
+        "title": "AccountListingCreate",
+        "description": "No free text: the title is built from the plan the seller picks."
       },
       "AccountListingOut": {
         "properties": {
@@ -11395,7 +11401,7 @@
             "title": "Id"
           },
           "service": {
-            "$ref": "#/components/schemas/AccountServiceOut"
+            "$ref": "#/components/schemas/AccountServiceRef"
           },
           "owner": {
             "$ref": "#/components/schemas/MarketplaceListingOwner"
@@ -11418,6 +11424,54 @@
               }
             ],
             "title": "Description"
+          },
+          "plan_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Code"
+          },
+          "plan_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Name"
+          },
+          "period_months": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Months"
+          },
+          "delivery": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "own_account",
+                  "ready_account"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery"
           },
           "status": {
             "type": "string",
@@ -11516,18 +11570,47 @@
       },
       "AccountListingUpdate": {
         "properties": {
-          "title": {
+          "plan_code": {
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 100,
-                "minLength": 2
+                "maxLength": 40,
+                "minLength": 1,
+                "pattern": "^[a-z0-9-]+$"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Title"
+            "title": "Plan Code"
+          },
+          "period_months": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 12.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Months"
+          },
+          "delivery": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "own_account",
+                  "ready_account"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery"
           },
           "price_kzt": {
             "anyOf": [
@@ -11541,23 +11624,42 @@
               }
             ],
             "title": "Price Kzt"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 500
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "title": "AccountListingUpdate"
+      },
+      "AccountPlanOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "periods": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Periods"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "full_name",
+          "periods"
+        ],
+        "title": "AccountPlanOut"
       },
       "AccountRequestAction": {
         "properties": {
@@ -11827,6 +11929,31 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/AccountPlanOut"
+            },
+            "type": "array",
+            "title": "Plans"
+          },
+          "deliveries": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "own_account",
+                "ready_account"
+              ]
+            },
+            "type": "array",
+            "title": "Deliveries"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Keywords"
           }
         },
         "type": "object",
@@ -11836,6 +11963,30 @@
           "name"
         ],
         "title": "AccountServiceOut"
+      },
+      "AccountServiceRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name"
+        ],
+        "title": "AccountServiceRef"
       },
       "CatalogImportResult": {
         "properties": {

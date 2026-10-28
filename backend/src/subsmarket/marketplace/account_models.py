@@ -50,6 +50,14 @@ class MarketplaceAccountListing(Base):
             "description is null or length(description) <= 500",
             name="marketplace_account_listing_description_length_ck",
         ),
+        CheckConstraint(
+            "period_months is null or period_months in (1, 3, 6, 12)",
+            name="marketplace_account_listing_period_ck",
+        ),
+        CheckConstraint(
+            "delivery is null or delivery in ('own_account', 'ready_account')",
+            name="marketplace_account_listing_delivery_ck",
+        ),
         Index(
             "marketplace_account_listing_catalog_idx",
             "status",
@@ -76,6 +84,10 @@ class MarketplaceAccountListing(Base):
     title: Mapped[str] = mapped_column(Text)
     price_kzt: Mapped[int] = mapped_column(Integer)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Plan from account_catalog; null only on listings made before the catalog.
+    plan_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    period_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    delivery: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(Text, default="active")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     published_at: Mapped[datetime] = mapped_column(

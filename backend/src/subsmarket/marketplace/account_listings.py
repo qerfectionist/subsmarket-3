@@ -11,6 +11,11 @@ from subsmarket.core.config import settings
 from subsmarket.core.database import utcnow
 from subsmarket.core.idempotency import claim_idempotency, complete_idempotency
 from subsmarket.identity.models import User
+from subsmarket.marketplace.account_catalog import (
+    catalog_service,
+    find_plan,
+    listing_title,
+)
 from subsmarket.marketplace.account_models import (
     MarketplaceAccountListing,
     MarketplaceAccountRequest,
@@ -45,13 +50,17 @@ def create_account_listing(
     if claim.is_replay:
         return to_account_listing_out(_get_listing(db, claim.resource_id), user.id)
     service = _get_active_service(db, data.service_slug)
+    title = _plan_title(service, data.plan_code, data.period_months, data.delivery)
     now = utcnow()
     listing = MarketplaceAccountListing(
         seller_user_id=user.id,
         service_id=service.id,
-        title=_normalize_title(data.title),
+        title=title,
         price_kzt=data.price_kzt,
-        description=_normalize_optional(data.description),
+        description=None,
+        plan_code=data.plan_code,
+        period_months=data.period_months,
+        delivery=data.delivery,
         status="active",
         expires_at=now + timedelta(days=settings.marketplace_account_listing_days),
         published_at=now,
@@ -88,16 +97,27 @@ def update_account_listing(
     listing = _get_owned_listing_for_update(db, user.id, listing_id)
     if listing.status not in {"active", "paused", "expired"}:
         raise HTTPException(status_code=409, detail="ACCOUNT_LISTING_NOT_EDITABLE")
-    if "title" in data.model_fields_set:
-        if data.title is None:
-            raise HTTPException(status_code=422, detail="ACCOUNT_TITLE_REQUIRED")
-        listing.title = _normalize_title(data.title)
+    plan_fields = {"plan_code", "period_months", "delivery"} & data.model_fields_set
+    if plan_fields:
+        plan_code = data.plan_code if "plan_code" in plan_fields else listing.plan_code
+        months = (
+            data.period_months
+            if "period_months" in plan_fields
+            else listing.period_months
+        )
+        delivery = data.delivery if "delivery" in plan_fields else listing.delivery
+        if plan_code is None or months is None or delivery is None:
+            raise HTTPException(status_code=422, detail="ACCOUNT_PLAN_REQUIRED")
+        listing.title = _plan_title(listing.service, plan_code, months, delivery)
+        listing.plan_code = plan_code
+        listing.period_months = months
+        listing.delivery = delivery
+        # Listings from before the catalog lose their free text with the new plan.
+        listing.description = None
     if "price_kzt" in data.model_fields_set:
         if data.price_kzt is None:
             raise HTTPException(status_code=422, detail="ACCOUNT_PRICE_REQUIRED")
         listing.price_kzt = data.price_kzt
-    if "description" in data.model_fields_set:
-        listing.description = _normalize_optional(data.description)
     listing.updated_at = utcnow()
     complete_idempotency(claim, resource_type="account_listing", resource_id=listing.id)
     db.flush()
@@ -271,18 +291,18 @@ def _get_active_service(db: Session, slug: str) -> MarketplaceAccountService:
     return service
 
 
-def _normalize_title(value: str) -> str:
-    normalized = " ".join(value.split())
-    if len(normalized) < 2:
-        raise HTTPException(status_code=422, detail="ACCOUNT_TITLE_REQUIRED")
-    return normalized
-
-
-def _normalize_optional(value: str | None) -> str | None:
-    if value is None:
-        return None
-    normalized = value.strip()
-    return normalized or None
+def _plan_title(
+    service: MarketplaceAccountService, plan_code: str, months: int, delivery: str
+) -> str:
+    entry = catalog_service(service.slug)
+    plan = find_plan(service.slug, plan_code)
+    if entry is None or plan is None:
+        raise HTTPException(status_code=422, detail="ACCOUNT_PLAN_UNAVAILABLE")
+    if months not in plan.periods:
+        raise HTTPException(status_code=422, detail="ACCOUNT_PERIOD_UNAVAILABLE")
+    if delivery not in entry.deliveries:
+        raise HTTPException(status_code=422, detail="ACCOUNT_DELIVERY_UNAVAILABLE")
+    return listing_title(entry, plan, months, delivery)
 
 
 def _require_username(user: User) -> None:

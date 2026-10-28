@@ -14,6 +14,11 @@ from subsmarket.families.models import (
     FamilyRequestRestriction,
 )
 from subsmarket.identity.models import User
+from subsmarket.marketplace.account_catalog import (
+    catalog_service,
+    find_plan,
+    listing_title,
+)
 from subsmarket.marketplace.account_models import (
     MarketplaceAccountListing,
     MarketplaceAccountRequest,
@@ -121,9 +126,7 @@ def seed_demo_account_orders(db: Session) -> dict[str, int]:
     if not owner or not member:
         return {"orders": 0}
 
-    services = {
-        s.slug: s for s in db.scalars(select(MarketplaceAccountService)).all()
-    }
+    services = {s.slug: s for s in db.scalars(select(MarketplaceAccountService)).all()}
     gemini_svc = services.get("gemini")
     canva_svc = services.get("canva")
     chatgpt_svc = services.get("chatgpt")
@@ -143,9 +146,11 @@ def seed_demo_account_orders(db: Session) -> dict[str, int]:
             gemini_listing = MarketplaceAccountListing(
                 seller_user_id=owner.id,
                 service_id=gemini_svc.id,
-                title="Gemini Advanced на 1 месяц",
+                title=_demo_title("gemini", "ai-pro", 1, "own_account"),
                 price_kzt=1890,
-                description="Быстрая выдача логина и пароля сразу после оплаты.",
+                plan_code="ai-pro",
+                period_months=1,
+                delivery="own_account",
                 status="active",
                 expires_at=expires,
                 published_at=now - timedelta(days=2),
@@ -165,9 +170,11 @@ def seed_demo_account_orders(db: Session) -> dict[str, int]:
             canva_listing = MarketplaceAccountListing(
                 seller_user_id=owner.id,
                 service_id=canva_svc.id,
-                title="Canva Pro годовая подписка",
+                title=_demo_title("canva", "pro", 12, "own_account"),
                 price_kzt=2490,
-                description="Приглашение в семью/аккаунт без смены почты.",
+                plan_code="pro",
+                period_months=12,
+                delivery="own_account",
                 status="active",
                 expires_at=expires,
                 published_at=now - timedelta(days=3),
@@ -264,3 +271,10 @@ def seed_demo_account_orders(db: Session) -> dict[str, int]:
 
     db.flush()
     return {"orders": created_count}
+
+
+def _demo_title(slug: str, plan_code: str, months: int, delivery: str) -> str:
+    service = catalog_service(slug)
+    plan = find_plan(slug, plan_code)
+    assert service is not None and plan is not None
+    return listing_title(service, plan, months, delivery)

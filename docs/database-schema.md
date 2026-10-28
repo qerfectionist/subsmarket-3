@@ -540,7 +540,10 @@ Marketplace доступен только через backend API и не име�
 
 - `marketplace_account_services` - справочник ChatGPT, Gemini, Grok, Canva;
 - `marketplace_account_listings` - продавец, сервис, название предложения,
-  цена, описание, статус и 30-дневный срок;
+  цена, описание, статус и 30-дневный срок. Миграция `20261028_0038` добавляет
+  `plan_code`, `period_months` (1, 3, 6 или 12) и `delivery`
+  (`own_account|ready_account`) и новые сервисы каталога. Название строится из
+  тарифа; `description` остаётся только у старых объявлений;
 - `marketplace_account_requests` - покупатель, снимок объявления, состояние
   контакта и результат `sold|not_sold`.
 

@@ -93,7 +93,7 @@ def create_account_request(
         payload={
             "listing_id": str(listing.id),
             "request_id": str(request.id),
-            "message": f"Новая заявка на покупку {listing.title}.",
+            "message": f"Новая заявка: «{listing.title}».",
         },
     )
     complete_idempotency(claim, resource_type="account_request", resource_id=request.id)

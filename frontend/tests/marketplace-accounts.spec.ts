@@ -20,6 +20,7 @@ test.afterEach(async ({ page }) => {
 });
 
 test("seller publishes an account offer and accepts a buyer", async ({ page }) => {
+  const title = "ChatGPT Plus · 1 месяц, на аккаунт покупателя";
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await page.getByTestId("market-buy-accounts").click({ force: true });
   await expect(page.getByTestId("accounts-screen")).toBeVisible();
@@ -33,19 +34,37 @@ test("seller publishes an account offer and accepts a buyer", async ({ page }) =
   await expect(page.locator(".gb-nav")).toHaveCount(0);
   await page.getByTestId("my-account-create-button").click({ force: true });
   await expect(page.getByTestId("accounts-screen")).toBeVisible();
-  await page.getByLabel("Что продаёте").fill("ChatGPT Plus на месяц");
+  await expect(page.getByTestId("account-listing-form")).toBeVisible();
+  // Search by a Russian word, then pick the plan from the official list.
+  await page.getByTestId("account-service-search").fill("чат");
+  await expect(page.getByTestId("account-service-chatgpt")).toBeVisible();
+  await expect(page.getByTestId("account-service-canva")).toHaveCount(0);
+  await page.getByTestId("account-service-search").fill("");
+  await page.getByTestId("account-service-claude").click({ force: true });
+  await page.getByTestId("account-plan-row").click({ force: true });
+  await page.getByTestId("account-plan-pro").click({ force: true });
+  await page.getByTestId("account-period-12").click({ force: true });
+  await page.getByTestId("account-plan-done").click({ force: true });
+  await expect(page.getByTestId("account-preview-title")).toHaveText("Claude Pro · 1 год, на аккаунт покупателя");
+  await page.getByTestId("account-service-chatgpt").click({ force: true });
+  await page.getByTestId("account-plan-row").click({ force: true });
+  await expect(page.getByTestId("account-period-12")).toHaveCount(0);
+  await page.getByTestId("account-plan-plus").click({ force: true });
+  await page.getByTestId("account-plan-done").click({ force: true });
+  await expect(page.getByTestId("account-plan-sheet")).toHaveCount(0);
   await page.getByLabel("Цена, ₸").fill("3990");
-  await page.getByLabel("Описание").fill("Детали обсудим в Telegram");
+  await expect(page.getByTestId("account-preview-title")).toHaveText(title);
   await page.getByRole("button", { name: "Опубликовать на 30 дней" }).click({
     force: true
   });
   await waitForNetworkQuiet(page);
-  await expect(page.getByText("ChatGPT Plus на месяц", { exact: true })).toBeVisible();
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
 
   await page.locator('nav[aria-label="Главная навигация"] button').nth(0).click({ force: true });
   await switchDevUser(page, "200002", "Member · @demo_member");
   await page.getByTestId("market-buy-accounts").click({ force: true });
-  await page.getByText("ChatGPT Plus на месяц", { exact: true }).click({ force: true });
+  await page.getByText(title, { exact: true }).click({ force: true });
+  await expect(page.getByTestId("account-detail-delivery")).toHaveText("Подписку оформят на ваш аккаунт");
   await page.getByTestId("account-submit-request").click({ force: true });
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Запрос отправлен продавцу", { exact: true })).toBeVisible();
@@ -73,7 +92,7 @@ test("seller publishes an account offer and accepts a buyer", async ({ page }) =
     .getByRole("button", { name: "Мои", exact: true })
     .click({ force: true });
   await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click({ force: true });
-  await expect(page.getByText("ChatGPT Plus на месяц", { exact: true })).toBeVisible();
+  await expect(page.getByText(title, { exact: true })).toBeVisible();
 });
 
 async function switchDevUser(page: Page, userId: string, optionName: string) {

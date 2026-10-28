@@ -134,6 +134,8 @@ export type MarketplaceSort =
   | "price_asc"
   | "price_desc";
 export type AccountService = Schema["AccountServiceOut"];
+export type AccountPlan = Schema["AccountPlanOut"];
+export type AccountDelivery = AccountListingCreate["delivery"];
 export type AccountListing = Schema["AccountListingOut"];
 export type AccountListingCreate = Schema["AccountListingCreate"];
 export type AccountListingUpdate = Schema["AccountListingUpdate"];

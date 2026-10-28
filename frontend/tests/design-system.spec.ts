@@ -8,7 +8,7 @@ const ownerHeaders = {
   "X-Dev-Telegram-Username": "demo_owner",
   "X-Dev-Telegram-First-Name": "Demo Owner"
 };
-const accountTitle = "ChatGPT Plus для индивидуального использования с подробным описанием";
+const accountTitle = "ChatGPT Pro 500 · 1 месяц, на аккаунт покупателя";
 test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true });
 
 test.beforeEach(async ({ page }) => {
@@ -47,7 +47,7 @@ async function seedOffers(request: APIRequestContext, slugs = ["youtube-premium"
   }
   const account = await request.post(apiUrl + "/api/marketplace/accounts/listings", {
     headers: ownerHeaders,
-    data: { service_slug: "chatgpt", title: accountTitle, price_kzt: 990, description: "Готовый аккаунт. Подробные условия продавец сообщает перед покупкой." }
+    data: { service_slug: "chatgpt", plan_code: "pro-500", period_months: 1, delivery: "own_account", price_kzt: 990 }
   });
   expect(account.ok(), await account.text()).toBeTruthy();
   const gigabytes = await request.post(apiUrl + "/api/marketplace/listings", {
@@ -307,8 +307,8 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
     await expect(page.locator(".product-scope-switch button").first()).toHaveAttribute("aria-pressed", "true");
     await page.screenshot({ path: info.outputPath("create-family-" + theme + ".png") });
     await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click();
-    await expect(page.getByLabel("Что продаёте")).toBeVisible();
-    await page.getByLabel("Что продаёте").fill(accountTitle);
+    await expect(page.getByTestId("account-plan-row")).toBeVisible();
+    await page.getByTestId("account-service-search").fill("чат");
     await assertNoOverflow(page);
     await page.screenshot({ path: info.outputPath("create-account-" + theme + ".png") });
     await nav.getByRole("button", { name: "Мои", exact: true }).click();
@@ -395,10 +395,10 @@ test("keyboard viewport keeps fields visible and hides the dock", async ({ page 
   await expect(page.locator("html")).not.toHaveAttribute("data-keyboard-open");
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
   await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click();
-  await page.getByLabel("Описание").focus();
+  await page.getByTestId("account-price-input").focus();
   await page.evaluate(() => (window as any).__setKeyboard(420));
   await expect(page.locator(".subs-dock")).toBeHidden();
-  await expect(page.getByLabel("Описание")).toBeInViewport();
+  await expect(page.getByTestId("account-price-input")).toBeInViewport();
   await page.screenshot({ path: info.outputPath("keyboard-form.png") });
   await page.evaluate(() => (window as any).__setKeyboard(844));
   await expect(page.locator(".subs-dock")).toBeVisible();

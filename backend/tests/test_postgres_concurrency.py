@@ -40,10 +40,8 @@ from subsmarket.marketplace.account_models import (
     MarketplaceAccountRequest,
     MarketplaceAccountService,
 )
-from subsmarket.marketplace.account_schemas import AccountListingCreate
 from subsmarket.marketplace.account_service import (
     accept_account_request,
-    create_account_listing,
     create_account_request,
 )
 from subsmarket.marketplace.models import (
@@ -1401,15 +1399,18 @@ def test_parallel_account_accepts_keep_listing_active() -> None:
         ]
         db.add_all([service, seller, *buyers])
         db.commit()
-        listing = create_account_listing(
-            db,
-            seller,
-            AccountListingCreate(
-                service_slug=service.slug,
-                title="Shared account access",
-                price_kzt=2500,
-            ),
+        # The race service is not in the plan catalog, so the row is made directly.
+        listing = MarketplaceAccountListing(
+            seller_user_id=seller.id,
+            service_id=service.id,
+            title="Shared account access",
+            price_kzt=2500,
+            status="active",
+            expires_at=utcnow() + timedelta(days=30),
+            published_at=utcnow(),
         )
+        db.add(listing)
+        db.flush()
         requests = [create_account_request(db, buyer, listing.id) for buyer in buyers]
         db.commit()
         request_ids = [request.id for request in requests]

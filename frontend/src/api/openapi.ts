@@ -1585,16 +1585,24 @@ export interface components {
             payment: components["schemas"]["FamilyPaymentOut"];
             payment_requisite: components["schemas"]["PaymentRequisiteOut"];
         };
-        /** AccountListingCreate */
+        /**
+         * AccountListingCreate
+         * @description No free text: the title is built from the plan the seller picks.
+         */
         AccountListingCreate: {
             /** Service Slug */
             service_slug: string;
-            /** Title */
-            title: string;
+            /** Plan Code */
+            plan_code: string;
+            /** Period Months */
+            period_months: number;
+            /**
+             * Delivery
+             * @enum {string}
+             */
+            delivery: "own_account" | "ready_account";
             /** Price Kzt */
             price_kzt: number;
-            /** Description */
-            description?: string | null;
         };
         /** AccountListingOut */
         AccountListingOut: {
@@ -1603,7 +1611,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            service: components["schemas"]["AccountServiceOut"];
+            service: components["schemas"]["AccountServiceRef"];
             owner: components["schemas"]["MarketplaceListingOwner"];
             /** Title */
             title: string;
@@ -1611,6 +1619,14 @@ export interface components {
             price_kzt: number;
             /** Description */
             description?: string | null;
+            /** Plan Code */
+            plan_code?: string | null;
+            /** Plan Name */
+            plan_name?: string | null;
+            /** Period Months */
+            period_months?: number | null;
+            /** Delivery */
+            delivery?: ("own_account" | "ready_account") | null;
             /**
              * Status
              * @enum {string}
@@ -1652,12 +1668,25 @@ export interface components {
         };
         /** AccountListingUpdate */
         AccountListingUpdate: {
-            /** Title */
-            title?: string | null;
+            /** Plan Code */
+            plan_code?: string | null;
+            /** Period Months */
+            period_months?: number | null;
+            /** Delivery */
+            delivery?: ("own_account" | "ready_account") | null;
             /** Price Kzt */
             price_kzt?: number | null;
-            /** Description */
-            description?: string | null;
+        };
+        /** AccountPlanOut */
+        AccountPlanOut: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Full Name */
+            full_name: string;
+            /** Periods */
+            periods: number[];
         };
         /** AccountRequestAction */
         AccountRequestAction: {
@@ -1742,6 +1771,24 @@ export interface components {
         };
         /** AccountServiceOut */
         AccountServiceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Plans */
+            plans?: components["schemas"]["AccountPlanOut"][];
+            /** Deliveries */
+            deliveries?: ("own_account" | "ready_account")[];
+            /** Keywords */
+            keywords?: string[];
+        };
+        /** AccountServiceRef */
+        AccountServiceRef: {
             /**
              * Id
              * Format: uuid

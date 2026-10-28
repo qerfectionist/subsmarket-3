@@ -60,6 +60,16 @@ export function AccountsListingDetails({
         ) : null}
 
         <div className="gb-detail-meta-row">
+          {listing.delivery ? (
+            <div className="gb-detail-meta-item" data-testid="account-detail-delivery">
+              <SystemSymbol name={listing.delivery === "ready_account" ? "key" : "person.crop.circle"} size={17} />
+              <span>
+                {listing.delivery === "ready_account"
+                  ? "Готовый аккаунт с подпиской"
+                  : "Подписку оформят на ваш аккаунт"}
+              </span>
+            </div>
+          ) : null}
           <div className="gb-detail-meta-item">
             <SystemSymbol name="calendar" size={17} />
             <span>Объявление до {formatDate(listing.expires_at)}</span>
@@ -81,7 +91,7 @@ export function AccountsListingDetails({
             Связаться с продавцом
           </button>
           <p className="gb-safety-note">
-            После принятия запроса продавец и покупатель связываются в Telegram. Условия, оплату и передачу доступа они согласуют самостоятельно.
+            После принятия запроса продавец и покупатель связываются в Telegram. Условия, оплату и передачу доступа они согласуют самостоятельно. SubsMarket не отвечает за блокировки, сброс сессий и смену правил у сервиса.
           </p>
         </div>
       ) : (

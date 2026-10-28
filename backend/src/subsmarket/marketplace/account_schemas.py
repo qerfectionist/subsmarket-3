@@ -8,8 +8,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from subsmarket.marketplace.schemas import MarketplaceListingOwner
 
+AccountDelivery = Literal["own_account", "ready_account"]
 
-class AccountServiceOut(BaseModel):
+
+class AccountServiceRef(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
@@ -17,21 +19,40 @@ class AccountServiceOut(BaseModel):
     name: str
 
 
+class AccountPlanOut(BaseModel):
+    code: str
+    name: str
+    full_name: str
+    periods: list[int]
+
+
+class AccountServiceOut(AccountServiceRef):
+    plans: list[AccountPlanOut] = Field(default_factory=list)
+    deliveries: list[AccountDelivery] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
+
+
 class AccountListingCreate(BaseModel):
+    """No free text: the title is built from the plan the seller picks."""
+
     model_config = ConfigDict(extra="forbid")
 
     service_slug: str = Field(min_length=2, max_length=40, pattern=r"^[a-z0-9-]+$")
-    title: str = Field(min_length=2, max_length=100)
+    plan_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9-]+$")
+    period_months: int = Field(ge=1, le=12)
+    delivery: AccountDelivery
     price_kzt: int = Field(ge=1, le=10_000_000)
-    description: str | None = Field(default=None, max_length=500)
 
 
 class AccountListingUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    title: str | None = Field(default=None, min_length=2, max_length=100)
+    plan_code: str | None = Field(
+        default=None, min_length=1, max_length=40, pattern=r"^[a-z0-9-]+$"
+    )
+    period_months: int | None = Field(default=None, ge=1, le=12)
+    delivery: AccountDelivery | None = None
     price_kzt: int | None = Field(default=None, ge=1, le=10_000_000)
-    description: str | None = Field(default=None, max_length=500)
 
     @model_validator(mode="after")
     def require_change(self):
@@ -42,11 +63,15 @@ class AccountListingUpdate(BaseModel):
 
 class AccountListingOut(BaseModel):
     id: UUID
-    service: AccountServiceOut
+    service: AccountServiceRef
     owner: MarketplaceListingOwner
     title: str
     price_kzt: int
     description: str | None = None
+    plan_code: str | None = None
+    plan_name: str | None = None
+    period_months: int | None = None
+    delivery: AccountDelivery | None = None
     status: Literal["active", "paused", "expired", "archived"]
     is_owner: bool
     can_renew: bool
