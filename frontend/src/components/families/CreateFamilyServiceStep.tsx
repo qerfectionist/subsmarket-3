@@ -47,8 +47,12 @@ export function CreateFamilyServiceStep({
     (nameCounts.get(service.name) ?? 0) > 1 ? serviceTitle(service) : service.name;
 
   const searching = query.trim() !== "";
+  // Operator tariffs are one category: no chips and no sections, just the operators.
+  const singleCategory = chips.length <= 2;
   let sections: ServiceSection[];
-  if (searching) {
+  if (singleCategory && !searching) {
+    sections = [{ id: "single", title: null, services: [...services].sort(byPopularity) }];
+  } else if (searching) {
     const found = services.filter((service) => matchesServiceQuery(service, query)).sort(byPopularity);
     sections = [{ id: "search", title: null, services: found }];
   } else if (activeChip.id !== "all") {
@@ -77,22 +81,24 @@ export function CreateFamilyServiceStep({
 
   return (
     <div className="create-step-body" data-create-step="service">
-      <Input
-        type="search"
-        aria-label="Найти сервис"
-        placeholder="Найти сервис"
-        data-testid="create-service-search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        // Enter in the search box only closes the keyboard, it does not move on.
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            event.currentTarget.blur();
-          }
-        }}
-      />
-      {searching || services.length === 0 ? null : (
+      {singleCategory ? null : (
+        <Input
+          type="search"
+          aria-label="Найти сервис"
+          placeholder="Найти сервис"
+          data-testid="create-service-search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          // Enter in the search box only closes the keyboard, it does not move on.
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+          }}
+        />
+      )}
+      {searching || singleCategory ? null : (
         <div className="create-category-chips" role="tablist" aria-label="Категории">
           {chips.map((item) => (
             <button

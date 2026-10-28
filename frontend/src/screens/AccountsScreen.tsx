@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AsyncContent } from "../components/AsyncContent";
 import { SystemSymbol } from "../components/SystemSymbol";
+import { CreateCategoryPicker, type CreateCategory } from "../components/CreateCategoryPicker";
 import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 import { formatError } from "../format";
 import {
@@ -51,10 +52,13 @@ const screenTitle = (mode: ScreenMode) =>
 
 export function AccountsScreen({
   onBack,
+  onSwitchCreate,
   initialMode = "catalog",
   initialListingId
 }: {
   onBack: () => void;
+  /** Set when opened from «Создать»: shows the category picker above the form. */
+  onSwitchCreate?: (category: CreateCategory) => void;
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -248,6 +252,10 @@ export function AccountsScreen({
           </div>
         </header>
       )}
+
+      {mode === "create" && onSwitchCreate && !editingId ? (
+        <CreateCategoryPicker value="accounts" onChange={onSwitchCreate} />
+      ) : null}
 
       {error ? <div className="inline-error" role="alert">{error}</div> : null}
       {notice ? <div className="gb-notice" role="status">{notice}</div> : null}

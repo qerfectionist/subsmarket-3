@@ -576,3 +576,57 @@
 .family-detail-join {
   margin-top: 16px;
 }
+
+/* What we create: the four market categories, always visible, the chosen one filled. */
+.create-category-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.create-category-option-subscription { --category-accent: var(--app-category-subscription, #bf5af2); }
+.create-category-option-tariff { --category-accent: var(--app-category-tariff, #64d2ff); }
+.create-category-option-accounts { --category-accent: var(--app-category-accounts, #ff9f0a); }
+.create-category-option-gigabytes { --category-accent: var(--app-category-gigabytes, #30d158); }
+
+:root.tma-light .create-category-option-subscription,
+[data-theme="light"] .create-category-option-subscription { --category-accent: var(--app-category-subscription, #af52de); }
+:root.tma-light .create-category-option-tariff,
+[data-theme="light"] .create-category-option-tariff { --category-accent: var(--app-category-tariff, #007aff); }
+:root.tma-light .create-category-option-accounts,
+[data-theme="light"] .create-category-option-accounts { --category-accent: var(--app-category-accounts, #c93400); }
+:root.tma-light .create-category-option-gigabytes,
+[data-theme="light"] .create-category-option-gigabytes { --category-accent: var(--app-category-gigabytes, #248a3d); }
+
+.create-category-picker > .create-category-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 8px 4px;
+  border: 2px solid transparent;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface);
+  color: var(--app-muted);
+  font: inherit;
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-label);
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.create-category-option-icon {
+  display: grid;
+  place-items: center;
+  color: var(--category-accent);
+}
+
+.create-category-picker > .create-category-option[aria-checked="true"] {
+  border-color: var(--category-accent);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+}

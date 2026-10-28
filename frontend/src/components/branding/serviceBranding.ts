@@ -136,7 +136,8 @@ const BRAND_BY_SLUG: Record<string, ServiceBrand> = {
   },
   claude: { color: "#D97757", iconSlug: "claude", category: "cloud_productivity", monogram: "C" },
   perplexity: { color: "#1FB8CD", iconSlug: "perplexity", category: "cloud_productivity", monogram: "P" },
-  capcut: { color: "#000000", iconSlug: "capcut", category: "cloud_productivity", monogram: "CC", monochrome: true },
+  // Simple Icons has no CapCut logo: the monogram is shown.
+  capcut: { color: "#000000", iconSlug: null, category: "cloud_productivity", monogram: "CC", monochrome: true },
   "telegram-premium": { color: "#26A5E4", iconSlug: "telegram", category: "default", monogram: "T" },
   "discord-nitro": { color: "#5865F2", iconSlug: "discord", category: "default", monogram: "D" },
 

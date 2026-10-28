@@ -304,10 +304,11 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
     await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
     await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
     await expect(page.getByTestId("create-family-next")).toBeVisible();
-    await expect(page.locator(".product-scope-switch button").first()).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("create-kind-subscription")).toHaveAttribute("aria-checked", "true");
     await page.screenshot({ path: info.outputPath("create-family-" + theme + ".png") });
-    await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click();
+    await page.getByTestId("create-kind-accounts").click();
     await expect(page.getByTestId("account-plan-row")).toBeVisible();
+    await expect(page.getByTestId("create-kind-accounts")).toHaveAttribute("aria-checked", "true");
     await page.getByTestId("account-service-search").fill("чат");
     await assertNoOverflow(page);
     await page.screenshot({ path: info.outputPath("create-account-" + theme + ".png") });
@@ -394,7 +395,7 @@ test("keyboard viewport keeps fields visible and hides the dock", async ({ page 
   await expect(page.locator(".subs-dock")).toBeVisible();
   await expect(page.locator("html")).not.toHaveAttribute("data-keyboard-open");
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
-  await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click();
+  await page.getByTestId("create-kind-accounts").click();
   await page.getByTestId("account-price-input").focus();
   await page.evaluate(() => (window as any).__setKeyboard(420));
   await expect(page.locator(".subs-dock")).toBeHidden();

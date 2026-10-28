@@ -1,6 +1,7 @@
 import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { Button as AppButton } from "../components/ui";
-import { Panel, ProductScopeSwitch } from "../components/layout";
+import { Panel } from "../components/layout";
+import { CreateCategoryPicker } from "../components/CreateCategoryPicker";
 import { SystemSymbol } from "../components/SystemSymbol";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
 import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
@@ -15,14 +16,16 @@ import {
 } from "../components/families/createFamilyForm";
 import { useTelegramBackButton, useTelegramMainButton } from "../hooks/useTelegramAppEffects";
 import { canUseTelegramMainButton } from "../telegram";
-import type { FamilyCreate, FamilyService } from "../types";
+import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 
 export function CreateFamilyScreen({
   services,
   service,
+  familyType,
   createForm,
   busy,
   onPickService,
+  onChangeFamilyType,
   onCreateAccounts,
   onCreateGigabytes,
   onBack,
@@ -31,9 +34,11 @@ export function CreateFamilyScreen({
 }: {
   services: FamilyService[];
   service: FamilyService | null;
+  familyType: FamilyType;
   createForm: FamilyCreate;
   busy: string | null;
   onPickService: (service: FamilyService) => void;
+  onChangeFamilyType: (type: FamilyType) => void;
   onCreateAccounts: () => void;
   onCreateGigabytes: () => void;
   onBack: () => void;
@@ -103,11 +108,12 @@ export function CreateFamilyScreen({
     <Panel title="Создать семью">
       <div className="screen-body-inset">
         {step === "service" ? (
-          <ProductScopeSwitch
-            value="families"
+          <CreateCategoryPicker
+            value={familyType}
             onChange={(value) => {
               if (value === "accounts") onCreateAccounts();
-              if (value === "gigabytes") onCreateGigabytes();
+              else if (value === "gigabytes") onCreateGigabytes();
+              else onChangeFamilyType(value);
             }}
           />
         ) : null}
@@ -141,7 +147,9 @@ export function CreateFamilyScreen({
         >
           {step === "service" ? (
             <CreateFamilyServiceStep
-              services={services}
+              services={services.filter((item) =>
+                familyType === "tariff" ? item.family_type === "tariff" : item.family_type !== "tariff"
+              )}
               selectedId={createForm.service_id}
               onPick={onPickService}
             />

@@ -71,6 +71,9 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await openCreate(page);
   await expect(page.getByTestId("create-family-form")).toBeVisible();
+  // YouTube Premium is preselected as the most popular; this flow checks Google One's Gmail invite.
+  await expect(page.getByTestId("create-service-option-youtube-premium")).toHaveAttribute("aria-checked", "true");
+  await pickCreateService(page, "google-one");
   await goToCreateStep(page, "terms");
   await expect(page.getByTestId("create-share-preview")).toContainText("650 ₸");
   await fillCreateField(page, "create-total-price-input", "3990");

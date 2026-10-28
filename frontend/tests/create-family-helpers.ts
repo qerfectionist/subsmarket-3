@@ -42,10 +42,18 @@ export async function fillCreateField(page: Page, testId: string, value: string)
   await page.getByTestId(testId).fill(value);
 }
 
-/** Picks a service tile on step 1, opening its category first. */
+/** Picks a service tile on step 1: «Тарифы» or «Подписки» on top, then the category chip. */
 export async function pickCreateService(page: Page, slug: string, category = "all") {
   await goToCreateStep(page, "service");
-  await page.getByTestId(`create-category-${category}`).evaluate((element) => (element as HTMLElement).click());
+  const tariff = category === "operators" || slug.endsWith("-family-tariff");
+  const kind = page.getByTestId(tariff ? "create-kind-tariff" : "create-kind-subscription");
+  if ((await kind.getAttribute("aria-checked")) !== "true") {
+    await kind.evaluate((element) => (element as HTMLElement).click());
+    await expect(kind).toHaveAttribute("aria-checked", "true");
+  }
+  if (!tariff) {
+    await page.getByTestId(`create-category-${category}`).evaluate((element) => (element as HTMLElement).click());
+  }
   await page.getByTestId(`create-service-option-${slug}`).evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId(`create-service-option-${slug}`)).toHaveAttribute("aria-checked", "true");
 }

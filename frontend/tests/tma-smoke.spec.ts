@@ -157,7 +157,15 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
-  await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click({ force: true });
+  await page.getByTestId("create-kind-accounts").click({ force: true });
+  await expect(page.getByTestId("create-kind-accounts")).toHaveAttribute("aria-checked", "true");
+  await expect(bottomNav.getByRole("button", { name: "Создать", exact: true })).toHaveAttribute("aria-current", "page");
+  await page.getByTestId("create-kind-gigabytes").click({ force: true });
+  await expect(page.getByTestId("gb-operator-tele2")).toBeVisible();
+  await page.getByTestId("create-kind-tariff").click({ force: true });
+  await expect(page.getByTestId("create-kind-tariff")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("create-service-search")).toHaveCount(0);
+  await page.getByTestId("create-kind-accounts").click({ force: true });
   await page.getByTestId("accounts-screen").getByRole("button", { name: "Назад" }).click();
   await expect(page.getByTestId("create-family-form")).toBeVisible();
 

@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CreateCategory } from "./components/CreateCategoryPicker";
+import { servicePopularity } from "./components/families/createFamilyForm";
+
 import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button as AppButton } from "./components/ui";
@@ -42,6 +45,14 @@ import {
   openTelegramMiniApp,
   triggerTelegramImpact
 } from "./telegram";
+
+function popularFirst<T extends { slug: string }>(list: T[]): T[] {
+  return [...list].sort((a, b) => servicePopularity(a.slug) - servicePopularity(b.slug));
+}
+
+function mostPopular<T extends { slug: string }>(list: T[]): T | undefined {
+  return popularFirst(list)[0];
+}
 
 const emptyCreateForm: FamilyCreate = {
   service_id: "",
@@ -302,7 +313,8 @@ export function App() {
   }
 
   function changeFamilyType(nextType: FamilyType) {
-    const nextServices = services.filter((service) => service.family_type === nextType);
+    // The most popular service of the type is preselected, so it is the first tile on screen.
+    const nextServices = popularFirst(services.filter((service) => service.family_type === nextType));
     setFamilyType(nextType);
     setCreateForm((current) => ({
       ...current,
@@ -344,10 +356,11 @@ export function App() {
         payment_recipient_name: normalizeText(createForm.payment_recipient_name)
       };
       const created = await createFamilyMutation.mutateAsync(payload);
+      const nextDefault = mostPopular(typedServices);
       setCreateForm({
         ...emptyCreateForm,
-        service_id: typedServices[0]?.id || "",
-        max_members: Math.min(6, typedServices[0]?.max_members ?? 8)
+        service_id: nextDefault?.id || "",
+        max_members: Math.min(6, nextDefault?.max_members ?? 8)
       });
       setCreatedFamilyId(created.family.id);
       setTab("created");
@@ -403,7 +416,7 @@ export function App() {
       if (current.service_id && typedServices.some((s) => s.id === current.service_id)) {
         return current;
       }
-      const first = typedServices[0];
+      const first = mostPopular(typedServices) ?? typedServices[0];
       return {
         ...current,
         service_id: first.id,
@@ -466,12 +479,32 @@ export function App() {
     );
   }
 
+  /** The category picker on «Создать»: families stay here, accounts and GB open their forms. */
+  function switchCreateCategory(category: CreateCategory) {
+    if (category === "accounts") {
+      setAccountEntryId(null);
+      setAccountsBackTab("create");
+      setAccountsEntryMode("create");
+      setTab("accounts");
+    } else if (category === "gigabytes") {
+      setGigabytesEntryId(null);
+      setGigabytesBackTab("create");
+      setGigabytesEntryMode("create");
+      setTab("gigabytes");
+    } else {
+      changeFamilyType(category);
+      setTab("create");
+    }
+  }
+
   const service = selectedService();
   const isMarket = tab === "home" || tab === "search" || tab === "gigabytes" || tab === "accounts";
   const bottomNavTab: Tab =
     tab === "mine" ? "mine" :
     tab === "requests" ? "requests" :
     tab === "create" || tab === "created" ? "create" :
+    (tab === "accounts" && accountsBackTab === "create") ||
+    (tab === "gigabytes" && gigabytesBackTab === "create") ? "create" :
     "home";
   const shellTitle =
     tab === "cards-showcase" ? "Варианты карточек" :
@@ -589,21 +622,15 @@ export function App() {
         <AsyncContent query={servicesQuery}>
           <CreateFamilyScreen
             onBack={() => setTab(createBackTab)}
-            onCreateAccounts={() => {
-              setAccountsBackTab("create");
-              setAccountsEntryMode("create");
-              setTab("accounts");
-            }}
-            onCreateGigabytes={() => {
-              setGigabytesBackTab("create");
-              setGigabytesEntryMode("create");
-              setTab("gigabytes");
-            }}
+            onCreateAccounts={() => switchCreateCategory("accounts")}
+            onCreateGigabytes={() => switchCreateCategory("gigabytes")}
             services={services}
             service={service}
+            familyType={familyType}
             createForm={createForm}
             busy={busy}
             onPickService={pickCreateService}
+            onChangeFamilyType={changeFamilyType}
             onChangeForm={setCreateForm}
             onSubmit={(event) => void handleCreateFamily(event)}
           />
@@ -797,6 +824,7 @@ export function App() {
           initialListingId={gigabytesEntryId}
           initialMode={gigabytesEntryMode}
           onBack={() => setTab(gigabytesBackTab)}
+          onSwitchCreate={gigabytesBackTab === "create" ? switchCreateCategory : undefined}
         />
       )}
 
@@ -805,6 +833,7 @@ export function App() {
           initialListingId={accountEntryId}
           initialMode={accountsEntryMode}
           onBack={() => setTab(accountsBackTab)}
+          onSwitchCreate={accountsBackTab === "create" ? switchCreateCategory : undefined}
         />
       )}
 
