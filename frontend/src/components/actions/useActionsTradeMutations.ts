@@ -628,7 +628,7 @@ export function useActionsTradeMutations({
       }
 
       if (item.category === "families" && item.familyId) {
-        await createFamilyRequestMutation.mutateAsync(item.familyId);
+        await createFamilyRequestMutation.mutateAsync({ familyId: item.familyId });
       } else if (item.category === "gigabytes" && item.listingId) {
         await createMarketplaceRequestMutation.mutateAsync({
           listingId: item.listingId,

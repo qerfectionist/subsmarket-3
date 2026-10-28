@@ -9,6 +9,7 @@ import { ListingAuthor } from "../components/ListingAuthor";
 import { Badge, EmptyState, Panel } from "../components/layout";
 import { PanelSkeleton } from "../components/skeleton";
 import { RequisiteBox } from "../components/RequisiteBox";
+import { JoinRequestForm } from "../components/families/JoinRequestForm";
 import { familyTitle, formatDate, formatDateTime, statusText } from "../format";
 import { familyKindLabels, periodLabels } from "../labels";
 import type {
@@ -17,6 +18,7 @@ import type {
   FamilyMember,
   FamilyPayment,
   FamilyRequest,
+  FamilyRequestCreate,
   FamilyView,
   PaymentRequisite
 } from "../types";
@@ -32,6 +34,7 @@ export function FamilyDetailsScreen({
   onRefresh,
   onCreateRequest,
   onConfirmAccess,
+  onReportAccessIssue,
   onGetRequisite,
   onReportPayment,
   onCancelPaymentReport,
@@ -52,8 +55,9 @@ export function FamilyDetailsScreen({
   loadError?: boolean;
   onBack: () => void;
   onRefresh: () => void;
-  onCreateRequest: (familyId: string) => void;
+  onCreateRequest: (familyId: string, body: FamilyRequestCreate) => void;
   onConfirmAccess: (memberId: string) => void;
+  onReportAccessIssue: (memberId: string) => void;
   onGetRequisite: (memberId: string) => void;
   onReportPayment: (payment: FamilyPayment) => Promise<unknown>;
   onCancelPaymentReport: (payment: FamilyPayment) => Promise<unknown>;
@@ -181,27 +185,38 @@ export function FamilyDetailsScreen({
           canRequest={view.can_request}
         />
 
+        {!membership && !request && view.can_request && (
+          <section className="family-detail-join" aria-label="Заявка в семью">
+            <JoinRequestForm
+              join={view.join}
+              busy={busy !== null}
+              onSubmit={(body) => onCreateRequest(family.id, body)}
+            />
+          </section>
+        )}
+
         <section className="family-detail-actions">
           <div className="workspace-actions">
-          {!membership && !request && view.can_request && (
-            <AppButton
-              type="button"
-              data-testid="detail-send-request-button"
-              disabled={busy !== null}
-              onClick={() => onCreateRequest(family.id)}
-            >
-              Отправить заявку
-            </AppButton>
-          )}
           {membership?.status === "awaiting_confirmation" && (
-            <AppButton
-              type="button"
-              data-testid="detail-confirm-access-button"
-              disabled={busy !== null}
-              onClick={() => onConfirmAccess(membership.id)}
-            >
-              Доступ получен
-            </AppButton>
+            <>
+              <AppButton
+                type="button"
+                data-testid="detail-confirm-access-button"
+                disabled={busy !== null}
+                onClick={() => onConfirmAccess(membership.id)}
+              >
+                Всё работает
+              </AppButton>
+              <AppButton
+                type="button"
+                variant="secondary"
+                data-testid="detail-access-issue-button"
+                disabled={busy !== null}
+                onClick={() => onReportAccessIssue(membership.id)}
+              >
+                Не работает
+              </AppButton>
+            </>
           )}
           {membership?.access_confirmed_at && (
             <AppButton

@@ -48,12 +48,14 @@ function OwnerListRow({
   subtitle,
   description,
   avatar,
+  extra,
   children
 }: {
   title: string;
   subtitle?: string;
   description?: string;
   avatar?: ReactNode;
+  extra?: ReactNode;
   children?: ReactNode;
 }) {
   return (
@@ -76,8 +78,37 @@ function OwnerListRow({
           ) : null}
         </div>
       </div>
+      {extra}
       {children ? <div className="row-actions">{children}</div> : null}
     </article>
+  );
+}
+
+const CONTACT_LABELS: Record<string, string> = {
+  gmail: "Gmail",
+  apple_id: "Apple ID",
+  email: "Почта",
+  phone: "Номер"
+};
+
+/** What the owner sends the invite to, with a copy button. */
+function JoinContactLine({ kind, value }: { kind?: string | null; value?: string | null }) {
+  const [copied, setCopied] = useState(false);
+  if (!kind || !value) return null;
+  return (
+    <p className="owner-join-contact" data-testid="owner-join-contact">
+      <span>{CONTACT_LABELS[kind] ?? "Контакт"}:</span>
+      <strong>{value}</strong>
+      <button
+        type="button"
+        data-testid="owner-join-contact-copy"
+        onClick={() => {
+          void navigator.clipboard?.writeText(value).then(() => setCopied(true));
+        }}
+      >
+        {copied ? "Скопировано" : "Копировать"}
+      </button>
+    </p>
   );
 }
 
@@ -208,6 +239,7 @@ export function OwnerDetails({
               title={`@${request.candidate.username}`}
               subtitle={request.candidate.first_name}
               description="Кандидат ждет решения владельца."
+              extra={<JoinContactLine kind={request.join_contact_kind} value={request.join_contact} />}
             >
               <AppButton
                 type="button"
@@ -246,7 +278,16 @@ export function OwnerDetails({
                 avatar={<UserAvatar name={`@${member.user.username}`} size={36} />}
                 title={`@${member.user.username} · участник`}
                 subtitle={statusText(member.status)}
-                description={ownerMemberHint(member.status)}
+                description={
+                  member.status === "awaiting_access" && member.access_issue_reported_at
+                    ? "Пишет, что доступ не работает. Проверьте приглашение и снова нажмите «Доступ выдан»."
+                    : ownerMemberHint(member.status)
+                }
+                extra={
+                  member.status === "awaiting_access" ? (
+                    <JoinContactLine kind={member.join_contact_kind} value={member.join_contact} />
+                  ) : null
+                }
               >
                 {member.status === "awaiting_access" && (
                   <>

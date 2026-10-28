@@ -77,3 +77,18 @@ export async function finishCreatedFamily(page: Page, { connectChat = true } = {
   }
   await page.getByTestId("family-created-done").evaluate((element) => (element as HTMLElement).click());
 }
+
+/** Fills what the request form asks for: the contact for the invite and the rules checkbox. */
+export async function fillJoinRequest(page: Page, contact?: string) {
+  await expect(page.getByTestId("join-request-form")).toBeVisible();
+  const input = page.getByTestId("join-contact-input");
+  if ((await input.count()) > 0) {
+    const isPhone = (await input.getAttribute("inputmode")) === "tel";
+    await input.fill(contact ?? (isPhone ? "+77007654321" : "demo.member@gmail.com"));
+  }
+  const confirm = page.getByTestId("join-confirm-checkbox");
+  if ((await confirm.count()) > 0 && !(await confirm.isChecked())) {
+    await confirm.check();
+  }
+  await expect(page.getByTestId("detail-send-request-button")).toBeEnabled();
+}

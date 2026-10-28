@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { fillCreateField, finishCreatedFamily, pressCreateFamily } from "./create-family-helpers";
+import {
+  fillCreateField,
+  fillJoinRequest,
+  finishCreatedFamily,
+  pressCreateFamily
+} from "./create-family-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
 const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
@@ -108,6 +113,7 @@ test("owner sees candidate request card in actions inbox and accepts it", async 
   const familyCard = page.getByTestId("family-card").first();
   await familyCard.click({ force: true });
   await expect(page.getByTestId("detail-send-request-button")).toBeVisible();
+  await fillJoinRequest(page);
   await page.getByTestId("detail-send-request-button").evaluate((el) => (el as HTMLElement).click());
   await waitForNetworkQuiet(page);
   await expect(page.getByText("Заявка отправлена", { exact: true }).first()).toBeVisible();

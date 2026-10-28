@@ -16,6 +16,7 @@ from subsmarket.families._internal import (  # noqa: F401
     record_owner_request_expired,
     record_owner_request_received,
 )
+from subsmarket.families.access_issues import report_access_issue  # noqa: F401
 from subsmarket.families.chat import (  # noqa: F401
     change_family_chat_kind,
     connect_telegram_chat,

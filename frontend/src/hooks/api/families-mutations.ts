@@ -27,6 +27,7 @@ import {
   reportPaymentPaid,
   rotateFamilyInvite,
   removeMember,
+  reportAccessIssue,
   setFamilyChatKind,
   updateFamilyDescription,
   updateFamilyPaymentDay,
@@ -38,6 +39,7 @@ import type {
   FamilyChatKind,
   FamilyCreate,
   FamilyMemberRemovalReason,
+  FamilyRequestCreate,
   FamilyPayment,
   FamilyView,
   MyFamily
@@ -215,8 +217,9 @@ export function useDisableFamilyInvite() {
 export function useCreateFamilyRequest() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (familyId: string) => createFamilyRequest(familyId),
-    onSuccess: (_data, familyId) => {
+    mutationFn: ({ familyId, body }: { familyId: string; body?: Partial<FamilyRequestCreate> }) =>
+      createFamilyRequest(familyId, body),
+    onSuccess: (_data, { familyId }) => {
       qc.invalidateQueries({ queryKey: queryKeys.myRequests });
       qc.invalidateQueries({ queryKey: queryKeys.familyView(familyId) });
     }
@@ -431,4 +434,15 @@ export function useMarkPaymentNotReceived() {
 
 export function useGetPaymentRequisite() {
   return useMutation({ mutationFn: (memberId: string) => getPaymentRequisite(memberId) });
+}
+
+export function useReportAccessIssue() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (memberId: string) => reportAccessIssue(memberId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.myFamilies });
+      qc.invalidateQueries({ queryKey: ["familyView"] });
+    }
+  });
 }

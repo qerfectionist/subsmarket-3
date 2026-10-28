@@ -60,7 +60,8 @@ async function seedOffers(request: APIRequestContext, slugs = ["youtube-premium"
 test("own families and actions use the same surfaces", async ({ page }, info) => {
   const familyIds = await seedOffers(page.request, ["youtube-premium"]);
   const submitted = await page.request.post(apiUrl + "/api/families/" + familyIds[0] + "/requests", {
-    headers: { "X-Dev-Telegram-User-Id": "200002", "X-Dev-Telegram-Username": "demo_member", "X-Dev-Telegram-First-Name": "Demo Member" }
+    headers: { "X-Dev-Telegram-User-Id": "200002", "X-Dev-Telegram-Username": "demo_member", "X-Dev-Telegram-First-Name": "Demo Member" },
+    data: { join_contact: "demo.member@gmail.com", rules_confirmed: true }
   });
   expect(submitted.ok(), await submitted.text()).toBeTruthy();
   await page.goto(appUrl + "?theme=dark");

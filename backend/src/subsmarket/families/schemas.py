@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 FamilyPeriod = Literal["monthly", "yearly"]
 FamilyChatKind = Literal["telegram", "whatsapp"]
+JoinContactKind = Literal["gmail", "phone", "apple_id", "email"]
 PaymentBank = Literal["kaspi", "halyk", "freedom", "jusan"]
 FamilyMemberRemovalReason = Literal[
     "no_payment",
@@ -184,6 +185,21 @@ class FamilyRequestOut(BaseModel):
     expired_at: datetime | None
     member_share_kzt: int | None = None
     price_kzt: int | None = None
+    join_contact_kind: JoinContactKind | None = None
+    join_contact: str | None = None
+
+
+class FamilyRequestCreate(BaseModel):
+    join_contact: str | None = Field(default=None, max_length=120)
+    rules_confirmed: bool = False
+
+
+class FamilyJoinInfoOut(BaseModel):
+    """What the service needs before a request: contact field and its rules."""
+
+    contact_kind: JoinContactKind | None = None
+    rules: list[str] = []
+    confirm: str | None = None
 
 
 class OwnerFamilyRequestOut(FamilyRequestOut):
@@ -214,6 +230,9 @@ class FamilyMemberOut(BaseModel):
     removed_at: datetime | None = None
     cancelled_at: datetime | None = None
     closing_acknowledged_at: datetime | None = None
+    join_contact_kind: JoinContactKind | None = None
+    join_contact: str | None = None
+    access_issue_reported_at: datetime | None = None
 
 
 class PaymentRequisiteOut(BaseModel):
@@ -304,6 +323,7 @@ class FamilyViewOut(BaseModel):
     my_request: FamilyRequestOut | None = None
     my_payments: list[FamilyPaymentOut] = []
     can_request: bool
+    join: FamilyJoinInfoOut = FamilyJoinInfoOut()
 
 
 class FamilyAuditLogOut(BaseModel):

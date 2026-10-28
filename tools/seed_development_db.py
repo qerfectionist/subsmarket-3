@@ -106,7 +106,9 @@ def seed_families(db: Session, users: dict[str, User]) -> None:
             db.flush()
 
             # Member joins and gets access
-            req1 = create_join_request(db, member, yt_family.id)
+            req1 = create_join_request(
+                db, member, yt_family.id, join_contact="demo.member@gmail.com", rules_confirmed=True
+            )
             db.flush()
             approve_join_request(db, owner, req1.id)
             db.flush()
@@ -118,7 +120,9 @@ def seed_families(db: Session, users: dict[str, User]) -> None:
                 db.flush()
 
             # Newbie sends pending join request
-            create_join_request(db, newbie, yt_family.id)
+            create_join_request(
+                db, newbie, yt_family.id, join_contact="demo.newbie@gmail.com", rules_confirmed=True
+            )
             db.flush()
 
     # 2. Spotify Family with reported payment waiting confirmation
@@ -139,7 +143,7 @@ def seed_families(db: Session, users: dict[str, User]) -> None:
             db.flush()
 
             # Member joins, gets access and reports payment
-            req2 = create_join_request(db, member, spot_family.id)
+            req2 = create_join_request(db, member, spot_family.id, rules_confirmed=True)
             db.flush()
             approve_join_request(db, owner, req2.id)
             db.flush()

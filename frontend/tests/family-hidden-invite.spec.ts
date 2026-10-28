@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { fillJoinRequest } from "./create-family-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
 const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
@@ -91,6 +92,7 @@ test("hidden family accepts a request only through its current invite link", asy
   await openAsDevUser(page, 200002, `invite_${newCode}`);
   const sendButton = page.getByTestId("detail-send-request-button");
   await expect(sendButton).toBeVisible();
+  await fillJoinRequest(page);
   await sendButton.click();
   await expect
     .poll(async () => {

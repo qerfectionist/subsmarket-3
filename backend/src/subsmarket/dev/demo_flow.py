@@ -252,11 +252,19 @@ def run_family_flow(
     searchable = api(client, "GET", f"/api/families?family_type={family_type}")
     assert any(item["id"] == family["id"] for item in searchable)
 
+    contact_kind = service.get("service_metadata", {}).get("join_contact")
+    demo_contact = {
+        "gmail": "demo.member@gmail.com",
+        "email": "demo.member@example.com",
+        "apple_id": "demo.member@icloud.com",
+        "phone": "+77007654321",
+    }.get(contact_kind)
     request = api(
         client,
         "POST",
         f"/api/families/{family['id']}/requests",
         headers=MEMBER_HEADERS,
+        json={"join_contact": demo_contact, "rules_confirmed": True},
     )
     owner_requests = api(
         client,

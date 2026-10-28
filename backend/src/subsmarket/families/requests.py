@@ -19,6 +19,7 @@ from subsmarket.families._internal import (
 )
 from subsmarket.families.audit import record_family_audit_event
 from subsmarket.families.chat import ensure_family_chat_connected
+from subsmarket.families.join_contact import check_join_request
 from subsmarket.families.models import (
     Family,
     FamilyMember,
@@ -57,6 +58,8 @@ def create_join_request(
     *,
     idempotency_key: str | None = None,
     invite_code: str | None = None,
+    join_contact: str | None = None,
+    rules_confirmed: bool = False,
 ) -> FamilyRequest:
     user_id = user.id
     claim = claim_idempotency(
@@ -82,6 +85,9 @@ def create_join_request(
     family = _get_joinable_family(db, family_id, invite_code=invite_code)
     if family.owner_user_id == user_id:
         raise HTTPException(status_code=400, detail="OWNER_CANNOT_REQUEST_OWN_FAMILY")
+    contact_kind, encrypted_contact = check_join_request(
+        family.service, contact=join_contact, rules_confirmed=rules_confirmed
+    )
 
     existing_member = db.scalar(
         select(FamilyMember)
@@ -137,6 +143,8 @@ def create_join_request(
         user_id=user_id,
         status=ACTIVE_REQUEST_STATUS,
         expires_at=now + timedelta(hours=2),
+        join_contact_kind=contact_kind,
+        encrypted_join_contact=encrypted_contact,
     )
     db.add(request)
     db.flush()
@@ -328,6 +336,8 @@ def approve_join_request(db: Session, user: User, request_id: UUID) -> FamilyReq
         user_id=request.user_id,
         role="member",
         status="awaiting_access",
+        join_contact_kind=request.join_contact_kind,
+        encrypted_join_contact=request.encrypted_join_contact,
     )
     db.add(member)
     family.active_members_count += 1

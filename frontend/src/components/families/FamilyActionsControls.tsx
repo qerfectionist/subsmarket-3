@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
-import { Button as AppButton, Input, TextArea, Typography } from "../ui";
+import { Button as AppButton, Input, TextArea, Typography, useToast } from "../ui";
+import { formatError } from "../../format";
+import { useReportAccessIssue } from "../../hooks/api";
+import { triggerTelegramNotification } from "../../telegram";
 import type {
   Family,
   FamilyMember,
@@ -36,7 +39,7 @@ export function getMemberStep(member: FamilyMember, payment?: FamilyPayment) {
     return {
       tone: "warning",
       title: "Проверьте доступ",
-      text: "Если подписка работает, нажмите «Доступ получен». После этого откроются реквизиты."
+      text: "Если подписка работает, нажмите «Всё работает» — откроются реквизиты. Если нет — «Не работает», владелец получит уведомление."
     };
   }
   if (member.status === "removal_pending") {
@@ -375,6 +378,18 @@ export function MemberActions({
   onLeaveFamily: (memberId: string) => void;
   onCreatePrepayment: (memberId: string) => void;
 }) {
+  const reportIssue = useReportAccessIssue();
+  const { toast } = useToast();
+  async function onReportAccessIssue(memberId: string) {
+    try {
+      await reportIssue.mutateAsync(memberId);
+      triggerTelegramNotification("success");
+      toast.info({ title: "Владелец получил уведомление" });
+    } catch (error) {
+      triggerTelegramNotification("error");
+      toast.error({ title: formatError(error) });
+    }
+  }
   return (
     <>
       {member.status === "awaiting_confirmation" && (
@@ -384,7 +399,18 @@ export function MemberActions({
           disabled={busy !== null}
           onClick={() => onConfirmAccess(member.id)}
         >
-          Доступ получен
+          Всё работает
+        </AppButton>
+      )}
+      {member.status === "awaiting_confirmation" && (
+        <AppButton
+          type="button"
+          variant="secondary"
+          data-testid="access-issue-button"
+          disabled={busy !== null || reportIssue.isPending}
+          onClick={() => void onReportAccessIssue(member.id)}
+        >
+          Не работает
         </AppButton>
       )}
       {member.access_confirmed_at && (

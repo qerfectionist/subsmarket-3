@@ -18,6 +18,7 @@ import {
   useConfirmPaymentReceived,
   useCreateFamilyInvite,
   useCreateFamilyRequest,
+  useReportAccessIssue,
   useCreateMemberPrepayment,
   useDisableFamilyInvite,
   useGetPaymentRequisite,
@@ -70,6 +71,7 @@ export function useFamilyActionHandlers() {
       "leave-family": "Вы вышли из семьи",
       "remove-member": "Участник удалён",
       "confirm-access": "Доступ подтверждён",
+      "report-access-issue": "Владелец получил уведомление",
       "confirm-payment": "Оплата подтверждена",
       "report-paid": "Оплата отмечена",
       "cancel-report": "Отметка отменена",
@@ -160,6 +162,7 @@ export function useFamilyActionHandlers() {
   const rotateInviteMutation = useRotateFamilyInvite();
   const disableInviteMutation = useDisableFamilyInvite();
   const createRequestMutation = useCreateFamilyRequest();
+  const reportAccessIssueMutation = useReportAccessIssue();
   const cancelRequestMutation = useCancelFamilyRequest();
   const approveRequestMutation = useApproveFamilyRequest();
   const rejectRequestMutation = useRejectFamilyRequest();
@@ -328,6 +331,7 @@ export function useFamilyActionHandlers() {
       rotateInviteMutation,
       disableInviteMutation,
       createRequestMutation,
+      reportAccessIssueMutation,
       cancelRequestMutation,
       approveRequestMutation,
       rejectRequestMutation,

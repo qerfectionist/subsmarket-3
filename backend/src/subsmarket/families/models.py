@@ -197,6 +197,11 @@ class FamilyMember(Base):
     access_provided_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    join_contact_kind: Mapped[str | None] = mapped_column(Text, nullable=True)
+    encrypted_join_contact: Mapped[str | None] = mapped_column(Text, nullable=True)
+    access_issue_reported_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     access_confirmed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -234,6 +239,9 @@ class FamilyRequest(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     status: Mapped[str] = mapped_column(Text, default="pending", index=True)
     cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # What the owner needs to send the invite: Gmail, phone, Apple ID or email.
+    join_contact_kind: Mapped[str | None] = mapped_column(Text, nullable=True)
+    encrypted_join_contact: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )

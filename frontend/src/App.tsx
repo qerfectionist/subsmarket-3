@@ -247,6 +247,7 @@ export function App() {
     familyActionHandlers,
     mutations: {
       createRequestMutation,
+      reportAccessIssueMutation,
       createInviteMutation,
       rotateInviteMutation,
       disableInviteMutation,
@@ -717,9 +718,16 @@ export function App() {
             setTab(familyBackTab);
           }}
           onRefresh={() => familyViewQuery.refetch()}
-          onCreateRequest={(familyId) =>
+          onCreateRequest={(familyId, body) =>
             void runMutation("create-request", () =>
-              createRequestMutation.mutateAsync(familyId)
+              createRequestMutation.mutateAsync({ familyId, body })
+            ).then((outcome) =>
+              outcome === "success" ? familyViewQuery.refetch() : undefined
+            )
+          }
+          onReportAccessIssue={(memberId) =>
+            void runMutation("report-access-issue", () =>
+              reportAccessIssueMutation.mutateAsync(memberId)
             ).then((outcome) =>
               outcome === "success" ? familyViewQuery.refetch() : undefined
             )

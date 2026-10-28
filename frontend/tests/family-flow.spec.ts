@@ -4,7 +4,8 @@ import {
   goToCreateStep,
   pickCreateService,
   pressCreateFamily,
-  finishCreatedFamily
+  finishCreatedFamily,
+  fillJoinRequest
 } from "./create-family-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
@@ -124,6 +125,10 @@ test("owner and member complete the first payment family flow", async ({ page })
     force: true
   });
   await expect(page.getByTestId("detail-send-request-button")).toBeVisible();
+  // Google One needs the Gmail for the invite and the 12-month confirmation.
+  await expect(page.getByTestId("detail-send-request-button")).toBeDisabled();
+  await expect(page.getByTestId("join-request-rules")).toContainText("12 месяцев");
+  await fillJoinRequest(page, "Member.Two@gmail.com");
   await page.getByTestId("detail-send-request-button").evaluate(el => el.scrollIntoView({ block: "center" }));
   await page.getByTestId("detail-send-request-button").click();
   await waitForNetworkQuiet(page);
@@ -141,8 +146,11 @@ test("owner and member complete the first payment family flow", async ({ page })
   await openNav(page, 1);
   await openOwnerDetails(page);
   await expect(page.getByTestId("approve-request-button")).toBeVisible();
+  // The owner gets the Gmail to send the Google invite to.
+  await expect(page.getByTestId("owner-join-contact").first()).toContainText("member.two@gmail.com");
   await clickAndWait(page, "approve-request-button");
   await expect(page.getByTestId("access-provided-button")).toBeVisible();
+  await expect(page.getByTestId("owner-join-contact").first()).toContainText("member.two@gmail.com");
   await clickAndWait(page, "access-provided-button");
   await expect(page.getByTestId("access-provided-button")).toHaveCount(0);
   await expect(page.getByTestId("remind-access-button")).toBeVisible();
@@ -419,6 +427,29 @@ test("inside Telegram the native main button drives family creation", async ({ p
   await pressMainButton();
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
   await expect.poll(mainButton).toMatchObject({ visible: false, handlers: 0 });
+});
+
+test("«Не работает» returns the member to waiting and tells the owner", async ({ page }) => {
+  await createOwnerPendingRequest(page);
+  await clickAndWait(page, "approve-request-button");
+  await clickAndWait(page, "access-provided-button");
+
+  await switchDevUser(page, "200002");
+  await openNav(page, 1);
+  await expandFirstFamilyCard(page);
+  await expect(page.getByTestId("access-issue-button")).toBeVisible();
+  await page.getByTestId("access-issue-button").evaluate((element) => (element as HTMLElement).click());
+  await waitForNetworkQuiet(page);
+  await expect(page.getByText("Владелец получил уведомление").first()).toBeVisible();
+  await expect(page.getByTestId("confirm-access-button")).toHaveCount(0);
+  // Payment details stay closed.
+  await expect(page.getByTestId("show-requisite-button")).toHaveCount(0);
+
+  await switchDevUser(page, "200001");
+  await openNav(page, 1);
+  await openOwnerDetails(page);
+  await expect(page.getByText("Пишет, что доступ не работает").first()).toBeVisible();
+  await expect(page.getByTestId("access-provided-button")).toBeVisible();
 });
 
 test("a family without a connected chat cannot accept members yet", async ({ page }) => {
@@ -850,6 +881,7 @@ async function openFirstFamilyAndRequest(page: Page) {
   const familyCard = page.getByTestId("family-card").first();
   await familyCard.click({ force: true });
   await expect(page.getByTestId("detail-send-request-button")).toBeVisible();
+  await fillJoinRequest(page);
   await clickAndWait(page, "detail-send-request-button");
   await expect(page.getByText("Заявка отправлена", { exact: true }).first()).toBeVisible();
 }

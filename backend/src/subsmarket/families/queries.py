@@ -17,6 +17,7 @@ from subsmarket.families._internal import (
     _trim_page,
 )
 from subsmarket.families.chat import family_chat_out
+from subsmarket.families.join_contact import read_join_contact, service_join_info
 from subsmarket.families.models import (
     Family,
     FamilyAuditLog,
@@ -109,6 +110,8 @@ def to_family_request_out(request: FamilyRequest) -> FamilyRequestOut:
         decided_at=request.decided_at,
         cancelled_at=request.cancelled_at,
         expired_at=request.expired_at,
+        join_contact_kind=request.join_contact_kind,
+        join_contact=read_join_contact(request.encrypted_join_contact),
         member_share_kzt=(
             getattr(request.family, "member_share_kzt", None)
             if getattr(request, "family", None)
@@ -154,6 +157,9 @@ def to_member_out(member: FamilyMember) -> FamilyMemberOut:
         removed_at=member.removed_at,
         cancelled_at=member.cancelled_at,
         closing_acknowledged_at=member.closing_acknowledged_at,
+        join_contact_kind=member.join_contact_kind,
+        join_contact=read_join_contact(member.encrypted_join_contact),
+        access_issue_reported_at=member.access_issue_reported_at,
     )
 
 
@@ -812,6 +818,7 @@ def get_family_view(
             else []
         ),
         can_request=can_request,
+        join=service_join_info(family.service),
     )
 
 

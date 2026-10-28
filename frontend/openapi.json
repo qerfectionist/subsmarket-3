@@ -1768,6 +1768,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/FamilyRequestCreate"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Successful Response",
@@ -4261,6 +4278,113 @@
         ],
         "summary": "Post Member Access Confirmation Reminder",
         "operationId": "post_member_access_confirmation_reminder_api_families_members__member_id__remind_access_confirmation_post",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          },
+          {
+            "name": "x-telegram-init-data",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Telegram-Init-Data"
+            }
+          },
+          {
+            "name": "x-dev-telegram-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-User-Id"
+            }
+          },
+          {
+            "name": "x-dev-telegram-username",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-Username"
+            }
+          },
+          {
+            "name": "x-dev-telegram-first-name",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-First-Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyMemberOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/families/members/{member_id}/access-issue": {
+      "post": {
+        "tags": [
+          "families"
+        ],
+        "summary": "Post Member Access Issue",
+        "operationId": "post_member_access_issue_api_families_members__member_id__access_issue_post",
         "parameters": [
           {
             "name": "member_id",
@@ -12267,6 +12391,49 @@
         ],
         "title": "FamilyInviteOut"
       },
+      "FamilyJoinInfoOut": {
+        "properties": {
+          "contact_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gmail",
+                  "phone",
+                  "apple_id",
+                  "email"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Kind"
+          },
+          "rules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rules",
+            "default": []
+          },
+          "confirm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirm"
+          }
+        },
+        "type": "object",
+        "title": "FamilyJoinInfoOut",
+        "description": "What the service needs before a request: contact field and its rules."
+      },
       "FamilyMemberOut": {
         "properties": {
           "id": {
@@ -12377,6 +12544,46 @@
               }
             ],
             "title": "Closing Acknowledged At"
+          },
+          "join_contact_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gmail",
+                  "phone",
+                  "apple_id",
+                  "email"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Contact Kind"
+          },
+          "join_contact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Contact"
+          },
+          "access_issue_reported_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Issue Reported At"
           }
         },
         "type": "object",
@@ -12900,6 +13107,29 @@
         ],
         "title": "FamilyPriceUpdate"
       },
+      "FamilyRequestCreate": {
+        "properties": {
+          "join_contact": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Contact"
+          },
+          "rules_confirmed": {
+            "type": "boolean",
+            "title": "Rules Confirmed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "FamilyRequestCreate"
+      },
       "FamilyRequestOut": {
         "properties": {
           "id": {
@@ -13040,6 +13270,34 @@
               }
             ],
             "title": "Price Kzt"
+          },
+          "join_contact_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gmail",
+                  "phone",
+                  "apple_id",
+                  "email"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Contact Kind"
+          },
+          "join_contact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Contact"
           }
         },
         "type": "object",
@@ -13218,6 +13476,12 @@
           "can_request": {
             "type": "boolean",
             "title": "Can Request"
+          },
+          "join": {
+            "$ref": "#/components/schemas/FamilyJoinInfoOut",
+            "default": {
+              "rules": []
+            }
           }
         },
         "type": "object",
@@ -14402,6 +14666,34 @@
               }
             ],
             "title": "Price Kzt"
+          },
+          "join_contact_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gmail",
+                  "phone",
+                  "apple_id",
+                  "email"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Contact Kind"
+          },
+          "join_contact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Join Contact"
           },
           "candidate": {
             "$ref": "#/components/schemas/RequestUserOut"

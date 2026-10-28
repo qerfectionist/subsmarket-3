@@ -619,6 +619,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/families/members/{member_id}/access-issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Member Access Issue */
+        post: operations["post_member_access_issue_api_families_members__member_id__access_issue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/families/members/{member_id}/cancel-before-access": {
         parameters: {
             query?: never;
@@ -1926,6 +1943,21 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * FamilyJoinInfoOut
+         * @description What the service needs before a request: contact field and its rules.
+         */
+        FamilyJoinInfoOut: {
+            /** Contact Kind */
+            contact_kind?: ("gmail" | "phone" | "apple_id" | "email") | null;
+            /**
+             * Rules
+             * @default []
+             */
+            rules: string[];
+            /** Confirm */
+            confirm?: string | null;
+        };
         /** FamilyMemberOut */
         FamilyMemberOut: {
             /**
@@ -1962,6 +1994,12 @@ export interface components {
             cancelled_at?: string | null;
             /** Closing Acknowledged At */
             closing_acknowledged_at?: string | null;
+            /** Join Contact Kind */
+            join_contact_kind?: ("gmail" | "phone" | "apple_id" | "email") | null;
+            /** Join Contact */
+            join_contact?: string | null;
+            /** Access Issue Reported At */
+            access_issue_reported_at?: string | null;
         };
         /** FamilyMemberPageOut */
         FamilyMemberPageOut: {
@@ -2138,6 +2176,16 @@ export interface components {
             /** Total Price Kzt */
             total_price_kzt: number;
         };
+        /** FamilyRequestCreate */
+        FamilyRequestCreate: {
+            /** Join Contact */
+            join_contact?: string | null;
+            /**
+             * Rules Confirmed
+             * @default false
+             */
+            rules_confirmed: boolean;
+        };
         /** FamilyRequestOut */
         FamilyRequestOut: {
             /**
@@ -2189,6 +2237,10 @@ export interface components {
             member_share_kzt?: number | null;
             /** Price Kzt */
             price_kzt?: number | null;
+            /** Join Contact Kind */
+            join_contact_kind?: ("gmail" | "phone" | "apple_id" | "email") | null;
+            /** Join Contact */
+            join_contact?: string | null;
         };
         /** FamilyRequestPageOut */
         FamilyRequestPageOut: {
@@ -2241,6 +2293,12 @@ export interface components {
             my_payments: components["schemas"]["FamilyPaymentOut"][];
             /** Can Request */
             can_request: boolean;
+            /**
+             * @default {
+             *       "rules": []
+             *     }
+             */
+            join: components["schemas"]["FamilyJoinInfoOut"];
         };
         /** FamilyVisibilityUpdate */
         FamilyVisibilityUpdate: {
@@ -2624,6 +2682,10 @@ export interface components {
             member_share_kzt?: number | null;
             /** Price Kzt */
             price_kzt?: number | null;
+            /** Join Contact Kind */
+            join_contact_kind?: ("gmail" | "phone" | "apple_id" | "email") | null;
+            /** Join Contact */
+            join_contact?: string | null;
             candidate: components["schemas"]["RequestUserOut"];
         };
         /** OwnerFamilyRequestPageOut */
@@ -3367,7 +3429,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["FamilyRequestCreate"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             201: {
@@ -4147,6 +4213,42 @@ export interface operations {
         };
     };
     post_member_access_confirmation_reminder_api_families_members__member_id__remind_access_confirmation_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FamilyMemberOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_member_access_issue_api_families_members__member_id__access_issue_post: {
         parameters: {
             query?: never;
             header?: {

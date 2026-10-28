@@ -489,3 +489,77 @@
   font-size: var(--app-size-caption);
   box-shadow: none;
 }
+
+/* Join request: service rules, contact for the invite, confirmation. */
+.join-request-form {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.join-request-rules {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface);
+  font-size: var(--app-size-caption);
+}
+
+.join-request-rules ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--app-muted);
+}
+
+.join-request-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+}
+
+.join-request-confirm input {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--app-text);
+}
+
+/* Owner: the address or number to send the invite to. */
+.owner-join-contact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 8px 0 0;
+  font-size: var(--app-size-caption);
+}
+
+.owner-join-contact > span {
+  color: var(--app-muted);
+}
+
+.owner-join-contact > strong {
+  overflow-wrap: anywhere;
+}
+
+.app-shell .owner-join-contact > button {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-size-label);
+  box-shadow: none;
+}
+
+.family-detail-join {
+  margin-top: 16px;
+}

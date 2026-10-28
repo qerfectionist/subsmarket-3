@@ -28,6 +28,7 @@ from subsmarket.families.service import (
     mark_access_provided,
     remind_access_confirmation,
     remove_member,
+    report_access_issue,
     to_member_out,
 )
 
@@ -90,6 +91,15 @@ def post_member_access_confirmation_reminder(
     user=Depends(get_current_user),
 ) -> FamilyMemberOut:
     member = remind_access_confirmation(db, user, member_id)
+    return to_member_out(member)
+
+
+def post_member_access_issue(
+    member_id: UUID,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyMemberOut:
+    member = report_access_issue(db, user, member_id)
     return to_member_out(member)
 
 

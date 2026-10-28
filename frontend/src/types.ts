@@ -106,7 +106,12 @@ export type FamilyView = {
   my_request: FamilyRequest | null;
   my_payments: FamilyPayment[];
   can_request: boolean;
+  join?: FamilyJoinInfo;
 };
+
+export type FamilyJoinInfo = Schema["FamilyJoinInfoOut"];
+export type FamilyRequestCreate = Schema["FamilyRequestCreate"];
+export type JoinContactKind = NonNullable<FamilyJoinInfo["contact_kind"]>;
 
 export type FamilyAuditLog = Schema["FamilyAuditLogOut"];
 

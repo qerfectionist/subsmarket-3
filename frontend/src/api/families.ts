@@ -14,6 +14,7 @@ import type {
   FamilyMemberRemovalReason,
   FamilyPayment,
   FamilyRequest,
+  FamilyRequestCreate,
   FamilyType,
   FamilyView,
   MyFamily,
@@ -185,11 +186,19 @@ export function acknowledgeFamilyClosing(familyId: string): Promise<FamilyMember
   return post<FamilyMember>(`/api/families/${familyId}/acknowledge-closing`);
 }
 
-export function createFamilyRequest(familyId: string): Promise<FamilyRequest> {
+export function createFamilyRequest(
+  familyId: string,
+  body: Partial<FamilyRequestCreate> = {}
+): Promise<FamilyRequest> {
   return postIdempotent<FamilyRequest>(
     `family_request.create:${familyId}`,
-    `/api/families/${familyId}/requests${inviteCodeQuery(familyId)}`
+    `/api/families/${familyId}/requests${inviteCodeQuery(familyId)}`,
+    body
   );
+}
+
+export function reportAccessIssue(memberId: string): Promise<FamilyMember> {
+  return post<FamilyMember>(`/api/families/members/${memberId}/access-issue`);
 }
 
 export function getMyFamilyRequestsPage(

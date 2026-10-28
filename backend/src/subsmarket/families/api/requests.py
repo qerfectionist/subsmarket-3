@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import Depends, Header, Query
+from fastapi import Body, Depends, Header, Query
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import get_db
@@ -13,6 +13,7 @@ from subsmarket.families.api.deps import (
     optional_invite_code,
 )
 from subsmarket.families.schemas import (
+    FamilyRequestCreate,
     FamilyRequestOut,
     OwnerFamilyRequestOut,
     OwnerFamilyRequestPageOut,
@@ -31,6 +32,7 @@ from subsmarket.families.service import (
 
 def post_family_request(
     family_id: UUID,
+    payload: FamilyRequestCreate | None = Body(default=None),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     invite_code: str | None = Depends(optional_invite_code),
     db: Session = Depends(get_db),
@@ -42,6 +44,8 @@ def post_family_request(
         family_id,
         idempotency_key=idempotency_key,
         invite_code=invite_code,
+        join_contact=payload.join_contact if payload else None,
+        rules_confirmed=payload.rules_confirmed if payload else False,
     )
     return to_family_request_out(request)
 

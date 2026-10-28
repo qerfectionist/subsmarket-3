@@ -91,6 +91,7 @@ def confirm_access_received(
     old_member_status = member.status
     member.status = "payment_due"
     member.access_confirmed_at = now
+    member.access_issue_reported_at = None
     payment = FamilyPayment(
         family_id=family.id,
         member_id=member.id,

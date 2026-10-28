@@ -228,6 +228,12 @@ _add(
 )
 _add(
     "post",
+    "/members/{member_id}/access-issue",
+    members.post_member_access_issue,
+    response_model=FamilyMemberOut,
+)
+_add(
+    "post",
     "/members/{member_id}/cancel-before-access",
     members.post_member_cancel_before_access,
     response_model=FamilyMemberOut,
