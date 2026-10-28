@@ -67,7 +67,6 @@ test("seller has undo countdown on accept and reject buttons", async ({ page }) 
   await page.getByTestId("my-gigabytes-create-button").click({ force: true });
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
   await page.getByLabel("Цена за 1 ГБ, ₸").fill("150");
-  await page.getByLabel("Описание").fill("Test listing for countdown undo");
   await page.getByRole("button", { name: "Опубликовать на 7 дней" }).click({ force: true });
   await waitForNetworkQuiet(page);
 

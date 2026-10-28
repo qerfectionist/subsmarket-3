@@ -1,0 +1,157 @@
+/* Sell GB: operator tiles, maximum and price, operator rules, preview. */
+.gb-operator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gb-form .gb-operator-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px;
+  border: 2px solid transparent;
+  border-radius: var(--app-radius-md);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-size-caption);
+  box-shadow: none;
+}
+
+.gb-form .gb-operator-tile[aria-checked="true"] {
+  border-color: var(--app-text);
+  font-weight: var(--app-weight-semibold);
+}
+
+.gb-form .gb-operator-tile:disabled {
+  opacity: .4;
+}
+
+.gb-operator-check {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--app-text);
+  color: var(--app-accent-text);
+}
+
+.gb-form-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.gb-operator-rules {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-inset);
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+}
+
+.gb-operator-rules p {
+  margin: 0;
+}
+
+.gb-operator-rules-title {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.gb-operator-rules a {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+}
+
+.gb-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+}
+
+.gb-preview-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gb-preview-copy span,
+.gb-preview-price span {
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+}
+
+.gb-preview-caption {
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.gb-preview-price {
+  display: grid;
+  flex: 0 0 auto;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.gb-preview-price strong {
+  font-size: var(--app-size-section);
+}
+
+.gb-operator-deadline,
+.gb-pay-first {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-inset);
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+}
+
+.gb-pay-first strong {
+  color: var(--app-text);
+}
+
+.gb-detail-max {
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+}
+
+.gb-form .create-stepper > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--app-surface-inset);
+  color: var(--app-text);
+  box-shadow: none;
+}
+
+.gb-form .create-stepper > button:disabled {
+  color: var(--app-muted);
+  opacity: .5;
+}

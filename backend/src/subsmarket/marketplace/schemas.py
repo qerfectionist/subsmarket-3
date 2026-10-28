@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
@@ -22,6 +22,7 @@ class MarketplaceOperatorOut(BaseModel):
     conditions: str | None = None
     source_url: str | None = None
     verified_at: datetime | None = None
+    available_until: date | None = None
 
 
 class MarketplaceListingCreate(BaseModel):
@@ -29,6 +30,7 @@ class MarketplaceListingCreate(BaseModel):
 
     operator_slug: str = Field(min_length=2, max_length=40, pattern=r"^[a-z0-9-]+$")
     price_per_gb_kzt: int = Field(ge=1, le=1_000_000)
+    max_gb: int | None = Field(default=None, ge=1, le=1000)
     description: str | None = Field(default=None, max_length=300)
 
 
@@ -42,6 +44,7 @@ class MarketplaceListingUpdate(BaseModel):
         pattern=r"^[a-z0-9-]+$",
     )
     price_per_gb_kzt: int | None = Field(default=None, ge=1, le=1_000_000)
+    max_gb: int | None = Field(default=None, ge=1, le=1000)
     description: str | None = Field(default=None, max_length=300)
 
     @model_validator(mode="after")
@@ -63,6 +66,7 @@ class MarketplaceListingOut(BaseModel):
     operator: MarketplaceOperatorOut
     owner: MarketplaceListingOwner
     price_per_gb_kzt: int
+    max_gb: int | None = None
     description: str | None = None
     status: Literal["active", "paused", "expired", "archived"]
     is_owner: bool

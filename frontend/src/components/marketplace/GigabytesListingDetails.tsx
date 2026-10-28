@@ -46,7 +46,15 @@ export function GigabytesListingDetails({
 
   const minimumAmount = Math.max(
     MINIMUM_GB_ORDER,
-    Number(listing.operator.min_lot_gb ?? 0)
+    Math.ceil(Number(listing.operator.min_lot_gb ?? 0))
+  );
+  // A single order is capped by the seller's maximum and by the operator.
+  const limits = [listing.max_gb, listing.operator.max_lot_gb]
+    .filter((value) => value !== null && value !== undefined)
+    .map(Number);
+  const maximumAmount = limits.length > 0 ? Math.min(...limits) : null;
+  const presets = [3, 5, 10].filter(
+    (amount) => amount >= minimumAmount && (maximumAmount === null || amount <= maximumAmount)
   );
   const selectedAmount = amountGb;
   const totalPrice = Math.round(
@@ -65,6 +73,11 @@ export function GigabytesListingDetails({
           <div className="gb-detail-title-block">
             <span className="gb-detail-service-name">{listing.operator.name}</span>
             <h2 className="gb-detail-price">{formatKzt(listing.price_per_gb_kzt)} за 1 ГБ</h2>
+            {listing.max_gb ? (
+              <span className="gb-detail-max" data-testid="gb-detail-max">
+                до {listing.max_gb} ГБ
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -122,7 +135,7 @@ export function GigabytesListingDetails({
           </label>
 
           <div className="gb-amount-presets" aria-label="Быстрый выбор количества">
-            {[3, 5, 10].map((amount) => (
+            {presets.map((amount) => (
               <button
                 key={amount}
                 type="button"
@@ -133,6 +146,12 @@ export function GigabytesListingDetails({
               </button>
             ))}
           </div>
+
+          <small className="field-helper">
+            {maximumAmount !== null
+              ? `От ${minimumAmount} до ${maximumAmount} ГБ, целое число.`
+              : `От ${minimumAmount} ГБ, целое число.`}
+          </small>
 
           <div className="gb-total-price">
             <strong>Итого: {formatKzt(totalPrice)}</strong>
@@ -147,8 +166,7 @@ export function GigabytesListingDetails({
               listing.status !== "active" ||
               !Number.isInteger(Number(selectedAmount)) ||
               Number(selectedAmount) < minimumAmount ||
-              (listing.operator.max_lot_gb !== null &&
-                Number(selectedAmount) > Number(listing.operator.max_lot_gb))
+              (maximumAmount !== null && Number(selectedAmount) > maximumAmount)
             }
             onClick={() => {
               void onBuy(listing.id, selectedAmount);
@@ -187,7 +205,7 @@ export function GigabytesListingDetails({
         </div>
       )}
       <p className="gb-safety-note">
-        SubsMarket не принимает оплату и не подтверждает перевод ГБ. После принятия заявки продавец пишет покупателю в Telegram.
+        Покупатель платит первым. SubsMarket не принимает оплату и не подтверждает перевод ГБ. После принятия заявки продавец и покупатель договариваются в Telegram.
       </p>
     </section>
   );

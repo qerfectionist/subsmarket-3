@@ -14,6 +14,7 @@ from subsmarket.core.database import utcnow
 from subsmarket.core.idempotency import claim_idempotency, complete_idempotency
 from subsmarket.identity.models import User
 from subsmarket.marketplace.models import MarketplaceListing, MarketplaceListingRequest
+from subsmarket.marketplace.operators import operator_is_open
 from subsmarket.marketplace.queries import to_request_out
 from subsmarket.marketplace.rules import MINIMUM_GB_ORDER, is_whole_gb
 from subsmarket.marketplace.schemas import (
@@ -65,7 +66,7 @@ def create_marketplace_request(
     now = utcnow()
     if listing.status != "active" or as_utc(listing.expires_at) <= now:
         raise HTTPException(status_code=409, detail="MARKETPLACE_LISTING_UNAVAILABLE")
-    if not listing.operator.is_active:
+    if not operator_is_open(listing.operator):
         raise HTTPException(status_code=409, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
 
     amount = _validate_requested_amount(listing, data.amount_gb)
@@ -485,6 +486,10 @@ def _validate_requested_amount(
         raise HTTPException(status_code=422, detail="MARKETPLACE_AMOUNT_BELOW_MINIMUM")
     if operator.max_lot_gb is not None and normalized > operator.max_lot_gb:
         raise HTTPException(status_code=422, detail="MARKETPLACE_AMOUNT_ABOVE_MAXIMUM")
+    if listing.max_gb is not None and normalized > listing.max_gb:
+        raise HTTPException(
+            status_code=422, detail="MARKETPLACE_AMOUNT_ABOVE_LISTING_MAXIMUM"
+        )
     if (
         operator.amount_step_gb is not None
         and normalized % operator.amount_step_gb != 0

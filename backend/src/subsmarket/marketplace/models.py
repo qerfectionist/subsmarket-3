@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     ForeignKey,
     Index,
@@ -59,6 +60,8 @@ class MarketplaceOperator(Base):
     verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Last day the operator's transfer service works, when it has one.
+    available_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )
@@ -79,6 +82,9 @@ class MarketplaceListing(Base):
         ),
         CheckConstraint(
             "price_per_gb_kzt > 0", name="marketplace_listing_unit_price_ck"
+        ),
+        CheckConstraint(
+            "max_gb is null or max_gb >= 1", name="marketplace_listing_max_gb_ck"
         ),
         CheckConstraint(
             "description is null or length(description) <= 300",
@@ -125,6 +131,8 @@ class MarketplaceListing(Base):
         ForeignKey("marketplace_operators.id", ondelete="RESTRICT")
     )
     price_per_gb_kzt: Mapped[int] = mapped_column(Integer)
+    # Most GB the seller can sell; the buyer picks an amount up to it.
+    max_gb: Mapped[int | None] = mapped_column(Integer, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(Text, default="active")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

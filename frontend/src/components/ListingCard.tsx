@@ -150,13 +150,14 @@ export function GigabytesListingCard({
   showStatus?: boolean;
   testId?: string;
 }) {
-  const validity = listing.operator.validity_days
-    ? `${listing.operator.validity_days} ${listing.operator.validity_days === 1 ? "день" : "дней"}`
+  const days = listing.operator.validity_days;
+  const validity = days
+    ? `${days} ${days % 10 === 1 && days % 100 !== 11 ? "день" : days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 12 || days % 100 > 14) ? "дня" : "дней"}`
     : undefined;
   return (
     <ListingCard
       title={listing.operator.name}
-      subtitle="Гигабайты"
+      subtitle={listing.max_gb ? `до ${listing.max_gb} ГБ` : "Гигабайты"}
       serviceSlug={`${listing.operator.slug}-family-tariff`}
       serviceName={listing.operator.name}
       price={listing.price_per_gb_kzt}

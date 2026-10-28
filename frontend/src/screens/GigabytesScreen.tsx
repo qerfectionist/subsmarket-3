@@ -23,6 +23,7 @@ import type {
   MarketplaceListingCreate,
   MarketplaceSort
 } from "../types";
+import { defaultMaxGb } from "../components/marketplace/GigabytesListingForm";
 import {
   GigabytesCatalogView,
   GigabytesListingDetails,
@@ -34,7 +35,8 @@ type ScreenMode = "catalog" | "detail" | "create" | "mine";
 
 const emptyForm: MarketplaceListingCreate = {
   operator_slug: "tele2",
-  price_per_gb_kzt: 120,
+  price_per_gb_kzt: 150,
+  max_gb: null,
   description: null
 };
 
@@ -114,7 +116,8 @@ export function GigabytesScreen({
 
   function startCreate() {
     setEditingId(null);
-    setForm({ ...emptyForm, operator_slug: operators[0]?.slug ?? "tele2" });
+    const first = operators[0] ?? null;
+    setForm({ ...emptyForm, operator_slug: first?.slug ?? "tele2", max_gb: defaultMaxGb(first) });
     setMode("create");
   }
 
@@ -123,6 +126,7 @@ export function GigabytesScreen({
     setForm({
       operator_slug: listing.operator.slug,
       price_per_gb_kzt: listing.price_per_gb_kzt,
+      max_gb: listing.max_gb ?? defaultMaxGb(listing.operator),
       description: listing.description ?? null
     });
     setMode("create");
@@ -132,6 +136,7 @@ export function GigabytesScreen({
     event.preventDefault();
     const payload: MarketplaceListingCreate = {
       ...form,
+      max_gb: form.max_gb ?? defaultMaxGb(activeOperator),
       description: normalizeText(form.description)
     };
     await run(

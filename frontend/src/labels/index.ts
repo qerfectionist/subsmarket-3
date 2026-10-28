@@ -126,6 +126,8 @@ export const errorLabels: Record<string, string> = {
   MARKETPLACE_LISTING_OPERATOR_IMMUTABLE:
     "Оператор опубликованного объявления изменить нельзя. Создайте новое объявление.",
   MARKETPLACE_AMOUNT_BELOW_MINIMUM: "Укажите не менее 1 ГБ.",
+  MARKETPLACE_AMOUNT_ABOVE_LISTING_MAXIMUM: "Продавец продаёт меньше ГБ. Выберите количество поменьше.",
+  MARKETPLACE_MAX_BELOW_OPERATOR_MINIMUM: "Максимум меньше, чем оператор разрешает передать за раз.",
   MARKETPLACE_AMOUNT_ABOVE_MAXIMUM:
     "Количество превышает лимит одного перевода у оператора.",
   MARKETPLACE_AMOUNT_INVALID_STEP:

@@ -13617,6 +13617,19 @@
             "minimum": 1.0,
             "title": "Price Per Gb Kzt"
           },
+          "max_gb": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Gb"
+          },
           "description": {
             "anyOf": [
               {
@@ -13659,6 +13672,17 @@
           "price_per_gb_kzt": {
             "type": "integer",
             "title": "Price Per Gb Kzt"
+          },
+          "max_gb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Gb"
           },
           "description": {
             "anyOf": [
@@ -14037,6 +14061,19 @@
             ],
             "title": "Price Per Gb Kzt"
           },
+          "max_gb": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Gb"
+          },
           "description": {
             "anyOf": [
               {
@@ -14160,6 +14197,18 @@
               }
             ],
             "title": "Verified At"
+          },
+          "available_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Until"
           }
         },
         "type": "object",

@@ -33,11 +33,15 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(page.getByTestId("gigabytes-screen")).toHaveCount(0);
   await page.getByTestId("my-gigabytes-create-button").click({ force: true });
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
+  await page.getByTestId("gb-operator-tele2").click({ force: true });
+  // Tele2 rules come from the operator: 200 ₸ on some tariffs, so 3 GB minimum.
+  await expect(page.getByTestId("gb-operator-rules")).toContainText("200 ₸");
+  await page.getByTestId("gb-max-input").fill("8");
   await page.getByLabel("Цена за 1 ГБ, ₸").fill("100");
+  await expect(page.getByTestId("gb-preview")).toContainText("Tele2, до 8 ГБ");
   await expect(
     page.getByText("Пока недостаточно объявлений для сравнения цены.")
   ).toBeVisible();
-  await page.getByLabel("Описание").fill("E2E mobile data listing");
   await page.getByRole("button", { name: "Опубликовать на 7 дней" }).click({
     force: true
   });
@@ -54,7 +58,9 @@ test("seller publishes GB and accepts a buyer request", async ({ page }) => {
   await expect(amountInput).toHaveAttribute("inputmode", "numeric");
   await expect(page.getByRole("button", { name: "3 ГБ" })).toBeVisible();
   await expect(page.getByRole("button", { name: "5 ГБ" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "10 ГБ" })).toBeVisible();
+  // The seller sells at most 8 GB, so the 10 GB preset is gone.
+  await expect(page.getByRole("button", { name: "10 ГБ" })).toHaveCount(0);
+  await expect(page.getByTestId("gb-detail-max")).toHaveText("до 8 ГБ");
   await page.getByRole("button", { name: "5 ГБ" }).click({ force: true });
   await expect(amountInput).toHaveValue("5");
   await expect(page.getByText("Итого: 500 ₸", { exact: true })).toBeVisible();

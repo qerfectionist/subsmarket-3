@@ -17,6 +17,7 @@ from subsmarket.marketplace.models import (
     MarketplaceListingRequest,
     MarketplaceOperator,
 )
+from subsmarket.marketplace.operators import operator_is_open, operator_open_clause
 from subsmarket.marketplace.queries import to_listing_out
 from subsmarket.marketplace.schemas import (
     MarketplaceListingCreate,
@@ -49,12 +50,14 @@ def create_marketplace_listing(
 
     operator = _get_active_operator(db, data.operator_slug)
     _ensure_no_managed_listing(db, user.id, operator.id)
+    _check_max_gb(operator, data.max_gb)
     now = utcnow()
     listing = MarketplaceListing(
         seller_user_id=user.id,
         listing_type="mobile_data",
         operator_id=operator.id,
         price_per_gb_kzt=data.price_per_gb_kzt,
+        max_gb=data.max_gb,
         description=_normalize_description(data.description),
         status="active",
         expires_at=now + timedelta(days=settings.marketplace_listing_days),
@@ -125,6 +128,9 @@ def update_marketplace_listing(
             listing.operator = operator
             if "price_per_gb_kzt" in data.model_fields_set:
                 listing.price_per_gb_kzt = data.price_per_gb_kzt
+            if "max_gb" in data.model_fields_set:
+                _check_max_gb(operator, data.max_gb)
+                listing.max_gb = data.max_gb
             if "description" in data.model_fields_set:
                 listing.description = _normalize_description(data.description)
             now = utcnow()
@@ -201,7 +207,7 @@ def renew_marketplace_listing(
     if listing.status == "archived":
         raise HTTPException(status_code=409, detail="MARKETPLACE_LISTING_ARCHIVED")
     now = utcnow()
-    if not listing.operator.is_active:
+    if not operator_is_open(listing.operator):
         raise HTTPException(status_code=409, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
     renew_available_at = as_utc(listing.expires_at) - timedelta(
         days=settings.marketplace_listing_expiry_reminder_days
@@ -270,7 +276,7 @@ def _set_listing_status(
         return to_listing_out(_get_listing(db, claim.resource_id), user.id)
 
     listing = _get_owned_listing_for_update(db, user.id, listing_id)
-    if target == "active" and not listing.operator.is_active:
+    if target == "active" and not operator_is_open(listing.operator):
         raise HTTPException(status_code=409, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
     if require_unexpired and as_utc(listing.expires_at) <= utcnow():
         raise HTTPException(
@@ -342,7 +348,7 @@ def _get_active_operator(db: Session, slug: str) -> MarketplaceOperator:
     operator = db.scalar(
         select(MarketplaceOperator)
         .where(MarketplaceOperator.slug == slug)
-        .where(MarketplaceOperator.is_active.is_(True))
+        .where(operator_open_clause())
     )
     if operator is None:
         raise HTTPException(status_code=422, detail="MARKETPLACE_OPERATOR_UNAVAILABLE")
@@ -363,6 +369,16 @@ def _ensure_no_managed_listing(
     if db.scalar(stmt) is not None:
         raise HTTPException(
             status_code=409, detail="MARKETPLACE_OPERATOR_LISTING_EXISTS"
+        )
+
+
+def _check_max_gb(operator: MarketplaceOperator, max_gb: int | None) -> None:
+    """The seller's maximum must fit at least one order the operator allows."""
+    if max_gb is None:
+        return
+    if operator.min_lot_gb is not None and max_gb < operator.min_lot_gb:
+        raise HTTPException(
+            status_code=422, detail="MARKETPLACE_MAX_BELOW_OPERATOR_MINIMUM"
         )
 
 

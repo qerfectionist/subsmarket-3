@@ -22,6 +22,7 @@ from subsmarket.marketplace.models import (
     MarketplaceListingRequest,
     MarketplaceOperator,
 )
+from subsmarket.marketplace.operators import operator_is_open, operator_open_clause
 from subsmarket.marketplace.owners import to_marketplace_listing_owner
 from subsmarket.marketplace.pagination import (
     cursor_datetime,
@@ -46,7 +47,7 @@ RequestRole = Literal["buyer", "seller"]
 def list_active_operators(db: Session) -> list[MarketplaceOperatorOut]:
     operators = db.scalars(
         select(MarketplaceOperator)
-        .where(MarketplaceOperator.is_active.is_(True))
+        .where(operator_open_clause())
         .order_by(MarketplaceOperator.name.asc())
     ).all()
     return [MarketplaceOperatorOut.model_validate(item) for item in operators]
@@ -92,7 +93,7 @@ def list_marketplace_listings_page(
         .where(MarketplaceListing.listing_type == "mobile_data")
         .where(MarketplaceListing.status == "active")
         .where(MarketplaceListing.expires_at > now)
-        .where(MarketplaceOperator.is_active.is_(True))
+        .where(operator_open_clause())
     )
     if operator_slug:
         stmt = stmt.where(MarketplaceOperator.slug == operator_slug)
@@ -119,7 +120,7 @@ def get_marketplace_price_insight(
         .where(MarketplaceListing.status == "active")
         .where(MarketplaceListing.expires_at > now)
         .where(MarketplaceOperator.slug == operator_slug)
-        .where(MarketplaceOperator.is_active.is_(True))
+        .where(operator_open_clause())
         .where(MarketplaceListing.seller_user_id != user.id)
     )
     if db.get_bind().dialect.name == "postgresql":
@@ -339,7 +340,7 @@ def to_listing_out(listing: MarketplaceListing, user_id: UUID) -> MarketplaceLis
         renew_available_at = as_utc(listing.expires_at) - timedelta(
             days=settings.marketplace_listing_expiry_reminder_days
         )
-        can_renew = listing.operator.is_active and (
+        can_renew = operator_is_open(listing.operator) and (
             listing.status == "expired" or utcnow() >= renew_available_at
         )
     return MarketplaceListingOut(
@@ -348,6 +349,7 @@ def to_listing_out(listing: MarketplaceListing, user_id: UUID) -> MarketplaceLis
         operator=MarketplaceOperatorOut.model_validate(listing.operator),
         owner=to_marketplace_listing_owner(listing.seller),
         price_per_gb_kzt=listing.price_per_gb_kzt,
+        max_gb=listing.max_gb,
         description=listing.description,
         status=listing.status,
         is_owner=listing.seller_user_id == user_id,

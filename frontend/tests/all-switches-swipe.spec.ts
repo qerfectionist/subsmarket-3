@@ -118,29 +118,5 @@ test("swiping works on all switches across the application", async ({ page }) =>
     });
   }
 
-  // --- 4. Create Family Screen: FamilyTypeSwitch ([ Подписки | Тарифы ]) ---
-  await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click({ force: true });
-  const createFamilySwitch = page.locator(".family-type-switch");
-  await expect(createFamilySwitch).toBeVisible();
-
-  const createSubBtn = createFamilySwitch.getByTestId("family-type-subscription");
-  const createTariffBtn = createFamilySwitch.getByTestId("family-type-tariff");
-  // Since market catalog was swiped to "tariff", CreateFamily inherits familyType="tariff"
-  await expect(createTariffBtn).toHaveAttribute("aria-pressed", "true");
-
-  const createBox = await createFamilySwitch.boundingBox();
-  if (createBox) {
-    const cry = createBox.y + createBox.height / 2;
-    // Swipe from tariff (75% width) back to subscription (25% width)
-    await page.mouse.move(createBox.x + createBox.width * 0.75, cry);
-    await page.mouse.down();
-    await page.mouse.move(createBox.x + createBox.width * 0.25, cry, { steps: 8 });
-    await page.mouse.up();
-
-    await expect(createSubBtn).toHaveAttribute("aria-pressed", "true");
-
-    await page.screenshot({
-      path: "C:/Users/qerfe/.gemini/antigravity/brain/9940f9a5-6e3c-4ff4-bf17-5ddbc333f212/screen_create_family_switch_swiped_to_sub.png"
-    });
-  }
+  // The create screen no longer has a type switch: an operator tile makes it a tariff family.
 });

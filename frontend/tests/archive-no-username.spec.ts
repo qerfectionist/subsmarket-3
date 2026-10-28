@@ -55,7 +55,6 @@ test("capture archive cards without username", async ({ page }) => {
   await page.locator(".product-scope-switch").getByRole("button", { name: "ГБ" }).click({ force: true });
   await page.getByTestId("my-gigabytes-create-button").click({ force: true });
   await page.getByLabel("Цена за 1 ГБ, ₸").fill("200");
-  await page.getByLabel("Описание").fill("Archive test listing");
   await page.getByRole("button", { name: "Опубликовать на 7 дней" }).click({ force: true });
   await waitForNetworkQuiet(page);
 

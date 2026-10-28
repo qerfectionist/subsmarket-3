@@ -1,47 +1,31 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from subsmarket.core.database import utcnow
 from subsmarket.marketplace.account_models import MarketplaceAccountService
 from subsmarket.marketplace.models import MarketplaceOperator
-from subsmarket.marketplace.rules import GB_ORDER_STEP, MINIMUM_GB_ORDER
+from subsmarket.marketplace.operator_catalog import OPERATOR_FIELDS, OPERATOR_RULES
 
 
 def ensure_development_marketplace_catalog(db: Session) -> int:
+    """Creates or refreshes operators with the official transfer rules."""
     created = _ensure_account_services(db)
-    existing = db.scalar(
-        select(MarketplaceOperator.id).where(MarketplaceOperator.slug == "tele2")
-    )
-    if existing is not None:
-        return created
     now = utcnow()
-    db.add(
-        MarketplaceOperator(
-            slug="tele2",
-            name="Tele2",
-            is_active=True,
-            min_lot_gb=MINIMUM_GB_ORDER,
-            max_lot_gb=Decimal("50.00"),
-            amount_step_gb=GB_ORDER_STEP,
-            validity_days=7,
-            fee_note=(
-                "Бесплатно на актуальных тарифах; на части архивных "
-                "тарифов комиссия 100 ₸."
-            ),
-            conditions=(
-                "Только Tele2 → Tele2. У отправителя должны остаться "
-                "минимум 1 ГБ и 10 минут."
-            ),
-            source_url="https://new.tele2.kz/new/transfer-resources",
-            verified_at=now,
+    for rules in OPERATOR_RULES:
+        operator = db.scalar(
+            select(MarketplaceOperator).where(MarketplaceOperator.slug == rules["slug"])
         )
-    )
+        if operator is None:
+            operator = MarketplaceOperator(slug=rules["slug"])
+            db.add(operator)
+            created += 1
+        for field in OPERATOR_FIELDS:
+            setattr(operator, field, rules.get(field))
+        operator.verified_at = now
     db.flush()
-    return created + 1
+    return created
 
 
 def _ensure_account_services(db: Session) -> int:

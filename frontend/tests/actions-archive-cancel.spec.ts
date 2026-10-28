@@ -60,7 +60,6 @@ test("cancelled request smoothly animates into archive", async ({ page }) => {
     await createButton.click({ force: true });
     await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
     await page.getByLabel("Цена за 1 ГБ, ₸").fill("150");
-    await page.getByLabel("Описание").fill("Test listing for archive animation");
     await page.getByRole("button", { name: "Опубликовать на 7 дней" }).click({ force: true });
     await waitForNetworkQuiet(page);
   }

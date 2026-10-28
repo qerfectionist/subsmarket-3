@@ -2356,6 +2356,8 @@ export interface components {
             operator_slug: string;
             /** Price Per Gb Kzt */
             price_per_gb_kzt: number;
+            /** Max Gb */
+            max_gb?: number | null;
             /** Description */
             description?: string | null;
         };
@@ -2375,6 +2377,8 @@ export interface components {
             owner: components["schemas"]["MarketplaceListingOwner"];
             /** Price Per Gb Kzt */
             price_per_gb_kzt: number;
+            /** Max Gb */
+            max_gb?: number | null;
             /** Description */
             description?: string | null;
             /**
@@ -2499,6 +2503,8 @@ export interface components {
             operator_slug?: string | null;
             /** Price Per Gb Kzt */
             price_per_gb_kzt?: number | null;
+            /** Max Gb */
+            max_gb?: number | null;
             /** Description */
             description?: string | null;
         };
@@ -2529,6 +2535,8 @@ export interface components {
             source_url?: string | null;
             /** Verified At */
             verified_at?: string | null;
+            /** Available Until */
+            available_until?: string | null;
         };
         /** MarketplacePriceInsightOut */
         MarketplacePriceInsightOut: {
