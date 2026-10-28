@@ -61,18 +61,11 @@
   margin-top: -8px;
 }
 
-/* Category chips above the service grid. */
+/* Category chips above the service grid: all visible at once, they wrap. */
 .create-category-chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-inline: -16px;
-  padding-inline: 16px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.create-category-chips::-webkit-scrollbar {
-  display: none;
 }
 
 .app-shell .create-category-chip {
@@ -82,7 +75,7 @@
   border: 0;
   border-radius: var(--app-radius-pill);
   background: var(--app-surface);
-  color: var(--app-muted);
+  color: var(--app-text);
   font: inherit;
   font-size: var(--app-size-caption);
   box-shadow: none;
@@ -92,6 +85,26 @@
   background: var(--app-accent);
   color: var(--app-accent-text);
   font-weight: var(--app-weight-semibold);
+}
+
+/* Sections under «Все»: «Популярное», then one per category. */
+.create-service-sections {
+  display: grid;
+  gap: 18px;
+}
+
+.create-service-section {
+  display: grid;
+  gap: 8px;
+}
+
+.app-shell .create-service-section-title {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-semibold);
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 
 /* Service tiles: three logos per row. */

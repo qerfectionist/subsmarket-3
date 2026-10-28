@@ -189,6 +189,34 @@ export const SERVICE_CATEGORY_CHIPS: ServiceCategoryChip[] = [
 
 const SERVICE_CATEGORY_ORDER = SERVICE_CATEGORY_CHIPS.flatMap((chip) => chip.categories);
 
+/** What families in Kazakhstan are made for most often: first in «Популярное» and in each category. */
+const POPULAR_SERVICE_SLUGS = [
+  "youtube-premium",
+  "yandex-plus",
+  "spotify-family",
+  "netflix-premium",
+  "apple-music",
+  "icloud-plus-2tb",
+  "tele2-family-tariff",
+  "beeline-family-tariff",
+  "activ-family-tariff",
+  "google-one",
+  "microsoft-365-family",
+  "duolingo-super",
+  "ivi",
+  "okko",
+  "kaspersky-standard",
+  "adguard-vpn"
+];
+
+/** How many tiles «Популярное» shows: two rows of three. */
+export const POPULAR_SERVICE_COUNT = 6;
+
+export function servicePopularity(slug: string) {
+  const index = POPULAR_SERVICE_SLUGS.indexOf(slug);
+  return index === -1 ? POPULAR_SERVICE_SLUGS.length : index;
+}
+
 export function serviceCategoryOrder(category: string) {
   const index = SERVICE_CATEGORY_ORDER.indexOf(category);
   return index === -1 ? SERVICE_CATEGORY_ORDER.length : index;
