@@ -2500,6 +2500,240 @@
         }
       }
     },
+    "/api/families/{family_id}/chat/kind": {
+      "post": {
+        "tags": [
+          "families"
+        ],
+        "summary": "Post Family Chat Kind",
+        "operationId": "post_family_chat_kind_api_families__family_id__chat_kind_post",
+        "parameters": [
+          {
+            "name": "family_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Family Id"
+            }
+          },
+          {
+            "name": "x-telegram-init-data",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Telegram-Init-Data"
+            }
+          },
+          {
+            "name": "x-dev-telegram-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-User-Id"
+            }
+          },
+          {
+            "name": "x-dev-telegram-username",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-Username"
+            }
+          },
+          {
+            "name": "x-dev-telegram-first-name",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-First-Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FamilyChatKindUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyChatOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/families/{family_id}/chat/whatsapp": {
+      "post": {
+        "tags": [
+          "families"
+        ],
+        "summary": "Post Family Chat Whatsapp",
+        "operationId": "post_family_chat_whatsapp_api_families__family_id__chat_whatsapp_post",
+        "parameters": [
+          {
+            "name": "family_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Family Id"
+            }
+          },
+          {
+            "name": "x-telegram-init-data",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Telegram-Init-Data"
+            }
+          },
+          {
+            "name": "x-dev-telegram-user-id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-User-Id"
+            }
+          },
+          {
+            "name": "x-dev-telegram-username",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-Username"
+            }
+          },
+          {
+            "name": "x-dev-telegram-first-name",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-Telegram-First-Name"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FamilyChatWhatsappUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyChatOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/families/{family_id}/price": {
       "patch": {
         "tags": [
@@ -11741,6 +11975,86 @@
         ],
         "title": "FamilyAuditLogPageOut"
       },
+      "FamilyChatKindUpdate": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "telegram",
+              "whatsapp"
+            ],
+            "title": "Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "FamilyChatKindUpdate"
+      },
+      "FamilyChatOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "telegram",
+              "whatsapp"
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "connected"
+            ],
+            "title": "Status"
+          },
+          "invite_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invite Url"
+          },
+          "connect_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connect Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "status"
+        ],
+        "title": "FamilyChatOut"
+      },
+      "FamilyChatWhatsappUpdate": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 10,
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "FamilyChatWhatsappUpdate"
+      },
       "FamilyCloseCreate": {
         "properties": {
           "closes_on": {
@@ -11870,6 +12184,21 @@
               }
             ],
             "title": "Payment Recipient Name"
+          },
+          "chat_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "telegram",
+                  "whatsapp"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Kind"
           }
         },
         "type": "object",
@@ -13763,6 +14092,16 @@
             "type": "integer",
             "title": "Pending Requests Count",
             "default": 0
+          },
+          "chat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FamilyChatOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

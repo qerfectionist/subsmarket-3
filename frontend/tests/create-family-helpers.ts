@@ -61,3 +61,19 @@ export async function pressCreateFamily(page: Page) {
   await expect(submit).toBeEnabled();
   await submit.evaluate((element) => (element as HTMLElement).click());
 }
+
+/** On «Семья создана»: connects a WhatsApp chat (so members can be approved) and goes to «Мои». */
+export async function finishCreatedFamily(page: Page, { connectChat = true } = {}) {
+  await expect(page.getByTestId("family-created-screen")).toBeVisible();
+  if (connectChat) {
+    const panel = page.getByTestId("family-chat-panel");
+    if ((await panel.getAttribute("data-chat-kind")) !== "whatsapp") {
+      await page.getByTestId("family-chat-switch").evaluate((element) => (element as HTMLElement).click());
+      await expect(panel).toHaveAttribute("data-chat-kind", "whatsapp");
+    }
+    await page.getByTestId("family-chat-whatsapp-input").fill("https://chat.whatsapp.com/AbCdEfGhIj12345");
+    await page.getByTestId("family-chat-save-whatsapp").evaluate((element) => (element as HTMLElement).click());
+    await expect(panel).toHaveAttribute("data-chat-status", "connected");
+  }
+  await page.getByTestId("family-created-done").evaluate((element) => (element as HTMLElement).click());
+}

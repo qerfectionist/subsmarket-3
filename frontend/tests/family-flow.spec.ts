@@ -3,7 +3,8 @@ import {
   fillCreateField,
   goToCreateStep,
   pickCreateService,
-  pressCreateFamily
+  pressCreateFamily,
+  finishCreatedFamily
 } from "./create-family-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
@@ -409,8 +410,47 @@ test("inside Telegram the native main button drives family creation", async ({ p
   await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: true, handlers: 1 });
   await pressMainButton();
   await waitForNetworkQuiet(page);
+  // «Семья создана»: the Telegram chat waits for the bot; the main button can postpone it.
+  await expect(page.getByTestId("family-created-screen")).toBeVisible();
+  await expect(page.getByTestId("family-chat-panel")).toHaveAttribute("data-chat-kind", "telegram");
+  await expect(page.getByTestId("family-chat-create-telegram")).toBeVisible();
+  await expect(page.getByTestId("family-created-done")).toHaveCount(0);
+  await expect.poll(mainButton).toMatchObject({ text: "Подключить позже", visible: true, handlers: 1 });
+  await pressMainButton();
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
   await expect.poll(mainButton).toMatchObject({ visible: false, handlers: 0 });
+});
+
+test("a family without a connected chat cannot accept members yet", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await openCreate(page);
+  await pressCreateFamily(page);
+  await waitForNetworkQuiet(page);
+  await finishCreatedFamily(page, { connectChat: false });
+  await waitForNetworkQuiet(page);
+  await expect(page.getByTestId("family-workspace")).toHaveCount(1);
+
+  await switchDevUser(page, "200002");
+  await openNav(page, 0);
+  await openFirstFamilyAndRequest(page);
+  await switchDevUser(page, "200001");
+  await openNav(page, 1);
+  await openOwnerDetails(page);
+  // The owner sees what is missing right in «Мои».
+  await expect(page.getByTestId("family-chat-panel")).toHaveAttribute("data-chat-status", "pending");
+  await page.getByTestId("approve-request-button").evaluate((element) => (element as HTMLElement).click());
+  await waitForNetworkQuiet(page);
+  await expect(page.getByText("Сначала подключите чат семьи", { exact: false }).first()).toBeVisible();
+
+  // Connecting WhatsApp in «Мои» unblocks approval.
+  await page.getByTestId("family-chat-switch").evaluate((element) => (element as HTMLElement).click());
+  await page.getByTestId("family-chat-whatsapp-input").fill("chat.whatsapp.com/AbCdEfGhIj12345");
+  await page.getByTestId("family-chat-save-whatsapp").evaluate((element) => (element as HTMLElement).click());
+  await waitForNetworkQuiet(page);
+  await expect(page.getByTestId("family-chat-panel")).toHaveCount(0);
+  await expect(page.getByTestId("family-chat-button")).toBeVisible();
+  await clickAndWait(page, "approve-request-button");
+  await expect(page.getByTestId("access-provided-button")).toBeVisible();
 });
 
 test("requisite phone is masked until revealed", async ({ page }) => {
@@ -618,6 +658,8 @@ test("successful mutation shows success and refreshes owner details once", async
 async function submitCreateFamily(page: Page) {
   await pressCreateFamily(page);
   await waitForNetworkQuiet(page);
+  await finishCreatedFamily(page);
+  await waitForNetworkQuiet(page);
 }
 
 async function createFamilyForOwner(page: Page) {
@@ -652,6 +694,11 @@ async function createFamilyWithActiveMember(page: Page) {
   await expect(page.getByTestId("confirm-access-button")).toBeVisible();
   await clickAndWait(page, "confirm-access-button");
   await expect(page.getByTestId("leave-family-button")).toBeVisible();
+  // An added member gets the family chat link.
+  await expect(page.getByTestId("family-chat-button")).toHaveAttribute(
+    "data-chat-url",
+    "https://chat.whatsapp.com/AbCdEfGhIj12345"
+  );
 }
 
 function dismissNextDialog(page: Page) {

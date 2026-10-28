@@ -50,6 +50,9 @@ class Settings(BaseSettings):
         alias="DB_CONNECT_TIMEOUT_SECONDS",
     )
     telegram_bot_token: str | None = Field(default=None, alias="TELEGRAM_BOT_TOKEN")
+    telegram_bot_username: str = Field(
+        default="subscription_market_bot", alias="TELEGRAM_BOT_USERNAME"
+    )
     telegram_mini_app_url: str | None = Field(
         default=None, alias="TELEGRAM_MINI_APP_URL"
     )

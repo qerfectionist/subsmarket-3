@@ -100,6 +100,7 @@ type TelegramWebApp = {
   showAlert?: (message: string, callback?: () => void) => void;
   showConfirm?: (message: string, callback?: (ok: boolean) => void) => void;
   openTelegramLink?: (url: string) => void;
+  openLink?: (url: string) => void;
   isVersionAtLeast?: (version: string) => boolean;
   onEvent?: (
     event:
@@ -424,6 +425,30 @@ export function openTelegramUser(username: string, text?: string) {
     : `https://t.me/${encodedUsername}`;
   if (webApp()?.openTelegramLink) {
     webApp()?.openTelegramLink?.(url);
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+/** Opens a t.me link inside Telegram, or a new tab in the browser. */
+export function openTelegramLink(url: string) {
+  if (typeof window !== "undefined" && window.navigator?.webdriver) {
+    return;
+  }
+  if (webApp()?.openTelegramLink) {
+    webApp()?.openTelegramLink?.(url);
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+/** Opens a link outside Telegram, for example WhatsApp. */
+export function openExternalLink(url: string) {
+  if (typeof window !== "undefined" && window.navigator?.webdriver) {
+    return;
+  }
+  if (webApp()?.openLink) {
+    webApp()?.openLink?.(url);
     return;
   }
   window.open(url, "_blank", "noopener,noreferrer");

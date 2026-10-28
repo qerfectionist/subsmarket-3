@@ -4,6 +4,8 @@ import type {
   CursorPage,
   Family,
   FamilyAuditLog,
+  FamilyChat,
+  FamilyChatKind,
   FamilyCreate,
   FamilyCreateResult,
   FamilyInvite,
@@ -131,6 +133,17 @@ export function createFamily(payload: FamilyCreate): Promise<FamilyCreateResult>
     "/api/families",
     payload
   );
+}
+
+export function setFamilyChatKind(
+  familyId: string,
+  kind: FamilyChatKind
+): Promise<FamilyChat> {
+  return post<FamilyChat>(`/api/families/${familyId}/chat/kind`, { kind });
+}
+
+export function connectWhatsappChat(familyId: string, url: string): Promise<FamilyChat> {
+  return post<FamilyChat>(`/api/families/${familyId}/chat/whatsapp`, { url });
 }
 
 export function updateFamilyDescription(

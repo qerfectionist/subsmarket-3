@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 from subsmarket.core.database import get_db
 from subsmarket.families.api.deps import get_current_user
 from subsmarket.families.schemas import (
+    FamilyChatKindUpdate,
+    FamilyChatOut,
+    FamilyChatWhatsappUpdate,
     FamilyCloseCreate,
     FamilyCreate,
     FamilyCreateResult,
@@ -21,11 +24,14 @@ from subsmarket.families.schemas import (
 )
 from subsmarket.families.service import (
     acknowledge_family_closing,
+    change_family_chat_kind,
     close_family,
     confirm_family_availability,
+    connect_whatsapp_chat,
     create_family,
     create_family_invite,
     disable_family_invite,
+    family_chat_out,
     get_family_invite,
     rotate_family_invite,
     to_family_out,
@@ -171,3 +177,29 @@ def post_family_closing_acknowledged(
 ) -> FamilyMemberOut:
     member = acknowledge_family_closing(db, user, family_id)
     return to_member_out(member)
+
+
+def post_family_chat_kind(
+    family_id: UUID,
+    payload: FamilyChatKindUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyChatOut:
+    chat = change_family_chat_kind(db, user, family_id, payload.kind)
+    result = family_chat_out(chat, is_owner=True, is_member=True)
+    if result is None:
+        raise RuntimeError("Family chat was not saved")
+    return result
+
+
+def post_family_chat_whatsapp(
+    family_id: UUID,
+    payload: FamilyChatWhatsappUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+) -> FamilyChatOut:
+    chat = connect_whatsapp_chat(db, user, family_id, payload.url)
+    result = family_chat_out(chat, is_owner=True, is_member=True)
+    if result is None:
+        raise RuntimeError("Family chat was not saved")
+    return result

@@ -11,7 +11,8 @@ import {
 } from "./FamilyActionsControls";
 import { PaymentList } from "./PaymentList";
 import { OwnerDetails } from "./OwnerDetails";
-import { memberCardStatus, statusText } from "../../format";
+import { FamilyChatButton, FamilyChatConnect } from "./FamilyChatPanel";
+import { familyTitle, memberCardStatus, statusText } from "../../format";
 import { triggerTelegramImpact } from "../../telegram";
 import type {
   FamilyMember,
@@ -117,6 +118,7 @@ export function MyFamilyWorkspaceCard({
             >
               Подробнее
             </AppButton>
+            <FamilyChatButton chat={item.chat} />
             <AppButton
               type="button"
               variant="secondary"
@@ -139,6 +141,13 @@ export function MyFamilyWorkspaceCard({
           )}
           {item.membership.role !== "owner" && (
             <MemberNextStep member={item.membership} payments={item.payments} />
+          )}
+          {item.membership.role === "owner" && item.chat?.status === "pending" && (
+            <FamilyChatConnect
+              familyId={item.family.id}
+              chat={item.chat}
+              groupName={`SubsMarket · ${familyTitle(item.family)}`}
+            />
           )}
           <div className="workspace-actions">
             {item.membership.role === "owner" ? (

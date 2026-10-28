@@ -21,6 +21,7 @@ from subsmarket.families._internal import (
     normalize_payment_phone,
 )
 from subsmarket.families.audit import record_family_audit_event
+from subsmarket.families.chat import create_family_chat
 from subsmarket.families.crypto import encrypt_payment_requisite
 from subsmarket.families.models import (
     Family,
@@ -135,6 +136,8 @@ def create_family(
             ),
         )
     )
+    if data.chat_kind is not None:
+        create_family_chat(db, family, data.chat_kind)
     owner_member = FamilyMember(
         family_id=family.id,
         user_id=user_id,

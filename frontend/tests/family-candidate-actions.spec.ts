@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { fillCreateField, pressCreateFamily } from "./create-family-helpers";
+import { fillCreateField, finishCreatedFamily, pressCreateFamily } from "./create-family-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
 const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
@@ -61,6 +61,8 @@ async function openCreate(page: Page) {
 
 async function submitCreateFamily(page: Page) {
   await pressCreateFamily(page);
+  await waitForNetworkQuiet(page);
+  await finishCreatedFamily(page);
   await waitForNetworkQuiet(page);
 }
 

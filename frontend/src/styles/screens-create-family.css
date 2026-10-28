@@ -380,3 +380,112 @@
   display: block;
   text-align: center;
 }
+
+/* Chat choice on the payout step. */
+.create-chat-choice {
+  display: flex;
+  gap: var(--app-segment-gap);
+  padding: var(--app-segment-padding);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-surface);
+}
+
+.app-shell .create-chat-option {
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: transparent;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: var(--app-size-caption);
+  box-shadow: none;
+}
+
+.app-shell .create-chat-option[aria-checked="true"] {
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font-weight: var(--app-weight-semibold);
+}
+
+/* Family chat panel: after creation and in «Мои». */
+.family-chat-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface);
+}
+
+.family-chat-panel h3 {
+  margin: 0;
+  font-size: var(--app-size-card);
+  line-height: var(--app-leading-card);
+}
+
+.family-chat-lead,
+.family-chat-wait {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+}
+
+.family-chat-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--app-success);
+  font-weight: var(--app-weight-semibold);
+}
+
+.family-chat-steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 22px;
+  list-style: decimal outside;
+}
+
+.family-chat-steps li::marker {
+  color: var(--app-muted);
+  font-weight: var(--app-weight-semibold);
+}
+
+.family-chat-steps li {
+  display: list-item;
+  font-size: var(--app-size-caption);
+}
+
+.family-chat-steps li > span {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.app-shell .family-chat-steps button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: var(--app-radius-pill);
+  background: var(--app-secondary-bg);
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-size-caption);
+  box-shadow: none;
+}
+
+.app-shell .family-chat-switch {
+  justify-self: center;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: var(--app-size-caption);
+  box-shadow: none;
+}

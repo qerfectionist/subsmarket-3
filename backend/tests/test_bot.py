@@ -59,12 +59,12 @@ def test_bot_start_sends_mini_app_intro() -> None:
     assert sender.messages == [(700001, START_MESSAGE)]
 
 
-def test_bot_ignores_group_updates() -> None:
+def test_bot_ignores_channel_updates() -> None:
     sender = FakeSender()
     result = handle_telegram_update(
         {
             "message": {
-                "chat": {"id": -1001, "type": "group"},
+                "chat": {"id": -1001, "type": "channel"},
                 "text": "/start",
             }
         },
@@ -74,6 +74,25 @@ def test_bot_ignores_group_updates() -> None:
     assert result["ok"] is True
     assert result["handled"] is False
     assert result["reason"] == "NON_PRIVATE_CHAT"
+    assert sender.messages == []
+
+
+def test_bot_ignores_ordinary_group_messages(db: Session) -> None:
+    sender = FakeSender()
+    result = handle_telegram_update(
+        {
+            "message": {
+                "chat": {"id": -1001, "type": "group"},
+                "text": "/start",
+            }
+        },
+        db=db,
+        sender=sender,
+    )
+
+    assert result["ok"] is True
+    assert result["handled"] is False
+    assert result["reason"] == "GROUP_MESSAGE_IGNORED"
     assert sender.messages == []
 
 

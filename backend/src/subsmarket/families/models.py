@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
@@ -81,6 +82,48 @@ class Family(Base):
     payment_requisite: Mapped[FamilyPaymentRequisite] = relationship(
         back_populates="family", uselist=False
     )
+    chat: Mapped[FamilyChat | None] = relationship(
+        back_populates="family", uselist=False
+    )
+
+
+class FamilyChat(Base):
+    """The family's group chat in Telegram or WhatsApp.
+
+    A new family starts with a pending chat; members can be approved only after
+    it is connected. Families created before chats existed have no row here.
+    """
+
+    __tablename__ = "family_chats"
+    __table_args__ = (
+        CheckConstraint("kind in ('telegram', 'whatsapp')", name="family_chat_kind_ck"),
+        CheckConstraint(
+            "status in ('pending', 'connected')", name="family_chat_status_ck"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    family_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("families.id", ondelete="CASCADE"), unique=True
+    )
+    kind: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text, default="pending")
+    connect_token: Mapped[str] = mapped_column(Text, unique=True)
+    telegram_chat_id: Mapped[int | None] = mapped_column(
+        BigInteger, nullable=True, unique=True
+    )
+    encrypted_invite_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    connected_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+    family: Mapped[Family] = relationship(back_populates="chat")
 
 
 class FamilyInvite(Base):

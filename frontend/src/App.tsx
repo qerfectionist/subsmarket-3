@@ -25,6 +25,7 @@ import { useAppQueries } from "./hooks/useAppQueries";
 import { useTouchScrollLock } from "./hooks/useTouchScrollLock";
 import { useFamilyActionHandlers } from "./hooks/useFamilyActionHandlers";
 import { CreateFamilyScreen } from "./screens/CreateFamilyScreen";
+import { FamilyCreatedScreen } from "./screens/FamilyCreatedScreen";
 import { AccountsScreen } from "./screens/AccountsScreen";
 import { ActionsScreen } from "./screens/ActionsScreen";
 import { FamilyDetailsScreen } from "./screens/FamilyDetailsScreen";
@@ -55,7 +56,8 @@ const emptyCreateForm: FamilyCreate = {
   owner_rules: "",
   payment_bank: "kaspi",
   payment_phone: "",
-  payment_recipient_name: ""
+  payment_recipient_name: "",
+  chat_kind: "telegram"
 };
 
 export function App() {
@@ -83,6 +85,7 @@ export function App() {
   const [accountsBackTab, setAccountsBackTab] = useState<Tab>("home");
   const [gigabytesBackTab, setGigabytesBackTab] = useState<Tab>("home");
   const [createBackTab, setCreateBackTab] = useState<Tab>("home");
+  const [createdFamilyId, setCreatedFamilyId] = useState<string | null>(null);
 
   useEffect(() => {
     if (tab !== "accounts") setAccountEntryId(null);
@@ -339,13 +342,14 @@ export function App() {
         owner_rules: normalizeText(createForm.owner_rules),
         payment_recipient_name: normalizeText(createForm.payment_recipient_name)
       };
-      await createFamilyMutation.mutateAsync(payload);
+      const created = await createFamilyMutation.mutateAsync(payload);
       setCreateForm({
         ...emptyCreateForm,
         service_id: typedServices[0]?.id || "",
         max_members: Math.min(6, typedServices[0]?.max_members ?? 8)
       });
-      setTab("mine");
+      setCreatedFamilyId(created.family.id);
+      setTab("created");
     });
   }
 
@@ -359,7 +363,7 @@ export function App() {
   }, [loadState]);
 
   useEffect(() => {
-    if (tab === "accounts" || tab === "gigabytes" || tab === "create") return;
+    if (tab === "accounts" || tab === "gigabytes" || tab === "create" || tab === "created") return;
     return setTelegramBackButton(tab !== "home", () => {
       if (tab === "family") {
         setTab(familyBackTab);
@@ -466,12 +470,13 @@ export function App() {
   const bottomNavTab: Tab =
     tab === "mine" ? "mine" :
     tab === "requests" ? "requests" :
-    tab === "create" ? "create" :
+    tab === "create" || tab === "created" ? "create" :
     "home";
   const shellTitle =
     tab === "cards-showcase" ? "Варианты карточек" :
     tab === "search" ? (familyType === "tariff" ? "Семейные тарифы" : "Семейные подписки") :
     tab === "create" ? "Создать семью" :
+    tab === "created" ? "Семья создана" :
     tab === "mine" ? "Мои" :
     tab === "requests" ? "Заявки" :
     tab === "family" ? "Семья" :
@@ -602,6 +607,13 @@ export function App() {
             onSubmit={(event) => void handleCreateFamily(event)}
           />
         </AsyncContent>
+      )}
+
+      {tab === "created" && (
+        <FamilyCreatedScreen
+          item={myFamilies.find((entry) => entry.family.id === createdFamilyId) ?? null}
+          onDone={() => setTab("mine")}
+        />
       )}
 
       {tab === "mine" && (

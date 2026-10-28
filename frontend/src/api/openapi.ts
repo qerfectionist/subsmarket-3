@@ -363,6 +363,40 @@ export interface paths {
         patch: operations["patch_family_description_api_families__family_id__description_patch"];
         trace?: never;
     };
+    "/api/families/{family_id}/chat/kind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Family Chat Kind */
+        post: operations["post_family_chat_kind_api_families__family_id__chat_kind_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/families/{family_id}/chat/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Family Chat Whatsapp */
+        post: operations["post_family_chat_whatsapp_api_families__family_id__chat_whatsapp_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/families/{family_id}/price": {
         parameters: {
             query?: never;
@@ -1789,6 +1823,36 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** FamilyChatKindUpdate */
+        FamilyChatKindUpdate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "telegram" | "whatsapp";
+        };
+        /** FamilyChatOut */
+        FamilyChatOut: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "telegram" | "whatsapp";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "connected";
+            /** Invite Url */
+            invite_url?: string | null;
+            /** Connect Url */
+            connect_url?: string | null;
+        };
+        /** FamilyChatWhatsappUpdate */
+        FamilyChatWhatsappUpdate: {
+            /** Url */
+            url: string;
+        };
         /** FamilyCloseCreate */
         FamilyCloseCreate: {
             /**
@@ -1838,6 +1902,8 @@ export interface components {
             payment_phone: string;
             /** Payment Recipient Name */
             payment_recipient_name?: string | null;
+            /** Chat Kind */
+            chat_kind?: ("telegram" | "whatsapp") | null;
         };
         /** FamilyCreateResult */
         FamilyCreateResult: {
@@ -2460,6 +2526,7 @@ export interface components {
              * @default 0
              */
             pending_requests_count: number;
+            chat?: components["schemas"]["FamilyChatOut"] | null;
         };
         /** MyFamilyPageOut */
         MyFamilyPageOut: {
@@ -3496,6 +3563,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FamilyOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_family_chat_kind_api_families__family_id__chat_kind_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                family_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyChatKindUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FamilyChatOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_family_chat_whatsapp_api_families__family_id__chat_whatsapp_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-telegram-init-data"?: string | null;
+                "x-dev-telegram-user-id"?: number | null;
+                "x-dev-telegram-username"?: string | null;
+                "x-dev-telegram-first-name"?: string | null;
+            };
+            path: {
+                family_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FamilyChatWhatsappUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FamilyChatOut"];
                 };
             };
             /** @description Validation Error */

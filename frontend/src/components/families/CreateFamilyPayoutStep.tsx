@@ -15,6 +15,10 @@ import {
 import { FieldNote } from "./createFamilyFields";
 
 const BANKS = Object.keys(bankLabels) as FamilyCreate["payment_bank"][];
+const CHAT_OPTIONS: { kind: NonNullable<FamilyCreate["chat_kind"]>; label: string }[] = [
+  { kind: "telegram", label: "Telegram" },
+  { kind: "whatsapp", label: "WhatsApp" }
+];
 
 type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolean>>;
 
@@ -134,6 +138,31 @@ export function CreateFamilyPayoutStep({
           error={shown("payment_recipient_name")}
           helper="Имя и первая буква фамилии, как покажет банк при переводе. Номер и имя увидят только участники, которым вы подтвердили доступ."
         />
+      </div>
+
+      <div className="ui-field">
+        <span>Чат семьи</span>
+        <div className="create-chat-choice" role="radiogroup" aria-label="Чат семьи">
+          {CHAT_OPTIONS.map((option) => (
+            <button
+              key={option.kind}
+              type="button"
+              role="radio"
+              aria-checked={(form.chat_kind ?? "telegram") === option.kind}
+              data-testid={`create-chat-${option.kind}`}
+              className="create-chat-option"
+              onClick={() => onChangeForm((current) => ({ ...current, chat_kind: option.kind }))}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <small className="field-helper">
+          {(form.chat_kind ?? "telegram") === "telegram"
+            ? "После создания откроем новую группу с ботом. Вам останется нажать «Создать»."
+            : "После создания поможем сделать группу в WhatsApp: три коротких шага."}{" "}
+          Без чата участников не добавить.
+        </small>
       </div>
 
       <TextArea

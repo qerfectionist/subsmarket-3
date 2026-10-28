@@ -88,11 +88,15 @@ export type PaymentConfirmationResult = {
   payment: FamilyPayment;
 };
 
+export type FamilyChat = Schema["FamilyChatOut"];
+export type FamilyChatKind = FamilyChat["kind"];
+
 export type MyFamily = {
   family: Family;
   membership: FamilyMember;
   payments: FamilyPayment[];
   pending_requests_count: number;
+  chat?: FamilyChat | null;
 };
 
 export type FamilyView = {

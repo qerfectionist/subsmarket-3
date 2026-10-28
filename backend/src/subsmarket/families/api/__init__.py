@@ -17,6 +17,7 @@ from subsmarket.families.schemas import (
     AccessConfirmationResult,
     FamilyAuditLogOut,
     FamilyAuditLogPageOut,
+    FamilyChatOut,
     FamilyCreateResult,
     FamilyInviteOut,
     FamilyMemberOut,
@@ -129,6 +130,18 @@ _add(
     "/{family_id}/description",
     management.patch_family_description,
     response_model=FamilyOut,
+)
+_add(
+    "post",
+    "/{family_id}/chat/kind",
+    management.post_family_chat_kind,
+    response_model=FamilyChatOut,
+)
+_add(
+    "post",
+    "/{family_id}/chat/whatsapp",
+    management.post_family_chat_whatsapp,
+    response_model=FamilyChatOut,
 )
 _add(
     "patch",

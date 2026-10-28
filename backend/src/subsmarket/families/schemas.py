@@ -7,6 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 FamilyPeriod = Literal["monthly", "yearly"]
+FamilyChatKind = Literal["telegram", "whatsapp"]
 PaymentBank = Literal["kaspi", "halyk", "freedom", "jusan"]
 FamilyMemberRemovalReason = Literal[
     "no_payment",
@@ -31,6 +32,7 @@ class FamilyCreate(BaseModel):
     payment_bank: PaymentBank
     payment_phone: str = Field(min_length=6, max_length=32)
     payment_recipient_name: str | None = Field(default=None, max_length=40)
+    chat_kind: FamilyChatKind | None = None
 
     @field_validator("payment_recipient_name")
     @classmethod
@@ -265,11 +267,29 @@ class PaymentConfirmationResult(BaseModel):
     payment: FamilyPaymentOut
 
 
+class FamilyChatOut(BaseModel):
+    kind: FamilyChatKind
+    status: Literal["pending", "connected"]
+    # Owner and added members only, once the chat is connected.
+    invite_url: str | None = None
+    # Owner only, while a Telegram chat waits for the bot.
+    connect_url: str | None = None
+
+
+class FamilyChatKindUpdate(BaseModel):
+    kind: FamilyChatKind
+
+
+class FamilyChatWhatsappUpdate(BaseModel):
+    url: str = Field(min_length=10, max_length=200)
+
+
 class MyFamilyOut(BaseModel):
     family: FamilyOut
     membership: FamilyMemberOut
     payments: list[FamilyPaymentOut]
     pending_requests_count: int = 0
+    chat: FamilyChatOut | None = None
 
 
 class MyFamilyPageOut(BaseModel):

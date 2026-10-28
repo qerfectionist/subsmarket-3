@@ -16,9 +16,11 @@ from subsmarket.families._internal import (
     _desc_due_created_uuid_condition,
     _trim_page,
 )
+from subsmarket.families.chat import family_chat_out
 from subsmarket.families.models import (
     Family,
     FamilyAuditLog,
+    FamilyChat,
     FamilyInvite,
     FamilyMember,
     FamilyPayment,
@@ -369,6 +371,16 @@ def _my_family_out_from_memberships(
             family_id: int(count) for family_id, count in rows
         }
 
+    chats_by_family_id: dict[UUID, FamilyChat] = {}
+    family_ids = list({membership.family_id for membership in memberships})
+    if family_ids:
+        chats_by_family_id = {
+            chat.family_id: chat
+            for chat in db.scalars(
+                select(FamilyChat).where(FamilyChat.family_id.in_(family_ids))
+            ).all()
+        }
+
     result: list[MyFamilyOut] = []
     for membership in memberships:
         payments = payments_by_member_id.get(membership.id, [])
@@ -381,6 +393,11 @@ def _my_family_out_from_memberships(
                 membership=to_member_out(membership),
                 payments=[to_payment_out(payment) for payment in payments],
                 pending_requests_count=pending_requests_count,
+                chat=family_chat_out(
+                    chats_by_family_id.get(membership.family_id),
+                    is_owner=membership.role == "owner",
+                    is_member=membership.status in ACTIVE_MEMBER_STATUSES,
+                ),
             )
         )
     return result

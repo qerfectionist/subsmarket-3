@@ -11,6 +11,7 @@ import {
   confirmAccessReceived,
   confirmFamilyAvailability,
   confirmPaymentReceived,
+  connectWhatsappChat,
   createFamily,
   createFamilyInvite,
   createFamilyRequest,
@@ -26,6 +27,7 @@ import {
   reportPaymentPaid,
   rotateFamilyInvite,
   removeMember,
+  setFamilyChatKind,
   updateFamilyDescription,
   updateFamilyPaymentDay,
   updateFamilyPrice,
@@ -33,6 +35,7 @@ import {
 } from "../../api";
 import type {
   CursorPage,
+  FamilyChatKind,
   FamilyCreate,
   FamilyMemberRemovalReason,
   FamilyPayment,
@@ -94,6 +97,24 @@ export function useCreateFamily() {
       await qc.invalidateQueries({ queryKey: queryKeys.myFamilies });
       await qc.refetchQueries({ queryKey: queryKeys.myFamilies });
     }
+  });
+}
+
+export function useSetFamilyChatKind() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ familyId, kind }: { familyId: string; kind: FamilyChatKind }) =>
+      setFamilyChatKind(familyId, kind),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.myFamilies })
+  });
+}
+
+export function useConnectWhatsappChat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ familyId, url }: { familyId: string; url: string }) =>
+      connectWhatsappChat(familyId, url),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.myFamilies })
   });
 }
 

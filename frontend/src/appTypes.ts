@@ -4,6 +4,7 @@ export type Tab =
   | "home"
   | "search"
   | "create"
+  | "created"
   | "mine"
   | "requests"
   | "family"

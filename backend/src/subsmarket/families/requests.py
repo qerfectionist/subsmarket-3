@@ -18,6 +18,7 @@ from subsmarket.families._internal import (
     record_owner_request_received,
 )
 from subsmarket.families.audit import record_family_audit_event
+from subsmarket.families.chat import ensure_family_chat_connected
 from subsmarket.families.models import (
     Family,
     FamilyMember,
@@ -304,6 +305,7 @@ def approve_join_request(db: Session, user: User, request_id: UUID) -> FamilyReq
         raise HTTPException(status_code=404, detail="FAMILY_REQUEST_NOT_FOUND")
     if family.owner_user_id != user.id:
         raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_APPROVE_REQUEST")
+    ensure_family_chat_connected(db, family)
     if request.status != ACTIVE_REQUEST_STATUS:
         raise HTTPException(status_code=409, detail="FAMILY_REQUEST_NOT_PENDING")
     if request.expires_at and as_utc(request.expires_at) <= utcnow():
