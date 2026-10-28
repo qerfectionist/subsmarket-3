@@ -11774,6 +11774,19 @@
             ],
             "title": "Plan Name"
           },
+          "full_speed_gb": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Speed Gb"
+          },
           "period": {
             "type": "string",
             "enum": [
@@ -11845,6 +11858,18 @@
             "maxLength": 32,
             "minLength": 6,
             "title": "Payment Phone"
+          },
+          "payment_recipient_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Recipient Name"
           }
         },
         "type": "object",
@@ -12152,6 +12177,17 @@
               }
             ],
             "title": "Plan Name"
+          },
+          "full_speed_gb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Speed Gb"
           },
           "owner": {
             "$ref": "#/components/schemas/PublicOwner"
@@ -14111,6 +14147,17 @@
           "phone": {
             "type": "string",
             "title": "Phone"
+          },
+          "recipient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Name"
           }
         },
         "type": "object",

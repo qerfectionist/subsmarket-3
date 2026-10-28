@@ -79,6 +79,8 @@ def create_family(
         raise HTTPException(status_code=400, detail="TARIFF_PLAN_NAME_REQUIRED")
     if service.family_type != "tariff" and plan_name:
         raise HTTPException(status_code=400, detail="PLAN_NAME_ONLY_FOR_TARIFF")
+    if service.family_type != "tariff" and data.full_speed_gb is not None:
+        raise HTTPException(status_code=400, detail="FULL_SPEED_ONLY_FOR_TARIFF")
 
     payment_phone = normalize_payment_phone(data.payment_phone)
     member_share, rounding_delta = calculate_member_share(
@@ -103,6 +105,7 @@ def create_family(
         owner_user_id=user_id,
         family_type=service.family_type,
         plan_name=plan_name,
+        full_speed_gb=data.full_speed_gb,
         status="active",
         period=data.period,
         max_members=data.max_members,
@@ -125,6 +128,11 @@ def create_family(
             family_id=family.id,
             bank=data.payment_bank,
             encrypted_phone=encrypt_payment_requisite(payment_phone),
+            encrypted_recipient_name=(
+                encrypt_payment_requisite(data.payment_recipient_name)
+                if data.payment_recipient_name
+                else None
+            ),
         )
     )
     owner_member = FamilyMember(

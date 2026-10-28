@@ -20,6 +20,7 @@ FamilyMemberRemovalReason = Literal[
 class FamilyCreate(BaseModel):
     service_id: uuid.UUID
     plan_name: str | None = Field(default=None, max_length=120)
+    full_speed_gb: int | None = Field(default=None, ge=1, le=5000)
     period: FamilyPeriod = "monthly"
     max_members: int = Field(ge=2, le=8)
     total_price_kzt: int = Field(gt=0, le=1_000_000)
@@ -29,6 +30,21 @@ class FamilyCreate(BaseModel):
     owner_rules: str | None = Field(default=None, max_length=1000)
     payment_bank: PaymentBank
     payment_phone: str = Field(min_length=6, max_length=32)
+    payment_recipient_name: str | None = Field(default=None, max_length=40)
+
+    @field_validator("payment_recipient_name")
+    @classmethod
+    def validate_payment_recipient_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        name = " ".join(value.split())
+        if not name:
+            return None
+        if len(name) < 2:
+            raise ValueError("PAYMENT_RECIPIENT_NAME_TOO_SHORT")
+        if any(char.isdigit() for char in name):
+            raise ValueError("PAYMENT_RECIPIENT_NAME_HAS_DIGITS")
+        return name
 
     @field_validator("next_payment_date")
     @classmethod
@@ -100,6 +116,7 @@ class FamilyOut(BaseModel):
     service_name: str
     service_variant: str | None
     plan_name: str | None
+    full_speed_gb: int | None = None
     owner: PublicOwner
     status: str
     period: str
@@ -200,6 +217,7 @@ class FamilyMemberOut(BaseModel):
 class PaymentRequisiteOut(BaseModel):
     bank: PaymentBank
     phone: str
+    recipient_name: str | None = None
 
 
 class FamilyPaymentOut(BaseModel):

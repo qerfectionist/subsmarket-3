@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { fillCreateField, pressCreateFamily } from "./create-family-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
 const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
@@ -58,53 +59,8 @@ async function openCreate(page: Page) {
   await expect(page.getByTestId("create-family-form")).toBeVisible();
 }
 
-const CREATE_FIELD_SECTION: Record<string, string> = {
-  "create-plan-name-input": "service",
-  "create-max-members-input": "price",
-  "create-total-price-input": "price",
-  "create-payment-day-input": "schedule",
-  "create-next-payment-date-input": "schedule",
-  "create-payment-phone-input": "payment",
-  "create-description-input": "details",
-  "create-owner-rules-input": "details"
-};
-
-async function openCreateSection(page: Page, section: string) {
-  const pane = page.locator(`[data-create-section="${section}"]`);
-  if ((await pane.count()) > 0) {
-    return;
-  }
-  await backToCreateSections(page);
-  await page
-    .getByTestId(`create-section-${section}`)
-    .evaluate((element) => (element as HTMLElement).click());
-  await expect(pane).toBeVisible();
-}
-
-async function backToCreateSections(page: Page) {
-  const back = page.getByTestId("create-family-back");
-  if ((await back.count()) > 0) {
-    await back.evaluate((element) => (element as HTMLElement).click());
-  }
-  await expect(page.getByTestId("create-hub-status")).toBeVisible();
-}
-
-async function fillCreateField(page: Page, testId: string, value: string) {
-  await openCreateSection(page, CREATE_FIELD_SECTION[testId] ?? "service");
-  await page.getByTestId(testId).fill(value);
-}
-
 async function submitCreateFamily(page: Page) {
-  const submit = page.getByTestId("create-family-submit");
-  for (let attempt = 0; attempt < 12 && (await submit.count()) === 0; attempt += 1) {
-    const next = page.getByTestId("create-section-done");
-    const target = (await next.count()) > 0 ? next : page.getByTestId("create-family-continue");
-    await expect(target).toBeEnabled();
-    await target.evaluate((element) => (element as HTMLElement).click());
-  }
-  await expect(submit).toBeEnabled();
-  await submit.scrollIntoViewIfNeeded();
-  await submit.evaluate((element) => (element as HTMLElement).click());
+  await pressCreateFamily(page);
   await waitForNetworkQuiet(page);
 }
 

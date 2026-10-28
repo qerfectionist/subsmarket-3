@@ -42,6 +42,14 @@ export function RequisiteBox({ requisite }: { requisite: PaymentRequisite }) {
         </Typography>
         <br />
         {phoneDisplay}
+        {requisite.recipient_name ? (
+          <>
+            <br />
+            <span data-testid="requisite-recipient-name">
+              Получатель: {requisite.recipient_name}
+            </span>
+          </>
+        ) : null}
       </Typography>
       <div className="row-actions">
         <AppButton

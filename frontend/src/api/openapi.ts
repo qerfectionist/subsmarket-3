@@ -1806,6 +1806,8 @@ export interface components {
             service_id: string;
             /** Plan Name */
             plan_name?: string | null;
+            /** Full Speed Gb */
+            full_speed_gb?: number | null;
             /**
              * Period
              * @default monthly
@@ -1834,6 +1836,8 @@ export interface components {
             payment_bank: "kaspi" | "halyk" | "freedom" | "jusan";
             /** Payment Phone */
             payment_phone: string;
+            /** Payment Recipient Name */
+            payment_recipient_name?: string | null;
         };
         /** FamilyCreateResult */
         FamilyCreateResult: {
@@ -1940,6 +1944,8 @@ export interface components {
             service_variant: string | null;
             /** Plan Name */
             plan_name: string | null;
+            /** Full Speed Gb */
+            full_speed_gb?: number | null;
             owner: components["schemas"]["PublicOwner"];
             /** Status */
             status: string;
@@ -2574,6 +2580,8 @@ export interface components {
             bank: "kaspi" | "halyk" | "freedom" | "jusan";
             /** Phone */
             phone: string;
+            /** Recipient Name */
+            recipient_name?: string | null;
         };
         /** PrepaymentPeriodsCreate */
         PrepaymentPeriodsCreate: {

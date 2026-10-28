@@ -1,291 +1,215 @@
 import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
-import { Button as AppButton, ListItem } from "../components/ui";
-import { FamilyTypeSwitch, Panel, ProductScopeSwitch } from "../components/layout";
-import { ServiceLogo } from "../components/branding";
+import { Button as AppButton } from "../components/ui";
+import { Panel, ProductScopeSwitch } from "../components/layout";
 import { SystemSymbol } from "../components/SystemSymbol";
-import { CreateFamilySectionFields } from "../components/families/CreateFamilySections";
+import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
+import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
+import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
 import {
-  CREATE_SECTIONS,
-  SECTION_HINTS,
-  SECTION_LEADS,
-  firstSectionError,
-  isSectionDone,
-  pluralRu,
-  sectionHasErrors,
-  sectionSummary,
+  CREATE_STEPS,
+  fixHint,
+  stepErrorFields,
+  stepHasErrors,
   validateCreateForm,
-  type CreateSection
+  type CreateStep
 } from "../components/families/createFamilyForm";
 import { useTelegramBackButton, useTelegramMainButton } from "../hooks/useTelegramAppEffects";
 import { canUseTelegramMainButton } from "../telegram";
-import { serviceTitle } from "../format";
-import type { FamilyCreate, FamilyService, FamilyType } from "../types";
-
-const REQUIRED_SECTIONS = CREATE_SECTIONS.filter((item) => item.required).map((item) => item.id);
+import type { FamilyCreate, FamilyService } from "../types";
 
 export function CreateFamilyScreen({
-  familyType,
-  typedServices,
+  services,
   service,
   createForm,
-  servicesCount,
   busy,
-  onChangeFamilyType,
+  onPickService,
   onCreateAccounts,
   onCreateGigabytes,
   onBack,
   onChangeForm,
   onSubmit
 }: {
-  familyType: FamilyType;
-  typedServices: FamilyService[];
+  services: FamilyService[];
   service: FamilyService | null;
   createForm: FamilyCreate;
-  servicesCount: number;
   busy: string | null;
-  onChangeFamilyType: (familyType: FamilyType) => void;
+  onPickService: (service: FamilyService) => void;
   onCreateAccounts: () => void;
   onCreateGigabytes: () => void;
   onBack: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
   onSubmit: (event: FormEvent) => void;
 }) {
-  const [openSection, setOpenSection] = useState<CreateSection | null>(null);
-  const [visited, setVisited] = useState<ReadonlySet<CreateSection>>(() => new Set());
+  const [step, setStep] = useState<CreateStep>("service");
+  const [attempted, setAttempted] = useState<ReadonlySet<CreateStep>>(() => new Set());
   const errors = validateCreateForm(createForm, service);
-  const serviceName = service ? serviceTitle(service) : null;
+  const stepIndex = CREATE_STEPS.findIndex((item) => item.id === step);
+  const isLast = step === "payout";
+  const blocked = stepHasErrors(step, errors) || (isLast && busy !== null);
+  const hint = fixHint(stepErrorFields(step, errors), isLast ? "создать семью" : "продолжить");
 
-  const isDone = (section: CreateSection, seen: ReadonlySet<CreateSection> = visited) =>
-    isSectionDone(section, errors, seen, createForm);
-  const unfinished = REQUIRED_SECTIONS.filter((section) => !isDone(section));
-  const ready = unfinished.length === 0 && Object.keys(errors).length === 0;
-
-  /** Where «Далее» leads from the open section: the next required section left. */
-  function nextAfter(section: CreateSection): CreateSection | null {
-    const seen = new Set(visited).add(section);
-    const order = REQUIRED_SECTIONS;
-    const start = order.indexOf(section);
-    const rotated = [...order.slice(start + 1), ...order.slice(0, Math.max(start, 0))];
-    return rotated.find((item) => !isDone(item, seen)) ?? null;
+  function goTo(next: CreateStep) {
+    setStep(next);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
-  function leaveSection(goTo: CreateSection | null) {
-    if (openSection) {
-      const section = openSection;
-      setVisited((current) => new Set(current).add(section));
+  function goBack() {
+    if (stepIndex === 0) onBack();
+    else goTo(CREATE_STEPS[stepIndex - 1].id);
+  }
+
+  useTelegramBackButton(true, goBack);
+
+  const formRef = useRef<HTMLFormElement | null>(null);
+  function advance() {
+    if (stepHasErrors(step, errors)) {
+      setAttempted((current) => new Set(current).add(step));
+      return;
     }
-    setOpenSection(goTo);
-  }
-
-  useTelegramBackButton(true, () => (openSection ? leaveSection(null) : onBack()));
-
-  function changeFamilyType(next: FamilyType) {
-    // A new type swaps the service list, so the checked sections start over.
-    setVisited(new Set());
-    onChangeFamilyType(next);
+    if (isLast) formRef.current?.requestSubmit();
+    else goTo(CREATE_STEPS[stepIndex + 1].id);
   }
 
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
-    if (openSection) {
-      // Enter inside a section moves on instead of creating the family.
-      if (!sectionHasErrors(openSection, errors)) leaveSection(nextAfter(openSection));
+    if (!isLast) {
+      // Enter inside a step moves on instead of creating the family.
+      advance();
       return;
     }
-    if (ready && busy === null) onSubmit(event);
+    if (Object.keys(errors).length === 0 && busy === null) onSubmit(event);
   }
 
-  const openMeta = openSection ? CREATE_SECTIONS.find((item) => item.id === openSection) : null;
-  const nextSection = openSection ? nextAfter(openSection) : null;
+  const mainLabel = isLast
+    ? "Создать семью"
+    : step === "service" && service
+      ? `Далее · ${service.name}`
+      : "Далее";
 
   // Inside Telegram the main action moves to the native bottom button; the page
   // keeps its own buttons for the browser and tests.
   const [nativeMainButton] = useState(canUseTelegramMainButton);
-  const formRef = useRef<HTMLFormElement | null>(null);
-  const mainAction = openSection
-    ? {
-        label: nextSection ? "Далее" : "Готово",
-        disabled: sectionHasErrors(openSection, errors),
-        run: () => leaveSection(nextSection)
-      }
-    : ready
-      ? {
-          label: "Создать семью",
-          disabled: busy !== null || servicesCount === 0,
-          run: () => formRef.current?.requestSubmit()
-        }
-      : { label: "Продолжить", disabled: false, run: () => setOpenSection(unfinished[0] ?? null) };
   useTelegramMainButton({
     visible: nativeMainButton,
-    label: mainAction.label,
+    label: mainLabel,
     onClick: () => {
-      if (!mainAction.disabled) mainAction.run();
+      if (!blocked) advance();
     },
     isPending: busy !== null,
-    disabled: mainAction.disabled
+    disabled: blocked
   });
 
   return (
     <Panel title="Создать семью">
       <div className="screen-body-inset">
-        {openSection === null ? (
-          <>
-            <ProductScopeSwitch
-              value="families"
-              onChange={(value) => {
-                if (value === "accounts") onCreateAccounts();
-                if (value === "gigabytes") onCreateGigabytes();
-              }}
-            />
-            <FamilyTypeSwitch value={familyType} onChange={changeFamilyType} />
-          </>
+        {step === "service" ? (
+          <ProductScopeSwitch
+            value="families"
+            onChange={(value) => {
+              if (value === "accounts") onCreateAccounts();
+              if (value === "gigabytes") onCreateGigabytes();
+            }}
+          />
         ) : null}
+
+        <ol className="create-progress" aria-label="Шаги">
+          {CREATE_STEPS.map((item, index) => {
+            const state = index < stepIndex ? "done" : index === stepIndex ? "current" : "todo";
+            return (
+              <li
+                key={item.id}
+                data-state={state}
+                aria-current={state === "current" ? "step" : undefined}
+                data-testid={`create-progress-${item.id}`}
+              >
+                <span className="create-progress-bar" />
+                <span className="create-progress-label">
+                  {state === "done" ? <SystemSymbol name="checkmark" size={12} /> : `${index + 1} `}
+                  {item.title}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
 
         <form
           ref={formRef}
-          className="form-grid"
+          className="create-step-form"
           data-testid="create-family-form"
+          data-step={step}
           onSubmit={handleFormSubmit}
         >
-          {openSection === null || !openMeta ? (
-            <>
-              <p className="create-hub-status" data-testid="create-hub-status">
-                {unfinished.length === 0
-                  ? "Всё заполнено, можно создавать"
-                  : `Осталось ${unfinished.length} ${pluralRu(unfinished.length, "раздел", "раздела", "разделов")}`}
+          {step === "service" ? (
+            <CreateFamilyServiceStep
+              services={services}
+              selectedId={createForm.service_id}
+              onPick={onPickService}
+            />
+          ) : null}
+          {step === "terms" && service ? (
+            <CreateFamilyTermsStep
+              form={createForm}
+              errors={errors}
+              service={service}
+              showAllErrors={attempted.has("terms")}
+              onChangeForm={onChangeForm}
+            />
+          ) : null}
+          {step === "payout" && service ? (
+            <CreateFamilyPayoutStep
+              form={createForm}
+              errors={errors}
+              service={service}
+              showAllErrors={attempted.has("payout")}
+              onEditTerms={() => goTo("terms")}
+              onChangeForm={onChangeForm}
+            />
+          ) : null}
+
+          <div className="create-wizard-footer">
+            {hint && step !== "service" ? (
+              <p className="create-fix-hint" data-testid="create-fix-hint">
+                {hint}
               </p>
-              <div className="family-overview-card create-hub-card">
-                <ol className="create-hub-list" aria-label="Разделы семьи">
-                  {CREATE_SECTIONS.map((item, index) => {
-                    const done = isDone(item.id);
-                    const error = visited.has(item.id)
-                      ? firstSectionError(item.id, errors)
-                      : undefined;
-                    const state = done ? "done" : error ? "error" : "todo";
-                    const description = done
-                      ? sectionSummary(item.id, createForm, serviceName)
-                      : (error ?? SECTION_HINTS[item.id]);
-                    const showLogo = item.id === "service" && service && done;
-                    return (
-                      <li key={item.id}>
-                        <ListItem
-                          data-testid={`create-section-${item.id}`}
-                          data-state={state}
-                          className={`create-hub-row create-hub-row-${state}`}
-                          label={item.title}
-                          description={description}
-                          startAdornment={
-                            showLogo ? (
-                              <ServiceLogo
-                                serviceSlug={service.slug}
-                                serviceName={service.name}
-                                familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
-                                size={32}
-                                loading="eager"
-                              />
-                            ) : done ? (
-                              <span className="create-hub-check">
-                                <SystemSymbol name="checkmark" size={26} />
-                              </span>
-                            ) : (
-                              <span className="wizard-step-index">{index + 1}</span>
-                            )
-                          }
-                          endAdornment={
-                            state === "error" ? (
-                              <SystemSymbol
-                                name="exclamationmark.circle"
-                                size={20}
-                                className="create-hub-error-icon"
-                              />
-                            ) : (
-                              <SystemSymbol
-                                name="chevron.forward"
-                                size={18}
-                                className="create-hub-chevron"
-                              />
-                            )
-                          }
-                          onClick={() => setOpenSection(item.id)}
-                        />
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-              <div className="create-wizard-footer">
-                {nativeMainButton ? null : (
-                  <div className="wizard-nav">
-                    {ready ? (
-                      <AppButton
-                        key="submit"
-                        type="submit"
-                        data-testid="create-family-submit"
-                        disabled={busy !== null || servicesCount === 0}
-                      >
-                        Создать семью
-                      </AppButton>
-                    ) : (
-                      <AppButton
-                        key="continue"
-                        type="button"
-                        data-testid="create-family-continue"
-                        onClick={() => setOpenSection(unfinished[0] ?? null)}
-                      >
-                        Продолжить
-                      </AppButton>
-                    )}
-                  </div>
+            ) : null}
+            {nativeMainButton ? null : (
+              <div className="wizard-nav">
+                <AppButton
+                  key="back"
+                  type="button"
+                  variant="secondary"
+                  data-testid="create-family-back"
+                  onClick={goBack}
+                >
+                  Назад
+                </AppButton>
+                {isLast ? (
+                  <AppButton
+                    key="submit"
+                    type="submit"
+                    data-testid="create-family-submit"
+                    disabled={blocked}
+                  >
+                    Создать семью
+                  </AppButton>
+                ) : (
+                  <AppButton
+                    key="next"
+                    type="submit"
+                    data-testid="create-family-next"
+                    disabled={blocked}
+                  >
+                    {mainLabel}
+                  </AppButton>
                 )}
-                <small className="field-helper create-hub-note">
-                  Сервис, период оплаты, число мест и правила после создания не поменять.
-                </small>
               </div>
-            </>
-          ) : (
-            <div className="wizard-pane wizard-pane-active" data-create-section={openSection}>
-              <div className="create-section-head">
-                <h2>{openMeta.title}</h2>
-                <p>{SECTION_LEADS[openSection]}</p>
-              </div>
-              <CreateFamilySectionFields
-                section={openSection}
-                familyType={familyType}
-                typedServices={typedServices}
-                form={createForm}
-                errors={errors}
-                service={service}
-                onChangeForm={onChangeForm}
-                onServicePicked={(planMissing) => {
-                  if (!planMissing) leaveSection(nextAfter("service"));
-                }}
-              />
-              {nativeMainButton ? null : (
-                <div className="create-wizard-footer">
-                  <div className="wizard-nav">
-                    <AppButton
-                      key="back"
-                      type="button"
-                      variant="secondary"
-                      data-testid="create-family-back"
-                      onClick={() => leaveSection(null)}
-                    >
-                      К разделам
-                    </AppButton>
-                    <AppButton
-                      key="done"
-                      type="button"
-                      data-testid="create-section-done"
-                      disabled={sectionHasErrors(openSection, errors)}
-                      onClick={() => leaveSection(nextSection)}
-                    >
-                      {nextSection ? "Далее" : "Готово"}
-                    </AppButton>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+            {isLast ? (
+              <small className="field-helper create-final-note">
+                После создания не поменять сервис и число мест.
+              </small>
+            ) : null}
+          </div>
         </form>
       </div>
     </Panel>

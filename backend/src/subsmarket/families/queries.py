@@ -60,6 +60,7 @@ def to_family_out(
         service_name=family.service.name,
         service_variant=family.service.variant,
         plan_name=family.plan_name,
+        full_speed_gb=family.full_speed_gb,
         owner=PublicOwner(
             avatar_name=family.owner.public_name
             or default_avatar_name(family.owner.id),

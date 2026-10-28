@@ -1,35 +1,54 @@
-import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
 
 const PHONE_RE = /^\+?7\d{10}$/;
-// Mirrors the backend limit in FamilyCreate.total_price_kzt.
+// Mirrors the backend limits in FamilyCreate.
 export const MAX_FAMILY_PRICE_KZT = 1_000_000;
+export const MAX_FULL_SPEED_GB = 5000;
 
-export type CreateSection = "service" | "price" | "schedule" | "payment" | "details";
+export type CreateStep = "service" | "terms" | "payout";
 
-export const CREATE_SECTIONS: { id: CreateSection; title: string; required: boolean }[] = [
-  { id: "service", title: "Сервис", required: true },
-  { id: "price", title: "Цена и места", required: true },
-  { id: "schedule", title: "День оплаты", required: true },
-  { id: "payment", title: "Реквизиты", required: true },
-  { id: "details", title: "Описание и правила", required: false }
+export const CREATE_STEPS: { id: CreateStep; title: string }[] = [
+  { id: "service", title: "Сервис" },
+  { id: "terms", title: "Условия" },
+  { id: "payout", title: "Выплаты" }
 ];
 
 export interface FieldErrors {
+  service_id?: string;
   plan_name?: string;
-  payment_phone?: string;
+  full_speed_gb?: string;
   total_price_kzt?: string;
+  max_members?: string;
   payment_day?: string;
   next_payment_date?: string;
-  max_members?: string;
+  payment_phone?: string;
+  payment_recipient_name?: string;
 }
 
-const SECTION_FIELDS: Record<CreateSection, (keyof FieldErrors)[]> = {
-  service: ["plan_name"],
-  price: ["total_price_kzt", "max_members"],
-  schedule: ["payment_day", "next_payment_date"],
-  payment: ["payment_phone"],
-  details: []
+const STEP_FIELDS: Record<CreateStep, (keyof FieldErrors)[]> = {
+  service: ["service_id"],
+  terms: [
+    "plan_name",
+    "full_speed_gb",
+    "total_price_kzt",
+    "max_members",
+    "payment_day",
+    "next_payment_date"
+  ],
+  payout: ["payment_phone", "payment_recipient_name"]
+};
+
+/** Short name of the field, used in «Чтобы создать семью, исправьте …». */
+export const FIELD_NAMES: Record<keyof FieldErrors, string> = {
+  service_id: "сервис",
+  plan_name: "название тарифа",
+  full_speed_gb: "полную скорость",
+  total_price_kzt: "цену",
+  max_members: "число мест",
+  payment_day: "день оплаты",
+  next_payment_date: "дату оплаты",
+  payment_phone: "номер телефона",
+  payment_recipient_name: "имя получателя"
 };
 
 export function getTodayKz(): string {
@@ -41,13 +60,19 @@ export function validateCreateForm(
   service: FamilyService | null
 ): FieldErrors {
   const errors: FieldErrors = {};
-  if (service?.family_type === "tariff" && !form.plan_name?.trim()) {
-    errors.plan_name = "Укажите название тарифа";
+  if (!service) {
+    errors.service_id = "Выберите сервис";
   }
-  if (!form.payment_phone.trim()) {
-    errors.payment_phone = "Укажите номер телефона";
-  } else if (!PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
-    errors.payment_phone = "Формат: +7 и 10 цифр, например +77001234567";
+  if (service?.family_type === "tariff") {
+    if (!form.plan_name?.trim()) {
+      errors.plan_name = "Укажите название тарифа";
+    }
+    const gb = form.full_speed_gb ?? 0;
+    if (!Number.isInteger(gb) || gb < 1) {
+      errors.full_speed_gb = "Сколько ГБ семья получает на полной скорости";
+    } else if (gb > MAX_FULL_SPEED_GB) {
+      errors.full_speed_gb = `Не больше ${MAX_FULL_SPEED_GB} ГБ`;
+    }
   }
   if (form.total_price_kzt <= 0) {
     errors.total_price_kzt = "Цена должна быть больше нуля";
@@ -65,11 +90,37 @@ export function validateCreateForm(
   } else if (form.next_payment_date < getTodayKz()) {
     errors.next_payment_date = "Дата не может быть в прошлом";
   }
+  if (!form.payment_phone.trim()) {
+    errors.payment_phone = "Укажите номер телефона";
+  } else if (!PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
+    errors.payment_phone = "Нужно +7 и 10 цифр, например +77001234567";
+  }
+  const recipient = (form.payment_recipient_name ?? "").trim();
+  if (!recipient) {
+    errors.payment_recipient_name = "Укажите имя, как оно записано в банке";
+  } else if (/\d/.test(recipient)) {
+    errors.payment_recipient_name = "Только имя и буква фамилии, без цифр";
+  } else if (recipient.length < 2) {
+    errors.payment_recipient_name = "Слишком короткое имя";
+  }
   return errors;
 }
 
-export function sectionHasErrors(section: CreateSection, errors: FieldErrors) {
-  return SECTION_FIELDS[section].some((key) => key in errors);
+export function stepHasErrors(step: CreateStep, errors: FieldErrors) {
+  return STEP_FIELDS[step].some((key) => key in errors);
+}
+
+export function stepErrorFields(step: CreateStep, errors: FieldErrors) {
+  return STEP_FIELDS[step].filter((key) => key in errors);
+}
+
+/** «Чтобы создать семью, проверьте номер телефона и имя получателя». */
+export function fixHint(fields: (keyof FieldErrors)[], action: string) {
+  if (fields.length === 0) return null;
+  const names = fields.map((field) => FIELD_NAMES[field]);
+  const list =
+    names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} и ${names[names.length - 1]}`;
+  return `Чтобы ${action}, проверьте ${list}`;
 }
 
 export function calculatePreviewShare(totalPriceKzt: number, maxMembers: number) {
@@ -95,89 +146,12 @@ export function periodPhrase(period: FamilyCreate["period"]) {
   return period === "yearly" ? "в год" : "в месяц";
 }
 
-export function periodOptionLabel(period: FamilyCreate["period"]) {
-  return period === "yearly" ? "Раз в год" : "Раз в месяц";
-}
-
-function formatDayMonth(isoDate: string) {
+export function formatDayMonth(isoDate: string) {
   const [year, month, day] = isoDate.split("-").map(Number);
   if (!year || !month || !day) return isoDate;
   return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(
     new Date(year, month - 1, day)
   );
-}
-
-/** One-line summary shown under a finished section in the step list. */
-export function sectionSummary(
-  section: CreateSection,
-  form: FamilyCreate,
-  serviceName: string | null
-): string {
-  switch (section) {
-    case "service": {
-      return [serviceName, form.plan_name?.trim()].filter(Boolean).join(" · ");
-    }
-    case "price": {
-      const seats = `${form.max_members} ${pluralRu(form.max_members, "место", "места", "мест")}`;
-      const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
-      return `${formatKzt(form.total_price_kzt)} ${periodPhrase(form.period)} · ${seats} · по ${formatKzt(share)}`;
-    }
-    case "schedule":
-      return `${form.payment_day}-го числа · ближайшая ${formatDayMonth(form.next_payment_date)}`;
-    case "payment":
-      return `${bankLabels[form.payment_bank]} · ${form.payment_phone.trim()}`;
-    case "details": {
-      const hasDescription = Boolean(form.description?.trim());
-      const hasRules = Boolean(form.owner_rules?.trim());
-      if (hasDescription && hasRules) return "Описание и правила добавлены";
-      if (hasDescription) return "Описание добавлено";
-      if (hasRules) return "Правила добавлены";
-      return SECTION_HINTS.details;
-    }
-  }
-}
-
-/** Hint shown under a section that is not finished yet. */
-export const SECTION_HINTS: Record<CreateSection, string> = {
-  service: "Что вы оплачиваете вместе",
-  price: "Сколько стоит и сколько вас",
-  schedule: "Когда участники переводят долю",
-  payment: "Банк и номер телефона",
-  details: "Необязательно"
-};
-
-/** Lead line at the top of an opened section. */
-export const SECTION_LEADS: Record<CreateSection, string> = {
-  service: "Что вы оплачиваете вместе. После создания сервис не поменять.",
-  price:
-    "Полная цена и сколько человек в семье, считая вас. Период и число мест после создания не поменять.",
-  schedule:
-    "К этому числу участники переводят вам свою долю. Если в месяце нет такого числа, оплата в последний день месяца.",
-  payment:
-    "Номер увидят только участники, которым вы подтвердили доступ.",
-  details:
-    "Расскажите, что входит в подписку и как подключиться. Правила после создания не поменять."
-};
-
-/** A section is finished when its fields are valid and the owner has looked at it.
- * The service is preselected and price and dates have guessed defaults, so those
- * need a visit; the phone has no default, so a valid value is enough. */
-export function isSectionDone(
-  section: CreateSection,
-  errors: FieldErrors,
-  confirmed: ReadonlySet<CreateSection>,
-  form: FamilyCreate
-) {
-  if (sectionHasErrors(section, errors)) return false;
-  if (section === "service") return Boolean(form.service_id) && confirmed.has(section);
-  if (section === "payment") return true;
-  if (section === "details") return Boolean(form.description?.trim() || form.owner_rules?.trim());
-  return confirmed.has(section);
-}
-
-export function firstSectionError(section: CreateSection, errors: FieldErrors) {
-  const key = SECTION_FIELDS[section].find((field) => field in errors);
-  return key ? errors[key] : undefined;
 }
 
 /** The next date that falls on `day`, after today. Days 29–31 fall back to the
@@ -195,31 +169,29 @@ export function nextPaymentDateFor(day: number, todayIso: string = getTodayKz())
   return month === 12 ? build(year + 1, 1) : build(year, month + 1);
 }
 
-const SERVICE_CATEGORY_LABELS: Record<string, string> = {
-  video_streaming: "Видео",
-  music_audio: "Музыка",
-  education_books: "Обучение и книги",
-  cloud_productivity: "Облако и офис",
-  security_utilities: "Защита и VPN",
-  mobile_tariffs: "Операторы"
-};
+/** Text hints stored in the catalog for a service. */
+export function serviceStrings(service: FamilyService | null, key: string): string[] {
+  const value = service?.service_metadata?.[key];
+  return Array.isArray(value) ? value.map(String) : [];
+}
 
-const SERVICE_CATEGORY_ORDER = [
-  "video_streaming",
-  "music_audio",
-  "cloud_productivity",
-  "education_books",
-  "security_utilities",
-  "mobile_tariffs"
+export type ServiceCategoryChip = { id: string; label: string; categories: string[] };
+
+export const SERVICE_CATEGORY_CHIPS: ServiceCategoryChip[] = [
+  { id: "all", label: "Все", categories: [] },
+  { id: "video", label: "Видео", categories: ["video_streaming"] },
+  { id: "music", label: "Музыка", categories: ["music_audio"] },
+  { id: "cloud", label: "Облако", categories: ["cloud_productivity"] },
+  { id: "study", label: "Обучение", categories: ["education_books"] },
+  { id: "vpn", label: "VPN", categories: ["security_utilities"] },
+  { id: "operators", label: "Операторы", categories: ["mobile_tariffs"] }
 ];
+
+const SERVICE_CATEGORY_ORDER = SERVICE_CATEGORY_CHIPS.flatMap((chip) => chip.categories);
 
 export function serviceCategoryOrder(category: string) {
   const index = SERVICE_CATEGORY_ORDER.indexOf(category);
   return index === -1 ? SERVICE_CATEGORY_ORDER.length : index;
-}
-
-export function serviceCategoryLabel(category: string) {
-  return SERVICE_CATEGORY_LABELS[category] ?? "Другое";
 }
 
 export function matchesServiceQuery(service: FamilyService, query: string) {

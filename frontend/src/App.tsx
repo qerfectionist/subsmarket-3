@@ -32,7 +32,7 @@ import { GigabytesScreen } from "./screens/GigabytesScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
 import { SearchScreen } from "./screens/SearchScreen";
 import { MasterFamilyCard } from "./components/cards-showcase/MasterFamilyCard";
-import type { FamilyCreate, FamilyType } from "./types";
+import type { FamilyCreate, FamilyService, FamilyType } from "./types";
 import {
   setTelegramBackButton,
   setTelegramClosingConfirmation,
@@ -45,6 +45,7 @@ import {
 const emptyCreateForm: FamilyCreate = {
   service_id: "",
   plan_name: null,
+  full_speed_gb: null,
   period: "monthly",
   max_members: 6,
   total_price_kzt: 3800,
@@ -53,7 +54,8 @@ const emptyCreateForm: FamilyCreate = {
   description: "",
   owner_rules: "",
   payment_bank: "kaspi",
-  payment_phone: ""
+  payment_phone: "",
+  payment_recipient_name: ""
 };
 
 export function App() {
@@ -292,7 +294,7 @@ export function App() {
   }
 
   function selectedService() {
-    return typedServices.find((service) => service.id === createForm.service_id) ?? null;
+    return services.find((service) => service.id === createForm.service_id) ?? null;
   }
 
   function changeFamilyType(nextType: FamilyType) {
@@ -302,8 +304,25 @@ export function App() {
       ...current,
       service_id: nextServices[0]?.id || "",
       plan_name: nextType === "tariff" ? current.plan_name : null,
-      period: nextServices[0]?.supported_periods[0] ?? "monthly",
+      full_speed_gb: nextType === "tariff" ? current.full_speed_gb : null,
+      period: "monthly",
       max_members: Math.min(current.max_members, nextServices[0]?.max_members ?? 8)
+    }));
+  }
+
+  /** The family type follows the picked service: an operator means a tariff family. */
+  function pickCreateService(next: FamilyService) {
+    const nextType: FamilyType = next.family_type === "tariff" ? "tariff" : "subscription";
+    setFamilyType(nextType);
+    setCreateForm((current) => ({
+      ...current,
+      service_id: next.id,
+      plan_name: nextType === "tariff" ? current.plan_name : null,
+      full_speed_gb: nextType === "tariff" ? current.full_speed_gb : null,
+      // «Раз в год» needs a payment screenshot checked by a moderator; until that
+      // exists new families are monthly only.
+      period: "monthly",
+      max_members: Math.min(Math.max(current.max_members, 2), next.max_members)
     }));
   }
 
@@ -313,14 +332,17 @@ export function App() {
       const payload: FamilyCreate = {
         ...createForm,
         plan_name: normalizeText(createForm.plan_name),
+        full_speed_gb:
+          selectedService()?.family_type === "tariff" ? createForm.full_speed_gb : null,
+        period: "monthly",
         description: normalizeText(createForm.description),
-        owner_rules: normalizeText(createForm.owner_rules)
+        owner_rules: normalizeText(createForm.owner_rules),
+        payment_recipient_name: normalizeText(createForm.payment_recipient_name)
       };
       await createFamilyMutation.mutateAsync(payload);
       setCreateForm({
         ...emptyCreateForm,
         service_id: typedServices[0]?.id || "",
-        period: typedServices[0]?.supported_periods[0] ?? "monthly",
         max_members: Math.min(6, typedServices[0]?.max_members ?? 8)
       });
       setTab("mine");
@@ -362,6 +384,7 @@ export function App() {
         Boolean(createForm.plan_name?.trim()) ||
         Boolean(createForm.description?.trim()) ||
         Boolean(createForm.owner_rules?.trim()) ||
+        Boolean(createForm.payment_recipient_name?.trim()) ||
         createForm.total_price_kzt !== emptyCreateForm.total_price_kzt)
   );
 
@@ -379,7 +402,7 @@ export function App() {
       return {
         ...current,
         service_id: first.id,
-        period: first.supported_periods[0] ?? current.period,
+        period: "monthly",
         max_members: Math.min(current.max_members, first.max_members)
       };
     });
@@ -570,13 +593,11 @@ export function App() {
               setGigabytesEntryMode("create");
               setTab("gigabytes");
             }}
-            familyType={familyType}
-            typedServices={typedServices}
+            services={services}
             service={service}
             createForm={createForm}
-            servicesCount={services.length}
             busy={busy}
-            onChangeFamilyType={changeFamilyType}
+            onPickService={pickCreateService}
             onChangeForm={setCreateForm}
             onSubmit={(event) => void handleCreateFamily(event)}
           />

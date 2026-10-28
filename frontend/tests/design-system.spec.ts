@@ -301,10 +301,9 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
     }));
     expect(createGeometry).toEqual({ radius: "50%", width: 52, height: 52 });
     await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
-    await expect(page.getByTestId("create-section-service")).toBeVisible();
-    await expect(page.getByTestId("create-family-continue")).toBeVisible();
+    await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
+    await expect(page.getByTestId("create-family-next")).toBeVisible();
     await expect(page.locator(".product-scope-switch button").first()).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator(".family-type-switch button").first()).toHaveAttribute("aria-pressed", "true");
     await page.screenshot({ path: info.outputPath("create-family-" + theme + ".png") });
     await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click();
     await expect(page.getByLabel("Что продаёте")).toBeVisible();

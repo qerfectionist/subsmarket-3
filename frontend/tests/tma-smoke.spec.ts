@@ -156,7 +156,7 @@ test("Mini App renders market, create, my, and family details", async ({ page })
 
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
-  await expect(page.getByTestId("create-section-service")).toBeVisible();
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
   await page.locator(".product-scope-switch").getByRole("button", { name: "Аккаунты" }).click({ force: true });
   await page.getByTestId("accounts-screen").getByRole("button", { name: "Назад" }).click();
   await expect(page.getByTestId("create-family-form")).toBeVisible();
@@ -516,23 +516,6 @@ test("Market catalog indicator matches its segment geometry", async ({ page }) =
   const geometry = await readSegmentIndicatorGeometry(scopeSwitch, 1, "--catalog-type-position");
 
   expect(geometry.position).toBeGreaterThan(0.99);
-  expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
-  expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
-});
-
-test("Create family type indicator matches its segment geometry", async ({ page }) => {
-  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
-  await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click({ force: true });
-  await expect(page.getByTestId("create-family-form")).toBeVisible();
-
-  const typeSwitch = page.locator(".family-type-switch");
-  const tariffButton = typeSwitch.getByTestId("family-type-tariff");
-  await tariffButton.click({ force: true });
-  await expect(tariffButton).toHaveAttribute("aria-pressed", "true");
-
-  const geometry = await readSegmentIndicatorGeometry(typeSwitch, 1, "--family-type-position");
-
-  expect(geometry.position).toBe(1);
   expect(Math.abs(geometry.indicatorWidth - geometry.segmentWidth)).toBeLessThan(1);
   expect(Math.abs(geometry.indicatorLeft - geometry.segmentLeft)).toBeLessThan(1);
 });

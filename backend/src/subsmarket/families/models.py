@@ -40,6 +40,7 @@ class Family(Base):
     owner_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     family_type: Mapped[str] = mapped_column(Text, default="subscription", index=True)
     plan_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    full_speed_gb: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(Text, default="active", index=True)
     is_search_visible: Mapped[bool] = mapped_column(Boolean, default=True)
     period: Mapped[str] = mapped_column(Text)
@@ -128,6 +129,7 @@ class FamilyPaymentRequisite(Base):
     )
     bank: Mapped[str] = mapped_column(Text)
     encrypted_phone: Mapped[str] = mapped_column(Text)
+    encrypted_recipient_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )

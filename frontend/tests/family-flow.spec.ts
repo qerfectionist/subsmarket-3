@@ -1,4 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  fillCreateField,
+  goToCreateStep,
+  pickCreateService,
+  pressCreateFamily
+} from "./create-family-helpers";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
 const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
@@ -63,13 +69,12 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await openCreate(page);
   await expect(page.getByTestId("create-family-form")).toBeVisible();
-  await openCreateSection(page, "price");
+  await goToCreateStep(page, "terms");
   await expect(page.getByTestId("create-share-preview")).toContainText("650 ₸");
   await fillCreateField(page, "create-total-price-input", "3990");
   await fillCreateField(page, "create-max-members-input", "4");
   await expect(page.getByTestId("create-share-preview")).toContainText("1 000 ₸");
   await fillCreateField(page, "create-payment-phone-input", "+77001234567");
-  await fillCreateField(page, "create-description-input", "E2E subscription family");
   await fillCreateField(page, "create-owner-rules-input", "Access first, payment after check.");
   await submitCreateFamily(page);
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
@@ -216,13 +221,16 @@ test("subscription and tariff families stay in separate storefronts", async ({
 }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
-  await page.getByTestId("family-type-tariff").click({ force: true });
-  await expect(page.getByTestId("create-family-form")).toBeVisible();
+  await pickCreateService(page, "tele2-family-tariff", "operators");
+  await goToCreateStep(page, "terms");
+  // A tariff needs its name and the full-speed volume before moving on.
+  await expect(page.getByTestId("create-family-next")).toBeDisabled();
   await fillCreateField(page, "create-plan-name-input", "Семейный 4");
+  await fillCreateField(page, "create-full-speed-input", "250");
   await fillCreateField(page, "create-total-price-input", "12000");
   await fillCreateField(page, "create-max-members-input", "4");
-  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
-  await fillCreateField(page, "create-description-input", "Семейный тариф оператора");
+  await expect(page.getByTestId("create-live-card")).toContainText("Тариф «Семейный 4»");
+  await expect(page.getByTestId("create-live-card")).toContainText("250 ГБ на полной скорости");
   await submitCreateFamily(page);
 
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
@@ -252,62 +260,67 @@ test("subscription and tariff families stay in separate storefronts", async ({
   ).toHaveCount(0);
 });
 
-test("create family form validates phone in real time", async ({ page }) => {
+test("create family form validates payout fields in real time", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
+  await goToCreateStep(page, "payout");
 
-  // Nothing is ticked until the owner looks at it; the main button leads to the next section.
-  await expect(page.getByTestId("create-hub-status")).toContainText("Осталось 4 раздела");
-  await expect(page.getByTestId("create-family-submit")).toHaveCount(0);
-  await expect(page.getByTestId("create-family-continue")).toBeEnabled();
+  // Empty phone and name: the button waits and says what is missing.
+  await expect(page.getByTestId("create-family-submit")).toBeDisabled();
+  await expect(page.getByTestId("create-fix-hint")).toContainText("номер телефона и имя получателя");
 
   await fillCreateField(page, "create-payment-phone-input", "123");
-  await expect(page.locator(".field-error")).toBeVisible();
-  await expect(page.locator(".field-error")).toContainText("Формат");
-  await expect(page.getByTestId("create-section-done")).toBeDisabled();
+  await page.getByTestId("create-payment-phone-input").blur();
+  await expect(page.locator(".field-error")).toContainText("Нужно +7 и 10 цифр");
 
   await fillCreateField(page, "create-payment-phone-input", "+77001234567");
+  await fillCreateField(page, "create-recipient-name-input", "Айгерим 4400");
+  await page.getByTestId("create-recipient-name-input").blur();
+  await expect(page.locator(".field-error")).toContainText("без цифр");
+  await expect(page.getByTestId("create-fix-hint")).toContainText("имя получателя");
+
+  await fillCreateField(page, "create-recipient-name-input", "Айгерим Б.");
   await expect(page.locator(".field-error")).toHaveCount(0);
-  await backToCreateSections(page);
-  await expect(page.getByTestId("create-section-payment")).toHaveAttribute("data-state", "done");
+  await expect(page.getByTestId("create-fix-hint")).toHaveCount(0);
+  await expect(page.getByTestId("create-family-submit")).toBeEnabled();
 
   await fillCreateField(page, "create-total-price-input", "0");
-  await expect(page.locator(".field-error")).toBeVisible();
   await expect(page.locator(".field-error")).toContainText("больше нуля");
-  await expect(page.getByTestId("create-section-done")).toBeDisabled();
-  await backToCreateSections(page);
-  await expect(page.getByTestId("create-section-price")).toHaveAttribute("data-state", "error");
-  await expect(page.getByTestId("create-section-price")).toContainText("больше нуля");
-  await expect(page.getByTestId("create-family-submit")).toHaveCount(0);
+  await expect(page.getByTestId("create-family-next")).toBeDisabled();
+  await expect(page.getByTestId("create-fix-hint")).toContainText("цену");
 });
 
-test("create family picks a service from the logo list and moves on", async ({ page }) => {
+test("create family picks a service from the logo grid and moves on", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
-  await page.getByTestId("create-family-continue").evaluate((element) => (element as HTMLElement).click());
-  await expect(page.locator('[data-create-section="service"]')).toBeVisible();
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
   const options = page.locator('[data-testid^="create-service-option-"]');
   await expect(options.first()).toBeVisible();
   const second = options.nth(1);
   const name = (await second.locator("strong").innerText()).trim();
   await second.evaluate((element) => (element as HTMLElement).click());
-  await expect(page.locator('[data-create-section="price"]')).toBeVisible();
-  await backToCreateSections(page);
-  await expect(page.getByTestId("create-section-service")).toHaveAttribute("data-state", "done");
-  await expect(page.getByTestId("create-section-service")).toContainText(name);
-  await expect(page.getByTestId("create-section-service").locator(".service-logo")).toHaveCount(1);
+  await expect(second).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("create-family-next")).toContainText(name);
+
+  await page.getByTestId("create-family-next").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
+  await expect(page.getByTestId("create-progress-service")).toHaveAttribute("data-state", "done");
+  await expect(page.getByTestId("create-live-card")).toContainText(name);
+  await expect(page.getByTestId("create-live-card").locator(".service-logo")).toHaveCount(1);
+
+  // Search narrows the grid and says when nothing matches.
+  await goToCreateStep(page, "service");
+  await page.getByTestId("create-service-search").fill("zzzz");
+  await expect(page.getByTestId("create-service-empty")).toContainText("zzzz");
 });
 
-test("create family enter key moves to the next section, not the family", async ({ page }) => {
+test("create family enter key moves to the next step, not the family", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
-  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
-  await page.getByTestId("create-payment-phone-input").press("Enter");
-  await expect(page.locator('[data-create-section="payment"]')).toHaveCount(0);
+  await fillCreateField(page, "create-total-price-input", "4500");
+  await page.getByTestId("create-total-price-input").press("Enter");
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "payout");
   await expect(page.getByTestId("family-workspace")).toHaveCount(0);
-  await backToCreateSections(page);
-  await expect(page.getByTestId("create-section-payment")).toHaveAttribute("data-state", "done");
-  await expect(page.getByTestId("create-family-submit")).toHaveCount(0);
 });
 
 test("inside Telegram the native main button drives family creation", async ({ page }) => {
@@ -379,24 +392,20 @@ test("inside Telegram the native main button drives family creation", async ({ p
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
-  await expect.poll(mainButton).toEqual({ text: "Продолжить", visible: true, enabled: true, handlers: 1 });
-  await expect(page.getByTestId("create-family-continue")).toHaveCount(0);
+  await expect
+    .poll(mainButton)
+    .toMatchObject({ text: expect.stringMatching(/^Далее · /), visible: true, enabled: true, handlers: 1 });
+  await expect(page.getByTestId("create-family-next")).toHaveCount(0);
 
   await pressMainButton();
-  await expect(page.locator('[data-create-section="service"]')).toBeVisible();
-  await expect(page.getByTestId("create-section-done")).toHaveCount(0);
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
   await expect.poll(mainButton).toMatchObject({ text: "Далее", visible: true, handlers: 1 });
 
-  for (const section of ["price", "schedule", "payment"]) {
-    await pressMainButton();
-    await expect(page.locator(`[data-create-section="${section}"]`)).toBeVisible();
-  }
-  await expect.poll(mainButton).toMatchObject({ text: "Готово", enabled: false });
-  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
-  await expect.poll(mainButton).toMatchObject({ text: "Готово", enabled: true, handlers: 1 });
   await pressMainButton();
-
-  await expect(page.getByTestId("create-hub-status")).toContainText("Всё заполнено");
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "payout");
+  await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: false });
+  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
+  await page.getByTestId("create-recipient-name-input").fill("Айгерим Б.");
   await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: true, handlers: 1 });
   await pressMainButton();
   await waitForNetworkQuiet(page);
@@ -606,53 +615,8 @@ test("successful mutation shows success and refreshes owner details once", async
   await expect(page.getByTestId("access-provided-button")).toBeVisible();
 });
 
-const CREATE_FIELD_SECTION: Record<string, string> = {
-  "create-plan-name-input": "service",
-  "create-max-members-input": "price",
-  "create-total-price-input": "price",
-  "create-payment-day-input": "schedule",
-  "create-next-payment-date-input": "schedule",
-  "create-payment-phone-input": "payment",
-  "create-description-input": "details",
-  "create-owner-rules-input": "details"
-};
-
-async function openCreateSection(page: Page, section: string) {
-  const pane = page.locator(`[data-create-section="${section}"]`);
-  if ((await pane.count()) > 0) {
-    return;
-  }
-  await backToCreateSections(page);
-  await page
-    .getByTestId(`create-section-${section}`)
-    .evaluate((element) => (element as HTMLElement).click());
-  await expect(pane).toBeVisible();
-}
-
-async function backToCreateSections(page: Page) {
-  const back = page.getByTestId("create-family-back");
-  if ((await back.count()) > 0) {
-    await back.evaluate((element) => (element as HTMLElement).click());
-  }
-  await expect(page.getByTestId("create-hub-status")).toBeVisible();
-}
-
-async function fillCreateField(page: Page, testId: string, value: string) {
-  await openCreateSection(page, CREATE_FIELD_SECTION[testId] ?? "service");
-  await page.getByTestId(testId).fill(value);
-}
-
 async function submitCreateFamily(page: Page) {
-  const submit = page.getByTestId("create-family-submit");
-  for (let attempt = 0; attempt < 12 && (await submit.count()) === 0; attempt += 1) {
-    const next = page.getByTestId("create-section-done");
-    const target = (await next.count()) > 0 ? next : page.getByTestId("create-family-continue");
-    await expect(target).toBeEnabled();
-    await target.evaluate((element) => (element as HTMLElement).click());
-  }
-  await expect(submit).toBeEnabled();
-  await submit.scrollIntoViewIfNeeded();
-  await submit.evaluate((element) => (element as HTMLElement).click());
+  await pressCreateFamily(page);
   await waitForNetworkQuiet(page);
 }
 

@@ -6,8 +6,6 @@ import {
   Typography
 } from "./ui";
 
-import { familyTypeLabels } from "../labels";
-import type { FamilyType } from "../types";
 export { BottomNav, setNavStylePreference, type NavStyle } from "./BottomNav";
 
 export { DevUserSwitch } from "./DevControls";
@@ -93,60 +91,6 @@ export function Shell({
     >
       {children}
     </main>
-  );
-}
-
-const familyTypeOptions = ["subscription", "tariff"] as const;
-
-export function FamilyTypeSwitch({ value, onChange }: { value: FamilyType; onChange: (value: FamilyType) => void }) {
-  const switchRef = useRef<HTMLDivElement | null>(null);
-
-  useLayoutEffect(() => {
-    switchRef.current?.style.setProperty(
-      "--family-type-position",
-      String(value === "subscription" ? 0 : 1)
-    );
-  }, [value]);
-
-  const switchSwipe = useSegmentSwitchSwipe<FamilyType>({
-    items: familyTypeOptions,
-    value,
-    onChange,
-    onPositionChange: (pos, dragging) => {
-      const el = switchRef.current;
-      if (!el) return;
-      el.style.setProperty("--family-type-position", String(pos));
-      if (dragging) el.setAttribute("data-scope-dragging", "true");
-      else el.removeAttribute("data-scope-dragging");
-    }
-  });
-
-  return (
-    <div
-      ref={(node) => {
-        switchRef.current = node;
-        switchSwipe.switchRef.current = node;
-      }}
-      className="family-type-switch"
-      role="group"
-      aria-label="Тип семейного предложения"
-      {...switchSwipe.handlers}
-    >
-      {familyTypeOptions.map((type) => (
-        <AppButton
-          key={type}
-          type="button"
-          data-testid={`family-type-${type}`}
-          aria-pressed={value === type}
-          variant={value === type ? "primary" : "tertiary"}
-          size="sm"
-          fullWidth
-          onClick={() => onChange(type)}
-        >
-          {familyTypeLabels[type]}
-        </AppButton>
-      ))}
-    </div>
   );
 }
 

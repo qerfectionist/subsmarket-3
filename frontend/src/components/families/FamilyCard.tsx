@@ -57,6 +57,11 @@ export function FamilyCard({
         </div>
       </div>
 
+      {family.family_type === "tariff" && family.full_speed_gb ? (
+        <p className="family-card-subtitle" data-testid="family-card-full-speed">
+          {family.full_speed_gb} ГБ на полной скорости
+        </p>
+      ) : null}
       <p className="family-card-subtitle">
         {family.description || "Описание пока не добавлено."}
       </p>

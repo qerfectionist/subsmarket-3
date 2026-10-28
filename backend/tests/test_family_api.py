@@ -955,6 +955,7 @@ def test_family_api_happy_path_keeps_requisites_private_until_access(
     assert confirmation["payment_requisite"] == {
         "bank": "kaspi",
         "phone": "+77001234567",
+        "recipient_name": None,
     }
     payment_id = confirmation["payment"]["id"]
     assert repeated_confirmation.json()["payment"]["id"] == payment_id

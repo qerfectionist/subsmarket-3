@@ -170,6 +170,7 @@ def _access_confirmation_result(
         payment_requisite=PaymentRequisiteOut(
             bank=requisite.bank,
             phone=decrypt_payment_requisite(requisite.encrypted_phone),
+            recipient_name=_recipient_name(requisite),
         ),
     )
 
@@ -204,7 +205,14 @@ def get_open_payment_requisite(
     return PaymentRequisiteOut(
         bank=requisite.bank,
         phone=decrypt_payment_requisite(requisite.encrypted_phone),
+        recipient_name=_recipient_name(requisite),
     )
+
+
+def _recipient_name(requisite: FamilyPaymentRequisite) -> str | None:
+    if not requisite.encrypted_recipient_name:
+        return None
+    return decrypt_payment_requisite(requisite.encrypted_recipient_name)
 
 
 def create_member_prepayment(db: Session, user: User, member_id: UUID) -> FamilyPayment:
