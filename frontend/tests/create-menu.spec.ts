@@ -29,8 +29,8 @@ test("«Создать» asks what to create and the options take turns", async 
   await openCreate(page);
   await expect(page.getByRole("heading", { name: "Что создаём?" })).toBeVisible();
   const word = page.getByTestId("create-ticker-word");
-  await expect(word).toHaveText("семейную подписку");
-  await expect(word).toHaveText("семейный тариф", { timeout: 6000 });
+  await expect(word).toHaveText("подписку");
+  await expect(word).toHaveText("тариф", { timeout: 6000 });
 });
 
 test("«Создать» finds anything that can be created", async ({ page }) => {

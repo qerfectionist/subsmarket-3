@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 
-/** What can be created, in the form that follows «Что создаём?». */
+/** What can be created, in the form that follows «Что создаём?» on the same line. */
 const ITEMS = [
-  { kind: "subscription", text: "семейную подписку" },
-  { kind: "tariff", text: "семейный тариф" },
-  { kind: "accounts", text: "продажу аккаунта" },
-  { kind: "gigabytes", text: "продажу гигабайтов" }
+  { kind: "subscription", text: "подписку" },
+  { kind: "tariff", text: "тариф" },
+  { kind: "accounts", text: "аккаунт" },
+  { kind: "gigabytes", text: "гигабайты" }
 ] as const;
 const INTERVAL_MS = 2600;
 
 /**
- * The line under «Что создаём?»: a still outline with the four things taking
+ * The words beside «Что создаём?»: a still outline with the four things taking
  * turns inside it. They share one cell, so the outline fits the longest and
  * never changes size. They roll like a drum: the shown one comes up from below
  * while the previous one leaves upward, both fading and tilting away.

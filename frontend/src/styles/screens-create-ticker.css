@@ -1,6 +1,18 @@
 /* «Что создаём?» and the words that take turns under it. */
+/* «Что создаём?» and the rolling word share one line. */
+.create-home .app-panel-head > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-inline: 0;
+}
+
+.create-home .app-panel-head h1,
 .create-home .app-panel-head p {
+  margin: 0;
   max-width: none;
+  white-space: nowrap;
 }
 
 .create-ticker {
