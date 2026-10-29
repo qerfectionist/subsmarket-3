@@ -87,11 +87,8 @@ export function CreateFamilyScreen({
     if (Object.keys(errors).length === 0 && busy === null) onSubmit(event);
   }
 
-  const mainLabel = isLast
-    ? "Создать семью"
-    : step === "service" && service
-      ? `Далее · ${service.name}`
-      : "Далее";
+  // The picked service shows on its tile, so the button only says what it does.
+  const mainLabel = isLast ? "Создать семью" : "Далее";
 
   // Inside Telegram the main action moves to the native bottom button; the page
   // keeps its own buttons for the browser and tests.

@@ -110,11 +110,6 @@ export function CreateFamilyServiceStep({
               loading="eager"
             />
             <strong>{tileName(service)}</strong>
-            {selected ? (
-              <span className="create-service-tile-check">
-                <SystemSymbol name="checkmark" size={14} />
-              </span>
-            ) : null}
           </button>
         );
       })}

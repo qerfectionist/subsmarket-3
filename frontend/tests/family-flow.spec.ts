@@ -313,7 +313,12 @@ test("create family picks a service from the logo grid and moves on", async ({ p
   const name = (await second.locator("strong").innerText()).trim();
   await second.evaluate((element) => (element as HTMLElement).click());
   await expect(second).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByTestId("create-family-next")).toContainText(name);
+  // The picked tile is ringed and the others dim; the button only says «Далее».
+  await expect(page.getByTestId("create-family-next")).toHaveText("Далее");
+  await expect(page.getByTestId("create-family-next")).toBeEnabled();
+  await expect
+    .poll(() => options.first().evaluate((element) => getComputedStyle(element).opacity))
+    .toBe("0.38");
 
   await page.getByTestId("create-family-next").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
@@ -410,7 +415,7 @@ test("inside Telegram the native main button drives family creation", async ({ p
   await page.getByTestId("create-service-option-youtube-premium").evaluate((element) => (element as HTMLElement).click());
   await expect
     .poll(mainButton)
-    .toMatchObject({ text: expect.stringMatching(/^Далее · /), visible: true, enabled: true, handlers: 1 });
+    .toMatchObject({ text: "Далее", visible: true, enabled: true, handlers: 1 });
   await expect(page.getByTestId("create-family-next")).toHaveCount(0);
 
   await pressMainButton();
