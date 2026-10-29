@@ -59,3 +59,32 @@
 .create-step-form[data-step="service"] .create-service-sections {
   padding-bottom: 34px;
 }
+
+/*
+ * Smooth swipe: the list settles on a section start when the finger lifts, as
+ * the other feeds do, and it keeps native momentum.
+ */
+.create-step-form[data-step="service"] .create-service-sections {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y proximity;
+  scroll-padding-top: 4px;
+}
+
+.create-service-section {
+  scroll-snap-align: start;
+}
+
+/* A tile answers the finger at once and eases back, instead of switching. */
+.app-shell .create-service-tile {
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms ease;
+  touch-action: manipulation;
+}
+
+.app-shell .create-service-tile:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .create-service-tile { transition: none; }
+  .app-shell .create-service-tile:active { transform: none; }
+}

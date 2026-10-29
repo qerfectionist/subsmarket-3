@@ -37,7 +37,8 @@ export function CreateFamilyServiceStep({
   const markScrolling = () => {
     const element = scrollRef.current;
     if (!element) return;
-    element.setAttribute("data-scrolling", "true");
+    // Only touch the DOM when the state changes, not on every scroll event.
+    if (element.getAttribute("data-scrolling") !== "true") element.setAttribute("data-scrolling", "true");
     window.clearTimeout(settleTimer.current);
     settleTimer.current = window.setTimeout(() => element.removeAttribute("data-scrolling"), 160);
   };
@@ -136,6 +137,7 @@ export function CreateFamilyServiceStep({
                           serviceName={service.name}
                           familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
                           size={44}
+                          loading="eager"
                         />
                         <strong>{tileName(service)}</strong>
                         {selected ? (
