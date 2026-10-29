@@ -16,6 +16,13 @@ import { useTelegramBackButton, useTelegramMainButton } from "../hooks/useTelegr
 import { canUseTelegramMainButton } from "../telegram";
 import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 
+/** The title of each step is the question it asks. */
+const STEP_QUESTIONS: Record<CreateStep, (familyType: FamilyType) => string> = {
+  service: (familyType) => (familyType === "tariff" ? "Какой тариф делите?" : "Какой сервис делите?"),
+  terms: () => "Сколько стоит и сколько мест?",
+  payout: () => "Куда переводить деньги?"
+};
+
 export function CreateFamilyScreen({
   services,
   service,
@@ -100,33 +107,13 @@ export function CreateFamilyScreen({
   });
 
   return (
-    <CreateShell title={CREATE_TITLES[familyType]} onBack={goBack} testId="create-family-screen">
+    <CreateShell
+      title={STEP_QUESTIONS[step](familyType)}
+      kicker={CREATE_TITLES[familyType]}
+      onBack={goBack}
+      testId="create-family-screen"
+    >
       <div className="screen-body-inset">
-
-        <div className="create-progress-wrap">
-          <p className="create-progress-caption" aria-live="polite">
-            Шаг {stepIndex + 1} из {CREATE_STEPS.length} · {CREATE_STEPS[stepIndex].title}
-          </p>
-          <ol className="create-progress" aria-label="Шаги">
-            {CREATE_STEPS.map((item, index) => {
-              const state = index < stepIndex ? "done" : index === stepIndex ? "current" : "todo";
-              return (
-                <li
-                  key={item.id}
-                  data-state={state}
-                  aria-current={state === "current" ? "step" : undefined}
-                  data-testid={`create-progress-${item.id}`}
-                >
-                  <span className="create-progress-bar" />
-                  <span className="visually-hidden">
-                    {index + 1}. {item.title}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-
         <form
           ref={formRef}
           className="create-step-form"
@@ -209,6 +196,30 @@ export function CreateFamilyScreen({
                 После создания не поменять сервис и число мест.
               </small>
             ) : null}
+            {/* Where the person is: three bars under the button. */}
+            <div className="create-progress-wrap">
+              <p className="visually-hidden">
+                Шаг {stepIndex + 1} из {CREATE_STEPS.length} · {CREATE_STEPS[stepIndex].title}
+              </p>
+              <ol className="create-progress" aria-label="Шаги">
+                {CREATE_STEPS.map((item, index) => {
+                  const state = index < stepIndex ? "done" : index === stepIndex ? "current" : "todo";
+                  return (
+                    <li
+                      key={item.id}
+                      data-state={state}
+                      aria-current={state === "current" ? "step" : undefined}
+                      data-testid={`create-progress-${item.id}`}
+                    >
+                      <span className="create-progress-bar" />
+                      <span className="visually-hidden">
+                        {index + 1}. {item.title}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
           </div>
         </form>
       </div>

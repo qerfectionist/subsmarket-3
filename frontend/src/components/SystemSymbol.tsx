@@ -1,7 +1,7 @@
 import { Icon, type IconProps } from "@iconify/react";
 import addBold from "@iconify-icons/solar/add-bold";
 import minusBold from "@iconify-icons/solar/minus-bold";
-import altArrowLeftDuotone from "@iconify-icons/solar/alt-arrow-left-bold-duotone";
+import altArrowLeftLinear from "@iconify-icons/solar/alt-arrow-left-linear";
 import altArrowRightLinear from "@iconify-icons/solar/alt-arrow-right-linear";
 import altArrowUpDuotone from "@iconify-icons/solar/alt-arrow-up-bold-duotone";
 import arrowLeftDuotone from "@iconify-icons/solar/arrow-left-bold-duotone";
@@ -59,7 +59,7 @@ const SYSTEM_SYMBOLS = {
   "checkmark.shield": shieldCheckDuotone,
   checklist: checklistDuotone,
   "clipboard.list": clipboardListDuotone,
-  "chevron.backward": altArrowLeftDuotone,
+  "chevron.backward": altArrowLeftLinear,
   "chevron.forward": altArrowRightLinear,
   "chevron.up": altArrowUpDuotone,
   clock: clockCircleDuotone,

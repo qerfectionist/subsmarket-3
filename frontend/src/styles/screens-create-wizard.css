@@ -17,7 +17,7 @@
   min-height: 0;
 }
 
-.create-form-screen:has([data-step="service"]) > .gb-header {
+.create-form-screen:has([data-step="service"]) > header {
   flex-shrink: 0;
 }
 
@@ -77,4 +77,43 @@
 
 .create-screen .create-step-form[data-step="service"] .create-wizard-footer::after {
   content: none;
+}
+
+/*
+ * A family's header: the back button shares its row with what is being created
+ * («Семейная подписка»), and the title under it asks the step's question.
+ */
+.create-form-header-question {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.create-form-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.create-form-kicker {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .create-form-header-question h1 {
+  margin: 0;
+  color: var(--app-text);
+  text-align: left;
+}
+
+/* The three step bars sit under the action button, closing the bar. */
+.create-wizard-footer .create-progress-wrap {
+  margin-top: 4px;
 }

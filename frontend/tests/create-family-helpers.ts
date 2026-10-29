@@ -49,7 +49,7 @@ export async function openCreateKind(page: Page, kind: "subscription" | "tariff"
   const home = page.getByTestId("create-home");
   const familyScreen = page.getByTestId("create-family-screen");
   if ((await familyScreen.count()) > 0) {
-    if ((await familyScreen.locator("h1").innerText()) === KIND_TITLES[kind]) return;
+    if ((await familyScreen.getByTestId("create-form-kicker").innerText()) === KIND_TITLES[kind]) return;
     await goToCreateStep(page, "service");
     await page.getByTestId("create-form-back").evaluate((element) => (element as HTMLElement).click());
   }
