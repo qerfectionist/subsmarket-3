@@ -619,6 +619,35 @@
 }
 
 /* A form opened from the menu: back arrow and its own title. */
-.create-form-header {
+/* The same header as «Создать», «Мои» and «Заявки»: a 48px row with the title
+   centred, and the back button on the left in the room the title leaves. */
+.create-form-header.gb-header {
+  justify-content: center;
+  min-height: 48px;
   margin-bottom: 16px;
+}
+
+.create-form-header .gb-back {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.app-shell .create-form-header .gb-back:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.create-form-header .gb-header-title-wrap {
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+  padding-inline: 48px;
+}
+
+.app-shell .create-form-header h1 {
+  font-size: var(--app-size-screen);
+  line-height: var(--app-leading-screen);
+  font-weight: var(--app-weight-semibold);
+  text-align: center;
 }

@@ -18,9 +18,9 @@ import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 
 /** The title of each step is the question it asks. */
 const STEP_QUESTIONS: Record<CreateStep, (familyType: FamilyType) => string> = {
-  service: (familyType) => (familyType === "tariff" ? "Какой тариф делите?" : "Какой сервис делите?"),
-  terms: () => "Сколько стоит и сколько мест?",
-  payout: () => "Куда переводить деньги?"
+  service: (familyType) => (familyType === "tariff" ? "Какой тариф?" : "Какой сервис?"),
+  terms: () => "Цена и места",
+  payout: () => "Куда переводить?"
 };
 
 export function CreateFamilyScreen({
