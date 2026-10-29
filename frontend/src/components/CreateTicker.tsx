@@ -12,7 +12,8 @@ const INTERVAL_MS = 2600;
 /**
  * The line under «Что создаём?»: a still outline with the four things taking
  * turns inside it. They share one cell, so the outline fits the longest and
- * never changes size; the shown one fades in while the previous fades out.
+ * never changes size. They roll like a drum: the shown one comes up from below
+ * while the previous one leaves upward, both fading and tilting away.
  */
 export function CreateTicker() {
   const [index, setIndex] = useState(0);
@@ -30,7 +31,9 @@ export function CreateTicker() {
           <span
             key={item.kind}
             className={`create-ticker-word create-kind-${item.kind}`}
-            data-active={position === index}
+            data-pos={
+              position === index ? "current" : position === (index + ITEMS.length - 1) % ITEMS.length ? "previous" : "next"
+            }
             data-testid={position === index ? "create-ticker-word" : undefined}
           >
             {item.text}
