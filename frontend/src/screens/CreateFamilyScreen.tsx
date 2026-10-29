@@ -1,6 +1,6 @@
 import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { Button as AppButton } from "../components/ui";
-import { CreateShell, type CreateCategory } from "../components/CreateCategoryPicker";
+import { CREATE_TITLES, CreateShell } from "../components/CreateCategoryPicker";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
 import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
 import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
@@ -23,7 +23,7 @@ export function CreateFamilyScreen({
   createForm,
   busy,
   onPickService,
-  onChangeKind,
+  initialStep = "service",
   onBack,
   onChangeForm,
   onSubmit
@@ -34,12 +34,13 @@ export function CreateFamilyScreen({
   createForm: FamilyCreate;
   busy: string | null;
   onPickService: (service: FamilyService) => void;
-  onChangeKind: (kind: CreateCategory) => void;
+  /** «Условия» when a popular service was picked on «Создать». */
+  initialStep?: CreateStep;
   onBack: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
   onSubmit: (event: FormEvent) => void;
 }) {
-  const [step, setStep] = useState<CreateStep>("service");
+  const [step, setStep] = useState<CreateStep>(initialStep);
   const [attempted, setAttempted] = useState<ReadonlySet<CreateStep>>(() => new Set());
   const errors = validateCreateForm(createForm, service);
   const stepIndex = CREATE_STEPS.findIndex((item) => item.id === step);
@@ -99,14 +100,7 @@ export function CreateFamilyScreen({
   });
 
   return (
-    <CreateShell
-      kind={familyType}
-      onChangeKind={onChangeKind}
-      // Steps 2 and 3 belong to the family already chosen: no switch, a precise title.
-      title={step === "service" ? "Создать" : "Создать семью"}
-      showSwitch={step === "service"}
-      testId="create-family-screen"
-    >
+    <CreateShell title={CREATE_TITLES[familyType]} onBack={goBack} testId="create-family-screen">
       <div className="screen-body-inset">
 
         <div className="create-progress-wrap">

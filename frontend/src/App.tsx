@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CreateCategory } from "./components/CreateCategoryPicker";
 import { servicePopularity } from "./components/families/createFamilyForm";
+import { CreateHome } from "./components/CreateHome";
 
 import type { FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -119,7 +120,11 @@ export function App() {
   const [devUser, setDevUser] = useState<DevTelegramUser | null>(getActiveDevTelegramUser());
   const [createForm, setCreateForm] = useState<FamilyCreate>(emptyCreateForm);
   const [myProductScope, setMyProductScope] = useState<"families" | "accounts" | "gigabytes">("families");
-  const [createScope, setCreateScope] = useState<"families" | "accounts" | "gigabytes">("families");
+  // «Создать» opens on its menu; a form opened from elsewhere sets its own scope.
+  const [createScope, setCreateScope] = useState<"home" | "families" | "accounts" | "gigabytes">("home");
+  const [createFamilyStep, setCreateFamilyStep] = useState<"service" | "terms">("service");
+  const [createEntry, setCreateEntry] = useState(0);
+  const [createFromMenu, setCreateFromMenu] = useState(false);
   const startParamHandled = useRef(false);
 
   const [isDevCardsModalOpen, setIsDevCardsModalOpen] = useState(false);
@@ -480,15 +485,36 @@ export function App() {
     );
   }
 
-  /** The slider on «Создать»: every category's form opens right here, under the same header. */
+  /** A row on the «Создать» menu: the form opens on the same tab, with a back arrow to the menu. */
   function switchCreateCategory(category: CreateCategory) {
     if (category === "accounts" || category === "gigabytes") {
       setCreateScope(category);
     } else {
       setCreateScope("families");
+      setCreateFamilyStep("service");
       changeFamilyType(category);
     }
+    setCreateEntry((current) => current + 1);
+    setCreateFromMenu(true);
     setTab("create");
+  }
+
+  /** A popular service on the menu opens its family on «Условия». */
+  function createFromPopular(next: FamilyService) {
+    pickCreateService(next);
+    setCreateScope("families");
+    setCreateFamilyStep("terms");
+    setCreateEntry((current) => current + 1);
+    setCreateFromMenu(true);
+  }
+
+  /** Back from a form: to the menu when it was opened there, else where the person came from. */
+  function leaveCreateForm() {
+    if (createFromMenu) {
+      setCreateScope("home");
+      return;
+    }
+    setTab(createBackTab);
   }
 
   /** After an account or GB listing is published from «Создать»: show it in «Мои». */
@@ -609,6 +635,8 @@ export function App() {
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
             setCreateScope("families");
+            setCreateFamilyStep("service");
+            setCreateFromMenu(false);
             changeFamilyType(nextType);
             setCreateBackTab("home");
             setTab("create");
@@ -617,17 +645,28 @@ export function App() {
         />
       )}
 
+      {tab === "create" && createScope === "home" && (
+        <AsyncContent query={servicesQuery}>
+          <CreateHome
+            services={services}
+            onOpen={switchCreateCategory}
+            onPickService={createFromPopular}
+          />
+        </AsyncContent>
+      )}
+
       {tab === "create" && createScope === "families" && (
         <AsyncContent query={servicesQuery}>
           <CreateFamilyScreen
-            onBack={() => setTab(createBackTab)}
+            key={`create-family-${createEntry}`}
+            initialStep={createFamilyStep}
+            onBack={leaveCreateForm}
             services={services}
             service={service}
             familyType={familyType}
             createForm={createForm}
             busy={busy}
             onPickService={pickCreateService}
-            onChangeKind={switchCreateCategory}
             onChangeForm={setCreateForm}
             onSubmit={(event) => void handleCreateFamily(event)}
           />
@@ -636,23 +675,19 @@ export function App() {
 
       {tab === "create" && createScope === "accounts" && (
         <AccountsScreen
+          key={`create-accounts-${createEntry}`}
           initialMode="create"
-          onBack={() => setTab(createBackTab)}
-          embedded={{
-            onChangeKind: switchCreateCategory,
-            onPublished: () => openPublishedListing("accounts")
-          }}
+          onBack={leaveCreateForm}
+          embedded={{ onPublished: () => openPublishedListing("accounts") }}
         />
       )}
 
       {tab === "create" && createScope === "gigabytes" && (
         <GigabytesScreen
+          key={`create-gigabytes-${createEntry}`}
           initialMode="create"
-          onBack={() => setTab(createBackTab)}
-          embedded={{
-            onChangeKind: switchCreateCategory,
-            onPublished: () => openPublishedListing("gigabytes")
-          }}
+          onBack={leaveCreateForm}
+          embedded={{ onPublished: () => openPublishedListing("gigabytes") }}
         />
       )}
 
@@ -711,6 +746,8 @@ export function App() {
           }}
           onCreateFamily={() => {
             setCreateScope("families");
+            setCreateFamilyStep("service");
+            setCreateFromMenu(false);
             changeFamilyType("subscription");
             setCreateBackTab("mine");
             setTab("create");
@@ -873,10 +910,12 @@ export function App() {
           }
           if (nextTab === "create") {
             setCreateBackTab("home");
+            setCreateScope("home");
           }
           setTab(nextTab);
         }}
         onReselect={(selectedTab) => {
+          if (selectedTab === "create") setCreateScope("home");
           if (selectedTab === "home") {
             try {
               window.sessionStorage.removeItem("subsmarket.marketViewState.v1");

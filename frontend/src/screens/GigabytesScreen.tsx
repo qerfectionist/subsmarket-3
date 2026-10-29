@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AsyncContent } from "../components/AsyncContent";
 import { SystemSymbol } from "../components/SystemSymbol";
-import { CreateShell, type CreateCategory } from "../components/CreateCategoryPicker";
+import { CREATE_TITLES, CreateShell } from "../components/CreateCategoryPicker";
 import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 import { formatError, normalizeText } from "../format";
 import {
@@ -55,10 +55,10 @@ export function GigabytesScreen({
 }: {
   onBack: () => void;
   /**
-   * Set when the form is shown on «Создать»: the same header and slider as «Мои»,
+   * Set when the form is opened from «Создать»: its own title and a back arrow to the menu,
    * and after publishing the person is taken to the new listing in «Мои».
    */
-  embedded?: { onChangeKind: (kind: CreateCategory) => void; onPublished: () => void };
+  embedded?: { onPublished: () => void };
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -286,7 +286,7 @@ export function GigabytesScreen({
 
   if (embedded) {
     return (
-      <CreateShell kind="gigabytes" onChangeKind={embedded.onChangeKind} testId="gigabytes-screen">
+      <CreateShell title={CREATE_TITLES.gigabytes} onBack={goBack} testId="gigabytes-screen">
         {body}
       </CreateShell>
     );

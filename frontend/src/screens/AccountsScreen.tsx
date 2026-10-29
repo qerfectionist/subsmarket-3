@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AsyncContent } from "../components/AsyncContent";
 import { SystemSymbol } from "../components/SystemSymbol";
-import { CreateShell, type CreateCategory } from "../components/CreateCategoryPicker";
+import { CREATE_TITLES, CreateShell } from "../components/CreateCategoryPicker";
 import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 import { formatError } from "../format";
 import {
@@ -58,10 +58,10 @@ export function AccountsScreen({
 }: {
   onBack: () => void;
   /**
-   * Set when the form is shown on «Создать»: the same header and slider as «Мои»,
+   * Set when the form is opened from «Создать»: its own title and a back arrow to the menu,
    * and after publishing the person is taken to the new listing in «Мои».
    */
-  embedded?: { onChangeKind: (kind: CreateCategory) => void; onPublished: () => void };
+  embedded?: { onPublished: () => void };
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -301,7 +301,7 @@ export function AccountsScreen({
 
   if (embedded) {
     return (
-      <CreateShell kind="accounts" onChangeKind={embedded.onChangeKind} testId="accounts-screen">
+      <CreateShell title={CREATE_TITLES.accounts} onBack={goBack} testId="accounts-screen">
         {body}
       </CreateShell>
     );

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  openCreateKind,
   fillCreateField,
   fillJoinRequest,
   finishCreatedFamily,
@@ -39,7 +40,7 @@ function navScreenLocator(page: Page, index: number) {
     case 1:
       return page.getByTestId("my-screen");
     case 2:
-      return page.getByTestId("create-family-form");
+      return page.getByTestId("create-home");
     case 3:
       return page.getByTestId("actions-screen");
     default:
@@ -61,7 +62,7 @@ async function openNav(page: Page, index: number) {
 
 async function openCreate(page: Page) {
   await openNav(page, 2);
-  await expect(page.getByTestId("create-family-form")).toBeVisible();
+  await openCreateKind(page, "subscription");
 }
 
 async function submitCreateFamily(page: Page) {

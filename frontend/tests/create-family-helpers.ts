@@ -42,15 +42,27 @@ export async function fillCreateField(page: Page, testId: string, value: string)
   await page.getByTestId(testId).fill(value);
 }
 
-/** Picks a service tile on step 1: «Тарифы» or «Подписки» on top, then the category chip. */
-export async function pickCreateService(page: Page, slug: string, category = "all") {
-  await goToCreateStep(page, "service");
-  const tariff = category === "operators" || slug.endsWith("-family-tariff");
-  const kind = page.getByTestId(tariff ? "create-kind-tariff" : "create-kind-subscription");
-  if ((await kind.getAttribute("aria-pressed")) !== "true") {
-    await kind.evaluate((element) => (element as HTMLElement).click());
-    await expect(kind).toHaveAttribute("aria-pressed", "true");
+const KIND_TITLES = { subscription: "Семья на подписку", tariff: "Семейный тариф" } as const;
+
+/** On «Создать»: opens the family form of the given kind from the menu, coming back to it if needed. */
+export async function openCreateKind(page: Page, kind: "subscription" | "tariff" = "subscription") {
+  const home = page.getByTestId("create-home");
+  const familyScreen = page.getByTestId("create-family-screen");
+  if ((await familyScreen.count()) > 0) {
+    if ((await familyScreen.locator("h1").innerText()) === KIND_TITLES[kind]) return;
+    await goToCreateStep(page, "service");
+    await page.getByTestId("create-form-back").evaluate((element) => (element as HTMLElement).click());
   }
+  await expect(home).toBeVisible();
+  await page.getByTestId(`create-kind-${kind}`).evaluate((element) => (element as HTMLElement).click());
+  await expect(form(page)).toBeVisible();
+}
+
+/** Picks a service tile on step 1: «Тарифы» or «Подписки» from the menu, then the category chip. */
+export async function pickCreateService(page: Page, slug: string, category = "all") {
+  const tariff = category === "operators" || slug.endsWith("-family-tariff");
+  await openCreateKind(page, tariff ? "tariff" : "subscription");
+  await goToCreateStep(page, "service");
   if (!tariff) {
     await page.getByTestId(`create-category-${category}`).evaluate((element) => (element as HTMLElement).click());
   }

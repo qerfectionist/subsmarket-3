@@ -302,13 +302,16 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
     }));
     expect(createGeometry).toEqual({ radius: "50%", width: 52, height: 52 });
     await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
+    await expect(page.getByTestId("create-home")).toBeVisible();
+    await assertNoOverflow(page);
+    await page.screenshot({ path: info.outputPath("create-home-" + theme + ".png") });
+    await page.getByTestId("create-kind-subscription").click();
     await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
     await expect(page.getByTestId("create-family-next")).toBeVisible();
-    await expect(page.getByTestId("create-kind-subscription")).toHaveAttribute("aria-pressed", "true");
     await page.screenshot({ path: info.outputPath("create-family-" + theme + ".png") });
+    await page.getByTestId("create-form-back").click();
     await page.getByTestId("create-kind-accounts").click();
     await expect(page.getByTestId("account-plan-row")).toBeVisible();
-    await expect(page.getByTestId("create-kind-accounts")).toHaveAttribute("aria-pressed", "true");
     await page.getByTestId("account-service-search").fill("чат");
     await assertNoOverflow(page);
     await page.screenshot({ path: info.outputPath("create-account-" + theme + ".png") });

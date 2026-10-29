@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  openCreateKind,
   fillCreateField,
   goToCreateStep,
   pickCreateService,
@@ -783,7 +784,7 @@ async function selectOptionByLabel(page: Page, testId: string, optionName: strin
 
 async function openCreate(page: Page) {
   await openNav(page, 2);
-  await expect(page.getByTestId("create-family-form")).toBeVisible();
+  await openCreateKind(page, "subscription");
 }
 
 async function selectMarketSubscriptions(page: Page) {
@@ -850,7 +851,7 @@ function navScreenLocator(page: Page, index: number) {
     case 3:
       return page.getByTestId("actions-screen");
     case 2:
-      return page.getByTestId("create-family-form");
+      return page.getByTestId("create-home");
     default:
       return page.locator(".native-screen, .home-page");
   }
