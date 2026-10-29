@@ -1,23 +1,41 @@
 /*
- * Step 1 tiles: every tile is the same size. The logo sits in a fixed 44px slot
- * at the top, the name under it reserves two lines, so a long name or a missing
- * logo does not change the tile or move its neighbours.
+ * Step 1 services as app icons, the way iOS lays out apps: four to a row, every
+ * logo in the same rounded square, the name under it, no card around. A wide
+ * wordmark, a round logo and a letter all sit in the same square, so the grid
+ * stays even whatever the logos are.
  */
+.create-step-form[data-step="service"] .create-service-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px 8px;
+  align-items: start;
+}
+
 .app-shell .create-service-tile {
   justify-content: flex-start;
   gap: 8px;
-  height: 112px;
-  min-height: 112px;
-  padding: 14px 8px 8px;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  touch-action: manipulation;
+  transition: opacity 260ms ease, filter 260ms ease;
 }
 
 .create-service-tile .service-logo {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 62px;
+  height: 62px;
+  flex: 0 0 62px;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--app-text) 6%, var(--app-surface));
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--app-text) 8%, transparent);
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
 }
 
-/* A wide wordmark and a round icon fill the same slot. */
 .create-service-tile .service-logo-image {
   width: 100%;
   height: 100%;
@@ -25,12 +43,59 @@
 }
 
 .create-service-tile .service-logo-monogram {
+  color: var(--app-text);
   font-size: 18px;
   font-weight: var(--app-weight-semibold);
 }
 
+/* Up to two lines, centred under the icon; the icons stay on one line whatever the names. */
 .create-service-tile strong {
-  min-height: calc(2 * var(--app-leading-label));
+  min-height: 0;
+  font-size: 12px;
+  font-weight: var(--app-weight-medium);
+  line-height: 15px;
+  -webkit-line-clamp: 2;
+}
+
+/* The icon answers the finger at once and eases back. */
+.app-shell .create-service-tile:active .service-logo {
+  transform: scale(0.94);
+}
+
+/*
+ * The picked service: a white ring around its icon, the other icons on the same
+ * page dim. A dim icon is still a button: it brightens under the finger and a
+ * tap picks it instead; a second tap on the picked one takes it back. Pages
+ * without the picked service stay bright.
+ */
+.app-shell .create-service-tile[aria-checked="true"] .service-logo {
+  box-shadow:
+    0 0 0 2px var(--app-bg, #0f0f10),
+    0 0 0 4px var(--app-text);
+  animation: create-service-pick 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes create-service-pick {
+  0% { transform: scale(0.94); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+.create-service-sections:has(.create-service-tile[aria-checked="true"])
+  .create-service-tile:not([aria-checked="true"]) {
+  opacity: 0.38;
+  filter: saturate(0.6);
+}
+
+.create-service-sections:has(.create-service-tile[aria-checked="true"])
+  .create-service-tile:not([aria-checked="true"]):active {
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-service-tile .service-logo { transition: none; }
+  .app-shell .create-service-tile:active .service-logo { transform: none; }
+  .app-shell .create-service-tile[aria-checked="true"] .service-logo { animation: none; }
 }
 
 /*
@@ -58,35 +123,6 @@
 
 .create-step-form[data-step="service"] .create-service-sections {
   padding-bottom: 34px;
-}
-
-/*
- * Smooth swipe: the list settles on a section start when the finger lifts, as
- * the other feeds do, and it keeps native momentum.
- */
-.create-step-form[data-step="service"] .create-service-sections {
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: y proximity;
-  scroll-padding-top: 4px;
-}
-
-.create-service-section {
-  scroll-snap-align: start;
-}
-
-/* A tile answers the finger at once and eases back, instead of switching. */
-.app-shell .create-service-tile {
-  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms ease;
-  touch-action: manipulation;
-}
-
-.app-shell .create-service-tile:active {
-  transform: scale(0.97);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-shell .create-service-tile { transition: none; }
-  .app-shell .create-service-tile:active { transform: none; }
 }
 
 /*
@@ -179,52 +215,6 @@
 .create-service-feed:has(.create-service-pager)::after {
   left: -16px;
   right: -16px;
-}
-
-/*
- * The picked service: its tile keeps a white ring and the other tiles on the same
- * page dim, so the choice stands out. A dim tile is still a button: it lights
- * up under the finger and a tap picks it instead. Pages without the picked
- * service stay bright.
- */
-.app-shell .create-service-tile[aria-checked="true"] {
-  border-color: transparent;
-  box-shadow: inset 0 0 0 2px var(--app-text);
-}
-
-.app-shell .create-service-tile {
-  transition:
-    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 260ms ease,
-    filter 260ms ease,
-    box-shadow 220ms ease;
-}
-
-/* As on iOS, a pick answers with a small spring: the tile settles just past its
-   size and back, with a light haptic tick from Telegram. A second tap undoes it. */
-.app-shell .create-service-tile[aria-checked="true"] {
-  animation: create-service-pick 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes create-service-pick {
-  0% { transform: scale(0.96); }
-  60% { transform: scale(1.03); }
-  100% { transform: scale(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-shell .create-service-tile[aria-checked="true"] { animation: none; }
-}
-
-.create-service-sections:has(.create-service-tile[aria-checked="true"])
-  .create-service-tile:not([aria-checked="true"]) {
-  opacity: 0.38;
-  filter: saturate(0.6);
-}
-
-.create-service-sections:has(.create-service-tile[aria-checked="true"])
-  .create-service-tile:not([aria-checked="true"]):active {
-  opacity: 0.7;
 }
 
 /*
