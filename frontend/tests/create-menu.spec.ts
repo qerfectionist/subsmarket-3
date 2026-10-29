@@ -54,7 +54,11 @@ test("«Создать» finds anything that can be created", async ({ page }) =
   await page.getByTestId("create-form-back").click();
 
   await search.fill("ззззз");
-  await expect(results).toContainText("Ничего не нашлось");
+  const empty = page.getByTestId("create-search-empty");
+  await expect(empty).toContainText("Ничего не найдено");
+  await empty.getByRole("button", { name: "Сбросить поиск" }).click();
+  await expect(search).toHaveValue("");
+  await expect(page.getByTestId("create-kind-subscription")).toBeVisible();
 
   // A family service opens straight on «Условия»; back goes to «Сервис», then to the menu.
   await search.fill("spotify");
@@ -90,4 +94,38 @@ test("«Недавние» repeats what was created before with the same terms",
   await row.click();
   await expect(page.getByTestId("gb-operator-beeline")).toHaveAttribute("aria-checked", "true");
   await expect(page.getByTestId("gb-price-input")).toHaveValue("230");
+});
+
+test("search results scroll like a feed, with «Наверх» at the end", async ({ page }) => {
+  await openCreate(page);
+  await page.getByTestId("create-search").fill("a");
+  const results = page.getByTestId("create-search-results");
+  const toTop = page.locator(".create-results-to-top");
+  await expect(results.locator(".create-row").nth(8)).toHaveCount(1);
+  await expect(toTop).toHaveAttribute("data-visible", "false");
+
+  // The list moves inside itself; the screen stays put.
+  await results.hover();
+  await page.mouse.wheel(0, 120);
+  await page.waitForTimeout(900);
+  expect(await page.evaluate(() => document.querySelector(".app-shell")!.scrollTop)).toBe(0);
+  // Snapped: a row sits at the top edge.
+  const offset = await results.evaluate((element) => {
+    const top = element.getBoundingClientRect().top;
+    return Math.min(
+      ...Array.from(element.querySelectorAll(".create-row")).map((row) =>
+        Math.abs(row.getBoundingClientRect().top - top)
+      )
+    );
+  });
+  expect(offset).toBeLessThan(2);
+  await expect(toTop).toHaveAttribute("data-visible", "false");
+
+  await results.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+  await expect(toTop).toHaveAttribute("data-visible", "true");
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: "test-results/create-results-end.png" });
+  await page.getByTestId("create-results-to-top").click();
+  await expect.poll(() => results.evaluate((element) => element.scrollTop)).toBe(0);
+  await expect(toTop).toHaveAttribute("data-visible", "false");
 });

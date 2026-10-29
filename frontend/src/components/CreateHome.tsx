@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Panel } from "./layout";
 import { ServiceLogo } from "./branding";
 import { SystemSymbol } from "./SystemSymbol";
 import { MarketSearchField } from "./market/MarketSearchField";
+import { ScrollToTopButton } from "./ScrollToTopButton";
+import { useFeedSnap } from "../hooks/useFeedSnap";
+import { useListEnd } from "../hooks/useListEnd";
 import { triggerTelegramSelection } from "../telegram";
 import { servicePopularity } from "./families/createFamilyForm";
 import { CREATE_TITLES, type CreateCategory } from "./CreateCategoryPicker";
@@ -113,6 +116,12 @@ export function CreateHome({
 
   const searching = query.trim() !== "";
   const found = searching ? searchCreateItems(query, { services, accountServices, operators }, actions) : [];
+  const feedSnap = useFeedSnap({ itemCount: found.length, cardSelector: ".create-row" });
+  const end = useListEnd(feedSnap.containerRef, ".create-row", found.length);
+  // A new query starts the results from the top.
+  useEffect(() => {
+    feedSnap.containerRef.current?.scrollTo({ top: 0 });
+  }, [query, feedSnap.containerRef]);
   const recent = searching
     ? []
     : recentCreateItems({ families: myFamilies, accountListings, gigabyteListings }, actions);
@@ -130,13 +139,46 @@ export function CreateHome({
           onEnter={(input) => input.blur()}
         />
 
-        {searching ? (
-          <div className="create-results" data-testid="create-search-results">
-            {found.length ? (
-              found.map((item) => <CreateRow key={item.key} item={item} />)
-            ) : (
-              <p className="create-results-empty">Ничего не нашлось</p>
-            )}
+        {searching && found.length === 0 ? (
+          <div className="sm-market-empty create-results-empty" data-testid="create-search-empty">
+            <SystemSymbol name="magnifyingglass" size={28} />
+            <h3>Ничего не найдено</h3>
+            <p>Попробуйте другое название сервиса, оператора или аккаунта.</p>
+            <div className="sm-market-empty-actions">
+              <button
+                type="button"
+                className="sm-market-button sm-market-button-secondary"
+                onClick={() => setQuery("")}
+              >
+                Сбросить поиск
+              </button>
+            </div>
+          </div>
+        ) : searching ? (
+          // Same feed behaviour as «Заявки»: snapping, a fade while it moves,
+          // and «Наверх» once the end is reached.
+          <div className="my-feed-wrap create-results-wrap">
+            <div
+              className="my-feed-scroll create-results"
+              data-testid="create-search-results"
+              ref={feedSnap.containerRef}
+              {...feedSnap.scrollHandlers}
+              onScroll={() => {
+                feedSnap.scrollHandlers.onScroll?.();
+                end.check();
+              }}
+            >
+              {found.map((item) => (
+                <CreateRow key={item.key} item={item} />
+              ))}
+            </div>
+            <ScrollToTopButton
+              containerRef={feedSnap.containerRef}
+              testId="create-results-to-top"
+              className="create-results-to-top"
+              hidden={!end.reached}
+              style={end.offset === null ? undefined : { bottom: `${end.offset}px` }}
+            />
           </div>
         ) : (
           <>
