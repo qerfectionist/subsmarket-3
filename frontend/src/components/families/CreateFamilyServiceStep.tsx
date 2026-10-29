@@ -3,6 +3,7 @@ import { MarketSearchField } from "../market/MarketSearchField";
 import { ServiceLogo } from "../branding";
 import { SystemSymbol } from "../SystemSymbol";
 import { serviceTitle } from "../../format";
+import { triggerTelegramSelection } from "../../telegram";
 import type { FamilyService } from "../../types";
 import { CreateCategoryTabs, type CategoryTabsHandle } from "./CreateCategoryTabs";
 import { CreateServicePager } from "./CreateServicePager";
@@ -26,11 +27,14 @@ const byPopularity = (a: FamilyService, b: FamilyService) =>
 export function CreateFamilyServiceStep({
   services,
   selectedId,
-  onPick
+  onPick,
+  onClear
 }: {
   services: FamilyService[];
   selectedId: string;
   onPick: (service: FamilyService) => void;
+  /** A second tap on the picked tile takes the choice back. */
+  onClear: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -100,7 +104,11 @@ export function CreateFamilyServiceStep({
             aria-checked={selected}
             data-testid={`create-service-option-${service.slug}`}
             className="create-service-tile"
-            onClick={() => onPick(service)}
+            onClick={() => {
+              triggerTelegramSelection();
+              if (selected) onClear();
+              else onPick(service);
+            }}
           >
             <ServiceLogo
               serviceSlug={service.slug}

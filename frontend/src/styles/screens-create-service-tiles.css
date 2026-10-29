@@ -193,12 +193,33 @@
 }
 
 .app-shell .create-service-tile {
-  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease, box-shadow 220ms ease;
+  transition:
+    transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 260ms ease,
+    filter 260ms ease,
+    box-shadow 220ms ease;
+}
+
+/* As on iOS, a pick answers with a small spring: the tile settles just past its
+   size and back, with a light haptic tick from Telegram. A second tap undoes it. */
+.app-shell .create-service-tile[aria-checked="true"] {
+  animation: create-service-pick 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes create-service-pick {
+  0% { transform: scale(0.96); }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .create-service-tile[aria-checked="true"] { animation: none; }
 }
 
 .create-service-sections:has(.create-service-tile[aria-checked="true"])
   .create-service-tile:not([aria-checked="true"]) {
   opacity: 0.38;
+  filter: saturate(0.6);
 }
 
 .create-service-sections:has(.create-service-tile[aria-checked="true"])

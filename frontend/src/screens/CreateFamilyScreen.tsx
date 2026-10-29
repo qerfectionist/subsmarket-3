@@ -125,6 +125,7 @@ export function CreateFamilyScreen({
               )}
               selectedId={createForm.service_id}
               onPick={onPickService}
+              onClear={() => onChangeForm((current) => ({ ...current, service_id: "" }))}
             />
           ) : null}
           {step === "terms" && service ? (

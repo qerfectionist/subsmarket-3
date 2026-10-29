@@ -320,6 +320,16 @@ test("create family picks a service from the logo grid and moves on", async ({ p
     .poll(() => options.first().evaluate((element) => getComputedStyle(element).opacity))
     .toBe("0.38");
 
+  // A second tap on the picked tile takes it back: nothing picked, nothing dim.
+  await second.evaluate((element) => (element as HTMLElement).click());
+  await expect(second).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByTestId("create-family-next")).toBeDisabled();
+  await expect
+    .poll(() => options.first().evaluate((element) => getComputedStyle(element).opacity))
+    .toBe("1");
+  await second.evaluate((element) => (element as HTMLElement).click());
+  await expect(second).toHaveAttribute("aria-checked", "true");
+
   await page.getByTestId("create-family-next").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
   await expect(page.getByTestId("create-progress-service")).toHaveAttribute("data-state", "done");
