@@ -31,14 +31,9 @@
   padding: 12px;
   box-sizing: border-box;
   border-radius: 16px;
-  /* The same material as the search field: its grey, a thin light edge along
-     the top, a hairline outline and a soft shadow under it, as iOS draws controls.
+  /* The search field's grey, flat, so the squares read on black.
      !important: the logo component paints its own background inline as transparent. */
   background: var(--app-secondary-bg, #2c2c2e) !important;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 6%),
-    inset 0 0 0 0.5px rgb(255 255 255 / 8%),
-    0 4px 12px rgb(0 0 0 / 28%);
   transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
 }
 
@@ -76,10 +71,8 @@
  */
 .app-shell .create-service-tile[aria-checked="true"] .service-logo {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 6%),
     0 0 0 2px var(--app-bg, #0f0f10),
-    0 0 0 4px var(--app-text),
-    0 4px 12px rgb(0 0 0 / 28%);
+    0 0 0 4px var(--app-text);
   animation: create-service-pick 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
