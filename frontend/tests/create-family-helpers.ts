@@ -68,9 +68,9 @@ export async function pickCreateService(page: Page, slug: string, category = "al
   const tariff = category === "operators" || slug.endsWith("-family-tariff");
   await openCreateKind(page, tariff ? "tariff" : "subscription");
   await goToCreateStep(page, "service");
-  // Only the category in the middle of the wheel is listed: turn to the one that has it.
+  // Only the category first on the wheel is listed: turn to the one that has it.
   const tile = page.getByTestId(`create-service-option-${slug}`);
-  const names = page.locator(".create-category-wheel .create-service-chip");
+  const names = page.locator('.create-category-wheel [role="tab"]');
   for (let i = 0; (await tile.count()) === 0 && i < (await names.count()); i += 1) {
     await names.nth(i).evaluate((element) => (element as HTMLElement).click());
   }

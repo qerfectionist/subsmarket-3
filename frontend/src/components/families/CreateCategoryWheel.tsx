@@ -1,7 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { triggerTelegramImpact } from "../../telegram";
 
-const GAP = 26;
+const GAP = 24;
+/** Where the chosen name starts, from the wheel's left edge: the screen's side margin. */
+const ANCHOR = 20;
+/** The names go round three times, so the ring is always wider than the screen and never shows its seam. */
+const COPIES = 3;
 
 type Drag = {
   pointerId: number;
@@ -15,11 +19,11 @@ type Drag = {
 };
 
 /**
- * Step 1 categories as a wheel: the names sit on a ring with the chosen one in
- * the middle. A swipe left turns the ring, so «Популярное» goes off to the left
- * and «Видео» comes to the middle; after the last name the first comes round
- * again, and a swipe right brings it back from the left. A tap on a name turns
- * the ring the short way to it. Names further from the middle fade and shrink.
+ * Step 1 categories as a wheel: the names sit on a ring, and the chosen one is
+ * first in the row, where the list starts. A swipe left turns the ring, so
+ * «Популярное» goes off to the left and «Видео» takes its place; after the last
+ * name the first comes round again, and a swipe right brings it back from the
+ * left. A tap on a name turns the ring the short way to it.
  */
 export function CreateCategoryWheel({
   items,
@@ -32,13 +36,14 @@ export function CreateCategoryWheel({
 }) {
   const count = items.length;
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  // Every copy of every name: [copy * count + i].
   const labelRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const lineRef = useRef<HTMLSpanElement | null>(null);
-  // Where each name's centre sits on the ring, and the ring's length, in px.
-  const centersRef = useRef<number[]>([]);
+  // Where each name starts on one turn of the ring, its width, and one turn's length, in px.
+  const startsRef = useRef<number[]>([]);
   const widthsRef = useRef<number[]>([]);
-  const ringRef = useRef(1);
-  // The point of the ring under the middle of the screen.
+  const turnRef = useRef(1);
+  // The point of the ring at the anchor.
   const cRef = useRef(0);
   const dragRef = useRef<Drag | null>(null);
   const frameRef = useRef<number | null>(null);
@@ -47,19 +52,20 @@ export function CreateCategoryWheel({
   const onIndexChangeRef = useRef(onIndexChange);
   onIndexChangeRef.current = onIndexChange;
 
-  const wrap = (value: number) => {
-    const ring = ringRef.current;
-    let d = value % ring;
-    if (d < -ring / 2) d += ring;
-    if (d >= ring / 2) d -= ring;
+  /** The short way round one turn: -turn/2 … turn/2. */
+  const shortWay = (value: number) => {
+    const turn = turnRef.current;
+    let d = value % turn;
+    if (d < -turn / 2) d += turn;
+    if (d >= turn / 2) d -= turn;
     return d;
   };
 
   function nearest(c: number) {
     let best = 0;
     let bestDistance = Infinity;
-    centersRef.current.forEach((center, i) => {
-      const distance = Math.abs(wrap(center - c));
+    startsRef.current.forEach((start, i) => {
+      const distance = Math.abs(shortWay(start - c));
       if (distance < bestDistance) {
         bestDistance = distance;
         best = i;
@@ -70,23 +76,29 @@ export function CreateCategoryWheel({
 
   function place(c: number) {
     cRef.current = c;
-    const half = (viewportRef.current?.clientWidth ?? 0) / 2;
-    labelRefs.current.forEach((label, i) => {
+    const width = viewportRef.current?.clientWidth ?? 0;
+    const ring = turnRef.current * COPIES;
+    labelRefs.current.forEach((label, k) => {
       if (!label) return;
-      const x = wrap(centersRef.current[i] - c);
-      const far = Math.min(Math.abs(x) / Math.max(half, 1), 1);
-      label.style.transform = `translate3d(${half + x - widthsRef.current[i] / 2}px, 0, 0) scale(${1 - far * 0.12})`;
-      // Names dim towards the edges and are gone at them, where the ring joins up.
-      label.style.opacity = String(far > 0.8 ? (1 - far) * 2.4 : 1 - far * 0.65);
+      const i = k % count;
+      const copy = Math.floor(k / count);
+      // Most of the ring lies to the right of the anchor, a little to the left.
+      let d = (startsRef.current[i] + copy * turnRef.current - c) % ring;
+      if (d < -ring * 0.3) d += ring;
+      if (d >= ring * 0.7) d -= ring;
+      label.style.transform = `translate3d(${ANCHOR + d}px, 0, 0)`;
+      // Names leaving on the left fade out fast; to the right they dim a little.
+      label.style.opacity = String(
+        d < 0 ? Math.max(0, 1 + d / 48) : 1 - Math.min(d / Math.max(width - ANCHOR, 1), 1) * 0.5
+      );
+      label.dataset.current = String(Math.abs(d) < widthsRef.current[i] / 2);
     });
-    // The line under the middle takes the width of the name over it.
-    const active = nearest(c);
-    if (lineRef.current) lineRef.current.style.width = `${widthsRef.current[active] ?? 0}px`;
+    // The line under the first place takes the width of the name over it.
+    if (lineRef.current) lineRef.current.style.width = `${widthsRef.current[nearest(c)] ?? 0}px`;
   }
 
   function report(c: number) {
     const next = nearest(c);
-    labelRefs.current.forEach((label, i) => label?.setAttribute("aria-selected", String(i === next)));
     if (next !== reportedRef.current) {
       reportedRef.current = next;
       triggerTelegramImpact("light");
@@ -128,17 +140,17 @@ export function CreateCategoryWheel({
   // Lay the names out on the ring once their widths are known.
   useLayoutEffect(() => {
     const measure = () => {
-      const widths = labelRefs.current.map((label) => label?.offsetWidth ?? 0);
-      const centers: number[] = [];
+      const widths = items.map((_, i) => labelRefs.current[i]?.offsetWidth ?? 0);
+      const starts: number[] = [];
       let run = 0;
       widths.forEach((width) => {
-        centers.push(run + width / 2);
+        starts.push(run);
         run += width + GAP;
       });
       widthsRef.current = widths;
-      centersRef.current = centers;
-      ringRef.current = Math.max(run, 1);
-      place(centers[reportedRef.current] ?? 0);
+      startsRef.current = starts;
+      turnRef.current = Math.max(run, 1);
+      place(starts[reportedRef.current] ?? 0);
     };
     measure();
     void document.fonts?.ready.then(measure);
@@ -149,13 +161,12 @@ export function CreateCategoryWheel({
 
   useEffect(() => () => stop(), []);
 
-  // The list below asked for a category (or it changed from outside): turn to it.
+  // A tap on a name (or a change from outside): turn the short way to it.
   useEffect(() => {
     if (index === reportedRef.current) return;
     reportedRef.current = index;
-    labelRefs.current.forEach((label, i) => label?.setAttribute("aria-selected", String(i === index)));
     const from = cRef.current;
-    animateTo(from + wrap((centersRef.current[index] ?? 0) - from));
+    animateTo(from + shortWay((startsRef.current[index] ?? 0) - from));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
@@ -213,11 +224,14 @@ export function CreateCategoryWheel({
     if (performance.now() - drag.lastTime > 60) drag.velocityX = 0;
     const projected = cRef.current - drag.velocityX * 0.18;
     const target = nearest(projected);
-    const end = cRef.current + wrap(centersRef.current[target] - cRef.current);
-    const landing = projected + wrap(end - projected);
+    const landing = projected + shortWay(startsRef.current[target] - projected);
     animateTo(landing, -drag.velocityX);
     report(landing);
   }
+
+  const select = (i: number) => {
+    if (i !== reportedRef.current) onIndexChangeRef.current(i);
+  };
 
   return (
     <div
@@ -237,25 +251,31 @@ export function CreateCategoryWheel({
         event.stopPropagation();
       }}
     >
-      {items.map((item, i) => (
-        <button
-          key={item.id}
-          ref={(element) => {
-            labelRefs.current[i] = element;
-          }}
-          type="button"
-          role="tab"
-          className="create-service-chip"
-          data-testid={`create-service-chip-${item.id}`}
-          aria-selected={i === index}
-          onClick={() => {
-            if (i === reportedRef.current) return;
-            onIndexChangeRef.current(i);
-          }}
-        >
-          {item.title}
-        </button>
-      ))}
+      {Array.from({ length: COPIES }, (_, copy) =>
+        items.map((item, i) => {
+          const k = copy * count + i;
+          // The first turn is the real tab list; the other turns only fill the ring.
+          const real = copy === 0;
+          return (
+            <button
+              key={`${copy}-${item.id}`}
+              ref={(element) => {
+                labelRefs.current[k] = element;
+              }}
+              type="button"
+              role={real ? "tab" : undefined}
+              className="create-service-chip"
+              data-testid={real ? `create-service-chip-${item.id}` : undefined}
+              aria-selected={real ? i === index : undefined}
+              aria-hidden={real ? undefined : true}
+              tabIndex={real ? undefined : -1}
+              onClick={() => select(i)}
+            >
+              {item.title}
+            </button>
+          );
+        })
+      )}
       <span ref={lineRef} className="create-category-wheel-line" aria-hidden="true" />
     </div>
   );

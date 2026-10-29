@@ -228,10 +228,10 @@ test("service tiles on step 1 take a vertical swipe", async ({ page }) => {
   expect(prevented).toBe(false);
 });
 
-test("categories turn like a wheel and the list follows", async ({ page }) => {
+test("categories turn like a wheel with the chosen one first", async ({ page }) => {
   await openCreate(page);
   await page.getByTestId("create-kind-subscription").click();
-  const tabs = page.locator(".create-category-wheel .create-service-chip");
+  const tabs = page.locator('.create-category-wheel [role="tab"]');
   const tabCount = await tabs.count();
   expect(tabCount).toBeGreaterThan(2);
   await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
@@ -247,39 +247,48 @@ test("categories turn like a wheel and the list follows", async ({ page }) => {
     await page.mouse.move(x, y);
     await page.mouse.down();
     for (let i = 1; i <= 10; i += 1) await page.mouse.move(x + (dx * i) / 10, y);
-    await page.waitForTimeout(80); // no flick: it settles on the name under the middle
+    await page.waitForTimeout(80); // no flick: it settles on the name nearest the first place
     await page.mouse.up();
   };
-  const middleName = () =>
+  // The name in the first place, where the list starts (the side margin).
+  const firstName = () =>
     page.evaluate(() => {
-      const wheelBox = document.querySelector(".create-category-wheel")!.getBoundingClientRect();
-      const mid = wheelBox.left + wheelBox.width / 2;
+      const left = document.querySelector(".create-category-wheel")!.getBoundingClientRect().left + 20;
       const names = [...document.querySelectorAll<HTMLElement>(".create-category-wheel .create-service-chip")];
       return names
-        .map((name) => {
-          const r = name.getBoundingClientRect();
-          return { text: name.textContent, d: Math.abs(r.left + r.width / 2 - mid) };
-        })
-        .sort((a, b) => a.d - b.d)[0];
+        .map((name) => ({ text: name.textContent, d: Math.abs(name.getBoundingClientRect().left - left) }))
+        .sort((a, b) => a.d - b.d)[0].text;
     });
+  await expect.poll(firstName).toBe("Популярное");
 
-  // Turn left by one name: the second category comes to the middle and its services show.
+  // Swipe left by one name: «Популярное» goes off, the second takes the first place.
   const second = (await tabs.nth(1).textContent())!;
   const firstWidth = (await tabs.first().boundingBox())!.width;
-  await swipe(-(firstWidth / 2 + 40));
+  await swipe(-(firstWidth + 24));
   await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
-  await expect.poll(async () => (await middleName()).text).toBe(second);
+  await expect.poll(firstName).toBe(second);
   await expect(page.getByTestId("create-service-option-youtube-premium")).toHaveCount(0);
 
-  // A tap on the first name turns back; past the first, the last comes round from the left.
-  await tabs.first().click();
+  // A tap on «Популярное» turns back; a swipe right from it brings the last round from the left.
+  // The ring shows a name more than once: tap the copy that is on screen.
+  await page
+    .locator(".create-category-wheel .create-service-chip", { hasText: "Популярное" })
+    .evaluateAll((names) => {
+      const box = document.querySelector(".create-category-wheel")!.getBoundingClientRect();
+      const shown = names.find((name) => {
+        const r = name.getBoundingClientRect();
+        return r.left < box.right - 20 && r.right > box.left && Number(getComputedStyle(name).opacity) > 0.3;
+      }) as HTMLElement;
+      shown.click();
+    });
   await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
-  await expect.poll(async () => (await middleName()).text).toBe("Популярное");
+  await expect.poll(firstName).toBe("Популярное");
+  await page.waitForTimeout(700); // the turn has settled
   const last = (await tabs.nth(tabCount - 1).textContent())!;
   const lastWidth = (await tabs.nth(tabCount - 1).boundingBox())!.width;
-  await swipe(firstWidth / 2 + 26 + lastWidth / 2);
+  await swipe(lastWidth + 24);
   await expect(tabs.nth(tabCount - 1)).toHaveAttribute("aria-selected", "true");
-  await expect.poll(async () => (await middleName()).text).toBe(last);
+  await expect.poll(firstName).toBe(last);
 
   // Searching shows one list of matches and hides the wheel.
   await page.getByTestId("create-service-search").fill("spotify");
