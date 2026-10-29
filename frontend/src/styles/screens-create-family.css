@@ -844,3 +844,25 @@
     display: none;
   }
 }
+
+/*
+ * The fade under «Популярное» shows only while the list moves and then goes away,
+ * as on «Заявки» (.actions-scope-swipe-pane): the shared .my-feed-wrap rule would
+ * keep it on for as long as the list is scrolled.
+ */
+.my-feed-wrap.create-popular-wrap::before {
+  opacity: 0;
+  transition: opacity 550ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.my-feed-wrap.create-popular-wrap[data-scrolling="true"]::before,
+.my-feed-wrap.create-popular-wrap:has([data-scrolling="true"])::before {
+  opacity: 1;
+  transition: opacity 200ms ease-out;
+}
+
+.my-feed-wrap.create-popular-wrap[data-scrolled="true"]:not([data-scrolling="true"]):not(:has([data-scrolling="true"]))::before,
+.my-feed-wrap.create-popular-wrap:has([data-scrolled="true"]):not([data-scrolling="true"]):not(:has([data-scrolling="true"]))::before {
+  opacity: 0;
+  transition: opacity 550ms cubic-bezier(0.25, 1, 0.5, 1);
+}
