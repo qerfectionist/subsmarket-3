@@ -100,7 +100,7 @@ test("search results scroll like a feed, with «Наверх» at the end", asyn
   await openCreate(page);
   await page.getByTestId("create-search").fill("a");
   const results = page.getByTestId("create-search-results");
-  const toTop = page.locator(".create-results-to-top");
+  const toTop = page.locator(".create-feed-to-top");
   await expect(results.locator(".create-row").nth(8)).toHaveCount(1);
   await expect(toTop).toHaveAttribute("data-visible", "false");
 
@@ -125,7 +125,56 @@ test("search results scroll like a feed, with «Наверх» at the end", asyn
   await expect(toTop).toHaveAttribute("data-visible", "true");
   await page.waitForTimeout(600);
   await page.screenshot({ path: "test-results/create-results-end.png" });
-  await page.getByTestId("create-results-to-top").click();
+  await page.getByTestId("create-search-results-to-top").click();
   await expect.poll(() => results.evaluate((element) => element.scrollTop)).toBe(0);
   await expect(toTop).toHaveAttribute("data-visible", "false");
+});
+
+test("«Недавние» scrolls like a feed when there is more than fits", async ({ page }) => {
+  const post = (path: string, data: object) =>
+    page.request.post(`${apiUrl}${path}`, {
+      headers: { ...ownerHeaders, "Idempotency-Key": crypto.randomUUID() },
+      data
+    });
+  for (const operator of ["beeline", "tele2", "activ"]) {
+    const response = await post("/api/marketplace/listings", { operator_slug: operator, price_per_gb_kzt: 200, max_gb: 5, description: null });
+    expect(response.ok(), await response.text()).toBeTruthy();
+  }
+  const services = (await (await page.request.get(`${apiUrl}/api/marketplace/accounts/services`)).json()) as {
+    slug: string;
+    plans?: { code: string; periods: number[] }[];
+    deliveries?: ("own_account" | "ready_account")[];
+  }[];
+  for (const service of services.filter((item) => item.plans?.length).slice(0, 4)) {
+    const plan = service.plans![0];
+    const response = await post("/api/marketplace/accounts/listings", {
+      service_slug: service.slug,
+      plan_code: plan.code,
+      period_months: plan.periods[0],
+      delivery: service.deliveries?.[0] ?? "own_account",
+      price_kzt: 3000
+    });
+    expect(response.ok(), await response.text()).toBeTruthy();
+  }
+
+  await openCreate(page);
+  const list = page.getByTestId("create-recent-list");
+  await expect(list.locator(".create-row")).toHaveCount(7);
+  const toTop = page.locator(".create-feed-to-top");
+  await expect(toTop).toHaveAttribute("data-visible", "false");
+
+  // The rows move inside «Недавние»; the menu above stays put.
+  await list.hover();
+  await page.mouse.wheel(0, 100);
+  await page.waitForTimeout(900);
+  expect(await list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.querySelector(".app-shell")!.scrollTop)).toBe(0);
+  await expect(page.getByTestId("create-kind-subscription")).toBeInViewport();
+
+  await list.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+  await expect(toTop).toHaveAttribute("data-visible", "true");
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: "test-results/create-recent-end.png" });
+  await page.getByTestId("create-recent-list-to-top").click();
+  await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(0);
 });

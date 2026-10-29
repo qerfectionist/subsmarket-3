@@ -1,11 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Panel } from "./layout";
-import { ServiceLogo } from "./branding";
 import { SystemSymbol } from "./SystemSymbol";
 import { MarketSearchField } from "./market/MarketSearchField";
-import { ScrollToTopButton } from "./ScrollToTopButton";
-import { useFeedSnap } from "../hooks/useFeedSnap";
-import { useListEnd } from "../hooks/useListEnd";
+import { CreateFeed } from "./CreateFeed";
 import { triggerTelegramSelection } from "../telegram";
 import { servicePopularity } from "./families/createFamilyForm";
 import { CREATE_TITLES, type CreateCategory } from "./CreateCategoryPicker";
@@ -18,8 +15,7 @@ import {
 import {
   recentCreateItems,
   searchCreateItems,
-  type CreateHomeActions,
-  type CreateHomeItem
+  type CreateHomeActions
 } from "./createHomeItems";
 import type { FamilyService, MyFamily } from "../types";
 
@@ -58,32 +54,6 @@ function popularFirst(list: FamilyService[]) {
   return [...list].sort((a, b) => servicePopularity(a.slug) - servicePopularity(b.slug));
 }
 
-function CreateRow({ item }: { item: CreateHomeItem }) {
-  return (
-    <button
-      type="button"
-      className="create-row"
-      data-testid={`create-row-${item.key}`}
-      onClick={() => {
-        triggerTelegramSelection();
-        item.open();
-      }}
-    >
-      <ServiceLogo
-        serviceSlug={item.logoSlug}
-        serviceName={item.title}
-        familyType={item.tariffLogo ? "tariff" : "subscription"}
-        size={40}
-      />
-      <span className="create-row-copy">
-        <strong>{item.title}</strong>
-        <span>{item.subtitle}</span>
-      </span>
-      <SystemSymbol name="chevron.forward" size={18} />
-    </button>
-  );
-}
-
 /**
  * «Создать»: a search across everything that can be created, the four kinds,
  * and what this person created before, so a repeat takes one tap.
@@ -116,12 +86,6 @@ export function CreateHome({
 
   const searching = query.trim() !== "";
   const found = searching ? searchCreateItems(query, { services, accountServices, operators }, actions) : [];
-  const feedSnap = useFeedSnap({ itemCount: found.length, cardSelector: ".create-row" });
-  const end = useListEnd(feedSnap.containerRef, ".create-row", found.length);
-  // A new query starts the results from the top.
-  useEffect(() => {
-    feedSnap.containerRef.current?.scrollTo({ top: 0 });
-  }, [query, feedSnap.containerRef]);
   const recent = searching
     ? []
     : recentCreateItems({ families: myFamilies, accountListings, gigabyteListings }, actions);
@@ -155,31 +119,7 @@ export function CreateHome({
             </div>
           </div>
         ) : searching ? (
-          // Same feed behaviour as «Заявки»: snapping, a fade while it moves,
-          // and «Наверх» once the end is reached.
-          <div className="my-feed-wrap create-results-wrap">
-            <div
-              className="my-feed-scroll create-results"
-              data-testid="create-search-results"
-              ref={feedSnap.containerRef}
-              {...feedSnap.scrollHandlers}
-              onScroll={() => {
-                feedSnap.scrollHandlers.onScroll?.();
-                end.check();
-              }}
-            >
-              {found.map((item) => (
-                <CreateRow key={item.key} item={item} />
-              ))}
-            </div>
-            <ScrollToTopButton
-              containerRef={feedSnap.containerRef}
-              testId="create-results-to-top"
-              className="create-results-to-top"
-              hidden={!end.reached}
-              style={end.offset === null ? undefined : { bottom: `${end.offset}px` }}
-            />
-          </div>
+          <CreateFeed items={found} testId="create-search-results" resetKey={query} />
         ) : (
           <>
             <div className="create-kinds">
@@ -213,11 +153,7 @@ export function CreateHome({
                     <h2 id="create-recent-title">Недавние</h2>
                   </div>
                 </div>
-                <div className="create-recent-list">
-                  {recent.map((item) => (
-                    <CreateRow key={item.key} item={item} />
-                  ))}
-                </div>
+                <CreateFeed items={recent} testId="create-recent-list" />
               </section>
             ) : null}
           </>

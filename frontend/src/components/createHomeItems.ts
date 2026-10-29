@@ -96,7 +96,7 @@ export function searchCreateItems(
   ];
 }
 
-const RECENT_LIMIT = 3;
+const RECENT_LIMIT = 10;
 
 /**
  * What this person created before, newest first, one row per service and kind,

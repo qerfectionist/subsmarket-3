@@ -39,10 +39,8 @@
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--app-secondary-bg);
+  width: 28px;
+  height: 28px;
   color: var(--category-accent);
 }
 
@@ -112,8 +110,8 @@
   flex-shrink: 0;
 }
 
-/* Search results: the «Мои»/«Заявки» feed (.my-feed-wrap, .my-feed-scroll). */
-.create-results {
+/* Search results and «Недавние»: the «Мои»/«Заявки» feed (.my-feed-wrap, .my-feed-scroll). */
+.create-feed {
   gap: 8px;
 }
 
@@ -127,8 +125,10 @@
 }
 
 /* Search results and «Недавние» share one row: logo, name, what it is. */
+/* «Недавние» takes the rest of the screen; its rows scroll inside it. */
 .create-recent {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   gap: 8px;
   min-height: 0;
@@ -136,12 +136,6 @@
 
 .create-recent .sm-market-section-heading {
   flex-shrink: 0;
-}
-
-.create-recent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .app-shell .create-row {
@@ -199,11 +193,6 @@
     padding: 10px 12px;
   }
 
-  .create-home .create-kind-icon {
-    width: 36px;
-    height: 36px;
-  }
-
   .create-home .create-kind-copy strong {
     font-size: var(--app-size-caption);
     line-height: var(--app-leading-caption);
@@ -243,19 +232,19 @@
  * as on «Заявки» (.actions-scope-swipe-pane): the shared .my-feed-wrap rule would
  * keep it on for as long as the list is scrolled.
  */
-.my-feed-wrap.create-results-wrap::before {
+.my-feed-wrap.create-feed-wrap::before {
   opacity: 0;
   transition: opacity 550ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.my-feed-wrap.create-results-wrap:has([data-scrolling="true"])::before {
+.my-feed-wrap.create-feed-wrap:has([data-scrolling="true"])::before {
   opacity: 1;
   transition: opacity 200ms ease-out;
 }
 
 /* «Наверх»: a floating glass capsule that rises in once the end of the results
    is reached, centred between the last row and the bottom menu. */
-.create-results-wrap .scroll-to-top-wrap.create-results-to-top {
+.create-feed-wrap .scroll-to-top-wrap.create-feed-to-top {
   position: absolute;
   left: 0;
   right: 0;
@@ -273,7 +262,7 @@
     filter 260ms ease-out;
 }
 
-.create-results-wrap .scroll-to-top-wrap.create-results-to-top[data-visible="true"] {
+.create-feed-wrap .scroll-to-top-wrap.create-feed-to-top[data-visible="true"] {
   opacity: 1;
   transform: none;
   filter: none;
@@ -283,14 +272,14 @@
     filter 260ms ease-out;
 }
 
-.create-results-wrap .scroll-to-top-wrap.create-results-to-top[data-visible="true"] .scroll-to-top-btn {
+.create-feed-wrap .scroll-to-top-wrap.create-feed-to-top[data-visible="true"] .scroll-to-top-btn {
   pointer-events: auto;
 }
 
-.create-results-to-top .scroll-to-top-btn,
-.create-results-to-top .scroll-to-top-btn:hover,
-[data-theme="light"] .create-results-to-top .scroll-to-top-btn,
-[data-theme="light"] .create-results-to-top .scroll-to-top-btn:hover {
+.create-feed-to-top .scroll-to-top-btn,
+.create-feed-to-top .scroll-to-top-btn:hover,
+[data-theme="light"] .create-feed-to-top .scroll-to-top-btn,
+[data-theme="light"] .create-feed-to-top .scroll-to-top-btn:hover {
   height: 40px;
   padding: 0 18px 0 15px;
   gap: 7px;
@@ -305,20 +294,20 @@
   -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 
-.create-results-to-top .scroll-to-top-btn .scroll-to-top-icon {
+.create-feed-to-top .scroll-to-top-btn .scroll-to-top-icon {
   opacity: 1;
 }
 
-.create-results-to-top .scroll-to-top-btn:active,
-[data-theme="light"] .create-results-to-top .scroll-to-top-btn:active {
+.create-feed-to-top .scroll-to-top-btn:active,
+[data-theme="light"] .create-feed-to-top .scroll-to-top-btn:active {
   transform: scale(0.94);
   color: var(--app-text);
   background: var(--app-control-material);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .create-results-wrap .scroll-to-top-wrap.create-results-to-top,
-  .create-results-wrap .scroll-to-top-wrap.create-results-to-top[data-visible="true"] {
+  .create-feed-wrap .scroll-to-top-wrap.create-feed-to-top,
+  .create-feed-wrap .scroll-to-top-wrap.create-feed-to-top[data-visible="true"] {
     transform: none;
     filter: none;
     transition: opacity 160ms linear;
