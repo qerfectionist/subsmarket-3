@@ -228,70 +228,65 @@ test("service tiles on step 1 take a vertical swipe", async ({ page }) => {
   expect(prevented).toBe(false);
 });
 
-test("categories turn like a wheel with the chosen one first", async ({ page }) => {
+test("categories are pages that swipe like folders, with a line that follows", async ({ page }) => {
   await openCreate(page);
   await page.getByTestId("create-kind-subscription").click();
-  const tabs = page.locator('.create-category-wheel [role="tab"]');
+  const tabs = page.locator('.create-category-tabs [role="tab"]');
   const tabCount = await tabs.count();
   expect(tabCount).toBeGreaterThan(2);
   await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
-  // No section titles: the wheel says which category is shown.
+  // No section titles: the tab says which category is on screen.
   await expect(page.locator(".create-service-section-title")).toHaveCount(0);
-  await expect(page.getByTestId("create-service-option-youtube-premium")).toBeVisible();
 
-  const wheel = page.locator(".create-category-wheel");
-  const box = (await wheel.boundingBox())!;
+  const pager = page.locator(".create-service-pager");
+  const box = (await pager.boundingBox())!;
   const swipe = async (dx: number) => {
-    const y = box.y + box.height / 2;
+    const y = box.y + 60;
     const x = box.x + box.width / 2;
     await page.mouse.move(x, y);
     await page.mouse.down();
-    for (let i = 1; i <= 10; i += 1) await page.mouse.move(x + (dx * i) / 10, y);
-    await page.waitForTimeout(80); // no flick: it settles on the name nearest the first place
+    for (let i = 1; i <= 8; i += 1) await page.mouse.move(x + (dx * i) / 8, y);
     await page.mouse.up();
   };
-  // The name in the first place, where the list starts (the side margin).
-  const firstName = () =>
-    page.evaluate(() => {
-      const left = document.querySelector(".create-category-wheel")!.getBoundingClientRect().left + 20;
-      const names = [...document.querySelectorAll<HTMLElement>(".create-category-wheel .create-service-chip")];
-      return names
-        .map((name) => ({ text: name.textContent, d: Math.abs(name.getBoundingClientRect().left - left) }))
-        .sort((a, b) => a.d - b.d)[0].text;
-    });
-  await expect.poll(firstName).toBe("Популярное");
+  const pageLeft = (id: string) =>
+    page.evaluate((pageId) => {
+      const viewport = document.querySelector(".create-service-pager")!.getBoundingClientRect();
+      const el = document.querySelector(`[data-page-id="${pageId}"]`)!.getBoundingClientRect();
+      return Math.round(el.left - viewport.left);
+    }, id);
+  // The line sits under the chosen tab.
+  const lineUnder = (i: number) =>
+    page.evaluate((n) => {
+      const line = document.querySelector(".create-category-tabs-line")!.getBoundingClientRect();
+      const tab = document.querySelectorAll('.create-category-tabs [role="tab"]')[n].getBoundingClientRect();
+      return Math.abs(line.left - tab.left) < 2 && Math.abs(line.width - tab.width) < 2;
+    }, i);
+  await expect.poll(() => lineUnder(0)).toBe(true);
 
-  // Swipe left by one name: «Популярное» goes off, the second takes the first place.
-  const second = (await tabs.nth(1).textContent())!;
-  const firstWidth = (await tabs.first().boundingBox())!.width;
-  await swipe(-(firstWidth + 24));
-  await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
-  await expect.poll(firstName).toBe(second);
-  await expect(page.getByTestId("create-service-option-youtube-premium")).toHaveCount(0);
-
-  // A tap on «Популярное» turns back; a swipe right from it brings the last round from the left.
-  // The ring shows a name more than once: tap the copy that is on screen.
-  await page
-    .locator(".create-category-wheel .create-service-chip", { hasText: "Популярное" })
-    .evaluateAll((names) => {
-      const box = document.querySelector(".create-category-wheel")!.getBoundingClientRect();
-      const shown = names.find((name) => {
-        const r = name.getBoundingClientRect();
-        return r.left < box.right - 20 && r.right > box.left && Number(getComputedStyle(name).opacity) > 0.3;
-      }) as HTMLElement;
-      shown.click();
-    });
+  // At the first page a swipe right only resists: still the first.
+  await swipe(160);
   await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
-  await expect.poll(firstName).toBe("Популярное");
-  await page.waitForTimeout(700); // the turn has settled
-  const last = (await tabs.nth(tabCount - 1).textContent())!;
-  const lastWidth = (await tabs.nth(tabCount - 1).boundingBox())!.width;
-  await swipe(lastWidth + 24);
-  await expect(tabs.nth(tabCount - 1)).toHaveAttribute("aria-selected", "true");
-  await expect.poll(firstName).toBe(last);
+  await expect.poll(() => pageLeft("popular")).toBe(0);
 
-  // Searching shows one list of matches and hides the wheel.
+  // Swipe left: the next category comes in from the right and the line moves to its tab.
+  await swipe(-160);
+  await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
+  const second = (await tabs.nth(1).getAttribute("data-testid"))!.replace("create-service-chip-", "");
+  await expect.poll(() => pageLeft(second)).toBe(0);
+  await expect.poll(() => lineUnder(1)).toBe(true);
+
+  // Swipe right: back to the first.
+  await swipe(160);
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+
+  // A tab tap slides to its page; a swipe that ended on a tile picked nothing.
+  await tabs.nth(tabCount - 1).click();
+  await expect(tabs.nth(tabCount - 1)).toHaveAttribute("aria-selected", "true");
+  await expect.poll(() => lineUnder(tabCount - 1)).toBe(true);
+  await expect(page.locator('[aria-checked="true"]')).toHaveCount(0);
+
+  // Searching shows one list of matches and hides the tabs.
   await page.getByTestId("create-service-search").fill("spotify");
-  await expect(wheel).toHaveCount(0);
+  await expect(tabs).toHaveCount(0);
   await expect(page.getByTestId("create-service-option-spotify-family")).toBeVisible();
 });
