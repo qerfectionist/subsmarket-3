@@ -63,12 +63,20 @@ type PopularItem = {
   open: () => void;
 };
 
-/** «ChatGPT, Claude и ещё 9»: the names that fit on one line, then how many more. */
+/**
+ * «Spotify, Netflix и ещё 31»: two of the most popular names, the first pair
+ * that fits on one line even on a narrow phone, then how many more.
+ */
 function examples(names: string[]) {
-  const shown: string[] = [];
-  for (const name of names.slice(0, 2)) {
-    if (shown.length && [...shown, name].join(", ").length > 24) break;
-    shown.push(name);
+  const top = names.slice(0, 8);
+  let shown = top.slice(0, 2);
+  search: for (let i = 0; i < top.length; i += 1) {
+    for (let j = i + 1; j < top.length; j += 1) {
+      if (`${top[i]}, ${top[j]}`.length <= 22) {
+        shown = [top[i], top[j]];
+        break search;
+      }
+    }
   }
   const rest = names.length - shown.length;
   return rest > 0 ? `${shown.join(", ")} и ещё ${rest}` : shown.join(", ");

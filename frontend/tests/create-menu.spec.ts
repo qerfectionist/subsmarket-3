@@ -17,7 +17,7 @@ test("«Создать» opens on a menu of what can be created and popular serv
   const home = page.getByTestId("create-home");
   await expect(home).toBeVisible();
   await expect(page.getByTestId("create-kind-subscription")).toContainText("Семейная подписка");
-  await expect(page.getByTestId("create-kind-subscription")).toContainText("YouTube Premium");
+  await expect(page.getByTestId("create-kind-subscription")).toContainText("Яндекс Плюс, Spotify");
   await expect(page.getByTestId("create-kind-tariff")).toContainText("Tele2");
 
   // «Популярное» mixes all four categories and scrolls inside itself; the screen stays put.
