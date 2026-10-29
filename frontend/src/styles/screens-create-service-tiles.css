@@ -1,0 +1,61 @@
+/*
+ * Step 1 tiles: every tile is the same size. The logo sits in a fixed 44px slot
+ * at the top, the name under it reserves two lines, so a long name or a missing
+ * logo does not change the tile or move its neighbours.
+ */
+.app-shell .create-service-tile {
+  justify-content: flex-start;
+  gap: 8px;
+  height: 112px;
+  min-height: 112px;
+  padding: 14px 8px 8px;
+}
+
+.create-service-tile .service-logo {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+
+/* A wide wordmark and a round icon fill the same slot. */
+.create-service-tile .service-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.create-service-tile .service-logo-monogram {
+  font-size: 18px;
+  font-weight: var(--app-weight-semibold);
+}
+
+.create-service-tile strong {
+  min-height: calc(2 * var(--app-leading-label));
+}
+
+/*
+ * The tiles dim into the three step bars below them instead of being cut off
+ * by them, as the lists on «Заявки» and «Мои» do. The last row still scrolls
+ * clear of the fade.
+ */
+.create-service-feed::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  height: 38px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    var(--app-bg, #0f0f10) 0%,
+    color-mix(in srgb, var(--app-bg, #0f0f10) 85%, transparent) 35%,
+    color-mix(in srgb, var(--app-bg, #0f0f10) 40%, transparent) 70%,
+    transparent 100%
+  );
+}
+
+.create-step-form[data-step="service"] .create-service-sections {
+  padding-bottom: 34px;
+}

@@ -52,10 +52,6 @@ function popularFirst<T extends { slug: string }>(list: T[]): T[] {
   return [...list].sort((a, b) => servicePopularity(a.slug) - servicePopularity(b.slug));
 }
 
-function mostPopular<T extends { slug: string }>(list: T[]): T | undefined {
-  return popularFirst(list)[0];
-}
-
 const emptyCreateForm: FamilyCreate = {
   service_id: "",
   plan_name: null,
@@ -323,12 +319,12 @@ export function App() {
   }
 
   function changeFamilyType(nextType: FamilyType) {
-    // The most popular service of the type is preselected, so it is the first tile on screen.
+    // Nothing is preselected: the person picks the service themselves.
     const nextServices = popularFirst(services.filter((service) => service.family_type === nextType));
     setFamilyType(nextType);
     setCreateForm((current) => ({
       ...current,
-      service_id: nextServices[0]?.id || "",
+      service_id: "",
       plan_name: nextType === "tariff" ? current.plan_name : null,
       full_speed_gb: nextType === "tariff" ? current.full_speed_gb : null,
       period: "monthly",
@@ -366,12 +362,7 @@ export function App() {
         payment_recipient_name: normalizeText(createForm.payment_recipient_name)
       };
       const created = await createFamilyMutation.mutateAsync(payload);
-      const nextDefault = mostPopular(typedServices);
-      setCreateForm({
-        ...emptyCreateForm,
-        service_id: nextDefault?.id || "",
-        max_members: Math.min(6, nextDefault?.max_members ?? 8)
-      });
+      setCreateForm({ ...emptyCreateForm, max_members: 6 });
       setCreatedFamilyId(created.family.id);
       setTab("created");
     });
@@ -422,18 +413,12 @@ export function App() {
 
   useEffect(() => {
     if (typedServices.length === 0) return;
-    setCreateForm((current) => {
-      if (current.service_id && typedServices.some((s) => s.id === current.service_id)) {
-        return current;
-      }
-      const first = mostPopular(typedServices) ?? typedServices[0];
-      return {
-        ...current,
-        service_id: first.id,
-        period: "monthly",
-        max_members: Math.min(current.max_members, first.max_members)
-      };
-    });
+    // A picked service that left the catalog is cleared; nothing is picked for the person.
+    setCreateForm((current) =>
+      current.service_id && !typedServices.some((s) => s.id === current.service_id)
+        ? { ...current, service_id: "" }
+        : current
+    );
   }, [typedServices]);
 
   if (loadState === "loading") {

@@ -71,8 +71,9 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await openCreate(page);
   await expect(page.getByTestId("create-family-form")).toBeVisible();
-  // YouTube Premium is preselected as the most popular; this flow checks Google One's Gmail invite.
-  await expect(page.getByTestId("create-service-option-youtube-premium")).toHaveAttribute("aria-checked", "true");
+  // Nothing is preselected: «Далее» waits for the person to pick; this flow checks Google One's Gmail invite.
+  await expect(page.getByTestId("create-service-option-youtube-premium")).toHaveAttribute("aria-checked", "false");
+  await expect(page.getByTestId("create-family-next")).toBeDisabled();
   await pickCreateService(page, "google-one");
   await goToCreateStep(page, "terms");
   await expect(page.getByTestId("create-share-preview")).toContainText("650 ₸");
@@ -404,6 +405,9 @@ test("inside Telegram the native main button drives family creation", async ({ p
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
+  // Nothing is preselected, so the native button waits for a service.
+  await expect.poll(mainButton).toMatchObject({ text: "Далее", visible: true, enabled: false, handlers: 1 });
+  await page.getByTestId("create-service-option-youtube-premium").evaluate((element) => (element as HTMLElement).click());
   await expect
     .poll(mainButton)
     .toMatchObject({ text: expect.stringMatching(/^Далее · /), visible: true, enabled: true, handlers: 1 });

@@ -30,6 +30,11 @@ export async function goToCreateStep(page: Page, target: Step) {
     if (step === target) return;
     const forward = STEPS.indexOf(target) > STEPS.indexOf(step);
     const button = page.getByTestId(forward ? "create-family-next" : "create-family-back");
+    // Nothing is preselected on step 1: a flow that does not care picks the first tile.
+    if (forward && step === "service" && (await button.isDisabled())) {
+      const tile = page.locator('[data-testid^="create-service-option-"]').first();
+      await tile.evaluate((element) => (element as HTMLElement).click());
+    }
     if (forward) await expect(button).toBeEnabled();
     await button.evaluate((element) => (element as HTMLElement).click());
     await expect(form(page)).not.toHaveAttribute("data-step", step);

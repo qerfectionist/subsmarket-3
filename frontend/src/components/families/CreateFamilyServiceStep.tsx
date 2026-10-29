@@ -135,7 +135,7 @@ export function CreateFamilyServiceStep({
                           serviceSlug={service.slug}
                           serviceName={service.name}
                           familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
-                          size={40}
+                          size={44}
                         />
                         <strong>{tileName(service)}</strong>
                         {selected ? (
