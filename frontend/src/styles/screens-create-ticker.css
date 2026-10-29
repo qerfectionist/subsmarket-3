@@ -5,22 +5,35 @@
 
 .create-ticker {
   display: inline-block;
-  color: var(--app-accent, var(--app-text));
   font-weight: 600;
 }
 
-/* One line tall, so the sliding words are clipped to it. */
+/* Tall enough for the outline, so the sliding words are clipped to it. */
 .create-ticker-window {
   position: relative;
   display: grid;
+  align-items: center;
+  justify-items: center;
   overflow: hidden;
-  height: 1.5em;
-  line-height: 1.5em;
+  height: 40px;
+  padding-inline: 4px;
 }
 
+/* The same glass outline as the iOS 27 controls, tinted like the kind's icon. */
 .create-ticker-word {
   grid-area: 1 / 1;
+  padding: 4px 14px;
+  border: 1px solid color-mix(in srgb, var(--category-accent) 55%, var(--app-control-border, transparent));
+  border-radius: 999px;
+  background:
+    linear-gradient(color-mix(in srgb, var(--category-accent) 14%, transparent), color-mix(in srgb, var(--category-accent) 14%, transparent)),
+    var(--app-control-material, transparent);
+  box-shadow: var(--app-control-shadow, none);
+  color: var(--category-accent);
+  line-height: 24px;
   white-space: nowrap;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .create-ticker-in {
