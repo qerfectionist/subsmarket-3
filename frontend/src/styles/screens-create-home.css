@@ -135,7 +135,17 @@
 }
 
 .create-recent .sm-market-section-heading {
+  position: relative;
+  z-index: 5;
   flex-shrink: 0;
+}
+
+/* The filter menu opens upward, over the menu rows: below there is only the
+   short «Недавние» list and then the bottom menu. */
+.create-recent .sm-market-filter-menu {
+  top: auto;
+  bottom: calc(100% + 8px);
+  transform-origin: bottom right;
 }
 
 /* .app-shell leaves the browser's heading margins on h2; the market screen has none. */

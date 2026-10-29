@@ -3,6 +3,7 @@ import { Panel } from "./layout";
 import { SystemSymbol } from "./SystemSymbol";
 import { MarketSearchField } from "./market/MarketSearchField";
 import { CreateFeed } from "./CreateFeed";
+import { CreateRecentSection } from "./CreateRecentSection";
 import { triggerTelegramSelection } from "../telegram";
 import { servicePopularity } from "./families/createFamilyForm";
 import { CREATE_TITLES, type CreateCategory } from "./CreateCategoryPicker";
@@ -146,16 +147,7 @@ export function CreateHome({
               ))}
             </div>
 
-            {recent.length > 0 ? (
-              <section className="create-recent" aria-labelledby="create-recent-title" data-testid="create-recent">
-                <div className="sm-market-section-heading">
-                  <div className="sm-market-section-heading-copy">
-                    <h2 id="create-recent-title">Недавние</h2>
-                  </div>
-                </div>
-                <CreateFeed items={recent} testId="create-recent-list" tail="first" />
-              </section>
-            ) : null}
+            {recent.length > 0 ? <CreateRecentSection items={recent} /> : null}
           </>
         )}
       </Panel>

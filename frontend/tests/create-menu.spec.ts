@@ -177,4 +177,16 @@ test("«Недавние» scrolls like a feed when there is more than fits", as
   await page.screenshot({ path: "test-results/create-recent-end.png" });
   await page.getByTestId("create-recent-list-to-top").click();
   await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(0);
+
+  // The count beside the title follows the filter; empty kinds can't be picked.
+  await expect(page.getByTestId("create-recent-count")).toHaveText("7");
+  await page.getByTestId("create-recent-filter").click();
+  await expect(page.getByTestId("create-recent-option-subscription")).toBeDisabled();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: "test-results/create-recent-filter.png" });
+  await page.getByTestId("create-recent-option-gigabytes").click();
+  await expect(page.getByTestId("create-recent-filter")).toContainText("Гигабайты");
+  await expect(page.getByTestId("create-recent-count")).toHaveText("3");
+  await expect(list.locator(".create-row")).toHaveCount(3);
+  await expect(list.getByTestId("create-row-accounts-chatgpt")).toHaveCount(0);
 });
