@@ -83,6 +83,10 @@
 .subs-dock--spotify .subs-dock-create .subs-dock-item {
   width: 100% !important;
   height: 54px !important;
+  /* The floating dock's round create button blurs what is under it; in this
+     full-width bar that blur showed as a square behind «Создать». */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .subs-dock--spotify .subs-dock-item {
