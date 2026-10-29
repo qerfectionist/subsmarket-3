@@ -93,6 +93,9 @@ function upToSeats(count: number) {
  */
 function useReachedEnd(containerRef: RefObject<HTMLElement | null>, rowSelector: string, itemCount: number) {
   const [reached, setReached] = useState(false);
+  // Distance from the list's bottom edge that centres the button in the space
+  // between the last row and the bottom menu.
+  const [offset, setOffset] = useState<number | null>(null);
   // Read through React's onScroll on the list itself, so the check never stays
   // tied to a list element that has since been replaced.
   const check = useCallback(() => {
@@ -106,14 +109,26 @@ function useReachedEnd(containerRef: RefObject<HTMLElement | null>, rowSelector:
     // The first row still showing at the top: the end is when it is the second to last.
     const top = container.getBoundingClientRect().top;
     const first = rows.findIndex((row) => row.getBoundingClientRect().bottom > top + 8);
-    setReached(first >= rows.length - 2);
+    const atEnd = first >= rows.length - 2;
+    setReached(atEnd);
+    if (atEnd) {
+      const box = container.getBoundingClientRect();
+      const dock = document.querySelector(".subs-dock");
+      const visibleBottom = Math.min(box.bottom, dock ? dock.getBoundingClientRect().top : Infinity);
+      const lastBottom = rows[rows.length - 1].getBoundingClientRect().bottom;
+      const buttonHeight = 40;
+      const centre = (lastBottom + visibleBottom) / 2;
+      // The button is placed inside the list's wrapper, so measure from its bottom.
+      const wrapBottom = (container.parentElement ?? container).getBoundingClientRect().bottom;
+      setOffset(Math.round(wrapBottom - centre - buttonHeight / 2));
+    }
   }, [containerRef, rowSelector]);
   useEffect(() => {
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, [check, itemCount]);
-  return { reached, check };
+  return { reached, offset, check };
 }
 
 function popularFirst(list: FamilyService[]) {
@@ -295,6 +310,7 @@ export function CreateHome({
                 testId="create-popular-scroll-to-top"
                 className="create-popular-to-top"
                 hidden={!end.reached}
+                style={end.offset === null ? undefined : { bottom: `${end.offset}px` }}
               />
             </div>
           </section>
