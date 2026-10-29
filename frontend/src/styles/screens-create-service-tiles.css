@@ -154,3 +154,44 @@
 @media (prefers-reduced-motion: reduce) {
   .app-shell .create-service-chip::after { transition: none; }
 }
+
+/*
+ * Categories as pages on a wheel: they sit side by side in one window and the
+ * pager moves them with transforms. Each page scrolls up and down on its own;
+ * pan-y leaves vertical scrolling to the browser and sideways swipes to the pager.
+ */
+/* The window runs to the screen edges, so a page slides off the edge instead of
+   being cut at the side margin; each page puts the margin back inside itself. */
+.create-service-pager {
+  position: relative;
+  margin-inline: -16px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.create-service-pager img {
+  -webkit-user-drag: none;
+}
+
+.create-step-form[data-step="service"] .create-service-page {
+  position: absolute;
+  inset: 0;
+  padding-top: 12px;
+  padding-inline: 16px;
+  will-change: transform;
+}
+
+.create-step-form[data-step="service"] .create-service-sections {
+  scroll-snap-type: none;
+}
+
+/* The fades above and below the pages span the same full width. */
+.create-service-feed:has(.create-service-pager)::before,
+.create-service-feed:has(.create-service-pager)::after {
+  left: -16px;
+  right: -16px;
+}

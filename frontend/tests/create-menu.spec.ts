@@ -201,9 +201,11 @@ test("«Недавние» scrolls like a feed when there is more than fits", as
 });
 
 test("service tiles on step 1 take a vertical swipe", async ({ page }) => {
+  // A short screen, so the first page has more tiles than fit and can scroll.
+  await page.setViewportSize({ width: 390, height: 600 });
   await openCreate(page);
   await page.getByTestId("create-kind-subscription").click();
-  const tiles = page.locator(".create-service-sections");
+  const tiles = page.locator(".create-service-sections").first();
   await expect(tiles).toBeVisible();
   // The touch lock must let a swipe up/down through to the tiles' own scroll area.
   const prevented = await tiles.evaluate((element) => {
@@ -226,36 +228,53 @@ test("service tiles on step 1 take a vertical swipe", async ({ page }) => {
   expect(prevented).toBe(false);
 });
 
-test("category chips scroll to a section and follow the list", async ({ page }) => {
+test("categories are pages that swipe round like a wheel", async ({ page }) => {
   await openCreate(page);
   await page.getByTestId("create-kind-subscription").click();
-  const tiles = page.locator(".create-service-sections");
-  const chips = page.locator(".create-service-chip");
-  await expect(chips.first()).toHaveAttribute("aria-current", "true");
+  const tabs = page.locator(".create-service-chip");
+  const tabCount = await tabs.count();
+  expect(tabCount).toBeGreaterThan(2);
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+  // No section titles: the tab says which category is on screen.
+  await expect(page.locator(".create-service-section-title")).toHaveCount(0);
 
-  // A tap brings that section to the top and lights its chip.
-  const cloud = page.getByRole("button", { name: "Облако", exact: true });
-  await cloud.click();
-  await expect(cloud).toHaveAttribute("aria-current", "true");
-  await expect
-    .poll(async () =>
-      page.evaluate(() => {
-        const box = document.querySelector(".create-service-sections")!.getBoundingClientRect();
-        const section = [...document.querySelectorAll("[data-section-id]")].find(
-          (item) => item.querySelector("h3")?.textContent === "Облако"
-        )!;
-        return Math.round(section.getBoundingClientRect().top - box.top);
-      })
-    )
-    .toBeLessThan(40);
+  const pager = page.locator(".create-service-pager");
+  const box = (await pager.boundingBox())!;
+  const swipe = async (dx: number) => {
+    const y = box.y + 60;
+    const x = box.x + box.width / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    for (let i = 1; i <= 8; i += 1) await page.mouse.move(x + (dx * i) / 8, y);
+    await page.mouse.up();
+  };
+  const onScreen = (id: string) =>
+    page.evaluate((pageId) => {
+      const viewport = document.querySelector(".create-service-pager")!.getBoundingClientRect();
+      const el = document.querySelector(`[data-page-id="${pageId}"]`)!.getBoundingClientRect();
+      return Math.round(el.left - viewport.left);
+    }, id);
 
-  // Scrolling by hand moves the highlight: back at the top it is the first chip again.
-  await page.waitForTimeout(900); // the tap's own scroll has settled
-  await tiles.evaluate((element) => (element.scrollTop = 0));
-  await expect(chips.first()).toHaveAttribute("aria-current", "true");
-  await expect(cloud).not.toHaveAttribute("aria-current", "true");
+  // Swipe left: the next category comes in from the right.
+  await swipe(-160);
+  await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
+  const second = await tabs.nth(1).getAttribute("data-testid");
+  await expect.poll(() => onScreen(second!.replace("create-service-chip-", ""))).toBe(0);
 
-  // Searching hides the chips, there is nothing to jump between.
+  // Swipe right twice: back to the first, then round to the last.
+  await swipe(160);
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+  await swipe(160);
+  await expect(tabs.nth(tabCount - 1)).toHaveAttribute("aria-selected", "true");
+
+  // A tab tap goes straight to its page; a swipe that ends on a tile does not pick it.
+  await tabs.first().click();
+  await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+  await expect.poll(() => onScreen("popular")).toBe(0);
+  await expect(page.locator('[aria-checked="true"]')).toHaveCount(0);
+
+  // Searching shows one list of matches and hides the tabs.
   await page.getByTestId("create-service-search").fill("spotify");
-  await expect(chips).toHaveCount(0);
+  await expect(tabs).toHaveCount(0);
+  await expect(page.getByTestId("create-service-option-spotify-family")).toBeVisible();
 });
