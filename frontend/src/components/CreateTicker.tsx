@@ -10,43 +10,32 @@ const ITEMS = [
 const INTERVAL_MS = 2600;
 
 /**
- * The line under «Что создаём?»: the four things take turns, each sliding up
- * from below while the previous one leaves upward.
+ * The line under «Что создаём?»: a still outline with the four things taking
+ * turns inside it. They share one cell, so the outline fits the longest and
+ * never changes size; the shown one fades in while the previous fades out.
  */
 export function CreateTicker() {
-  // `previous` is null on the first showing, so nothing slides out on load.
-  const [shown, setShown] = useState<{ index: number; previous: number | null }>({
-    index: 0,
-    previous: null
-  });
-  const { index, previous } = shown;
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const timer = window.setInterval(
-      () => setShown((value) => ({ index: (value.index + 1) % ITEMS.length, previous: value.index })),
-      INTERVAL_MS
-    );
+    const timer = window.setInterval(() => setIndex((value) => (value + 1) % ITEMS.length), INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, []);
 
   return (
     <span className="create-ticker" data-testid="create-ticker">
       <span className="sr-only">{ITEMS.map((item) => item.text).join(", ")}</span>
-      <span className="create-ticker-window" aria-hidden="true">
-        {/* A new key restarts the slide-in; the outgoing word is the one before it. */}
-        {previous === null ? null : (
+      <span className="create-ticker-pill" aria-hidden="true">
+        {ITEMS.map((item, position) => (
           <span
-            key={`out-${index}`}
-            className={`create-ticker-word create-ticker-out create-kind-${ITEMS[previous].kind}`}
+            key={item.kind}
+            className={`create-ticker-word create-kind-${item.kind}`}
+            data-active={position === index}
+            data-testid={position === index ? "create-ticker-word" : undefined}
           >
-            {ITEMS[previous].text}
+            {item.text}
           </span>
-        )}
-        <span key={`in-${index}`} className={`create-ticker-word create-kind-${ITEMS[index].kind}${previous === null ? "" : " create-ticker-in"}`}
-          data-testid="create-ticker-word"
-        >
-          {ITEMS[index].text}
-        </span>
+        ))}
       </span>
     </span>
   );
