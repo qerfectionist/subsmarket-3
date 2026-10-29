@@ -88,3 +88,45 @@
   .app-shell .create-service-tile { transition: none; }
   .app-shell .create-service-tile:active { transform: none; }
 }
+
+/*
+ * Category chips under the search: a tap scrolls to the section, and the chip of
+ * the section on screen lights up. The row scrolls sideways and fades at its ends.
+ */
+.create-step-form[data-step="service"] .create-service-chips {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin: 12px -4px 0;
+  padding: 2px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
+}
+
+.create-service-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.app-shell .create-service-chip {
+  flex: none;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--app-text) 35%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-size-caption, 14px);
+  font-weight: var(--app-weight-semibold);
+  white-space: nowrap;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
+.app-shell .create-service-chip[aria-current="true"] {
+  border-color: var(--app-text);
+  background: var(--app-text);
+  color: var(--app-bg, #0f0f10);
+}

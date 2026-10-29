@@ -225,3 +225,37 @@ test("service tiles on step 1 take a vertical swipe", async ({ page }) => {
   });
   expect(prevented).toBe(false);
 });
+
+test("category chips scroll to a section and follow the list", async ({ page }) => {
+  await openCreate(page);
+  await page.getByTestId("create-kind-subscription").click();
+  const tiles = page.locator(".create-service-sections");
+  const chips = page.locator(".create-service-chip");
+  await expect(chips.first()).toHaveAttribute("aria-current", "true");
+
+  // A tap brings that section to the top and lights its chip.
+  const cloud = page.getByRole("button", { name: "Облако", exact: true });
+  await cloud.click();
+  await expect(cloud).toHaveAttribute("aria-current", "true");
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const box = document.querySelector(".create-service-sections")!.getBoundingClientRect();
+        const section = [...document.querySelectorAll("[data-section-id]")].find(
+          (item) => item.querySelector("h3")?.textContent === "Облако"
+        )!;
+        return Math.round(section.getBoundingClientRect().top - box.top);
+      })
+    )
+    .toBeLessThan(40);
+
+  // Scrolling by hand moves the highlight: back at the top it is the first chip again.
+  await page.waitForTimeout(900); // the tap's own scroll has settled
+  await tiles.evaluate((element) => (element.scrollTop = 0));
+  await expect(chips.first()).toHaveAttribute("aria-current", "true");
+  await expect(cloud).not.toHaveAttribute("aria-current", "true");
+
+  // Searching hides the chips, there is nothing to jump between.
+  await page.getByTestId("create-service-search").fill("spotify");
+  await expect(chips).toHaveCount(0);
+});

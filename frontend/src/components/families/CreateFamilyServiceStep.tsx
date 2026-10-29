@@ -35,6 +35,8 @@ export function CreateFamilyServiceStep({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const settleTimer = useRef<number | undefined>(undefined);
   const markScrolling = () => {
+    window.cancelAnimationFrame(spyFrame.current ?? 0);
+    spyFrame.current = window.requestAnimationFrame(updateActive);
     const element = scrollRef.current;
     if (!element) return;
     // Only touch the DOM when the state changes, not on every scroll event.
@@ -43,6 +45,42 @@ export function CreateFamilyServiceStep({
     settleTimer.current = window.setTimeout(() => element.removeAttribute("data-scrolling"), 160);
   };
   useEffect(() => () => window.clearTimeout(settleTimer.current), []);
+
+  // Category chips: a tap scrolls to that section, and while the list scrolls the
+  // chip of the section at the top lights up. A tap holds the highlight until its
+  // own scroll has settled, so it does not flicker through the sections in between.
+  const chipsRef = useRef<HTMLDivElement | null>(null);
+  const [activeId, setActiveId] = useState("");
+  const spyLockUntil = useRef(0);
+  const spyFrame = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.cancelAnimationFrame(spyFrame.current ?? 0), []);
+  const updateActive = () => {
+    const container = scrollRef.current;
+    if (!container || Date.now() < spyLockUntil.current) return;
+    const marks = [...container.querySelectorAll<HTMLElement>("[data-section-id]")];
+    if (marks.length === 0) return;
+    const top = container.getBoundingClientRect().top;
+    const atEnd = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
+    let current = marks[0];
+    for (const mark of marks) {
+      if (mark.getBoundingClientRect().top - top <= 24) current = mark;
+    }
+    // The last sections can be too short to reach the top: at the end the last one is the current.
+    if (atEnd) current = marks[marks.length - 1];
+    setActiveId(current.dataset.sectionId ?? "");
+  };
+  const goToSection = (id: string) => {
+    const container = scrollRef.current;
+    const target = container?.querySelector<HTMLElement>(`[data-section-id="${id}"]`);
+    if (!container || !target) return;
+    const offset = target.getBoundingClientRect().top - container.getBoundingClientRect().top;
+    spyLockUntil.current = Date.now() + 800;
+    setActiveId(id);
+    container.scrollTo({
+      top: container.scrollTop + offset - 4,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    });
+  };
   // A new query starts the tiles from the top.
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
@@ -88,6 +126,22 @@ export function CreateFamilyServiceStep({
     if (other.length > 0) sections.push({ id: "other", title: "Другое", services: other });
   }
   const nothingFound = searching && sections[0].services.length === 0;
+  // One chip per titled section; none while searching or when there is a single list.
+  const chips = searching
+    ? []
+    : sections.filter((section) => section.title && section.services.length > 0);
+  const currentId = chips.some((chip) => chip.id === activeId) ? activeId : (chips[0]?.id ?? "");
+
+  // The lit chip stays in view when the row itself scrolls sideways.
+  useEffect(() => {
+    const row = chipsRef.current;
+    const chip = row?.querySelector<HTMLElement>(`[data-chip-id="${currentId}"]`);
+    if (!row || !chip) return;
+    row.scrollTo({
+      left: chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2,
+      behavior: "smooth"
+    });
+  }, [currentId]);
 
   return (
     <div className="create-step-body" data-create-step="service">
@@ -102,6 +156,23 @@ export function CreateFamilyServiceStep({
           onEnter={(input) => input.blur()}
         />
       )}
+      {chips.length > 1 ? (
+        <div className="create-service-chips" ref={chipsRef} role="group" aria-label="Категории">
+          {chips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              className="create-service-chip"
+              data-chip-id={chip.id}
+              data-testid={`create-service-chip-${chip.id}`}
+              aria-current={chip.id === currentId ? "true" : undefined}
+              onClick={() => goToSection(chip.id)}
+            >
+              {chip.title}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="my-feed-wrap create-feed-wrap create-service-feed">
         <div
           ref={scrollRef}
@@ -109,12 +180,16 @@ export function CreateFamilyServiceStep({
           role="radiogroup"
           aria-label="Сервис"
           onScroll={markScrolling}
+          // The person takes over: the highlight follows their scrolling again.
+          onTouchStart={() => (spyLockUntil.current = 0)}
+          onWheel={() => (spyLockUntil.current = 0)}
         >
           {sections.map((section) =>
             section.services.length === 0 ? null : (
               <section
                 key={section.id}
                 className="create-service-section"
+                data-section-id={section.id}
                 data-testid={`create-service-section-${section.id}`}
                 aria-label={section.title ?? undefined}
               >
