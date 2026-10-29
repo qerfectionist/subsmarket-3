@@ -44,7 +44,7 @@ export function useTouchScrollLock() {
       }
 
       const scrollable = target.closest(
-        ".my-feed-scroll, .actions-tab-content, .actions-archive-feed-scroll, .sm-market-home-feed-scroll, .sm-market-catalog-feed-scroll, .subs-screen-scroll, .my-calendar-disclosure-content, .wizard-scroll, .app-shell, textarea, [data-scrollable]"
+        ".my-feed-scroll, .actions-tab-content, .actions-archive-feed-scroll, .sm-market-home-feed-scroll, .sm-market-catalog-feed-scroll, .subs-screen-scroll, .my-calendar-disclosure-content, .wizard-scroll, .create-service-sections, .app-shell, textarea, [data-scrollable]"
       ) as HTMLElement | null;
 
       if (!scrollable) {

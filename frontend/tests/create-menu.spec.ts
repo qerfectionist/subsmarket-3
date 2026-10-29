@@ -199,3 +199,29 @@ test("«Недавние» scrolls like a feed when there is more than fits", as
   await expect(list.locator(".create-row")).toHaveCount(3);
   await expect(list.getByTestId("create-row-accounts-chatgpt")).toHaveCount(0);
 });
+
+test("service tiles on step 1 take a vertical swipe", async ({ page }) => {
+  await openCreate(page);
+  await page.getByTestId("create-kind-subscription").click();
+  const tiles = page.locator(".create-service-sections");
+  await expect(tiles).toBeVisible();
+  // The touch lock must let a swipe up/down through to the tiles' own scroll area.
+  const prevented = await tiles.evaluate((element) => {
+    const target = element.querySelector(".create-service-tile") as HTMLElement;
+    const touch = (y: number) =>
+      new Touch({ identifier: 1, target, clientX: 100, clientY: y });
+    const fire = (type: string, y: number) => {
+      const event = new TouchEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        touches: type === "touchend" ? [] : [touch(y)],
+        changedTouches: [touch(y)]
+      });
+      target.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    fire("touchstart", 400);
+    return fire("touchmove", 340);
+  });
+  expect(prevented).toBe(false);
+});
