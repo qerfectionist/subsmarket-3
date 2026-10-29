@@ -290,3 +290,36 @@ test("categories are pages that swipe like folders, with a line that follows", a
   await expect(tabs).toHaveCount(0);
   await expect(page.getByTestId("create-service-option-spotify-family")).toBeVisible();
 });
+
+test.describe("with a finger", () => {
+  test.use({ hasTouch: true });
+
+  test("a touch swipe over the services turns the category page", async ({ page }) => {
+    await openCreate(page);
+    await page.getByTestId("create-kind-subscription").click();
+    const tabs = page.locator('.create-category-tabs [role="tab"]');
+    await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+    // Real touch input, so the browser's own gesture handling takes part, as on a phone.
+    const cdp = await page.context().newCDPSession(page);
+    const box = (await page.locator(".create-service-pager").boundingBox())!;
+    const x = box.x + box.width - 60;
+    const y = box.y + 80;
+    const swipe = async (dx: number) => {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+      for (let i = 1; i <= 10; i += 1) {
+        await cdp.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x: x + (dx * i) / 10, y: y + i }]
+        });
+        await page.waitForTimeout(16);
+      }
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    };
+    await swipe(-200);
+    await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
+    await page.waitForTimeout(500);
+    await swipe(200);
+    await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator('[aria-checked="true"]')).toHaveCount(0);
+  });
+});

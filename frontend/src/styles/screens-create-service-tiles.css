@@ -169,6 +169,9 @@
   inset: 0;
   padding: 12px 16px 34px;
   will-change: transform;
+  /* Each page is its own scroll area, which resets what the pager allows: say
+     again that sideways moves belong to the pager, or the browser takes them. */
+  touch-action: pan-y;
 }
 
 /* The fades above and below the pages span the same full width. */
