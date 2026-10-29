@@ -16,7 +16,7 @@ test("«Создать» opens on a menu of what can be created and popular serv
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
   const home = page.getByTestId("create-home");
   await expect(home).toBeVisible();
-  await expect(page.getByTestId("create-kind-subscription")).toContainText("Семья на подписку");
+  await expect(page.getByTestId("create-kind-subscription")).toContainText("Семейная подписка");
   await expect(page.getByTestId("create-kind-subscription")).toContainText("YouTube Premium");
   await expect(page.getByTestId("create-kind-tariff")).toContainText("Tele2");
 
@@ -52,7 +52,7 @@ test("«Создать» opens on a menu of what can be created and popular serv
   // A popular service opens its family straight on «Условия».
   await list.getByTestId("create-popular-subscription-spotify-family").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
-  await expect(page.getByTestId("create-family-screen").locator("h1")).toHaveText("Семья на подписку");
+  await expect(page.getByTestId("create-family-screen").locator("h1")).toHaveText("Семейная подписка");
 
   // Back goes to «Сервис» with Spotify picked, then to the menu.
   await page.getByTestId("create-form-back").click();
@@ -66,4 +66,27 @@ test("«Создать» opens on a menu of what can be created and popular serv
   await expect(page.getByTestId("gigabytes-screen")).toBeVisible();
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
   await expect(home).toBeVisible();
+});
+
+test("«Наверх» in «Популярное» shows up only at the end of the list", async ({ page }) => {
+  await page.goto(appUrl);
+  await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
+  const list = page.getByTestId("create-popular-list");
+  const toTop = page.locator(".create-popular-to-top");
+  await expect(list.getByTestId("create-popular-accounts-canva")).toHaveCount(1);
+  await expect(toTop).toHaveAttribute("data-visible", "false");
+
+  // Halfway down: still hidden.
+  await list.evaluate((element) => element.scrollTo({ top: 300 }));
+  await page.waitForTimeout(150);
+  await expect(toTop).toHaveAttribute("data-visible", "false");
+
+  // At the end: it rises in, and takes the list back to the top.
+  await list.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+  await expect(toTop).toHaveAttribute("data-visible", "true");
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: "test-results/create-popular-to-top.png" });
+  await page.getByTestId("create-popular-scroll-to-top").click();
+  await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(0);
+  await expect(toTop).toHaveAttribute("data-visible", "false");
 });

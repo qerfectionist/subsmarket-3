@@ -866,3 +866,75 @@
   opacity: 0;
   transition: opacity 550ms cubic-bezier(0.25, 1, 0.5, 1);
 }
+
+/* «Наверх» in «Популярное»: a floating glass capsule that rises in only once the
+   last row is in view, and sinks away as soon as the list moves back up. */
+.create-popular-wrap .scroll-to-top-wrap.create-popular-to-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Just above the bottom menu, which the list runs on under. */
+  bottom: calc(var(--app-nav-height) + 16px + var(--app-inset-bottom) + 12px);
+  z-index: 3;
+  width: auto;
+  padding: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(14px) scale(0.9);
+  filter: blur(4px);
+  transition:
+    opacity 220ms ease-out,
+    transform 420ms cubic-bezier(0.32, 0.72, 0, 1),
+    filter 260ms ease-out;
+}
+.create-popular-wrap .scroll-to-top-wrap.create-popular-to-top[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition:
+    opacity 260ms ease-out,
+    transform 520ms cubic-bezier(0.34, 1.36, 0.64, 1),
+    filter 260ms ease-out;
+}
+.create-popular-wrap .scroll-to-top-wrap.create-popular-to-top[data-visible="true"] .scroll-to-top-btn {
+  pointer-events: auto;
+}
+.create-popular-to-top .scroll-to-top-btn {
+  height: 40px;
+  padding: 0 18px 0 15px;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--app-text);
+  background: var(--app-control-material);
+  border: 1px solid var(--app-control-border);
+  box-shadow: var(--app-control-shadow);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+.create-popular-to-top .scroll-to-top-btn .scroll-to-top-icon { opacity: 1; }
+.create-popular-to-top .scroll-to-top-btn:hover {
+  color: var(--app-text);
+  background: var(--app-control-material);
+}
+.create-popular-to-top .scroll-to-top-btn:active {
+  transform: scale(0.94);
+  color: var(--app-text);
+  background: var(--app-control-material);
+}
+[data-theme="light"] .create-popular-to-top .scroll-to-top-btn,
+[data-theme="light"] .create-popular-to-top .scroll-to-top-btn:hover,
+[data-theme="light"] .create-popular-to-top .scroll-to-top-btn:active {
+  color: var(--app-text);
+  background: var(--app-control-material);
+  box-shadow: var(--app-control-shadow);
+}
+@media (prefers-reduced-motion: reduce) {
+  .create-popular-wrap .scroll-to-top-wrap.create-popular-to-top,
+  .create-popular-wrap .scroll-to-top-wrap.create-popular-to-top[data-visible="true"] {
+    transform: none;
+    filter: none;
+    transition: opacity 160ms linear;
+  }
+}

@@ -4,7 +4,7 @@ import { SystemSymbol } from "./SystemSymbol";
 export type CreateCategory = "subscription" | "tariff" | "accounts" | "gigabytes";
 
 export const CREATE_TITLES: Record<CreateCategory, string> = {
-  subscription: "Семья на подписку",
+  subscription: "Семейная подписка",
   tariff: "Семейный тариф",
   accounts: "Продать аккаунт",
   gigabytes: "Продать гигабайты"

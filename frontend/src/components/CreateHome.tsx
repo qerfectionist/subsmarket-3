@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { RefObject } from "react";
 import { Panel } from "./layout";
 import { ServiceLogo } from "./branding";
 import { SystemSymbol } from "./SystemSymbol";
@@ -49,7 +50,7 @@ const FILTERS: { id: "all" | CreateCategory; label: string }[] = [
   { id: "subscription", label: "Подписки" },
   { id: "tariff", label: "Тарифы" },
   { id: "accounts", label: "Аккаунты" },
-  { id: "gigabytes", label: "ГБ" }
+  { id: "gigabytes", label: "Гигабайты" }
 ];
 
 type PopularItem = {
@@ -62,9 +63,55 @@ type PopularItem = {
   open: () => void;
 };
 
+/** «ChatGPT, Claude и ещё 9»: the names that fit on one line, then how many more. */
 function examples(names: string[]) {
-  const shown = names.slice(0, 3).join(", ");
-  return names.length > 3 ? `${shown}…` : shown;
+  const shown: string[] = [];
+  for (const name of names.slice(0, 2)) {
+    if (shown.length && [...shown, name].join(", ").length > 24) break;
+    shown.push(name);
+  }
+  const rest = names.length - shown.length;
+  return rest > 0 ? `${shown.join(", ")} и ещё ${rest}` : shown.join(", ");
+}
+
+/** «до 1 места», «до 6 мест». */
+function upToSeats(count: number) {
+  return `до ${count} ${count % 10 === 1 && count % 100 !== 11 ? "места" : "мест"}`;
+}
+
+/**
+ * True once the last row is fully in view, so «Наверх» shows up only at the
+ * end of the list and hides again as soon as the list moves back up.
+ */
+function useReachedEnd(containerRef: RefObject<HTMLElement | null>, rowSelector: string, itemCount: number) {
+  const [reached, setReached] = useState(false);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const update = () => {
+      const rows = container.querySelectorAll<HTMLElement>(rowSelector);
+      const last = rows[rows.length - 1];
+      if (!last || container.scrollTop <= 0) {
+        setReached(false);
+        return;
+      }
+      // The list runs on under the bottom menu, so the end counts only above it.
+      const dock = document.querySelector(".subs-dock");
+      const visibleBottom = Math.min(
+        container.getBoundingClientRect().bottom,
+        dock ? dock.getBoundingClientRect().top : Infinity
+      );
+      setReached(last.getBoundingClientRect().bottom <= visibleBottom + 1);
+    };
+    update();
+    container.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      container.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [containerRef, rowSelector, itemCount]);
+  return reached;
 }
 
 function popularFirst(list: FamilyService[]) {
@@ -112,7 +159,7 @@ export function CreateHome({
         key: `${kind}-${slug}`,
         kind,
         title: service.name,
-        subtitle: `${kind === "tariff" ? "Семейный тариф" : "Семья"} · до ${service.max_members} мест`,
+        subtitle: `${kind === "tariff" ? "Тариф" : "Подписка"} · ${upToSeats(service.max_members)}`,
         logoSlug: service.slug,
         tariffLogo: kind === "tariff",
         open: () => onPickService(service)
@@ -124,7 +171,9 @@ export function CreateHome({
         key: `${kind}-${slug}`,
         kind,
         title: service.name,
-        subtitle: "Продать аккаунт",
+        subtitle: (service.plans ?? []).length
+          ? `Аккаунт · ${(service.plans ?? []).map((plan) => plan.name).join(", ")}`
+          : "Аккаунт",
         logoSlug: service.slug,
         tariffLogo: false,
         open: () => onPickAccount(service.slug)
@@ -136,7 +185,7 @@ export function CreateHome({
         key: `${kind}-${slug}`,
         kind,
         title: operator.name,
-        subtitle: "Продать гигабайты",
+        subtitle: "Гигабайты",
         logoSlug: `${operator.slug}-family-tariff`,
         tariffLogo: true,
         open: () => onPickOperator(operator.slug)
@@ -148,6 +197,7 @@ export function CreateHome({
   // Same feed behaviour as «Заявки» and «Мои»: snap to the nearest row, a fade under the
   // heading once scrolled, and a button back to the top.
   const feedSnap = useFeedSnap({ itemCount: shown.length, cardSelector: ".create-popular-row" });
+  const reachedEnd = useReachedEnd(feedSnap.containerRef, ".create-popular-row", shown.length);
   useEffect(() => {
     feedSnap.containerRef.current?.scrollTo({ top: 0 });
   }, [filter, feedSnap.containerRef]);
@@ -233,11 +283,13 @@ export function CreateHome({
                     <SystemSymbol name="chevron.forward" size={18} />
                   </button>
                 ))}
-                <ScrollToTopButton
-                  containerRef={feedSnap.containerRef}
-                  testId="create-popular-scroll-to-top"
-                />
               </div>
+              <ScrollToTopButton
+                containerRef={feedSnap.containerRef}
+                testId="create-popular-scroll-to-top"
+                className="create-popular-to-top"
+                hidden={!reachedEnd}
+              />
             </div>
           </section>
         ) : null}

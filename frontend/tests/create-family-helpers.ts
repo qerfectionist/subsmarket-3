@@ -42,7 +42,7 @@ export async function fillCreateField(page: Page, testId: string, value: string)
   await page.getByTestId(testId).fill(value);
 }
 
-const KIND_TITLES = { subscription: "Семья на подписку", tariff: "Семейный тариф" } as const;
+const KIND_TITLES = { subscription: "Семейная подписка", tariff: "Семейный тариф" } as const;
 
 /** On «Создать»: opens the family form of the given kind from the menu, coming back to it if needed. */
 export async function openCreateKind(page: Page, kind: "subscription" | "tariff" = "subscription") {
