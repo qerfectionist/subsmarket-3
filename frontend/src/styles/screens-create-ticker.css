@@ -19,30 +19,16 @@
   background: transparent;
 }
 
-/* Only the text takes the colour of the kind's icon. */
+/* Only the text takes the colour of the kind's icon; words simply fade into each other. */
 .create-ticker-word {
   grid-area: 1 / 1;
   color: var(--category-accent);
   line-height: 24px;
   white-space: nowrap;
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 380ms ease, transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 400ms ease;
 }
 
 .create-ticker-word[data-active="true"] {
   opacity: 1;
-  transform: none;
-}
-
-/* The word that leaves drifts up while it fades. */
-.create-ticker-word[data-active="false"] {
-  transform: translateY(-6px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .create-ticker-word,
-  .create-ticker-word[data-active="false"] {
-    transform: none;
-  }
 }
