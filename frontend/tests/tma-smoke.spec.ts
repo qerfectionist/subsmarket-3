@@ -886,7 +886,6 @@ test("Mini App keeps readable surfaces with legacy Telegram dark theme params", 
     return {
       market: read("[data-testid='market-screen']"),
       title: read("[data-testid='family-type-subscription']"),
-      banner: read("[data-testid='market-first-run-banner']"),
       avatar: read(".sm-market-avatar-button"),
       bottomNav: read("nav[aria-label='Главная навигация']")
     };
@@ -896,6 +895,5 @@ test("Mini App keeps readable surfaces with legacy Telegram dark theme params", 
     expect(colors.market.background).toBe("rgb(33, 33, 33)");
     expect(colors.avatar.background).toBe("rgb(135, 116, 225)");
   expect(colors.title.color).not.toBe(colors.market.background);
-  expect(colors.banner.color).not.toBe(colors.banner.background);
   expect(colors.bottomNav.background).not.toBe("rgb(255, 255, 255)");
 });

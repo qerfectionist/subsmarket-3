@@ -10,7 +10,6 @@ import { formatDate } from "../format";
 import { triggerTelegramSelection } from "../telegram";
 import type { AccountListing, Family, FamilyRequest, FamilyType, MarketplaceListing, MyFamily } from "../types";
 import {
-  FIRST_RUN_BANNER_KEY,
   MAX_MARKET_BANNERS,
   marketFilterOptions,
   priceSortOptions,
@@ -125,7 +124,6 @@ export function SearchScreen({
     if (param === "classic") return "classic";
     return localStorage.getItem("subsmarket.menuVariant") === "classic" ? "classic" : "ios27";
   });
-  const [showIntro, setShowIntro] = useState(() => localStorage.getItem(FIRST_RUN_BANNER_KEY) !== "true");
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const screenPulseRef = useRef<ScreenPulseHandle | null>(null);
@@ -669,11 +667,6 @@ export function SearchScreen({
         searchInputRef={searchInputRef}
         scrollRef={marketScrollRef}
         onScroll={scheduleMarketScrollPersistence}
-        showIntro={showIntro}
-        onDismissIntro={() => {
-          localStorage.setItem(FIRST_RUN_BANNER_KEY, "true");
-          setShowIntro(false);
-        }}
         pendingActionsCount={pendingActionsCount}
         bannerItems={bannerItems}
         menuVariant={menuVariant}

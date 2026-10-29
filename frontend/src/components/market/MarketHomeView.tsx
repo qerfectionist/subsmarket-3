@@ -32,8 +32,6 @@ export type MarketHomeViewProps = {
   searchInputRef: React.RefObject<HTMLInputElement | null>;
   scrollRef: React.RefObject<HTMLDivElement | null>;
   onScroll?: (scrollTop: number) => void;
-  showIntro: boolean;
-  onDismissIntro: () => void;
   pendingActionsCount: number;
   bannerItems: MarketBanner[];
   menuVariant: "classic" | "ios27";
@@ -69,8 +67,6 @@ export function MarketHomeView({
   searchInputRef,
   scrollRef,
   onScroll,
-  showIntro,
-  onDismissIntro,
   pendingActionsCount,
   bannerItems,
   menuVariant,
@@ -374,23 +370,6 @@ export function MarketHomeView({
         onTouchEnd={handlePinnedTouchEnd}
         onWheel={handlePinnedWheel}
       >
-        {showIntro && pendingActionsCount === 0 ? (
-          <section className="sm-market-alert" data-testid="market-first-run-banner">
-            <div>
-              <span className="sm-market-alert-eyebrow">Для семейных подписок</span>
-              <strong>Сначала доступ, потом оплата</strong>
-              <p>Проверьте подписку перед переводом владельцу семьи.</p>
-            </div>
-            <button
-              className="sm-market-button sm-market-button-secondary"
-              type="button"
-              onClick={onDismissIntro}
-            >
-              Понятно
-            </button>
-          </section>
-        ) : null}
-
         <MarketBannerCarousel
           bannerItems={bannerItems}
           onOpenActions={onOpenActions}

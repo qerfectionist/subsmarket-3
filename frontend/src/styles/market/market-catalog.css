@@ -293,7 +293,6 @@
 .sm-market-screen-catalog .sm-market-header,
 .sm-market-screen-catalog .sm-market-search,
 .sm-market-screen-catalog .sm-market-family-type-switch,
-.sm-market-screen-catalog .sm-market-alert,
 .sm-market-screen-catalog .sm-market-info-disclosure {
   flex-shrink: 0;
 }

@@ -1,6 +1,5 @@
 import type { AccountListing, Family, MarketplaceListing } from "../../types";
 
-export const FIRST_RUN_BANNER_KEY = "subsmarket.firstRunBannerSeen.v1";
 export const MAX_MARKET_BANNERS = 5;
 export const MARKET_VIEW_STATE_KEY = "subsmarket.marketViewState.v1";
 

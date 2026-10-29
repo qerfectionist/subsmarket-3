@@ -1,5 +1,4 @@
 export {
-  FIRST_RUN_BANNER_KEY,
   MAX_MARKET_BANNERS,
   MARKET_VIEW_STATE_KEY,
   marketFilterOptions,
@@ -39,7 +38,6 @@ export {
 
 export { ScreenEventPulse } from "./ScreenEventPulse";
 export { MarketBannerCarousel, DEV_BANNER_ITEMS } from "./MarketBanners";
-export { MarketIslandBanner } from "./MarketIslandBanner";
 export { MarketTile, CategoryIconGradientDefs, IconButton, BannerIcon } from "./MarketTiles";
 export { MarketFilterMenu, MarketFilterMenu as FilterMenu } from "./MarketFilterMenu";
 export { CatalogResultsPane } from "./CatalogResultsPane";

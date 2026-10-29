@@ -61,7 +61,6 @@ test("owner and member complete the first payment family flow", async ({ page })
 
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("market-screen")).toBeVisible();
-  await expect(page.getByTestId("market-first-run-banner")).toBeVisible();
   await expect(page.getByTestId("market-search-input")).toBeVisible();
   await expect(page.getByTestId("family-type-subscription")).toBeVisible();
   await expect(page.getByTestId("family-type-tariff")).toBeVisible();
