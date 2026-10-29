@@ -66,33 +66,7 @@
   margin-top: -8px;
 }
 
-/* Category chips above the service grid: all visible at once, they wrap. */
-.create-category-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.app-shell .create-category-chip {
-  flex: 0 0 auto;
-  min-height: 36px;
-  padding: 6px 14px;
-  border: 0;
-  border-radius: var(--app-radius-pill);
-  background: var(--app-surface);
-  color: var(--app-text);
-  font: inherit;
-  font-size: var(--app-size-caption);
-  box-shadow: none;
-}
-
-.app-shell .create-category-chip[aria-selected="true"] {
-  background: var(--app-accent);
-  color: var(--app-accent-text);
-  font-weight: var(--app-weight-semibold);
-}
-
-/* Sections under «Все»: «Популярное», then one per category. */
+/* «Популярное», then one section per category. */
 .create-service-sections {
   display: grid;
   gap: 18px;

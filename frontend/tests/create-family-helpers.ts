@@ -58,14 +58,11 @@ export async function openCreateKind(page: Page, kind: "subscription" | "tariff"
   await expect(form(page)).toBeVisible();
 }
 
-/** Picks a service tile on step 1: «Тарифы» or «Подписки» from the menu, then the category chip. */
+/** Picks a service tile on step 1, opening «Тарифы» or «Подписки» from the menu. */
 export async function pickCreateService(page: Page, slug: string, category = "all") {
   const tariff = category === "operators" || slug.endsWith("-family-tariff");
   await openCreateKind(page, tariff ? "tariff" : "subscription");
   await goToCreateStep(page, "service");
-  if (!tariff) {
-    await page.getByTestId(`create-category-${category}`).evaluate((element) => (element as HTMLElement).click());
-  }
   await page.getByTestId(`create-service-option-${slug}`).evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId(`create-service-option-${slug}`)).toHaveAttribute("aria-checked", "true");
 }

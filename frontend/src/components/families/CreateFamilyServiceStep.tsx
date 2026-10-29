@@ -18,8 +18,7 @@ const byPopularity = (a: FamilyService, b: FamilyService) =>
   servicePopularity(a.slug) - servicePopularity(b.slug) || a.name.localeCompare(b.name, "ru");
 
 /**
- * Step 1: categories always visible (they wrap, nothing scrolls sideways).
- * «Все» starts with «Популярное», then one titled section per category.
+ * Step 1: «Популярное», then one titled section per category, under a search.
  */
 export function CreateFamilyServiceStep({
   services,
@@ -31,9 +30,8 @@ export function CreateFamilyServiceStep({
   onPick: (service: FamilyService) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [chip, setChip] = useState("all");
   // The tiles scroll inside their own area; while they move, a fade shows under
-  // the chips, as on «Заявки» (data-scrolling drives it in CSS).
+  // the search, as on «Заявки» (data-scrolling drives it in CSS).
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const settleTimer = useRef<number | undefined>(undefined);
   const markScrolling = () => {
@@ -44,18 +42,18 @@ export function CreateFamilyServiceStep({
     settleTimer.current = window.setTimeout(() => element.removeAttribute("data-scrolling"), 160);
   };
   useEffect(() => () => window.clearTimeout(settleTimer.current), []);
-  // A new category or query starts the tiles from the top.
+  // A new query starts the tiles from the top.
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
-  }, [chip, query]);
+  }, [query]);
   const countFor = (categories: string[]) =>
     categories.length === 0
       ? services.length
       : services.filter((service) => categories.includes(service.category)).length;
-  const chips = SERVICE_CATEGORY_CHIPS.filter(
+  // The categories that have services: each becomes a titled section under «Популярное».
+  const categories = SERVICE_CATEGORY_CHIPS.filter(
     (item) => item.id === "all" || countFor(item.categories) > 0
   );
-  const activeChip = chips.find((item) => item.id === chip) ?? chips[0];
   // A tile shows the bare name; the variant only when two services share it (Duolingo Super / Max).
   const nameCounts = new Map<string, number>();
   for (const service of services) nameCounts.set(service.name, (nameCounts.get(service.name) ?? 0) + 1);
@@ -63,24 +61,19 @@ export function CreateFamilyServiceStep({
     (nameCounts.get(service.name) ?? 0) > 1 ? serviceTitle(service) : service.name;
 
   const searching = query.trim() !== "";
-  // Operator tariffs are one category: no chips and no sections, just the operators.
-  const singleCategory = chips.length <= 2;
+  // Operator tariffs are one category: no search and no sections, just the operators.
+  const singleCategory = categories.length <= 2;
   let sections: ServiceSection[];
   if (singleCategory && !searching) {
     sections = [{ id: "single", title: null, services: [...services].sort(byPopularity) }];
   } else if (searching) {
     const found = services.filter((service) => matchesServiceQuery(service, query)).sort(byPopularity);
     sections = [{ id: "search", title: null, services: found }];
-  } else if (activeChip.id !== "all") {
-    const inCategory = services
-      .filter((service) => activeChip.categories.includes(service.category))
-      .sort(byPopularity);
-    sections = [{ id: activeChip.id, title: null, services: inCategory }];
   } else {
     const popular = [...services].sort(byPopularity).slice(0, POPULAR_SERVICE_COUNT);
     const popularIds = new Set(popular.map((service) => service.id));
     sections = [{ id: "popular", title: "Популярное", services: popular }];
-    for (const item of chips) {
+    for (const item of categories) {
       if (item.id === "all") continue;
       const rest = services
         .filter((service) => item.categories.includes(service.category) && !popularIds.has(service.id))
@@ -107,23 +100,6 @@ export function CreateFamilyServiceStep({
           // Enter in the search box only closes the keyboard, it does not move on.
           onEnter={(input) => input.blur()}
         />
-      )}
-      {searching || singleCategory ? null : (
-        <div className="create-category-chips" role="tablist" aria-label="Категории">
-          {chips.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={item.id === activeChip.id}
-              data-testid={`create-category-${item.id}`}
-              className="create-category-chip"
-              onClick={() => setChip(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
       )}
       <div className="my-feed-wrap create-feed-wrap create-service-feed">
         <div
