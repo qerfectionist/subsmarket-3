@@ -1,11 +1,11 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Input } from "../ui";
 import { ServiceLogo } from "../branding";
+import { SystemSymbol } from "../SystemSymbol";
 import { serviceTitle } from "../../format";
 import type { FamilyCreate, FamilyService } from "../../types";
 import {
   calculatePreviewShare,
-  formatDayMonth,
   formatKzt,
   nextPaymentDateFor,
   periodPhrase,
@@ -13,15 +13,15 @@ import {
   type FieldErrors
 } from "./createFamilyForm";
 import { FieldNote } from "./createFamilyFields";
-import { MiniStepper, PriceHero, SeatStrip, TermsRow } from "./createTermsParts";
+import { AmountDisplay, AmountKeypad, MiniStepper, TermsRow } from "./createTermsParts";
 
 type Touched = Partial<Record<"plan_name" | "full_speed_gb", boolean>>;
 
 /**
- * Step 2, in the order the person thinks it through: which service (a short
- * row, to go back and change it), how much it costs in full (the one large
- * number), how many places share it and so what each member pays, then the
- * day of payment. The result sits right under what it comes from.
+ * Step 2 as an amount screen, the way banking apps take a sum: the service as
+ * a small pill (a tap goes back to change it), the full price as the one large
+ * number, the places, the payment day and each member's share as one group of
+ * rows, and a keypad for the digits, so no system keyboard covers the rows.
  */
 export function CreateFamilyTermsStep({
   form,
@@ -43,7 +43,7 @@ export function CreateFamilyTermsStep({
   const hints = serviceStrings(service, "tariff_hints");
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
   const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
-  const period = periodPhrase(form.period);
+  const setPrice = (value: number) => onChangeForm((current) => ({ ...current, total_price_kzt: value }));
 
   function setDay(day: number) {
     onChangeForm((current) => ({
@@ -56,81 +56,71 @@ export function CreateFamilyTermsStep({
 
   return (
     <div className="create-step-body create-terms" data-create-step="terms">
-      <div className="create-terms-service">
+      <button type="button" className="create-terms-pill" data-testid="create-edit-service" onClick={onEditService}>
         <ServiceLogo
           serviceSlug={service.slug}
           serviceName={service.name}
           familyType={isTariff ? "tariff" : "subscription"}
-          size={36}
+          size={26}
           loading="eager"
         />
-        <strong>{isTariff ? service.name : serviceTitle(service)}</strong>
-        <button type="button" data-testid="create-edit-service" onClick={onEditService}>
-          Изменить
-        </button>
-      </div>
+        <span>{isTariff ? service.name : serviceTitle(service)}</span>
+        <SystemSymbol name="chevron.down" size={16} />
+      </button>
 
-      {isTariff ? (
-        <div>
-          <Input
-            required
-            label="Название тарифа"
-            list={hints.length > 0 ? "create-tariff-hints" : undefined}
-            data-testid="create-plan-name-input"
-            error={Boolean(shown("plan_name"))}
-            value={form.plan_name ?? ""}
-            onBlur={() => setTouched((current) => ({ ...current, plan_name: true }))}
-            onChange={(event) => onChangeForm((current) => ({ ...current, plan_name: event.target.value }))}
-          />
-          {hints.length > 0 ? (
-            <datalist id="create-tariff-hints">
-              {hints.map((hint) => (
-                <option key={hint} value={hint} />
-              ))}
-            </datalist>
-          ) : null}
-          <FieldNote error={shown("plan_name")} helper="Как в приложении оператора" />
-        </div>
-      ) : null}
-
-      <PriceHero
-        label={isTariff ? `Сколько стоит тариф ${period}` : `Сколько стоит подписка ${period}`}
+      <AmountDisplay
+        label={`${isTariff ? "Тариф" : "Подписка"} ${periodPhrase(form.period)}`}
         value={form.total_price_kzt}
         error={errors.total_price_kzt}
-        onChange={(value) => onChangeForm((current) => ({ ...current, total_price_kzt: value }))}
+        onChange={setPrice}
       />
 
       {isTariff ? (
-        <div>
-          <Input
-            label="Полная скорость, ГБ"
-            min={1}
-            data-testid="create-full-speed-input"
-            inputMode="numeric"
-            type="number"
-            error={Boolean(shown("full_speed_gb"))}
-            value={form.full_speed_gb ?? ""}
-            onBlur={() => setTouched((current) => ({ ...current, full_speed_gb: true }))}
-            onChange={(event) =>
-              onChangeForm((current) => ({
-                ...current,
-                full_speed_gb: event.target.value === "" ? null : Number(event.target.value)
-              }))
-            }
-          />
-          <FieldNote
-            error={shown("full_speed_gb")}
-            helper="Сколько ГБ в месяц семья получает на полной скорости, дальше медленнее"
-          />
+        <div className="create-terms-tariff">
+          <div>
+            <Input
+              required
+              label="Название тарифа"
+              list={hints.length > 0 ? "create-tariff-hints" : undefined}
+              data-testid="create-plan-name-input"
+              error={Boolean(shown("plan_name"))}
+              value={form.plan_name ?? ""}
+              onBlur={() => setTouched((current) => ({ ...current, plan_name: true }))}
+              onChange={(event) => onChangeForm((current) => ({ ...current, plan_name: event.target.value }))}
+            />
+            {hints.length > 0 ? (
+              <datalist id="create-tariff-hints">
+                {hints.map((hint) => (
+                  <option key={hint} value={hint} />
+                ))}
+              </datalist>
+            ) : null}
+            <FieldNote error={shown("plan_name")} helper="Как в приложении оператора" />
+          </div>
+          <div>
+            <Input
+              label="Полная скорость, ГБ"
+              min={1}
+              data-testid="create-full-speed-input"
+              inputMode="numeric"
+              type="number"
+              error={Boolean(shown("full_speed_gb"))}
+              value={form.full_speed_gb ?? ""}
+              onBlur={() => setTouched((current) => ({ ...current, full_speed_gb: true }))}
+              onChange={(event) =>
+                onChangeForm((current) => ({
+                  ...current,
+                  full_speed_gb: event.target.value === "" ? null : Number(event.target.value)
+                }))
+              }
+            />
+            <FieldNote error={shown("full_speed_gb")} helper="Сколько ГБ в месяц на полной скорости" />
+          </div>
         </div>
       ) : null}
 
-      <section className="create-terms-card" aria-label="Места">
-        <TermsRow
-          label="Мест, считая вас"
-          hint={`Сервис разрешает до ${service.max_members}`}
-          error={errors.max_members}
-        >
+      <section className="create-terms-group" aria-label="Места и оплата">
+        <TermsRow label="Мест, считая вас" error={errors.max_members}>
           <MiniStepper
             id="create-max-members"
             label="Мест, считая вас"
@@ -141,21 +131,7 @@ export function CreateFamilyTermsStep({
             onChange={(value) => onChangeForm((current) => ({ ...current, max_members: value }))}
           />
         </TermsRow>
-        <SeatStrip count={form.max_members} />
-        <p className="create-terms-share" data-testid="create-share-preview">
-          <span>Каждый участник платит вам</span>
-          <strong>
-            {formatKzt(share)} <small>{form.period === "yearly" ? "/ год" : "/ мес"}</small>
-          </strong>
-        </p>
-      </section>
-
-      <section className="create-terms-card" aria-label="День оплаты">
-        <TermsRow
-          label="День оплаты"
-          hint={`Ближайшая ${formatDayMonth(form.next_payment_date)}`}
-          error={errors.payment_day ?? errors.next_payment_date}
-        >
+        <TermsRow label="День оплаты" error={errors.payment_day ?? errors.next_payment_date}>
           <MiniStepper
             id="create-payment-day"
             label="День оплаты"
@@ -166,12 +142,20 @@ export function CreateFamilyTermsStep({
             onChange={setDay}
           />
         </TermsRow>
-        {form.payment_day >= 29 ? (
-          <small className="create-terms-note">
-            В месяцах без {form.payment_day}-го числа оплата в последний день месяца.
-          </small>
-        ) : null}
+        <p className="create-terms-share" data-testid="create-share-preview">
+          <span>Каждый платит вам</span>
+          <strong>
+            {formatKzt(share)} <small>{form.period === "yearly" ? "/ год" : "/ мес"}</small>
+          </strong>
+        </p>
       </section>
+      {form.payment_day >= 29 ? (
+        <small className="create-terms-note">
+          В месяцах без {form.payment_day}-го числа оплата в последний день месяца.
+        </small>
+      ) : null}
+
+      <AmountKeypad value={form.total_price_kzt} onChange={setPrice} />
     </div>
   );
 }

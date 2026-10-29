@@ -334,7 +334,7 @@ test("each step bar is named under it, the current one lit", async ({ page }) =>
   await page.getByTestId("create-service-option-youtube-premium").click();
   await page.getByTestId("create-family-next").click();
   await expect(page.getByTestId("create-progress-terms")).toHaveAttribute("data-state", "current");
-  expect(await color(1)).not.toBe(await color(2));
+  await expect.poll(async () => (await color(1)) !== (await color(2))).toBe(true);
 });
 
 test("typing in the service search makes room: no step bars, button or menu", async ({ page }) => {
@@ -352,4 +352,27 @@ test("typing in the service search makes room: no step bars, button or menu", as
   await page.getByTestId("create-service-search").blur();
   await expect(footer).toBeVisible();
   await expect(dock).toBeVisible();
+});
+
+test("step 2 takes the price from its own keypad and shows each member's share", async ({ page }) => {
+  await openCreate(page);
+  await page.getByTestId("create-kind-subscription").click();
+  await page.getByTestId("create-service-option-youtube-premium").click();
+  await page.getByTestId("create-family-next").click();
+  const price = page.getByTestId("create-total-price-input");
+  const next = page.getByTestId("create-family-next");
+  // No system keyboard: the field asks for none, the keypad types into it.
+  await expect(price).toHaveAttribute("inputmode", "none");
+  for (let i = 0; i < 8; i += 1) await page.getByTestId("create-keypad-back").click();
+  await expect(price).toHaveValue("");
+  await expect(next).toBeDisabled();
+  for (const key of ["4", "2", "0", "0"]) await page.getByTestId(`create-keypad-${key}`).click();
+  await expect(price).toHaveValue(/^4\s?200$/);
+  await page.getByTestId("create-max-members-decrease").click();
+  await page.getByTestId("create-max-members-decrease").click();
+  await expect(page.getByTestId("create-share-preview")).toContainText("1 050 ₸");
+  await expect(next).toBeEnabled();
+  // The service pill leads back to step 1.
+  await page.getByTestId("create-edit-service").click();
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
 });

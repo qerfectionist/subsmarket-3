@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { SystemSymbol } from "../SystemSymbol";
+import { triggerTelegramSelection } from "../../telegram";
 import { formatKzt } from "./createFamilyForm";
+
+/** Up to 9 999 999 ₸: more digits than any family subscription costs. */
+const MAX_DIGITS = 7;
 
 /** A compact − value + control for a row; keeps the test ids of the old stepper. */
 export function MiniStepper({
@@ -55,23 +59,13 @@ export function MiniStepper({
   );
 }
 
-/** One row of a settings card: what it is with a hint under it, the control on the right. */
-export function TermsRow({
-  label,
-  hint,
-  error,
-  children
-}: {
-  label: string;
-  hint?: ReactNode;
-  error?: string;
-  children: ReactNode;
-}) {
+/** One row of the settings group: what it is (and an error if any) on the left, the control or value on the right. */
+export function TermsRow({ label, error, children }: { label: ReactNode; error?: string; children: ReactNode }) {
   return (
     <div className="create-terms-row">
       <div className="create-terms-row-copy">
         <strong>{label}</strong>
-        {error ? <span className="create-terms-row-error">{error}</span> : hint ? <span>{hint}</span> : null}
+        {error ? <span className="create-terms-row-error">{error}</span> : null}
       </div>
       {children}
     </div>
@@ -79,10 +73,12 @@ export function TermsRow({
 }
 
 /**
- * The total as one large number, the way banking apps take an amount: digits
- * only, grouped as they are typed, with ₸ after them.
+ * The total as the one large number on the screen, as banking apps show an
+ * amount being typed: grouped digits, ₸ after them and a blinking caret. The
+ * field asks for no system keyboard (the keypad below types into it), but
+ * still takes typing from a hardware keyboard.
  */
-export function PriceHero({
+export function AmountDisplay({
   value,
   label,
   error,
@@ -95,24 +91,27 @@ export function PriceHero({
 }) {
   const shown = value > 0 ? formatKzt(value).replace(/\s*₸$/, "") : "";
   return (
-    <label className="create-price-hero" data-invalid={Boolean(error) || undefined}>
-      <span className="create-price-hero-label">{label}</span>
-      <span className="create-price-hero-amount">
+    <label className="create-amount" data-invalid={Boolean(error) || undefined}>
+      <span className="create-amount-label">{label}</span>
+      <span className="create-amount-value">
         <input
           data-testid="create-total-price-input"
-          inputMode="numeric"
+          inputMode="none"
           type="text"
           placeholder="0"
           aria-invalid={Boolean(error) || undefined}
           value={shown}
-          // The field is as wide as the number, so ₸ stays right after it.
-          style={{ width: `${Math.max(shown.length, 1) + 0.4}ch` }}
-          onChange={(event) => onChange(Number(event.target.value.replace(/\D/g, "")) || 0)}
+          // As wide as the number, so the caret and ₸ stay right after it.
+          style={{ width: `${Math.max(shown.length, 1) + 0.2}ch` }}
+          onChange={(event) => onChange(Number(event.target.value.replace(/\D/g, "").slice(0, MAX_DIGITS)) || 0)}
         />
-        <span aria-hidden="true">₸</span>
+        <span className="create-amount-caret" aria-hidden="true" />
+        <span className="create-amount-currency" aria-hidden="true">
+          ₸
+        </span>
       </span>
       {error ? (
-        <small className="field-error create-price-hero-error" role="alert" aria-live="polite">
+        <small className="field-error create-amount-error" role="alert" aria-live="polite">
           {error}
         </small>
       ) : null}
@@ -120,15 +119,33 @@ export function PriceHero({
   );
 }
 
-/** The seats as places: «Вы» first, then one per member. */
-export function SeatStrip({ count }: { count: number }) {
+const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"] as const;
+
+/** The digits for the amount, on the screen itself, so no system keyboard covers the rows. */
+export function AmountKeypad({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  function press(key: (typeof KEYS)[number]) {
+    const digits = value > 0 ? String(value) : "";
+    const next = key === "back" ? digits.slice(0, -1) : (digits + key).slice(0, MAX_DIGITS);
+    triggerTelegramSelection();
+    onChange(Number(next) || 0);
+  }
   return (
-    <div className="create-seat-strip" aria-hidden="true">
-      {Array.from({ length: count }, (_, i) => (
-        <span key={i} data-owner={i === 0 || undefined}>
-          {i === 0 ? "Вы" : i}
-        </span>
-      ))}
+    <div className="create-keypad" role="group" aria-label="Цифры цены">
+      {KEYS.map((key) =>
+        key === "" ? (
+          <span key="blank" aria-hidden="true" />
+        ) : (
+          <button
+            key={key}
+            type="button"
+            data-testid={`create-keypad-${key}`}
+            aria-label={key === "back" ? "Стереть цифру" : key}
+            onClick={() => press(key)}
+          >
+            {key === "back" ? <SystemSymbol name="delete.left" size={24} /> : key}
+          </button>
+        )
+      )}
     </div>
   );
 }
