@@ -41,13 +41,19 @@ function CreateRow({ item }: { item: CreateHomeItem }) {
 export function CreateFeed({
   items,
   testId,
-  resetKey
+  resetKey,
+  tail = "second"
 }: {
   items: CreateHomeItem[];
   testId: string;
   resetKey?: string;
+  /**
+   * How far the end scrolls: two rows left, or one. A short list needs "first",
+   * so the last row can rise and leave room for «Наверх» under it.
+   */
+  tail?: "first" | "second";
 }) {
-  const feedSnap = useFeedSnap({ itemCount: items.length, cardSelector: ".create-row" });
+  const feedSnap = useFeedSnap({ itemCount: items.length, cardSelector: ".create-row", tailCardTarget: tail });
   const end = useListEnd(feedSnap.containerRef, ".create-row", items.length);
   useEffect(() => {
     feedSnap.containerRef.current?.scrollTo({ top: 0 });

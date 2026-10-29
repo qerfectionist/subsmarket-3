@@ -153,7 +153,7 @@ export function CreateHome({
                     <h2 id="create-recent-title">Недавние</h2>
                   </div>
                 </div>
-                <CreateFeed items={recent} testId="create-recent-list" />
+                <CreateFeed items={recent} testId="create-recent-list" tail="first" />
               </section>
             ) : null}
           </>
