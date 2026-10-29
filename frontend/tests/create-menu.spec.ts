@@ -86,7 +86,6 @@ test("«Недавние» repeats what was created before with the same terms",
   await expect(recent).toBeVisible();
   const row = recent.getByTestId("create-row-gigabytes-beeline");
   await expect(row).toContainText("230 ₸ за ГБ");
-  await page.screenshot({ path: "test-results/create-recent.png" });
 
   await row.click();
   await expect(page.getByTestId("gb-operator-beeline")).toHaveAttribute("aria-checked", "true");

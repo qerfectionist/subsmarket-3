@@ -869,3 +869,26 @@
     display: none;
   }
 }
+
+/*
+ * The market's search field on «Создать». Here it sits inside .app-shell, whose
+ * input rule would draw a second field inside it; the market lives in its own shell.
+ */
+.app-shell .sm-market-search input:not([type="checkbox"]):not([type="radio"]) {
+  min-height: 0;
+  padding: 14px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  line-height: 1.4;
+}
+
+:root[data-ios27-layout="on"] .app-shell .sm-market-search input:not([type="checkbox"]):not([type="radio"]) {
+  padding-block: 0;
+  line-height: 22px;
+}
+
+.app-shell .sm-market-search input:focus-visible {
+  outline: none;
+}

@@ -1,3 +1,4 @@
+import { MarketSearchField } from "./MarketSearchField";
 import {
   type ReactNode
 } from "react";
@@ -193,31 +194,15 @@ export function MarketCatalogView({
         </header>
       )}
 
-      <label className="sm-market-search">
-        <SystemSymbol name="magnifyingglass" size={20} />
-        <input
-          ref={searchInputRef}
-          type="search"
-          aria-label={isCatalog ? `Поиск: ${catalogTitle.toLowerCase()}` : "Поиск сервиса или семьи"}
-          data-testid={isCatalog ? "family-catalog-search-input" : "market-search-input"}
-          placeholder={isCatalog ? catalogSearchPlaceholder : "Сервис, оператор или аккаунт"}
-          value={searchTerm}
-          onChange={e => onSearchTermChange(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === "Enter") openInvite();
-          }}
-        />
-        {searchTerm ? (
-          <button
-            type="button"
-            className="sm-market-search-clear"
-            aria-label="Очистить поиск"
-            onClick={() => onSearchTermChange("")}
-          >
-            <SystemSymbol name="xmark" size={18} />
-          </button>
-        ) : null}
-      </label>
+      <MarketSearchField
+        inputRef={searchInputRef}
+        ariaLabel={isCatalog ? `Поиск: ${catalogTitle.toLowerCase()}` : "Поиск сервиса или семьи"}
+        testId={isCatalog ? "family-catalog-search-input" : "market-search-input"}
+        placeholder={isCatalog ? catalogSearchPlaceholder : "Сервис, оператор или аккаунт"}
+        value={searchTerm}
+        onChange={onSearchTermChange}
+        onEnter={() => openInvite()}
+      />
 
       {isCatalog ? (
         <nav

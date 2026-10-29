@@ -1,3 +1,4 @@
+import { MarketSearchField } from "./MarketSearchField";
 import {
   useCallback,
   useEffect,
@@ -348,31 +349,15 @@ export function MarketHomeView({
             </button>
           </header>
 
-          <label className="sm-market-search">
-            <SystemSymbol name="magnifyingglass" size={20} />
-            <input
-              ref={searchInputRef}
-              type="search"
-              aria-label="Поиск сервиса или семьи"
-              data-testid="market-search-input"
-              placeholder="Сервис, оператор или аккаунт"
-              value={searchTerm}
-              onChange={e => onSearchTermChange(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter") openInvite();
-              }}
-            />
-            {searchTerm ? (
-              <button
-                type="button"
-                className="sm-market-search-clear"
-                aria-label="Очистить поиск"
-                onClick={() => onSearchTermChange("")}
-              >
-                <SystemSymbol name="xmark" size={18} />
-              </button>
-            ) : null}
-          </label>
+          <MarketSearchField
+            inputRef={searchInputRef}
+            ariaLabel="Поиск сервиса или семьи"
+            testId="market-search-input"
+            placeholder="Сервис, оператор или аккаунт"
+            value={searchTerm}
+            onChange={onSearchTermChange}
+            onEnter={() => openInvite()}
+          />
         </div>
       </div>
 

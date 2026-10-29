@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Panel } from "./layout";
 import { ServiceLogo } from "./branding";
 import { SystemSymbol } from "./SystemSymbol";
-import { Input } from "./ui";
+import { MarketSearchField } from "./market/MarketSearchField";
 import { triggerTelegramSelection } from "../telegram";
 import { servicePopularity } from "./families/createFamilyForm";
 import { CREATE_TITLES, type CreateCategory } from "./CreateCategoryPicker";
@@ -120,20 +120,14 @@ export function CreateHome({
   return (
     <div className="create-screen create-home" data-testid="create-home">
       <Panel title="Создать">
-        <Input
-          type="search"
-          aria-label="Найти сервис"
-          placeholder="Найти сервис"
-          data-testid="create-search"
+        <MarketSearchField
+          ariaLabel="Найти, что создать"
+          testId="create-search"
+          placeholder="Сервис, оператор или аккаунт"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={setQuery}
           // Enter only closes the keyboard.
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              event.currentTarget.blur();
-            }
-          }}
+          onEnter={(input) => input.blur()}
         />
 
         {searching ? (
