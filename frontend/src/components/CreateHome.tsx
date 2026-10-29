@@ -4,6 +4,7 @@ import { SystemSymbol } from "./SystemSymbol";
 import { MarketSearchField } from "./market/MarketSearchField";
 import { CreateFeed } from "./CreateFeed";
 import { CreateRecentSection } from "./CreateRecentSection";
+import { CreateTicker } from "./CreateTicker";
 import { triggerTelegramSelection } from "../telegram";
 import { servicePopularity } from "./families/createFamilyForm";
 import { CREATE_TITLES, type CreateCategory } from "./CreateCategoryPicker";
@@ -93,7 +94,7 @@ export function CreateHome({
 
   return (
     <div className="create-screen create-home" data-testid="create-home">
-      <Panel title="Создать">
+      <Panel title="Что создаём?" description={<CreateTicker />}>
         <MarketSearchField
           ariaLabel="Найти, что создать"
           testId="create-search"

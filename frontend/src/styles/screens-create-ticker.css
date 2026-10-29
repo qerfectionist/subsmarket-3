@@ -1,0 +1,52 @@
+/* «Что создаём?» and the words that take turns under it. */
+.create-home .app-panel-head p {
+  max-width: none;
+}
+
+.create-ticker {
+  display: inline-block;
+  color: var(--app-accent, var(--app-text));
+  font-weight: 600;
+}
+
+/* One line tall, so the sliding words are clipped to it. */
+.create-ticker-window {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  height: 1.5em;
+  line-height: 1.5em;
+}
+
+.create-ticker-word {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+
+.create-ticker-in {
+  animation: create-ticker-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.create-ticker-out {
+  animation: create-ticker-out 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes create-ticker-in {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes create-ticker-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-ticker-in { animation: create-ticker-fade 300ms ease both; }
+  .create-ticker-out { display: none; }
+}
+
+@keyframes create-ticker-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -17,7 +17,7 @@ export function Panel({
   children
 }: {
   title?: string;
-  description?: string;
+  description?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
 }) {

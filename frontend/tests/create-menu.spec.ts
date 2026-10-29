@@ -25,6 +25,14 @@ async function openCreate(page: import("@playwright/test").Page) {
   await expect(page.getByTestId("create-home")).toBeVisible();
 }
 
+test("«Создать» asks what to create and the options take turns", async ({ page }) => {
+  await openCreate(page);
+  await expect(page.getByRole("heading", { name: "Что создаём?" })).toBeVisible();
+  const word = page.getByTestId("create-ticker-word");
+  await expect(word).toHaveText("семейную подписку");
+  await expect(word).toHaveText("семейный тариф", { timeout: 6000 });
+});
+
 test("«Создать» finds anything that can be created", async ({ page }) => {
   await openCreate(page);
   const home = page.getByTestId("create-home");
