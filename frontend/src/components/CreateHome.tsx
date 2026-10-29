@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { RefObject } from "react";
 import { Panel } from "./layout";
 import { ServiceLogo } from "./branding";
@@ -93,29 +93,27 @@ function upToSeats(count: number) {
  */
 function useReachedEnd(containerRef: RefObject<HTMLElement | null>, rowSelector: string, itemCount: number) {
   const [reached, setReached] = useState(false);
-  useEffect(() => {
+  // Read through React's onScroll on the list itself, so the check never stays
+  // tied to a list element that has since been replaced.
+  const check = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
-    const update = () => {
-      const rows = Array.from(container.querySelectorAll<HTMLElement>(rowSelector));
-      if (rows.length < 3 || container.scrollTop <= 0) {
-        setReached(false);
-        return;
-      }
-      // The first row still showing at the top: the end is when it is the second to last.
-      const top = container.getBoundingClientRect().top;
-      const first = rows.findIndex((row) => row.getBoundingClientRect().bottom > top + 8);
-      setReached(first >= rows.length - 2);
-    };
-    update();
-    container.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      container.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [containerRef, rowSelector, itemCount]);
-  return reached;
+    const rows = Array.from(container.querySelectorAll<HTMLElement>(rowSelector));
+    if (rows.length < 3 || container.scrollTop <= 0) {
+      setReached(false);
+      return;
+    }
+    // The first row still showing at the top: the end is when it is the second to last.
+    const top = container.getBoundingClientRect().top;
+    const first = rows.findIndex((row) => row.getBoundingClientRect().bottom > top + 8);
+    setReached(first >= rows.length - 2);
+  }, [containerRef, rowSelector]);
+  useEffect(() => {
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [check, itemCount]);
+  return { reached, check };
 }
 
 function popularFirst(list: FamilyService[]) {
@@ -201,7 +199,7 @@ export function CreateHome({
   // Same feed behaviour as «Заявки» and «Мои»: snap to the nearest row, a fade under the
   // heading once scrolled, and a button back to the top.
   const feedSnap = useFeedSnap({ itemCount: shown.length, cardSelector: ".create-popular-row" });
-  const reachedEnd = useReachedEnd(feedSnap.containerRef, ".create-popular-row", shown.length);
+  const end = useReachedEnd(feedSnap.containerRef, ".create-popular-row", shown.length);
   useEffect(() => {
     feedSnap.containerRef.current?.scrollTo({ top: 0 });
   }, [filter, feedSnap.containerRef]);
@@ -262,6 +260,10 @@ export function CreateHome({
                 data-testid="create-popular-list"
                 ref={feedSnap.containerRef}
                 {...feedSnap.scrollHandlers}
+                onScroll={() => {
+                  feedSnap.scrollHandlers.onScroll?.();
+                  end.check();
+                }}
               >
                 {shown.map((item) => (
                   <button
@@ -292,7 +294,7 @@ export function CreateHome({
                 containerRef={feedSnap.containerRef}
                 testId="create-popular-scroll-to-top"
                 className="create-popular-to-top"
-                hidden={!reachedEnd}
+                hidden={!end.reached}
               />
             </div>
           </section>
