@@ -58,7 +58,7 @@ export function GigabytesScreen({
    * Set when the form is opened from «Создать»: its own title and a back arrow to the menu,
    * and after publishing the person is taken to the new listing in «Мои».
    */
-  embedded?: { onPublished: () => void };
+  embedded?: { onPublished: () => void; operatorSlug?: string | null };
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -92,6 +92,16 @@ export function GigabytesScreen({
   const createRequestMutation = useCreateMarketplaceRequest();
 
   const operators = operatorsQuery.data ?? [];
+
+  // A popular operator on «Создать» opens the form with it picked.
+  const presetOperator = embedded?.operatorSlug ?? null;
+  const [presetApplied, setPresetApplied] = useState(false);
+  useEffect(() => {
+    if (presetApplied || !presetOperator || operators.length === 0) return;
+    const picked = operators.find((item) => item.slug === presetOperator);
+    if (picked) setForm({ ...emptyForm, operator_slug: picked.slug, max_gb: defaultMaxGb(picked) });
+    setPresetApplied(true);
+  }, [presetApplied, presetOperator, operators]);
   const listings = listingsQuery.data ?? [];
   const myListings = myListingsQuery.data ?? [];
   const selectedListing = listingQuery.data ?? null;

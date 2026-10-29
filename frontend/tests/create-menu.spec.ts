@@ -20,8 +20,37 @@ test("«Создать» opens on a menu of what can be created and popular serv
   await expect(page.getByTestId("create-kind-subscription")).toContainText("YouTube Premium");
   await expect(page.getByTestId("create-kind-tariff")).toContainText("Tele2");
 
+  // «Популярное» mixes all four categories and scrolls inside itself; the screen stays put.
+  const list = page.getByTestId("create-popular-list");
+  await expect(page.getByTestId("create-popular-tariff-tele2-family-tariff")).toBeVisible();
+  await expect(list.getByTestId("create-popular-gigabytes-tele2")).toHaveCount(1);
+  await expect(list.getByTestId("create-popular-accounts-chatgpt")).toHaveCount(1);
+  await list.evaluate((element) => element.scrollBy(0, 400));
+  expect(await page.evaluate(() => document.querySelector(".app-shell")!.scrollTop)).toBe(0);
+  await expect(page.getByTestId("create-kind-subscription")).toBeInViewport();
+
+  // The chip narrows the list to one category.
+  await page.getByTestId("create-popular-filter").click();
+  await page.getByTestId("create-popular-filter").click();
+  await expect(page.getByTestId("create-popular-filter")).toContainText("Тарифы");
+  await expect(list.getByTestId("create-popular-subscription-youtube-premium")).toHaveCount(0);
+  await page.getByTestId("create-popular-filter").click();
+  await page.getByTestId("create-popular-filter").click();
+  await page.getByTestId("create-popular-filter").click();
+  await expect(page.getByTestId("create-popular-filter")).toContainText("Все");
+
+  // A popular GB operator opens the GB form with it picked.
+  await list.getByTestId("create-popular-gigabytes-beeline").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("gb-operator-beeline")).toHaveAttribute("aria-checked", "true");
+  await page.getByTestId("create-form-back").click();
+
+  // A popular account opens the account form with its service picked.
+  await list.getByTestId("create-popular-accounts-telegram-premium").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("account-service-telegram-premium")).toHaveAttribute("aria-checked", "true");
+  await page.getByTestId("create-form-back").click();
+
   // A popular service opens its family straight on «Условия».
-  await page.getByTestId("create-popular-spotify-family").click();
+  await list.getByTestId("create-popular-subscription-spotify-family").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
   await expect(page.getByTestId("create-family-screen").locator("h1")).toHaveText("Семья на подписку");
 

@@ -61,7 +61,7 @@ export function AccountsScreen({
    * Set when the form is opened from «Создать»: its own title and a back arrow to the menu,
    * and after publishing the person is taken to the new listing in «Мои».
    */
-  embedded?: { onPublished: () => void };
+  embedded?: { onPublished: () => void; serviceSlug?: string | null };
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -94,6 +94,16 @@ export function AccountsScreen({
   const listings = listingsQuery.data ?? [];
   const myListings = myListingsQuery.data ?? [];
   const selectedListing = listingQuery.data ?? null;
+
+  // A popular account on «Создать» opens the form with its service picked.
+  const presetSlug = embedded?.serviceSlug ?? null;
+  const [presetApplied, setPresetApplied] = useState(false);
+  useEffect(() => {
+    if (presetApplied || !presetSlug || services.length === 0) return;
+    const service = services.find((item) => item.slug === presetSlug);
+    if (service) setForm(selectionForService(EMPTY_FORM, service));
+    setPresetApplied(true);
+  }, [presetApplied, presetSlug, services]);
 
   const activeService = useMemo(
     () => services.find((item) => item.slug === form.service_slug),

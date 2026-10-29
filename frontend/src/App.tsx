@@ -125,6 +125,7 @@ export function App() {
   const [createFamilyStep, setCreateFamilyStep] = useState<"service" | "terms">("service");
   const [createEntry, setCreateEntry] = useState(0);
   const [createFromMenu, setCreateFromMenu] = useState(false);
+  const [createPreset, setCreatePreset] = useState<string | null>(null);
   const startParamHandled = useRef(false);
 
   const [isDevCardsModalOpen, setIsDevCardsModalOpen] = useState(false);
@@ -487,6 +488,7 @@ export function App() {
 
   /** A row on the «Создать» menu: the form opens on the same tab, with a back arrow to the menu. */
   function switchCreateCategory(category: CreateCategory) {
+    setCreatePreset(null);
     if (category === "accounts" || category === "gigabytes") {
       setCreateScope(category);
     } else {
@@ -504,6 +506,14 @@ export function App() {
     pickCreateService(next);
     setCreateScope("families");
     setCreateFamilyStep("terms");
+    setCreateEntry((current) => current + 1);
+    setCreateFromMenu(true);
+  }
+
+  /** A popular account or operator on the menu opens its form with it picked. */
+  function createListingFromPopular(scope: "accounts" | "gigabytes", slug: string) {
+    setCreatePreset(slug);
+    setCreateScope(scope);
     setCreateEntry((current) => current + 1);
     setCreateFromMenu(true);
   }
@@ -651,6 +661,8 @@ export function App() {
             services={services}
             onOpen={switchCreateCategory}
             onPickService={createFromPopular}
+            onPickAccount={(slug) => createListingFromPopular("accounts", slug)}
+            onPickOperator={(slug) => createListingFromPopular("gigabytes", slug)}
           />
         </AsyncContent>
       )}
@@ -678,7 +690,7 @@ export function App() {
           key={`create-accounts-${createEntry}`}
           initialMode="create"
           onBack={leaveCreateForm}
-          embedded={{ onPublished: () => openPublishedListing("accounts") }}
+          embedded={{ onPublished: () => openPublishedListing("accounts"), serviceSlug: createPreset }}
         />
       )}
 
@@ -687,7 +699,7 @@ export function App() {
           key={`create-gigabytes-${createEntry}`}
           initialMode="create"
           onBack={leaveCreateForm}
-          embedded={{ onPublished: () => openPublishedListing("gigabytes") }}
+          embedded={{ onPublished: () => openPublishedListing("gigabytes"), operatorSlug: createPreset }}
         />
       )}
 
