@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Panel } from "./layout";
 import { ServiceLogo } from "./branding";
 import { SystemSymbol } from "./SystemSymbol";
@@ -6,6 +6,8 @@ import { triggerTelegramSelection } from "../telegram";
 import { servicePopularity } from "./families/createFamilyForm";
 import { CREATE_TITLES, type CreateCategory } from "./CreateCategoryPicker";
 import { useAccountServices, useMarketplaceOperators } from "../hooks/useApi";
+import { useFeedSnap } from "../hooks/useFeedSnap";
+import { ScrollToTopButton } from "./ScrollToTopButton";
 import type { FamilyService } from "../types";
 
 const KIND_ICONS: Record<
@@ -143,6 +145,12 @@ export function CreateHome({
   }
   const shown = filter === "all" ? popular : popular.filter((item) => item.kind === filter);
   const activeFilter = FILTERS.find((item) => item.id === filter) ?? FILTERS[0];
+  // Same feed behaviour as «Заявки» and «Мои»: snap to the nearest row, a fade under the
+  // heading once scrolled, and a button back to the top.
+  const feedSnap = useFeedSnap({ itemCount: shown.length, cardSelector: ".create-popular-row" });
+  useEffect(() => {
+    feedSnap.containerRef.current?.scrollTo({ top: 0 });
+  }, [filter, feedSnap.containerRef]);
 
   return (
     <div className="create-screen create-home" data-testid="create-home">
@@ -194,31 +202,42 @@ export function CreateHome({
                 </button>
               </div>
             </div>
-            <div className="create-popular-scroll" data-testid="create-popular-list">
-              {shown.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className="create-popular-row"
-                  data-testid={`create-popular-${item.key}`}
-                  onClick={() => {
-                    triggerTelegramSelection();
-                    item.open();
-                  }}
-                >
-                  <ServiceLogo
-                    serviceSlug={item.logoSlug}
-                    serviceName={item.title}
-                    familyType={item.tariffLogo ? "tariff" : "subscription"}
-                    size={40}
-                  />
-                  <span className="create-popular-copy">
-                    <strong>{item.title}</strong>
-                    <span>{item.subtitle}</span>
-                  </span>
-                  <SystemSymbol name="chevron.forward" size={18} />
-                </button>
-              ))}
+            <div className="my-feed-wrap create-popular-wrap">
+              <div
+                className="my-feed-scroll create-popular-scroll"
+                data-testid="create-popular-list"
+                ref={feedSnap.containerRef}
+                {...feedSnap.scrollHandlers}
+              >
+                {shown.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className="create-popular-row"
+                    data-testid={`create-popular-${item.key}`}
+                    onClick={() => {
+                      triggerTelegramSelection();
+                      item.open();
+                    }}
+                  >
+                    <ServiceLogo
+                      serviceSlug={item.logoSlug}
+                      serviceName={item.title}
+                      familyType={item.tariffLogo ? "tariff" : "subscription"}
+                      size={40}
+                    />
+                    <span className="create-popular-copy">
+                      <strong>{item.title}</strong>
+                      <span>{item.subtitle}</span>
+                    </span>
+                    <SystemSymbol name="chevron.forward" size={18} />
+                  </button>
+                ))}
+                <ScrollToTopButton
+                  containerRef={feedSnap.containerRef}
+                  testId="create-popular-scroll-to-top"
+                />
+              </div>
             </div>
           </section>
         ) : null}

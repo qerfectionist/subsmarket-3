@@ -716,7 +716,7 @@
 
 /*
  * The menu stays put: the shell does not scroll, «Популярное» scrolls inside
- * its own area and snaps row by row, as «Популярное сейчас» on the market does.
+ * its own feed, as on «Заявки» and «Мои».
  */
 .app-shell:has(> .create-home) {
   overflow-y: hidden;
@@ -768,27 +768,14 @@
   flex-wrap: nowrap;
 }
 
+/* The list itself is .my-feed-scroll inside .my-feed-wrap: the fade and snapping come from there. */
 .create-popular-scroll {
-  display: grid;
-  flex: 1 1 0;
-  align-content: start;
   gap: 8px;
-  min-height: 0;
-  margin-inline: -16px;
-  padding: 0 16px calc(var(--app-nav-clearance) + 8px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scroll-padding-top: 0;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-}
-
-.create-popular-scroll::-webkit-scrollbar {
-  display: none;
 }
 
 .app-shell .create-popular-row {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 12px;
   width: 100%;
@@ -801,7 +788,6 @@
   font: inherit;
   text-align: left;
   box-shadow: none;
-  scroll-snap-align: start;
 }
 
 .create-popular-copy {
