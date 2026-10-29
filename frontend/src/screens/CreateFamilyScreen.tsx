@@ -1,7 +1,6 @@
 import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { Button as AppButton } from "../components/ui";
 import { CreateShell, type CreateCategory } from "../components/CreateCategoryPicker";
-import { SystemSymbol } from "../components/SystemSymbol";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
 import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
 import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
@@ -110,25 +109,29 @@ export function CreateFamilyScreen({
     >
       <div className="screen-body-inset">
 
-        <ol className="create-progress" aria-label="Шаги">
-          {CREATE_STEPS.map((item, index) => {
-            const state = index < stepIndex ? "done" : index === stepIndex ? "current" : "todo";
-            return (
-              <li
-                key={item.id}
-                data-state={state}
-                aria-current={state === "current" ? "step" : undefined}
-                data-testid={`create-progress-${item.id}`}
-              >
-                <span className="create-progress-bar" />
-                <span className="create-progress-label">
-                  {state === "done" ? <SystemSymbol name="checkmark" size={12} /> : `${index + 1} `}
-                  {item.title}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
+        <div className="create-progress-wrap">
+          <p className="create-progress-caption" aria-live="polite">
+            Шаг {stepIndex + 1} из {CREATE_STEPS.length} · {CREATE_STEPS[stepIndex].title}
+          </p>
+          <ol className="create-progress" aria-label="Шаги">
+            {CREATE_STEPS.map((item, index) => {
+              const state = index < stepIndex ? "done" : index === stepIndex ? "current" : "todo";
+              return (
+                <li
+                  key={item.id}
+                  data-state={state}
+                  aria-current={state === "current" ? "step" : undefined}
+                  data-testid={`create-progress-${item.id}`}
+                >
+                  <span className="create-progress-bar" />
+                  <span className="visually-hidden">
+                    {index + 1}. {item.title}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
 
         <form
           ref={formRef}
@@ -173,16 +176,19 @@ export function CreateFamilyScreen({
               </p>
             ) : null}
             {nativeMainButton ? null : (
-              <div className="wizard-nav">
-                <AppButton
-                  key="back"
-                  type="button"
-                  variant="secondary"
-                  data-testid="create-family-back"
-                  onClick={goBack}
-                >
-                  Назад
-                </AppButton>
+              <div className="wizard-nav" data-single={stepIndex === 0 || undefined}>
+                {/* Step 1 has one way on: the service is picked, «Далее». */}
+                {stepIndex > 0 ? (
+                  <AppButton
+                    key="back"
+                    type="button"
+                    variant="secondary"
+                    data-testid="create-family-back"
+                    onClick={goBack}
+                  >
+                    Назад
+                  </AppButton>
+                ) : null}
                 {isLast ? (
                   <AppButton
                     key="submit"

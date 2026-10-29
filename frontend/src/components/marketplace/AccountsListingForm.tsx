@@ -175,9 +175,11 @@ export function AccountsListingForm({
         Данные для входа передайте покупателю в Telegram после подтверждения заявки. Мы их не храним.
       </p>
 
-      <AppButton fullWidth type="submit" disabled={busy || !ready || priceInvalid}>
-        {busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 30 дней"}
-      </AppButton>
+      <div className="listing-form-footer">
+        <AppButton fullWidth type="submit" disabled={busy || !ready || priceInvalid}>
+          {busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 30 дней"}
+        </AppButton>
+      </div>
 
       {planSheetOpen && activeService ? (
         <AccountPlanSheet

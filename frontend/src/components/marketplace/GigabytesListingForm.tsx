@@ -225,9 +225,11 @@ export function GigabytesListingForm({
         Telegram. Отправляйте ГБ, когда деньги пришли.
       </p>
 
-      <AppButton fullWidth type="submit" disabled={busy || maxInvalid || priceInvalid}>
-        {busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 7 дней"}
-      </AppButton>
+      <div className="listing-form-footer">
+        <AppButton fullWidth type="submit" disabled={busy || maxInvalid || priceInvalid}>
+          {busy ? "Сохраняем..." : editing ? "Сохранить" : "Опубликовать на 7 дней"}
+        </AppButton>
+      </div>
     </form>
   );
 }

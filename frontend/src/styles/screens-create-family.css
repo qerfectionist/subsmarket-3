@@ -1,20 +1,33 @@
 /* Create family: three steps — service, terms, payout. */
+/* Step progress: one caption and a thin bar, so it does not read as a second tab row. */
+.create-progress-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.create-progress-caption {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: var(--app-size-label);
+  font-weight: var(--app-weight-semibold);
+  line-height: var(--app-leading-label);
+}
+
 .create-progress {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .create-progress li {
-  display: grid;
-  gap: 6px;
   min-width: 0;
 }
 
 .create-progress-bar {
+  display: block;
   height: 4px;
   border-radius: 2px;
   background: var(--app-border);
@@ -25,21 +38,13 @@
   background: var(--app-text);
 }
 
-.create-progress-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  color: var(--app-muted);
-  font-size: var(--app-size-label);
-  line-height: var(--app-leading-label);
-  text-overflow: ellipsis;
+  clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-.create-progress li[data-state="current"] .create-progress-label {
-  color: var(--app-text);
-  font-weight: var(--app-weight-semibold);
 }
 
 .create-step-form,
@@ -575,4 +580,65 @@
 
 .family-detail-join {
   margin-top: 16px;
+}
+
+/*
+ * «Создать»: one form language for every category.
+ * The action bar stays above the bottom menu; the account and GB forms lose
+ * their outer card and use the wizard's field labels and logo grid.
+ */
+.create-screen .create-wizard-footer,
+.create-screen .listing-form-footer {
+  --create-dock-top: calc(var(--app-nav-height) + 16px + var(--app-inset-bottom));
+  position: sticky;
+  /* Sticky offsets count from inside the shell's bottom padding (the menu clearance). */
+  bottom: calc(var(--create-dock-top) - var(--app-nav-clearance));
+  z-index: 5;
+  padding: 12px 0;
+  background: var(--app-bg);
+  /* Widens the background to the screen edges without widening the box. */
+  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg);
+}
+
+/* Fills the strip under the bar down to the menu, so nothing scrolls through it. */
+.create-screen .create-wizard-footer::after,
+.create-screen .listing-form-footer::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  inset-inline: 0;
+  height: var(--create-dock-top);
+  background: var(--app-bg);
+  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg);
+  pointer-events: none;
+}
+
+.create-screen .gb-form {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app-shell .create-screen .gb-form label,
+.create-screen .gb-form .ui-field {
+  font-size: var(--app-size-caption);
+  line-height: var(--app-leading-caption);
+  font-weight: 500;
+}
+
+.create-screen .account-service-ribbon {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 8px 0 0;
+  overflow: visible;
+}
+
+.create-screen .gb-form .account-service-tile {
+  width: auto;
+  min-height: 92px;
+  align-content: center;
+  background: var(--app-surface);
 }
