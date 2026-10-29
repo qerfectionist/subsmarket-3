@@ -88,8 +88,8 @@ function upToSeats(count: number) {
 }
 
 /**
- * True once the last row is fully in view, so «Наверх» shows up only at the
- * end of the list and hides again as soon as the list moves back up.
+ * True once only the last two rows are left in the list, so «Наверх» shows up
+ * at the very end and hides again as soon as the list moves back up.
  */
 function useReachedEnd(containerRef: RefObject<HTMLElement | null>, rowSelector: string, itemCount: number) {
   const [reached, setReached] = useState(false);
@@ -97,19 +97,15 @@ function useReachedEnd(containerRef: RefObject<HTMLElement | null>, rowSelector:
     const container = containerRef.current;
     if (!container) return;
     const update = () => {
-      const rows = container.querySelectorAll<HTMLElement>(rowSelector);
-      const last = rows[rows.length - 1];
-      if (!last || container.scrollTop <= 0) {
+      const rows = Array.from(container.querySelectorAll<HTMLElement>(rowSelector));
+      if (rows.length < 3 || container.scrollTop <= 0) {
         setReached(false);
         return;
       }
-      // The list runs on under the bottom menu, so the end counts only above it.
-      const dock = document.querySelector(".subs-dock");
-      const visibleBottom = Math.min(
-        container.getBoundingClientRect().bottom,
-        dock ? dock.getBoundingClientRect().top : Infinity
-      );
-      setReached(last.getBoundingClientRect().bottom <= visibleBottom + 1);
+      // The first row still showing at the top: the end is when it is the second to last.
+      const top = container.getBoundingClientRect().top;
+      const first = rows.findIndex((row) => row.getBoundingClientRect().bottom > top + 8);
+      setReached(first >= rows.length - 2);
     };
     update();
     container.addEventListener("scroll", update, { passive: true });

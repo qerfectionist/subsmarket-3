@@ -81,7 +81,15 @@ test("«Наверх» in «Популярное» shows up only at the end of t
   await page.waitForTimeout(150);
   await expect(toTop).toHaveAttribute("data-visible", "false");
 
-  // At the end: it rises in, and takes the list back to the top.
+  // Three rows left: still hidden.
+  await list.evaluate((element) => {
+    const rows = element.querySelectorAll<HTMLElement>(".create-popular-row");
+    element.scrollTo({ top: rows[rows.length - 3].offsetTop - rows[0].offsetTop });
+  });
+  await page.waitForTimeout(800);
+  await expect(toTop).toHaveAttribute("data-visible", "false");
+
+  // At the end, two rows left: it rises in, and takes the list back to the top.
   await list.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
   await expect(toTop).toHaveAttribute("data-visible", "true");
   await page.waitForTimeout(600);
