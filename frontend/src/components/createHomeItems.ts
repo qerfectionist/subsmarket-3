@@ -131,7 +131,10 @@ export function recentCreateItems(
         key: `accounts-${listing.service.slug}`,
         kind: "accounts",
         title: listing.service.name,
-        subtitle: ["Аккаунт", listing.plan_name, formatKzt(listing.price_kzt)].filter(Boolean).join(" · "),
+        // «ChatGPT Plus» under «ChatGPT» reads as just «Plus».
+        subtitle: ["Аккаунт", listing.plan_name?.replace(`${listing.service.name} `, ""), formatKzt(listing.price_kzt)]
+          .filter(Boolean)
+          .join(" · "),
         logoSlug: listing.service.slug,
         tariffLogo: false,
         open: () => actions.onRepeatAccount(listing)
