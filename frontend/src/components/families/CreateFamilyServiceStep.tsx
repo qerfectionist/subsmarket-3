@@ -4,7 +4,7 @@ import { ServiceLogo } from "../branding";
 import { SystemSymbol } from "../SystemSymbol";
 import { serviceTitle } from "../../format";
 import type { FamilyService } from "../../types";
-import { CreateServicePager } from "./CreateServicePager";
+import { CreateCategoryWheel } from "./CreateCategoryWheel";
 import {
   POPULAR_SERVICE_COUNT,
   SERVICE_CATEGORY_CHIPS,
@@ -19,8 +19,9 @@ const byPopularity = (a: FamilyService, b: FamilyService) =>
   servicePopularity(a.slug) - servicePopularity(b.slug) || a.name.localeCompare(b.name, "ru");
 
 /**
- * Step 1: tabs for «Популярное» and each category over pages that swipe round
- * like a wheel; a search above turns them into one list of matches.
+ * Step 1: a wheel of categories («Популярное», then each category) over the
+ * services of the one in the middle; a search above turns them into one list
+ * of matches.
  */
 export function CreateFamilyServiceStep({
   services,
@@ -33,7 +34,6 @@ export function CreateFamilyServiceStep({
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
-  const tabsRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   // While a list moves, a fade shows under the search, as on «Заявки»
@@ -46,10 +46,10 @@ export function CreateFamilyServiceStep({
     settleTimer.current = window.setTimeout(() => element.removeAttribute("data-scrolling"), 160);
   };
   useEffect(() => () => window.clearTimeout(settleTimer.current), []);
-  // A new query starts the matches from the top.
+  // A new query or another category starts the list from the top.
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0 });
-  }, [query]);
+  }, [query, page]);
 
   const countFor = (categories: string[]) =>
     services.filter((service) => categories.includes(service.category)).length;
@@ -82,18 +82,12 @@ export function CreateFamilyServiceStep({
   // Operator tariffs are one category: no search and no tabs, just the operators.
   const singleCategory = categories.length <= 1;
   const paged = !searching && !singleCategory && sections.length > 1;
+  const current = Math.min(page, sections.length - 1);
   const list = searching
     ? services.filter((service) => matchesServiceQuery(service, query)).sort(byPopularity)
-    : [...services].sort(byPopularity);
-  const current = Math.min(page, sections.length - 1);
-
-  // The lit tab stays in view when the row of tabs is wider than the screen.
-  useEffect(() => {
-    const row = tabsRef.current;
-    const tab = row?.querySelector<HTMLElement>(`[data-tab-index="${current}"]`);
-    if (!row || !tab) return;
-    row.scrollTo({ left: tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2, behavior: "smooth" });
-  }, [current]);
+    : paged
+      ? sections[current].services
+      : [...services].sort(byPopularity);
 
   const grid = (items: FamilyService[]) => (
     <div className="create-service-grid">
@@ -142,53 +136,37 @@ export function CreateFamilyServiceStep({
         />
       )}
       {paged ? (
-        <div className="create-service-chips" ref={tabsRef} role="tablist" aria-label="Категории">
-          {sections.map((section, index) => (
-            <button
-              key={section.id}
-              type="button"
-              role="tab"
-              className="create-service-chip"
-              data-tab-index={index}
-              data-testid={`create-service-chip-${section.id}`}
-              aria-selected={index === current}
-              aria-current={index === current ? "true" : undefined}
-              onClick={() => setPage(index)}
-            >
-              {section.title}
-            </button>
-          ))}
-        </div>
+        <CreateCategoryWheel
+          items={sections.map((section) => ({ id: section.id, title: section.title }))}
+          index={current}
+          onIndexChange={setPage}
+        />
       ) : null}
       <div className="my-feed-wrap create-feed-wrap create-service-feed" role="radiogroup" aria-label="Сервис">
-        {paged ? (
-          <CreateServicePager
-            pages={sections.map((section) => ({ id: section.id, content: grid(section.services) }))}
-            index={current}
-            onIndexChange={setPage}
-            onPageScroll={markScrolling}
-          />
-        ) : (
-          <div ref={listRef} className="create-service-sections" onScroll={markScrolling}>
-            {list.length > 0 ? grid(list) : null}
-            {searching && list.length === 0 ? (
-              <div className="sm-market-empty create-results-empty" data-testid="create-service-empty">
-                <SystemSymbol name="magnifyingglass" size={28} />
-                <h3>Ничего не найдено</h3>
-                <p>По запросу «{query.trim()}» сервиса нет. Проверьте название.</p>
-                <div className="sm-market-empty-actions">
-                  <button
-                    type="button"
-                    className="sm-market-button sm-market-button-secondary"
-                    onClick={() => setQuery("")}
-                  >
-                    Сбросить поиск
-                  </button>
-                </div>
+        <div ref={listRef} className="create-service-sections" onScroll={markScrolling}>
+          {/* A new key fades the next category in. */}
+          {list.length > 0 ? (
+            <div key={paged ? sections[current].id : "all"} className="create-service-fade">
+              {grid(list)}
+            </div>
+          ) : null}
+          {searching && list.length === 0 ? (
+            <div className="sm-market-empty create-results-empty" data-testid="create-service-empty">
+              <SystemSymbol name="magnifyingglass" size={28} />
+              <h3>Ничего не найдено</h3>
+              <p>По запросу «{query.trim()}» сервиса нет. Проверьте название.</p>
+              <div className="sm-market-empty-actions">
+                <button
+                  type="button"
+                  className="sm-market-button sm-market-button-secondary"
+                  onClick={() => setQuery("")}
+                >
+                  Сбросить поиск
+                </button>
               </div>
-            ) : null}
-          </div>
-        )}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
