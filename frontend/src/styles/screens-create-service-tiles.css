@@ -251,3 +251,20 @@
 .create-screen .create-wizard-footer .wizard-nav {
   padding-top: 14px;
 }
+
+/*
+ * Typing in the search: the keyboard covers the lower half, so the step bars,
+ * «Далее» and the bottom menu step aside and the services take the room above
+ * the keyboard. They return once the field is left.
+ */
+.app-shell:has(.create-step-body[data-search-typing]) {
+  padding-bottom: 12px;
+}
+
+.create-step-form[data-step="service"]:has(.create-step-body[data-search-typing]) .create-wizard-footer {
+  display: none;
+}
+
+body:has(.create-step-body[data-search-typing]) .subs-dock--spotify {
+  display: none !important;
+}

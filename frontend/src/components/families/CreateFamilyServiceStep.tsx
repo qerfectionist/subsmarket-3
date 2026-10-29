@@ -37,6 +37,15 @@ export function CreateFamilyServiceStep({
   onClear: () => void;
 }) {
   const [query, setQuery] = useState("");
+  // While the search is being typed in, the keyboard takes half the screen: the
+  // step bars, «Далее» and the bottom menu step aside so the services keep the
+  // room. They come back a moment after the field is left, so a tap on a tile
+  // that closes the keyboard lands on the tile before anything moves.
+  const [typing, setTyping] = useState(false);
+  const typingTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(typingTimer.current), []);
+  const isSearchInput = (target: EventTarget) =>
+    target instanceof HTMLInputElement && target.closest('[data-testid="create-service-search"]') !== null;
   const [page, setPage] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
   const tabsRef = useRef<CategoryTabsHandle | null>(null);
@@ -125,7 +134,21 @@ export function CreateFamilyServiceStep({
   );
 
   return (
-    <div className="create-step-body" data-create-step="service">
+    <div
+      className="create-step-body"
+      data-create-step="service"
+      data-search-typing={typing || undefined}
+      onFocusCapture={(event) => {
+        if (!isSearchInput(event.target)) return;
+        window.clearTimeout(typingTimer.current);
+        setTyping(true);
+      }}
+      onBlurCapture={(event) => {
+        if (!isSearchInput(event.target)) return;
+        window.clearTimeout(typingTimer.current);
+        typingTimer.current = window.setTimeout(() => setTyping(false), 250);
+      }}
+    >
       {singleCategory ? null : (
         <MarketSearchField
           ariaLabel="Найти сервис"

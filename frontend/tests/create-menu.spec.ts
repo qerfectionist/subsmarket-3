@@ -336,3 +336,20 @@ test("each step bar is named under it, the current one lit", async ({ page }) =>
   await expect(page.getByTestId("create-progress-terms")).toHaveAttribute("data-state", "current");
   expect(await color(1)).not.toBe(await color(2));
 });
+
+test("typing in the service search makes room: no step bars, button or menu", async ({ page }) => {
+  await openCreate(page);
+  await page.getByTestId("create-kind-subscription").click();
+  const footer = page.locator(".create-wizard-footer");
+  const dock = page.locator(".subs-dock--spotify");
+  await expect(footer).toBeVisible();
+  await page.getByTestId("create-service-search").focus();
+  await expect(footer).toBeHidden();
+  await expect(dock).toBeHidden();
+  await page.getByTestId("create-service-search").fill("spot");
+  await expect(page.getByTestId("create-service-option-spotify-family")).toBeVisible();
+  // Leaving the field brings them back.
+  await page.getByTestId("create-service-search").blur();
+  await expect(footer).toBeVisible();
+  await expect(dock).toBeVisible();
+});
