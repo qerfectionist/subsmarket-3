@@ -149,7 +149,7 @@ export function CreateFamilyScreen({
           ) : null}
 
           <div className="create-wizard-footer">
-            {/* Where the person is: three bars above the button. */}
+            {/* Where the person is: three bars above the button, each named under it. */}
             <div className="create-progress-wrap">
               <p className="visually-hidden">
                 Шаг {stepIndex + 1} из {CREATE_STEPS.length} · {CREATE_STEPS[stepIndex].title}
@@ -165,9 +165,8 @@ export function CreateFamilyScreen({
                       data-testid={`create-progress-${item.id}`}
                     >
                       <span className="create-progress-bar" />
-                      <span className="visually-hidden">
-                        {index + 1}. {item.title}
-                      </span>
+                      <span className="visually-hidden">{index + 1}. </span>
+                      <span className="create-progress-label">{item.title}</span>
                     </li>
                   );
                 })}

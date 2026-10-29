@@ -226,3 +226,37 @@
   .create-service-tile:not([aria-checked="true"]):active {
   opacity: 0.7;
 }
+
+/*
+ * The name of each step under its bar: the current one white, the ones done a
+ * softer white, the ones to come grey.
+ */
+.create-progress {
+  gap: 6px;
+}
+
+.create-progress-label {
+  display: block;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption, 13px);
+  font-weight: var(--app-weight-semibold);
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 200ms ease;
+}
+
+.create-progress li[data-state="done"] .create-progress-label {
+  color: color-mix(in srgb, var(--app-text) 75%, transparent);
+}
+
+.create-progress li[data-state="current"] .create-progress-label {
+  color: var(--app-text);
+}
+
+/* With names under the bars, the button needs more room above it. */
+.create-screen .create-wizard-footer .wizard-nav {
+  padding-top: 14px;
+}

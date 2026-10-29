@@ -323,3 +323,16 @@ test.describe("with a finger", () => {
     await expect(page.locator('[aria-checked="true"]')).toHaveCount(0);
   });
 });
+
+test("each step bar is named under it, the current one lit", async ({ page }) => {
+  await openCreate(page);
+  await page.getByTestId("create-kind-subscription").click();
+  const labels = page.locator(".create-progress-label");
+  await expect(labels).toHaveText(["Сервис", "Цена и места", "Выплата"]);
+  const color = (i: number) => labels.nth(i).evaluate((el) => getComputedStyle(el).color);
+  expect(await color(0)).not.toBe(await color(1));
+  await page.getByTestId("create-service-option-youtube-premium").click();
+  await page.getByTestId("create-family-next").click();
+  await expect(page.getByTestId("create-progress-terms")).toHaveAttribute("data-state", "current");
+  expect(await color(1)).not.toBe(await color(2));
+});

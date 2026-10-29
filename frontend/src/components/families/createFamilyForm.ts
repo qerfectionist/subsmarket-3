@@ -9,8 +9,8 @@ export type CreateStep = "service" | "terms" | "payout";
 
 export const CREATE_STEPS: { id: CreateStep; title: string }[] = [
   { id: "service", title: "Сервис" },
-  { id: "terms", title: "Условия" },
-  { id: "payout", title: "Выплаты" }
+  { id: "terms", title: "Цена и места" },
+  { id: "payout", title: "Выплата" }
 ];
 
 export interface FieldErrors {
