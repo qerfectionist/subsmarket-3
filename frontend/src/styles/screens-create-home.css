@@ -138,6 +138,11 @@
   flex-shrink: 0;
 }
 
+/* .app-shell leaves the browser's heading margins on h2; the market screen has none. */
+.app-shell .create-recent .sm-market-section-heading h2 {
+  margin: 0;
+}
+
 .app-shell .create-row {
   display: flex;
   flex-shrink: 0;
