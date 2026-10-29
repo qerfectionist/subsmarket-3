@@ -113,7 +113,12 @@
   text-align: left;
 }
 
-/* The three step bars sit under the action button, closing the bar. */
-.create-wizard-footer .create-progress-wrap {
-  margin-top: 4px;
+/* The three step bars sit just above the action button, grouped with it:
+   more room above them than between them and the button. */
+.create-screen .create-wizard-footer {
+  padding-top: 20px;
+}
+
+.create-screen .create-wizard-footer .wizard-nav {
+  padding-top: 4px;
 }

@@ -151,6 +151,30 @@ export function CreateFamilyScreen({
           ) : null}
 
           <div className="create-wizard-footer">
+            {/* Where the person is: three bars above the button. */}
+            <div className="create-progress-wrap">
+              <p className="visually-hidden">
+                Шаг {stepIndex + 1} из {CREATE_STEPS.length} · {CREATE_STEPS[stepIndex].title}
+              </p>
+              <ol className="create-progress" aria-label="Шаги">
+                {CREATE_STEPS.map((item, index) => {
+                  const state = index < stepIndex ? "done" : index === stepIndex ? "current" : "todo";
+                  return (
+                    <li
+                      key={item.id}
+                      data-state={state}
+                      aria-current={state === "current" ? "step" : undefined}
+                      data-testid={`create-progress-${item.id}`}
+                    >
+                      <span className="create-progress-bar" />
+                      <span className="visually-hidden">
+                        {index + 1}. {item.title}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
             {hint && step !== "service" ? (
               <p className="create-fix-hint" data-testid="create-fix-hint">
                 {hint}
@@ -196,30 +220,6 @@ export function CreateFamilyScreen({
                 После создания не поменять сервис и число мест.
               </small>
             ) : null}
-            {/* Where the person is: three bars under the button. */}
-            <div className="create-progress-wrap">
-              <p className="visually-hidden">
-                Шаг {stepIndex + 1} из {CREATE_STEPS.length} · {CREATE_STEPS[stepIndex].title}
-              </p>
-              <ol className="create-progress" aria-label="Шаги">
-                {CREATE_STEPS.map((item, index) => {
-                  const state = index < stepIndex ? "done" : index === stepIndex ? "current" : "todo";
-                  return (
-                    <li
-                      key={item.id}
-                      data-state={state}
-                      aria-current={state === "current" ? "step" : undefined}
-                      data-testid={`create-progress-${item.id}`}
-                    >
-                      <span className="create-progress-bar" />
-                      <span className="visually-hidden">
-                        {index + 1}. {item.title}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
           </div>
         </form>
       </div>
