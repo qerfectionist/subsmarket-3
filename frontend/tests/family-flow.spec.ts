@@ -242,8 +242,9 @@ test("subscription and tariff families stay in separate storefronts", async ({
   await fillCreateField(page, "create-full-speed-input", "250");
   await fillCreateField(page, "create-total-price-input", "12000");
   await fillCreateField(page, "create-max-members-input", "4");
-  await expect(page.getByTestId("create-live-card")).toContainText("Тариф «Семейный 4»");
-  await expect(page.getByTestId("create-live-card")).toContainText("250 ГБ на полной скорости");
+  // The last step sums the family up with the tariff's name.
+  await goToCreateStep(page, "payout");
+  await expect(page.getByTestId("create-terms-summary")).toContainText("«Семейный 4»");
   await submitCreateFamily(page);
 
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
@@ -333,8 +334,14 @@ test("create family picks a service from the logo grid and moves on", async ({ p
   await page.getByTestId("create-family-next").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
   await expect(page.getByTestId("create-progress-service")).toHaveAttribute("data-state", "done");
-  await expect(page.getByTestId("create-live-card")).toContainText(name);
-  await expect(page.getByTestId("create-live-card").locator(".service-logo")).toHaveCount(1);
+  // Step 2 opens with the picked service as a short row that leads back to step 1.
+  await expect(page.locator(".create-terms-service")).toContainText(name);
+  await expect(page.locator(".create-terms-service .service-logo")).toHaveCount(1);
+  await expect(page.getByTestId("create-family-back")).toHaveCount(0);
+  await page.getByTestId("create-edit-service").click();
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
+  await page.getByTestId("create-family-next").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
 
   // Search narrows the grid and says when nothing matches.
   await goToCreateStep(page, "service");

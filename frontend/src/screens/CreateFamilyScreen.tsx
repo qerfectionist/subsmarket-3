@@ -134,6 +134,7 @@ export function CreateFamilyScreen({
               errors={errors}
               service={service}
               showAllErrors={attempted.has("terms")}
+              onEditService={() => goTo("service")}
               onChangeForm={onChangeForm}
             />
           ) : null}
@@ -178,19 +179,8 @@ export function CreateFamilyScreen({
               </p>
             ) : null}
             {nativeMainButton ? null : (
-              <div className="wizard-nav" data-single={stepIndex === 0 || undefined}>
-                {/* Step 1 has one way on: the service is picked, «Далее». */}
-                {stepIndex > 0 ? (
-                  <AppButton
-                    key="back"
-                    type="button"
-                    variant="secondary"
-                    data-testid="create-family-back"
-                    onClick={goBack}
-                  >
-                    Назад
-                  </AppButton>
-                ) : null}
+              <div className="wizard-nav" data-single>
+                {/* One way on; going back is the arrow in the header. */}
                 {isLast ? (
                   <AppButton
                     key="submit"

@@ -1,0 +1,251 @@
+/*
+ * Step 2 «Цена и места», top to bottom in the order of the decision: the
+ * service as a short row, the full price as one large number, the places with
+ * what each member pays right under them, then the payment day.
+ */
+.create-terms {
+  display: grid;
+  gap: 16px;
+}
+
+/* The service: context, not the subject — a quiet row with a way back to step 1. */
+.create-terms-service {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: var(--app-surface);
+}
+
+.create-terms-service .service-logo {
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background: var(--app-secondary-bg, #2c2c2e) !important;
+}
+
+.create-terms-service strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: var(--app-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .create-terms-service button {
+  padding: 6px 4px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: var(--app-size-caption, 14px);
+}
+
+/* The price: the one large number on the screen. */
+.create-price-hero {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.create-price-hero-label {
+  color: var(--app-muted);
+  font-size: var(--app-size-caption, 14px);
+  font-weight: var(--app-weight-medium);
+}
+
+.create-price-hero-amount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  font-size: 52px;
+  font-weight: var(--app-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The :not()s match the specificity of the shared field rule, which this undoes. */
+.app-shell .create-price-hero-amount input:not([type="checkbox"]):not([type="radio"]) {
+  min-width: 1ch;
+  min-height: 0;
+  max-width: 9ch;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-text);
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: right;
+  caret-color: var(--app-text);
+  outline: none;
+}
+
+.create-price-hero-amount input::placeholder {
+  color: var(--app-muted);
+}
+
+.create-price-hero-amount > span {
+  color: var(--app-muted);
+  font-size: 0.7em;
+  font-weight: var(--app-weight-semibold);
+}
+
+.create-price-hero-error {
+  color: var(--app-danger, #ff453a);
+  font-size: var(--app-size-caption, 14px);
+}
+
+.create-price-hero[data-invalid] .create-price-hero-amount input {
+  color: var(--app-danger, #ff453a);
+}
+
+/* Settings cards: places, payment day. */
+.create-terms-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--app-surface);
+}
+
+.create-terms-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.create-terms-row-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.create-terms-row-copy strong {
+  font-weight: var(--app-weight-semibold);
+}
+
+.create-terms-row-copy span {
+  color: var(--app-muted);
+  font-size: var(--app-size-caption, 13px);
+}
+
+.create-terms-row-copy .create-terms-row-error {
+  color: var(--app-danger, #ff453a);
+}
+
+/* − 6 +: round buttons around the number. */
+.create-mini-stepper {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-shell .create-mini-stepper button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--app-secondary-bg, #2c2c2e);
+  box-shadow: none;
+  color: var(--app-text);
+}
+
+.app-shell .create-mini-stepper button:disabled {
+  color: var(--app-muted);
+  opacity: 0.5;
+}
+
+.app-shell .create-mini-stepper input:not([type="checkbox"]):not([type="radio"]) {
+  width: 34px;
+  min-height: 0;
+  border-radius: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-text);
+  font: inherit;
+  font-size: 18px;
+  font-weight: var(--app-weight-bold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.create-mini-stepper input::-webkit-inner-spin-button,
+.create-mini-stepper input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+/* The places: «Вы» lit, one quiet cell per member. */
+.create-seat-strip {
+  display: flex;
+  gap: 6px;
+}
+
+.create-seat-strip span {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--app-secondary-bg, #2c2c2e);
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: var(--app-weight-semibold);
+}
+
+.create-seat-strip span[data-owner] {
+  background: var(--app-text);
+  color: var(--app-bg, #0f0f10);
+}
+
+/* What each member pays: the result, right under the places it comes from. */
+.create-terms-share {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--app-text) 8%, transparent);
+}
+
+.create-terms-share span {
+  color: var(--app-muted);
+  font-size: var(--app-size-caption, 14px);
+}
+
+.create-terms-share strong {
+  font-size: 22px;
+  font-weight: var(--app-weight-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.create-terms-share small {
+  color: var(--app-muted);
+  font-size: 14px;
+  font-weight: var(--app-weight-medium);
+}
+
+.create-terms-note {
+  color: var(--app-muted);
+  font-size: var(--app-size-caption, 13px);
+}
