@@ -1,6 +1,6 @@
 import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { Button as AppButton } from "../components/ui";
-import { CREATE_TITLES, CreateShell } from "../components/CreateCategoryPicker";
+import { CreateShell } from "../components/CreateCategoryPicker";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
 import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
 import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
@@ -109,7 +109,6 @@ export function CreateFamilyScreen({
   return (
     <CreateShell
       title={STEP_QUESTIONS[step](familyType)}
-      kicker={CREATE_TITLES[familyType]}
       onBack={goBack}
       testId="create-family-screen"
     >
@@ -119,6 +118,7 @@ export function CreateFamilyScreen({
           className="create-step-form"
           data-testid="create-family-form"
           data-step={step}
+          data-family-type={familyType}
           onSubmit={handleFormSubmit}
         >
           {step === "service" ? (

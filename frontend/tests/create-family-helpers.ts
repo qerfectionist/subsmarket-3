@@ -42,14 +42,14 @@ export async function fillCreateField(page: Page, testId: string, value: string)
   await page.getByTestId(testId).fill(value);
 }
 
-const KIND_TITLES = { subscription: "Семейная подписка", tariff: "Семейный тариф" } as const;
 
 /** On «Создать»: opens the family form of the given kind from the menu, coming back to it if needed. */
 export async function openCreateKind(page: Page, kind: "subscription" | "tariff" = "subscription") {
   const home = page.getByTestId("create-home");
   const familyScreen = page.getByTestId("create-family-screen");
   if ((await familyScreen.count()) > 0) {
-    if ((await familyScreen.getByTestId("create-form-kicker").innerText()) === KIND_TITLES[kind]) return;
+    const familyType = kind === "tariff" ? "tariff" : "subscription";
+    if ((await form(page).getAttribute("data-family-type")) === familyType) return;
     await goToCreateStep(page, "service");
     await page.getByTestId("create-form-back").evaluate((element) => (element as HTMLElement).click());
   }

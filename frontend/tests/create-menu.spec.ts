@@ -64,7 +64,7 @@ test("«Создать» finds anything that can be created", async ({ page }) =
   await search.fill("spotify");
   await results.getByTestId("create-row-subscription-spotify-family").click();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
-  await expect(page.getByTestId("create-form-kicker")).toHaveText("Семейная подписка");
+  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-family-type", "subscription");
   await expect(page.getByTestId("create-family-screen").locator("h1")).toHaveText("Сколько стоит и сколько мест?");
   await page.getByTestId("create-form-back").click();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
