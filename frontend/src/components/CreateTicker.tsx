@@ -27,6 +27,7 @@ export function CreateTicker() {
     <span className="create-ticker" data-testid="create-ticker">
       <span className="sr-only">{ITEMS.map((item) => item.text).join(", ")}</span>
       <span className="create-ticker-pill" aria-hidden="true">
+        <span className="create-ticker-window">
         {ITEMS.map((item, position) => (
           <span
             key={item.kind}
@@ -39,6 +40,7 @@ export function CreateTicker() {
             {item.text}
           </span>
         ))}
+        </span>
       </span>
     </span>
   );

@@ -18,7 +18,18 @@
   border: 1px solid color-mix(in srgb, var(--app-text) 45%, transparent);
   border-radius: 999px;
   background: transparent;
+}
+
+/* The words dim into the top and bottom edges and come out of them, as on the feeds. */
+.create-ticker-window {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  width: 100%;
+  height: 100%;
   perspective: 120px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
 }
 
 /* Only the text takes the colour of the kind's icon. */
@@ -39,12 +50,12 @@
 
 /* Waiting below the outline, tilted away, until its turn. */
 .create-ticker-word[data-pos="next"] {
-  transform: translateY(70%) rotateX(-65deg);
+  transform: translateY(90%) rotateX(-65deg);
 }
 
 /* Gone upward, tilted away the other way. */
 .create-ticker-word[data-pos="previous"] {
-  transform: translateY(-70%) rotateX(65deg);
+  transform: translateY(-90%) rotateX(65deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
