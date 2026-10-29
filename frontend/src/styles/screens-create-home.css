@@ -257,6 +257,12 @@
   transition: opacity 200ms ease-out;
 }
 
+/* Once it stops, the fade goes, even though the list stays scrolled. */
+.my-feed-wrap.create-feed-wrap:has([data-scrolled="true"]):not(:has([data-scrolling="true"]))::before {
+  opacity: 0;
+  transition: opacity 550ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
 /* «Наверх»: a floating glass capsule that rises in once the end of the results
    is reached, centred between the last row and the bottom menu. */
 .create-feed-wrap .scroll-to-top-wrap.create-feed-to-top {

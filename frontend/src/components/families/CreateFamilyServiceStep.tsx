@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Input } from "../ui";
+import { useEffect, useRef, useState } from "react";
+import { MarketSearchField } from "../market/MarketSearchField";
 import { ServiceLogo } from "../branding";
 import { SystemSymbol } from "../SystemSymbol";
 import { serviceTitle } from "../../format";
@@ -32,6 +32,22 @@ export function CreateFamilyServiceStep({
 }) {
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState("all");
+  // The tiles scroll inside their own area; while they move, a fade shows under
+  // the chips, as on «Заявки» (data-scrolling drives it in CSS).
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const settleTimer = useRef<number | undefined>(undefined);
+  const markScrolling = () => {
+    const element = scrollRef.current;
+    if (!element) return;
+    element.setAttribute("data-scrolling", "true");
+    window.clearTimeout(settleTimer.current);
+    settleTimer.current = window.setTimeout(() => element.removeAttribute("data-scrolling"), 160);
+  };
+  useEffect(() => () => window.clearTimeout(settleTimer.current), []);
+  // A new category or query starts the tiles from the top.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [chip, query]);
   const countFor = (categories: string[]) =>
     categories.length === 0
       ? services.length
@@ -82,20 +98,14 @@ export function CreateFamilyServiceStep({
   return (
     <div className="create-step-body" data-create-step="service">
       {singleCategory ? null : (
-        <Input
-          type="search"
-          aria-label="Найти сервис"
+        <MarketSearchField
+          ariaLabel="Найти сервис"
+          testId="create-service-search"
           placeholder="Найти сервис"
-          data-testid="create-service-search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={setQuery}
           // Enter in the search box only closes the keyboard, it does not move on.
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              event.currentTarget.blur();
-            }
-          }}
+          onEnter={(input) => input.blur()}
         />
       )}
       {searching || singleCategory ? null : (
@@ -115,54 +125,73 @@ export function CreateFamilyServiceStep({
           ))}
         </div>
       )}
-      <div className="create-service-sections" role="radiogroup" aria-label="Сервис">
-        {sections.map((section) =>
-          section.services.length === 0 ? null : (
-            <section
-              key={section.id}
-              className="create-service-section"
-              data-testid={`create-service-section-${section.id}`}
-              aria-label={section.title ?? undefined}
-            >
-              {section.title ? <h3 className="create-service-section-title">{section.title}</h3> : null}
-              <div className="create-service-grid">
-                {section.services.map((service) => {
-                  const selected = service.id === selectedId;
-                  return (
-                    <button
-                      key={service.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      data-testid={`create-service-option-${service.slug}`}
-                      className="create-service-tile"
-                      onClick={() => onPick(service)}
-                    >
-                      <ServiceLogo
-                        serviceSlug={service.slug}
-                        serviceName={service.name}
-                        familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
-                        size={40}
-                      />
-                      <strong>{tileName(service)}</strong>
-                      {selected ? (
-                        <span className="create-service-tile-check">
-                          <SystemSymbol name="checkmark" size={14} />
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
+      <div className="my-feed-wrap create-feed-wrap create-service-feed">
+        <div
+          ref={scrollRef}
+          className="create-service-sections"
+          role="radiogroup"
+          aria-label="Сервис"
+          onScroll={markScrolling}
+        >
+          {sections.map((section) =>
+            section.services.length === 0 ? null : (
+              <section
+                key={section.id}
+                className="create-service-section"
+                data-testid={`create-service-section-${section.id}`}
+                aria-label={section.title ?? undefined}
+              >
+                {section.title ? <h3 className="create-service-section-title">{section.title}</h3> : null}
+                <div className="create-service-grid">
+                  {section.services.map((service) => {
+                    const selected = service.id === selectedId;
+                    return (
+                      <button
+                        key={service.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        data-testid={`create-service-option-${service.slug}`}
+                        className="create-service-tile"
+                        onClick={() => onPick(service)}
+                      >
+                        <ServiceLogo
+                          serviceSlug={service.slug}
+                          serviceName={service.name}
+                          familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
+                          size={40}
+                        />
+                        <strong>{tileName(service)}</strong>
+                        {selected ? (
+                          <span className="create-service-tile-check">
+                            <SystemSymbol name="checkmark" size={14} />
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )
+          )}
+          {nothingFound ? (
+            <div className="sm-market-empty create-results-empty" data-testid="create-service-empty">
+              <SystemSymbol name="magnifyingglass" size={28} />
+              <h3>Ничего не найдено</h3>
+              <p>По запросу «{query.trim()}» сервиса нет. Проверьте название.</p>
+              <div className="sm-market-empty-actions">
+                <button
+                  type="button"
+                  className="sm-market-button sm-market-button-secondary"
+                  onClick={() => setQuery("")}
+                >
+                  Сбросить поиск
+                </button>
               </div>
-            </section>
-          )
-        )}
+            </div>
+          ) : null}
+        </div>
       </div>
-      {nothingFound ? (
-        <p className="create-service-empty" data-testid="create-service-empty">
-          По запросу «{query.trim()}» ничего не нашлось. Проверьте название.
-        </p>
-      ) : null}
     </div>
   );
 }

@@ -157,8 +157,8 @@
 
 .create-service-tile-check {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 6px;
+  right: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -589,7 +589,8 @@
  */
 .create-screen .create-wizard-footer,
 .create-screen .listing-form-footer {
-  --create-dock-top: calc(var(--app-nav-height) + 16px + var(--app-inset-bottom));
+  /* The menu bar: its 24px fade on top, then the items (nav height plus 16px). */
+  --create-dock-top: calc(var(--app-nav-height) + 40px + var(--app-inset-bottom));
   position: sticky;
   /* Sticky offsets count from inside the shell's bottom padding (the menu clearance). */
   bottom: calc(var(--create-dock-top) - var(--app-nav-clearance));

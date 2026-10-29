@@ -1,0 +1,80 @@
+/*
+ * Step 1 of a family («Сервис») is one fixed screen like the «Создать» menu: the
+ * header, progress, search and chips stay put, the service tiles scroll inside
+ * their own area with the «Заявки» fade, and «Далее» sits on the bottom menu.
+ * Steps 2 and 3 keep the scrolling form, which the keyboard needs.
+ */
+.app-shell:has(> .create-form-screen [data-step="service"]) {
+  overflow-y: hidden;
+  /* Ends the screen where the menu starts, so «Далее» sits right on it. */
+  padding-bottom: calc(var(--app-nav-height) + 40px + var(--app-inset-bottom));
+}
+
+.create-form-screen:has([data-step="service"]) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.create-form-screen:has([data-step="service"]) > .gb-header {
+  flex-shrink: 0;
+}
+
+.create-form-screen:has([data-step="service"]) > .screen-body-inset {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.create-form-screen .create-progress-wrap {
+  flex-shrink: 0;
+}
+
+.create-step-form[data-step="service"] {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+}
+
+.create-step-form[data-step="service"] > .create-step-body {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  /* Room for the search field's focus ring on the sides. */
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.create-step-form[data-step="service"] > .create-step-body > :not(.create-service-feed) {
+  flex-shrink: 0;
+}
+
+.create-step-form[data-step="service"] .create-service-sections {
+  flex: 1 1 0;
+  min-height: 0;
+  align-content: start;
+  padding: 0 0 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.create-step-form[data-step="service"] .create-service-sections::-webkit-scrollbar {
+  display: none;
+}
+
+/* The bar is the last row of the fixed screen, so it no longer needs to stick. */
+.create-screen .create-step-form[data-step="service"] .create-wizard-footer {
+  position: static;
+  flex-shrink: 0;
+}
+
+.create-screen .create-step-form[data-step="service"] .create-wizard-footer::after {
+  content: none;
+}
