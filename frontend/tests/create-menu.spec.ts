@@ -2,59 +2,65 @@ import { expect, test } from "@playwright/test";
 
 const appUrl = process.env.TMA_APP_URL ?? "http://127.0.0.1:5174/";
 const apiUrl = process.env.TMA_API_URL ?? "http://127.0.0.1:8001";
+const ownerHeaders = {
+  "X-Dev-Telegram-User-Id": "200001",
+  "X-Dev-Telegram-Username": "demo_owner",
+  "X-Dev-Telegram-First-Name": "Demo Owner"
+};
 
 test.use({ isMobile: true, viewport: { width: 390, height: 844 } });
 
 test.beforeEach(async ({ page }) => {
   await page.request.post(`${apiUrl}/api/dev/reset-demo-data`);
   await page.request.post(`${apiUrl}/api/catalog/import-family-services`);
-  await page.addInitScript(() => window.localStorage.clear());
+  await page.addInitScript(() => {
+    window.localStorage.clear();
+    window.localStorage.setItem("subsmarket.devTelegramUser", "200001");
+  });
 });
 
-test("«Создать» opens on a menu of what can be created and popular services", async ({ page }) => {
+async function openCreate(page: import("@playwright/test").Page) {
   await page.goto(appUrl);
   await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
+  await expect(page.getByTestId("create-home")).toBeVisible();
+}
+
+test("«Создать» finds anything that can be created", async ({ page }) => {
+  await openCreate(page);
   const home = page.getByTestId("create-home");
-  await expect(home).toBeVisible();
   await expect(page.getByTestId("create-kind-subscription")).toContainText("Семейная подписка");
   await expect(page.getByTestId("create-kind-subscription")).toContainText("Яндекс Плюс, Spotify");
   await expect(page.getByTestId("create-kind-tariff")).toContainText("Tele2");
 
-  // «Популярное» mixes all four categories and scrolls inside itself; the screen stays put.
-  const list = page.getByTestId("create-popular-list");
-  await expect(page.getByTestId("create-popular-tariff-tele2-family-tariff")).toBeVisible();
-  await expect(list.getByTestId("create-popular-gigabytes-tele2")).toHaveCount(1);
-  await expect(list.getByTestId("create-popular-accounts-chatgpt")).toHaveCount(1);
-  await list.evaluate((element) => element.scrollBy(0, 400));
+  // One search across all four kinds; the menu steps aside while it is in use.
+  const search = page.getByTestId("create-search");
+  await search.fill("spotify");
+  const results = page.getByTestId("create-search-results");
+  await expect(results.getByTestId("create-row-subscription-spotify-family")).toContainText("Семейная подписка");
+  await expect(results.getByTestId("create-row-accounts-spotify")).toContainText("Аккаунт");
+  await expect(page.getByTestId("create-kind-subscription")).toHaveCount(0);
   expect(await page.evaluate(() => document.querySelector(".app-shell")!.scrollTop)).toBe(0);
-  await expect(page.getByTestId("create-kind-subscription")).toBeInViewport();
 
-  // The chip narrows the list to one category.
-  await page.getByTestId("create-popular-filter").click();
-  await page.getByTestId("create-popular-filter").click();
-  await expect(page.getByTestId("create-popular-filter")).toContainText("Тарифы");
-  await expect(list.getByTestId("create-popular-subscription-youtube-premium")).toHaveCount(0);
-  await page.getByTestId("create-popular-filter").click();
-  await page.getByTestId("create-popular-filter").click();
-  await page.getByTestId("create-popular-filter").click();
-  await expect(page.getByTestId("create-popular-filter")).toContainText("Все");
-
-  // A popular GB operator opens the GB form with it picked.
-  await list.getByTestId("create-popular-gigabytes-beeline").evaluate((element) => (element as HTMLElement).click());
+  await search.fill("beeline");
+  await expect(results.getByTestId("create-row-tariff-beeline-family-tariff")).toBeVisible();
+  await results.getByTestId("create-row-gigabytes-beeline").click();
   await expect(page.getByTestId("gb-operator-beeline")).toHaveAttribute("aria-checked", "true");
   await page.getByTestId("create-form-back").click();
+  await expect(page.getByTestId("create-kind-subscription")).toBeVisible();
 
-  // A popular account opens the account form with its service picked.
-  await list.getByTestId("create-popular-accounts-telegram-premium").evaluate((element) => (element as HTMLElement).click());
+  await search.fill("telegram");
+  await results.getByTestId("create-row-accounts-telegram-premium").click();
   await expect(page.getByTestId("account-service-telegram-premium")).toHaveAttribute("aria-checked", "true");
   await page.getByTestId("create-form-back").click();
 
-  // A popular service opens its family straight on «Условия».
-  await list.getByTestId("create-popular-subscription-spotify-family").evaluate((element) => (element as HTMLElement).click());
+  await search.fill("ззззз");
+  await expect(results).toContainText("Ничего не нашлось");
+
+  // A family service opens straight on «Условия»; back goes to «Сервис», then to the menu.
+  await search.fill("spotify");
+  await results.getByTestId("create-row-subscription-spotify-family").click();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
   await expect(page.getByTestId("create-family-screen").locator("h1")).toHaveText("Семейная подписка");
-
-  // Back goes to «Сервис» with Spotify picked, then to the menu.
   await page.getByTestId("create-form-back").click();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
   await expect(page.getByTestId("create-service-option-spotify-family")).toHaveAttribute("aria-checked", "true");
@@ -68,33 +74,21 @@ test("«Создать» opens on a menu of what can be created and popular serv
   await expect(home).toBeVisible();
 });
 
-test("«Наверх» in «Популярное» shows up only at the end of the list", async ({ page }) => {
-  await page.goto(appUrl);
-  await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
-  const list = page.getByTestId("create-popular-list");
-  const toTop = page.locator(".create-popular-to-top");
-  await expect(list.getByTestId("create-popular-accounts-canva")).toHaveCount(1);
-  await expect(toTop).toHaveAttribute("data-visible", "false");
-
-  // Halfway down: still hidden.
-  await list.evaluate((element) => element.scrollTo({ top: 300 }));
-  await page.waitForTimeout(150);
-  await expect(toTop).toHaveAttribute("data-visible", "false");
-
-  // Three rows left: still hidden.
-  await list.evaluate((element) => {
-    const rows = element.querySelectorAll<HTMLElement>(".create-popular-row");
-    element.scrollTo({ top: rows[rows.length - 3].offsetTop - rows[0].offsetTop });
+test("«Недавние» repeats what was created before with the same terms", async ({ page }) => {
+  const created = await page.request.post(`${apiUrl}/api/marketplace/listings`, {
+    headers: { ...ownerHeaders, "Idempotency-Key": `create-menu-${Date.now()}` },
+    data: { operator_slug: "beeline", price_per_gb_kzt: 230, max_gb: 7, description: null }
   });
-  await page.waitForTimeout(800);
-  await expect(toTop).toHaveAttribute("data-visible", "false");
+  expect(created.ok(), await created.text()).toBeTruthy();
 
-  // At the end, two rows left: it rises in, and takes the list back to the top.
-  await list.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
-  await expect(toTop).toHaveAttribute("data-visible", "true");
-  await page.waitForTimeout(600);
-  await page.screenshot({ path: "test-results/create-popular-to-top.png" });
-  await page.getByTestId("create-popular-scroll-to-top").click();
-  await expect.poll(() => list.evaluate((element) => element.scrollTop)).toBe(0);
-  await expect(toTop).toHaveAttribute("data-visible", "false");
+  await openCreate(page);
+  const recent = page.getByTestId("create-recent");
+  await expect(recent).toBeVisible();
+  const row = recent.getByTestId("create-row-gigabytes-beeline");
+  await expect(row).toContainText("230 ₸ за ГБ");
+  await page.screenshot({ path: "test-results/create-recent.png" });
+
+  await row.click();
+  await expect(page.getByTestId("gb-operator-beeline")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("gb-price-input")).toHaveValue("230");
 });

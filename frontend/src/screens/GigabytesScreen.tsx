@@ -58,7 +58,7 @@ export function GigabytesScreen({
    * Set when the form is opened from «Создать»: its own title and a back arrow to the menu,
    * and after publishing the person is taken to the new listing in «Мои».
    */
-  embedded?: { onPublished: () => void; operatorSlug?: string | null };
+  embedded?: { onPublished: () => void; operatorSlug?: string | null; repeat?: MarketplaceListing | null };
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -99,9 +99,22 @@ export function GigabytesScreen({
   useEffect(() => {
     if (presetApplied || !presetOperator || operators.length === 0) return;
     const picked = operators.find((item) => item.slug === presetOperator);
-    if (picked) setForm({ ...emptyForm, operator_slug: picked.slug, max_gb: defaultMaxGb(picked) });
+    // From «Недавние»: the same price, limit and text as last time.
+    const repeat = embedded?.repeat;
+    if (picked) {
+      setForm(
+        repeat
+          ? {
+              operator_slug: picked.slug,
+              price_per_gb_kzt: repeat.price_per_gb_kzt,
+              max_gb: repeat.max_gb ?? defaultMaxGb(picked),
+              description: repeat.description ?? null
+            }
+          : { ...emptyForm, operator_slug: picked.slug, max_gb: defaultMaxGb(picked) }
+      );
+    }
     setPresetApplied(true);
-  }, [presetApplied, presetOperator, operators]);
+  }, [embedded?.repeat, presetApplied, presetOperator, operators]);
   const listings = listingsQuery.data ?? [];
   const myListings = myListingsQuery.data ?? [];
   const selectedListing = listingQuery.data ?? null;

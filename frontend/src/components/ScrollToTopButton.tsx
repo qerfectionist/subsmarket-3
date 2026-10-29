@@ -1,4 +1,4 @@
-import type { CSSProperties, MouseEvent, RefObject } from "react";
+import type { MouseEvent, RefObject } from "react";
 import { triggerTelegramImpact } from "../telegram";
 
 export interface ScrollToTopButtonProps {
@@ -7,9 +7,6 @@ export interface ScrollToTopButtonProps {
   label?: string;
   testId?: string;
   className?: string;
-  /** Kept in the DOM but faded out and out of the tab order, so it can animate in. */
-  hidden?: boolean;
-  style?: CSSProperties;
 }
 
 export function ScrollToTopButton({
@@ -17,9 +14,7 @@ export function ScrollToTopButton({
   containerRef,
   label = "Наверх",
   testId = "scroll-to-top-btn",
-  className = "",
-  hidden,
-  style
+  className = ""
 }: ScrollToTopButtonProps) {
   const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
     triggerTelegramImpact("light");
@@ -62,14 +57,8 @@ export function ScrollToTopButton({
   };
 
   return (
-    <div
-      className={`scroll-to-top-wrap ${className}`.trim()}
-      style={style}
-      data-visible={hidden === undefined ? undefined : String(!hidden)}
-      aria-hidden={hidden ? true : undefined}
-    >
+    <div className={`scroll-to-top-wrap ${className}`.trim()}>
       <button
-        tabIndex={hidden ? -1 : undefined}
         type="button"
         className="scroll-to-top-btn actions-scroll-to-top-btn"
         data-testid={testId}

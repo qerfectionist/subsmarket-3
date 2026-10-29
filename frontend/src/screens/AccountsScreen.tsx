@@ -61,7 +61,7 @@ export function AccountsScreen({
    * Set when the form is opened from «Создать»: its own title and a back arrow to the menu,
    * and after publishing the person is taken to the new listing in «Мои».
    */
-  embedded?: { onPublished: () => void; serviceSlug?: string | null };
+  embedded?: { onPublished: () => void; serviceSlug?: string | null; repeat?: AccountListing | null };
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -101,9 +101,24 @@ export function AccountsScreen({
   useEffect(() => {
     if (presetApplied || !presetSlug || services.length === 0) return;
     const service = services.find((item) => item.slug === presetSlug);
-    if (service) setForm(selectionForService(EMPTY_FORM, service));
+    if (service) {
+      const picked = selectionForService(EMPTY_FORM, service);
+      // From «Недавние»: the same plan, period, delivery and price as last time.
+      const repeat = embedded?.repeat;
+      setForm(
+        repeat
+          ? {
+              ...picked,
+              plan_code: repeat.plan_code ?? picked.plan_code,
+              period_months: repeat.period_months ?? picked.period_months,
+              delivery: repeat.delivery ?? picked.delivery,
+              price_kzt: repeat.price_kzt
+            }
+          : picked
+      );
+    }
     setPresetApplied(true);
-  }, [presetApplied, presetSlug, services]);
+  }, [embedded?.repeat, presetApplied, presetSlug, services]);
 
   const activeService = useMemo(
     () => services.find((item) => item.slug === form.service_slug),

@@ -5,16 +5,13 @@ interface UseFeedSnapOptions {
   itemCount?: number;
   tailCardTarget?: "second" | "first";
   enableScrollSnap?: boolean;
-  /** What counts as a card to snap to; market and «Мои» cards by default. */
-  cardSelector?: string;
 }
 
 export function useFeedSnap({
   enabled = true,
   itemCount = 0,
   tailCardTarget = "second",
-  enableScrollSnap = true,
-  cardSelector = ".sm-listing"
+  enableScrollSnap = true
 }: UseFeedSnapOptions = {}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const isDraggingRef = useRef(false);
@@ -75,7 +72,7 @@ export function useFeedSnap({
     updateScrollAttribute();
     const container = containerRef.current;
     if (!container || !enabled) return;
-    const cards = container.querySelectorAll<HTMLElement>(cardSelector);
+    const cards = container.querySelectorAll<HTMLElement>(".sm-listing");
     if (cards.length === 0) {
       container.style.paddingBottom = "0px";
       return;
@@ -104,7 +101,7 @@ export function useFeedSnap({
     const diff = container.clientHeight - tailHeight;
     const targetPadding = Math.max(76, diff);
     container.style.paddingBottom = `${Math.round(targetPadding)}px`;
-  }, [cardSelector, enabled, tailCardTarget, updateScrollAttribute]);
+  }, [enabled, tailCardTarget, updateScrollAttribute]);
 
   const snapToNearestCard = useCallback(() => {
     if (!enableScrollSnap) return;
@@ -125,7 +122,7 @@ export function useFeedSnap({
     }
 
     const containerRect = container.getBoundingClientRect();
-    const cards = container.querySelectorAll<HTMLElement>(cardSelector);
+    const cards = container.querySelectorAll<HTMLElement>(".sm-listing");
     if (!cards.length) return;
 
     let closestTargetScrollTop = currentScrollTop;
@@ -149,7 +146,7 @@ export function useFeedSnap({
         container.scrollTo({ top: target, behavior: "smooth" });
       }
     }
-  }, [cardSelector, enabled, enableScrollSnap, updatePadding]);
+  }, [enabled, enableScrollSnap, updatePadding]);
 
   useEffect(() => {
     if (!enabled) return;

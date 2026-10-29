@@ -37,7 +37,8 @@ import { GigabytesScreen } from "./screens/GigabytesScreen";
 import { MyFamiliesScreen } from "./screens/MyFamiliesScreen";
 import { SearchScreen } from "./screens/SearchScreen";
 import { MasterFamilyCard } from "./components/cards-showcase/MasterFamilyCard";
-import type { FamilyCreate, FamilyService, FamilyType } from "./types";
+import type { AccountListing, Family, FamilyCreate, FamilyService, FamilyType } from "./types";
+import type { MarketplaceListing } from "./types";
 import {
   setTelegramBackButton,
   setTelegramClosingConfirmation,
@@ -126,6 +127,8 @@ export function App() {
   const [createEntry, setCreateEntry] = useState(0);
   const [createFromMenu, setCreateFromMenu] = useState(false);
   const [createPreset, setCreatePreset] = useState<string | null>(null);
+  // A listing from «Недавние»: its form opens filled with the same terms.
+  const [createRepeat, setCreateRepeat] = useState<AccountListing | MarketplaceListing | null>(null);
   const startParamHandled = useRef(false);
 
   const [isDevCardsModalOpen, setIsDevCardsModalOpen] = useState(false);
@@ -489,6 +492,7 @@ export function App() {
   /** A row on the «Создать» menu: the form opens on the same tab, with a back arrow to the menu. */
   function switchCreateCategory(category: CreateCategory) {
     setCreatePreset(null);
+    setCreateRepeat(null);
     if (category === "accounts" || category === "gigabytes") {
       setCreateScope(category);
     } else {
@@ -501,7 +505,7 @@ export function App() {
     setTab("create");
   }
 
-  /** A popular service on the menu opens its family on «Условия». */
+  /** A service found on the menu opens its family on «Условия». */
   function createFromPopular(next: FamilyService) {
     pickCreateService(next);
     setCreateScope("families");
@@ -510,12 +514,33 @@ export function App() {
     setCreateFromMenu(true);
   }
 
-  /** A popular account or operator on the menu opens its form with it picked. */
-  function createListingFromPopular(scope: "accounts" | "gigabytes", slug: string) {
+  /** An account or operator found on the menu opens its form with it picked. */
+  function createListingFromPopular(
+    scope: "accounts" | "gigabytes",
+    slug: string,
+    repeat: AccountListing | MarketplaceListing | null = null
+  ) {
     setCreatePreset(slug);
+    setCreateRepeat(repeat);
     setCreateScope(scope);
     setCreateEntry((current) => current + 1);
     setCreateFromMenu(true);
+  }
+
+  /** A family from «Недавние» opens on «Условия» with the same seats, price and texts. */
+  function repeatFamily(family: Family) {
+    const next = services.find((item) => item.id === family.service_id);
+    if (!next) return;
+    createFromPopular(next);
+    setCreateForm((current) => ({
+      ...current,
+      max_members: Math.min(family.max_members, next.max_members),
+      total_price_kzt: family.total_price_kzt,
+      plan_name: family.plan_name,
+      full_speed_gb: family.full_speed_gb ?? null,
+      description: family.description,
+      owner_rules: family.owner_rules
+    }));
   }
 
   /** Back from a form: to the menu when it was opened there, else where the person came from. */
@@ -659,10 +684,14 @@ export function App() {
         <AsyncContent query={servicesQuery}>
           <CreateHome
             services={services}
+            myFamilies={myFamilies}
             onOpen={switchCreateCategory}
             onPickService={createFromPopular}
             onPickAccount={(slug) => createListingFromPopular("accounts", slug)}
             onPickOperator={(slug) => createListingFromPopular("gigabytes", slug)}
+            onRepeatFamily={repeatFamily}
+            onRepeatAccount={(listing) => createListingFromPopular("accounts", listing.service.slug, listing)}
+            onRepeatGigabytes={(listing) => createListingFromPopular("gigabytes", listing.operator.slug, listing)}
           />
         </AsyncContent>
       )}
@@ -690,7 +719,11 @@ export function App() {
           key={`create-accounts-${createEntry}`}
           initialMode="create"
           onBack={leaveCreateForm}
-          embedded={{ onPublished: () => openPublishedListing("accounts"), serviceSlug: createPreset }}
+          embedded={{
+            onPublished: () => openPublishedListing("accounts"),
+            serviceSlug: createPreset,
+            repeat: createRepeat && "service" in createRepeat ? createRepeat : null
+          }}
         />
       )}
 
@@ -699,7 +732,11 @@ export function App() {
           key={`create-gigabytes-${createEntry}`}
           initialMode="create"
           onBack={leaveCreateForm}
-          embedded={{ onPublished: () => openPublishedListing("gigabytes"), operatorSlug: createPreset }}
+          embedded={{
+            onPublished: () => openPublishedListing("gigabytes"),
+            operatorSlug: createPreset,
+            repeat: createRepeat && "operator" in createRepeat ? createRepeat : null
+          }}
         />
       )}
 
