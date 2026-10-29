@@ -304,11 +304,11 @@ test("navigation and creation share tokens in both themes", async ({ page }, inf
     await page.locator(".subs-dock-create").getByRole("button", { name: "Создать", exact: true }).click();
     await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
     await expect(page.getByTestId("create-family-next")).toBeVisible();
-    await expect(page.getByTestId("create-kind-subscription")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("create-kind-subscription")).toHaveAttribute("aria-pressed", "true");
     await page.screenshot({ path: info.outputPath("create-family-" + theme + ".png") });
     await page.getByTestId("create-kind-accounts").click();
     await expect(page.getByTestId("account-plan-row")).toBeVisible();
-    await expect(page.getByTestId("create-kind-accounts")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("create-kind-accounts")).toHaveAttribute("aria-pressed", "true");
     await page.getByTestId("account-service-search").fill("чат");
     await assertNoOverflow(page);
     await page.screenshot({ path: info.outputPath("create-account-" + theme + ".png") });

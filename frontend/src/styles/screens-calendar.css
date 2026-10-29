@@ -190,8 +190,8 @@
   .my-family-filter-row { flex-wrap: wrap; row-gap: 8px; }
   .my-family-section-heading { flex: 1 0 100%; }
 }
-:is(.my-screen-filters, .actions-screen-filters) .product-scope-switch { width: 100%; }
-:is(.my-screen, .actions-screen) .product-scope-switch {
+:is(.my-screen-filters, .actions-screen-filters, .create-screen-filters) .product-scope-switch { width: 100%; }
+:is(.my-screen, .actions-screen, .create-screen) .product-scope-switch {
   --scope-position: 0;
   position: relative;
   overflow: hidden;
@@ -213,7 +213,10 @@
 .actions-screen .product-scope-switch {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-:is(.my-screen, .actions-screen) .product-scope-switch button {
+.create-screen .product-scope-switch {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+:is(.my-screen, .actions-screen, .create-screen) .product-scope-switch button {
   position: relative;
   z-index: 1;
   display: flex;
@@ -237,8 +240,8 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-:is(.my-screen, .actions-screen) .product-scope-switch button.ui-button-primary,
-:is(.my-screen, .actions-screen) .product-scope-switch button[aria-pressed="true"] {
+:is(.my-screen, .actions-screen, .create-screen) .product-scope-switch button.ui-button-primary,
+:is(.my-screen, .actions-screen, .create-screen) .product-scope-switch button[aria-pressed="true"] {
   color: var(--app-text) !important;
 }
 .my-screen .product-scope-switch::before {
@@ -256,6 +259,19 @@
   transition: none;
   pointer-events: none;
 }
+.create-screen .product-scope-switch::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: var(--app-segment-padding) auto var(--app-segment-padding) var(--app-segment-padding);
+  width: calc((100% - 2 * var(--app-segment-padding) - 3 * var(--app-segment-gap)) / 4);
+  border-radius: var(--app-radius-pill);
+  background: var(--app-nav-active);
+  box-shadow: var(--app-nav-active-shadow);
+  transform: translateX(calc(var(--scope-position, 0) * (100% + var(--app-segment-gap))));
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
 .actions-screen .product-scope-switch::before {
   content: "";
   position: absolute;
@@ -269,11 +285,11 @@
   transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
-:is(.my-screen, .actions-screen) .product-scope-switch[data-scope-dragging="true"]::before {
+:is(.my-screen, .actions-screen, .create-screen) .product-scope-switch[data-scope-dragging="true"]::before {
   transition: none;
 }
-:is(.my-screen, .actions-screen) .product-scope-switch button { position: relative; z-index: 1; }
-:is(.my-screen, .actions-screen) .product-scope-switch button.ui-button-tertiary {
+:is(.my-screen, .actions-screen, .create-screen) .product-scope-switch button { position: relative; z-index: 1; }
+:is(.my-screen, .actions-screen, .create-screen) .product-scope-switch button.ui-button-tertiary {
   border: 0;
   background: transparent;
   color: var(--app-muted);

@@ -1,7 +1,6 @@
 import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { Button as AppButton } from "../components/ui";
-import { Panel } from "../components/layout";
-import { CreateCategoryPicker } from "../components/CreateCategoryPicker";
+import { CreateShell, type CreateCategory } from "../components/CreateCategoryPicker";
 import { SystemSymbol } from "../components/SystemSymbol";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
 import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
@@ -25,9 +24,7 @@ export function CreateFamilyScreen({
   createForm,
   busy,
   onPickService,
-  onChangeFamilyType,
-  onCreateAccounts,
-  onCreateGigabytes,
+  onChangeKind,
   onBack,
   onChangeForm,
   onSubmit
@@ -38,9 +35,7 @@ export function CreateFamilyScreen({
   createForm: FamilyCreate;
   busy: string | null;
   onPickService: (service: FamilyService) => void;
-  onChangeFamilyType: (type: FamilyType) => void;
-  onCreateAccounts: () => void;
-  onCreateGigabytes: () => void;
+  onChangeKind: (kind: CreateCategory) => void;
   onBack: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
   onSubmit: (event: FormEvent) => void;
@@ -105,18 +100,15 @@ export function CreateFamilyScreen({
   });
 
   return (
-    <Panel title="Создать семью">
+    <CreateShell
+      kind={familyType}
+      onChangeKind={onChangeKind}
+      // Steps 2 and 3 belong to the family already chosen: no switch, a precise title.
+      title={step === "service" ? "Создать" : "Создать семью"}
+      showSwitch={step === "service"}
+      testId="create-family-screen"
+    >
       <div className="screen-body-inset">
-        {step === "service" ? (
-          <CreateCategoryPicker
-            value={familyType}
-            onChange={(value) => {
-              if (value === "accounts") onCreateAccounts();
-              else if (value === "gigabytes") onCreateGigabytes();
-              else onChangeFamilyType(value);
-            }}
-          />
-        ) : null}
 
         <ol className="create-progress" aria-label="Шаги">
           {CREATE_STEPS.map((item, index) => {
@@ -220,6 +212,6 @@ export function CreateFamilyScreen({
           </div>
         </form>
       </div>
-    </Panel>
+    </CreateShell>
   );
 }

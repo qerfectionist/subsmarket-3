@@ -119,6 +119,7 @@ export function App() {
   const [devUser, setDevUser] = useState<DevTelegramUser | null>(getActiveDevTelegramUser());
   const [createForm, setCreateForm] = useState<FamilyCreate>(emptyCreateForm);
   const [myProductScope, setMyProductScope] = useState<"families" | "accounts" | "gigabytes">("families");
+  const [createScope, setCreateScope] = useState<"families" | "accounts" | "gigabytes">("families");
   const startParamHandled = useRef(false);
 
   const [isDevCardsModalOpen, setIsDevCardsModalOpen] = useState(false);
@@ -479,22 +480,21 @@ export function App() {
     );
   }
 
-  /** The category picker on «Создать»: families stay here, accounts and GB open their forms. */
+  /** The slider on «Создать»: every category's form opens right here, under the same header. */
   function switchCreateCategory(category: CreateCategory) {
-    if (category === "accounts") {
-      setAccountEntryId(null);
-      setAccountsBackTab("create");
-      setAccountsEntryMode("create");
-      setTab("accounts");
-    } else if (category === "gigabytes") {
-      setGigabytesEntryId(null);
-      setGigabytesBackTab("create");
-      setGigabytesEntryMode("create");
-      setTab("gigabytes");
+    if (category === "accounts" || category === "gigabytes") {
+      setCreateScope(category);
     } else {
+      setCreateScope("families");
       changeFamilyType(category);
-      setTab("create");
     }
+    setTab("create");
+  }
+
+  /** After an account or GB listing is published from «Создать»: show it in «Мои». */
+  function openPublishedListing(scope: "accounts" | "gigabytes") {
+    setMyProductScope(scope);
+    setTab("mine");
   }
 
   const service = selectedService();
@@ -503,8 +503,6 @@ export function App() {
     tab === "mine" ? "mine" :
     tab === "requests" ? "requests" :
     tab === "create" || tab === "created" ? "create" :
-    (tab === "accounts" && accountsBackTab === "create") ||
-    (tab === "gigabytes" && gigabytesBackTab === "create") ? "create" :
     "home";
   const shellTitle =
     tab === "cards-showcase" ? "Варианты карточек" :
@@ -610,6 +608,7 @@ export function App() {
           onOpenFamily={(familyId) => openFamily(familyId, tab)}
           onOpenInvite={(code) => void openFamilyByInviteCode(code)}
           onCreateFamily={(nextType) => {
+            setCreateScope("families");
             changeFamilyType(nextType);
             setCreateBackTab("home");
             setTab("create");
@@ -618,23 +617,43 @@ export function App() {
         />
       )}
 
-      {tab === "create" && (
+      {tab === "create" && createScope === "families" && (
         <AsyncContent query={servicesQuery}>
           <CreateFamilyScreen
             onBack={() => setTab(createBackTab)}
-            onCreateAccounts={() => switchCreateCategory("accounts")}
-            onCreateGigabytes={() => switchCreateCategory("gigabytes")}
             services={services}
             service={service}
             familyType={familyType}
             createForm={createForm}
             busy={busy}
             onPickService={pickCreateService}
-            onChangeFamilyType={changeFamilyType}
+            onChangeKind={switchCreateCategory}
             onChangeForm={setCreateForm}
             onSubmit={(event) => void handleCreateFamily(event)}
           />
         </AsyncContent>
+      )}
+
+      {tab === "create" && createScope === "accounts" && (
+        <AccountsScreen
+          initialMode="create"
+          onBack={() => setTab(createBackTab)}
+          embedded={{
+            onChangeKind: switchCreateCategory,
+            onPublished: () => openPublishedListing("accounts")
+          }}
+        />
+      )}
+
+      {tab === "create" && createScope === "gigabytes" && (
+        <GigabytesScreen
+          initialMode="create"
+          onBack={() => setTab(createBackTab)}
+          embedded={{
+            onChangeKind: switchCreateCategory,
+            onPublished: () => openPublishedListing("gigabytes")
+          }}
+        />
       )}
 
       {tab === "created" && (
@@ -691,6 +710,7 @@ export function App() {
             setTab("gigabytes");
           }}
           onCreateFamily={() => {
+            setCreateScope("families");
             changeFamilyType("subscription");
             setCreateBackTab("mine");
             setTab("create");
@@ -824,7 +844,6 @@ export function App() {
           initialListingId={gigabytesEntryId}
           initialMode={gigabytesEntryMode}
           onBack={() => setTab(gigabytesBackTab)}
-          onSwitchCreate={gigabytesBackTab === "create" ? switchCreateCategory : undefined}
         />
       )}
 
@@ -833,7 +852,6 @@ export function App() {
           initialListingId={accountEntryId}
           initialMode={accountsEntryMode}
           onBack={() => setTab(accountsBackTab)}
-          onSwitchCreate={accountsBackTab === "create" ? switchCreateCategory : undefined}
         />
       )}
 

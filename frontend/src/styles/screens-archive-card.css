@@ -369,7 +369,7 @@
 }
 /* Маркет-переключатель задаёт 600/8px (market.css), поэтому «Мои» повторяет
    те же метрики явным селектором поверх общего HIG-правила выше. */
-.app-shell :is(.my-screen, .actions-screen) .product-scope-switch button {
+.app-shell :is(.my-screen, .actions-screen, .create-screen) .product-scope-switch button {
   padding: 8px 12px;
   font-weight: var(--app-weight-semibold);
 }

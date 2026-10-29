@@ -158,15 +158,17 @@ test("Mini App renders market, create, my, and family details", async ({ page })
   await expect(page.getByTestId("create-family-form")).toBeVisible();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
   await page.getByTestId("create-kind-accounts").click({ force: true });
-  await expect(page.getByTestId("create-kind-accounts")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("create-kind-accounts")).toHaveAttribute("aria-pressed", "true");
   await expect(bottomNav.getByRole("button", { name: "Создать", exact: true })).toHaveAttribute("aria-current", "page");
   await page.getByTestId("create-kind-gigabytes").click({ force: true });
   await expect(page.getByTestId("gb-operator-tele2")).toBeVisible();
   await page.getByTestId("create-kind-tariff").click({ force: true });
-  await expect(page.getByTestId("create-kind-tariff")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("create-kind-tariff")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("create-service-search")).toHaveCount(0);
   await page.getByTestId("create-kind-accounts").click({ force: true });
-  await page.getByTestId("accounts-screen").getByRole("button", { name: "Назад" }).click();
+  await expect(page.getByTestId("accounts-screen")).toBeVisible();
+  // The slider stays on top of every create form, like on «Мои».
+  await page.getByTestId("create-kind-subscription").click({ force: true });
   await expect(page.getByTestId("create-family-form")).toBeVisible();
 
   await bottomNav.getByRole("button", { name: "Мои", exact: true }).click({ force: true });

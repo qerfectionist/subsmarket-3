@@ -1,55 +1,102 @@
-import { SystemSymbol } from "./SystemSymbol";
-import { triggerTelegramSelection } from "../telegram";
+import { useRef, type CSSProperties, type ReactNode } from "react";
+import { useSegmentSwitchSwipe } from "../hooks/useSegmentSwitchSwipe";
+import { Button as AppButton } from "./ui";
+import { Panel } from "./layout";
 
 export type CreateCategory = "subscription" | "tariff" | "accounts" | "gigabytes";
 
-const OPTIONS: {
-  id: CreateCategory;
-  label: string;
-  icon: "person.2" | "antenna.radiowaves.left.and.right" | "key" | "globe";
-}[] = [
-  { id: "subscription", label: "Подписки", icon: "person.2" },
-  { id: "tariff", label: "Тарифы", icon: "antenna.radiowaves.left.and.right" },
-  { id: "accounts", label: "Аккаунты", icon: "key" },
-  { id: "gigabytes", label: "ГБ", icon: "globe" }
-];
+const CATEGORIES: CreateCategory[] = ["subscription", "tariff", "accounts", "gigabytes"];
+
+const LABELS: Record<CreateCategory, string> = {
+  subscription: "Подписки",
+  tariff: "Тарифы",
+  accounts: "Аккаунты",
+  gigabytes: "ГБ"
+};
 
 /**
- * What the person creates, the same four categories as on the market home:
- * a subscription family, an operator tariff family, an account or gigabytes.
+ * What the person creates. The same glass slider as on «Мои» (product-scope-switch),
+ * with a fourth segment for operator tariffs.
  */
-export function CreateCategoryPicker({
+export function CreateScopeSwitch({
   value,
   onChange
 }: {
   value: CreateCategory;
   onChange: (value: CreateCategory) => void;
 }) {
+  const innerRef = useRef<HTMLDivElement | null>(null);
+  const switchSwipe = useSegmentSwitchSwipe<CreateCategory>({
+    items: CATEGORIES,
+    value,
+    onChange,
+    onPositionChange: (position, dragging) => {
+      const node = innerRef.current;
+      if (!node) return;
+      node.style.setProperty("--scope-position", String(position));
+      if (dragging) node.dataset.scopeDragging = "true";
+      else delete node.dataset.scopeDragging;
+    }
+  });
+  const style = { "--scope-position": CATEGORIES.indexOf(value) } as CSSProperties;
+
   return (
-    <div className="create-category-picker" role="radiogroup" aria-label="Что создаём">
-      {OPTIONS.map((option) => {
-        const selected = option.id === value;
-        return (
-          <button
-            key={option.id}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            data-testid={`create-kind-${option.id}`}
-            className={`create-category-option create-category-option-${option.id}`}
-            onClick={() => {
-              if (selected) return;
-              triggerTelegramSelection();
-              onChange(option.id);
-            }}
-          >
-            <span className="create-category-option-icon" aria-hidden="true">
-              <SystemSymbol name={option.icon} size={22} />
-            </span>
-            <span>{option.label}</span>
-          </button>
-        );
-      })}
+    <div
+      ref={(node) => {
+        innerRef.current = node;
+        switchSwipe.switchRef.current = node;
+      }}
+      className="product-scope-switch create-scope-switch"
+      role="group"
+      aria-label="Что создаём"
+      style={style}
+      {...switchSwipe.handlers}
+    >
+      {CATEGORIES.map((category) => (
+        <AppButton
+          key={category}
+          type="button"
+          size="sm"
+          data-testid={`create-kind-${category}`}
+          aria-pressed={value === category}
+          variant={value === category ? "primary" : "tertiary"}
+          onClick={() => {
+            if (value !== category) onChange(category);
+          }}
+        >
+          {LABELS[category]}
+        </AppButton>
+      ))}
+    </div>
+  );
+}
+
+/** «Создать»: the same header and slider as «Мои»; the chosen form goes below. */
+export function CreateShell({
+  kind,
+  onChangeKind,
+  title = "Создать",
+  showSwitch = true,
+  testId,
+  children
+}: {
+  kind: CreateCategory;
+  onChangeKind: (value: CreateCategory) => void;
+  title?: string;
+  showSwitch?: boolean;
+  testId?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="create-screen" data-testid={testId}>
+      <Panel title={title}>
+        {showSwitch ? (
+          <div className="create-screen-filters">
+            <CreateScopeSwitch value={kind} onChange={onChangeKind} />
+          </div>
+        ) : null}
+        {children}
+      </Panel>
     </div>
   );
 }

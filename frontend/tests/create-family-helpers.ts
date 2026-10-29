@@ -47,9 +47,9 @@ export async function pickCreateService(page: Page, slug: string, category = "al
   await goToCreateStep(page, "service");
   const tariff = category === "operators" || slug.endsWith("-family-tariff");
   const kind = page.getByTestId(tariff ? "create-kind-tariff" : "create-kind-subscription");
-  if ((await kind.getAttribute("aria-checked")) !== "true") {
+  if ((await kind.getAttribute("aria-pressed")) !== "true") {
     await kind.evaluate((element) => (element as HTMLElement).click());
-    await expect(kind).toHaveAttribute("aria-checked", "true");
+    await expect(kind).toHaveAttribute("aria-pressed", "true");
   }
   if (!tariff) {
     await page.getByTestId(`create-category-${category}`).evaluate((element) => (element as HTMLElement).click());

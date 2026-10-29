@@ -172,7 +172,7 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 .section-inline-title > span, .section-inline-title h2, .section-inline-title h3 {
   font-size: var(--app-size-section); line-height: var(--app-leading-section); color: var(--app-text); font-weight: 600;
 }
-:is(.my-screen, .actions-screen) .app-panel-head {
+:is(.my-screen, .actions-screen, .create-screen) .app-panel-head {
   position: relative;
   display: flex;
   align-items: center;
@@ -180,17 +180,17 @@ button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   min-height: 48px;
   text-align: center;
 }
-:is(.my-screen, .actions-screen) .app-panel-head > div:first-child {
+:is(.my-screen, .actions-screen, .create-screen) .app-panel-head > div:first-child {
   width: 100%;
   min-width: 0;
   padding-inline: 48px;
   text-align: center;
 }
-:is(.my-screen, .actions-screen) .app-panel-head h1 {
+:is(.my-screen, .actions-screen, .create-screen) .app-panel-head h1 {
   text-align: center;
 }
-:is(.my-screen, .actions-screen) .app-panel-head p { margin: 6px auto 0; max-width: 28rem; text-align: center; }
-:is(.my-screen, .actions-screen) .app-panel-action {
+:is(.my-screen, .actions-screen, .create-screen) .app-panel-head p { margin: 6px auto 0; max-width: 28rem; text-align: center; }
+:is(.my-screen, .actions-screen, .create-screen) .app-panel-action {
   position: absolute;
   right: 0;
   top: 50%;

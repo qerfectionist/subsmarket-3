@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AsyncContent } from "../components/AsyncContent";
 import { SystemSymbol } from "../components/SystemSymbol";
-import { CreateCategoryPicker, type CreateCategory } from "../components/CreateCategoryPicker";
+import { CreateShell, type CreateCategory } from "../components/CreateCategoryPicker";
 import { useTelegramBackButton } from "../hooks/useTelegramAppEffects";
 import { formatError } from "../format";
 import {
@@ -52,13 +52,16 @@ const screenTitle = (mode: ScreenMode) =>
 
 export function AccountsScreen({
   onBack,
-  onSwitchCreate,
+  embedded,
   initialMode = "catalog",
   initialListingId
 }: {
   onBack: () => void;
-  /** Set when opened from «Создать»: shows the category picker above the form. */
-  onSwitchCreate?: (category: CreateCategory) => void;
+  /**
+   * Set when the form is shown on «Создать»: the same header and slider as «Мои»,
+   * and after publishing the person is taken to the new listing in «Мои».
+   */
+  embedded?: { onChangeKind: (kind: CreateCategory) => void; onPublished: () => void };
   initialMode?: "catalog" | "mine" | "create";
   initialListingId?: string | null;
 }) {
@@ -166,7 +169,8 @@ export function AccountsScreen({
           setMode("detail");
         } else {
           await createListing.mutateAsync(payload);
-          setMode("mine");
+          if (embedded) embedded.onPublished();
+          else setMode("mine");
         }
       },
       editingId ? "Объявление обновлено" : "Объявление опубликовано на 30 дней"
@@ -185,78 +189,8 @@ export function AccountsScreen({
     document.querySelector(".app-shell")?.scrollTo({ top: 0, behavior: "auto" });
   }, [mode, selectedId]);
 
-  return (
-    <div
-      className={`gb-screen sm-market-screen ${mode === "catalog" ? "sm-market-screen-catalog" : "subs-screen-scroll"}`}
-      data-testid="accounts-screen"
-    >
-      {mode === "catalog" ? (
-        <>
-          <header className="sm-market-catalog-header">
-            <h1>Аккаунты</h1>
-            <button
-              type="button"
-              className={`sm-market-catalog-info${isInfoOpen ? " is-active" : ""}`}
-              aria-label="О сделках"
-              aria-expanded={isInfoOpen}
-              aria-controls="accounts-safety-disclosure"
-              data-testid="accounts-safety-note"
-              onClick={() => {
-                triggerTelegramImpact("light");
-                setIsInfoOpen((prev) => !prev);
-              }}
-            >
-              <SystemSymbol name="info.circle" size={20} />
-            </button>
-          </header>
-          <div
-            id="accounts-safety-disclosure"
-            className={`sm-market-info-disclosure${isInfoOpen ? " is-open" : ""}`}
-            aria-hidden={!isInfoOpen}
-            inert={!isInfoOpen}
-          >
-            <div className="sm-market-info-disclosure-content">
-              <div className="sm-market-alert-disclosure" data-testid="accounts-safety-alert">
-                <div className="sm-market-alert-content">
-                  <p>
-                    Сделка и передача доступа происходят напрямую. SubsMarket не принимает оплату, не хранит пароли и не несёт ответственности за сделки.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="sm-market-alert-close"
-                  aria-label="Закрыть памятку"
-                  onClick={() => {
-                    triggerTelegramImpact("light");
-                    setIsInfoOpen(false);
-                  }}
-                >
-                  <SystemSymbol name="xmark" size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      ) : (
-        <header className="gb-header">
-          <button type="button" className="gb-back" aria-label="Назад" onClick={goBack}>
-            <SystemSymbol name="chevron.backward" size={20} />
-          </button>
-          <div className="gb-header-title-wrap">
-            {mode === "detail" ? (
-              <span className="gb-header-eyebrow">
-                {selectedListing?.service.name ?? "АККАУНТ"}
-              </span>
-            ) : null}
-            <h1>{screenTitle(mode)}</h1>
-          </div>
-        </header>
-      )}
-
-      {mode === "create" && onSwitchCreate && !editingId ? (
-        <CreateCategoryPicker value="accounts" onChange={onSwitchCreate} />
-      ) : null}
-
+  const body = (
+    <>
       {error ? <div className="inline-error" role="alert">{error}</div> : null}
       {notice ? <div className="gb-notice" role="status">{notice}</div> : null}
 
@@ -362,6 +296,86 @@ export function AccountsScreen({
           />
         ) : null}
       </AsyncContent>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <CreateShell kind="accounts" onChangeKind={embedded.onChangeKind} testId="accounts-screen">
+        {body}
+      </CreateShell>
+    );
+  }
+
+  return (
+    <div
+      className={`gb-screen sm-market-screen ${mode === "catalog" ? "sm-market-screen-catalog" : "subs-screen-scroll"}`}
+      data-testid="accounts-screen"
+    >
+      {mode === "catalog" ? (
+        <>
+          <header className="sm-market-catalog-header">
+            <h1>Аккаунты</h1>
+            <button
+              type="button"
+              className={`sm-market-catalog-info${isInfoOpen ? " is-active" : ""}`}
+              aria-label="О сделках"
+              aria-expanded={isInfoOpen}
+              aria-controls="accounts-safety-disclosure"
+              data-testid="accounts-safety-note"
+              onClick={() => {
+                triggerTelegramImpact("light");
+                setIsInfoOpen((prev) => !prev);
+              }}
+            >
+              <SystemSymbol name="info.circle" size={20} />
+            </button>
+          </header>
+          <div
+            id="accounts-safety-disclosure"
+            className={`sm-market-info-disclosure${isInfoOpen ? " is-open" : ""}`}
+            aria-hidden={!isInfoOpen}
+            inert={!isInfoOpen}
+          >
+            <div className="sm-market-info-disclosure-content">
+              <div className="sm-market-alert-disclosure" data-testid="accounts-safety-alert">
+                <div className="sm-market-alert-content">
+                  <p>
+                    Сделка и передача доступа происходят напрямую. SubsMarket не принимает оплату, не хранит пароли и не несёт ответственности за сделки.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="sm-market-alert-close"
+                  aria-label="Закрыть памятку"
+                  onClick={() => {
+                    triggerTelegramImpact("light");
+                    setIsInfoOpen(false);
+                  }}
+                >
+                  <SystemSymbol name="xmark" size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <header className="gb-header">
+          <button type="button" className="gb-back" aria-label="Назад" onClick={goBack}>
+            <SystemSymbol name="chevron.backward" size={20} />
+          </button>
+          <div className="gb-header-title-wrap">
+            {mode === "detail" ? (
+              <span className="gb-header-eyebrow">
+                {selectedListing?.service.name ?? "АККАУНТ"}
+              </span>
+            ) : null}
+            <h1>{screenTitle(mode)}</h1>
+          </div>
+        </header>
+      )}
+
+      {body}
     </div>
   );
 }
