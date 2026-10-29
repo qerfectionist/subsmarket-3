@@ -8,7 +8,7 @@
   font-weight: 600;
 }
 
-/* A still glass outline; the words share one cell, so it fits the longest. */
+/* A still outline, no fill; the words share one cell, so it fits the longest. */
 .create-ticker-pill {
   display: grid;
   align-items: center;
@@ -16,10 +16,7 @@
   padding: 4px 16px;
   border: 1px solid color-mix(in srgb, var(--app-text) 45%, transparent);
   border-radius: 999px;
-  background: var(--app-control-material, transparent);
-  box-shadow: var(--app-control-shadow, none);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  background: transparent;
 }
 
 /* Only the text takes the colour of the kind's icon. */
