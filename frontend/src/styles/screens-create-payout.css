@@ -1,0 +1,164 @@
+/*
+ * Step 3 «Выплата»: the family it is for, then bank, recipient, chat and rules.
+ * Each block is a caption, one control or group of rows, and one short note,
+ * with the step-2 rhythm: 20 between blocks, 8 inside them.
+ */
+.create-payout {
+  display: grid;
+  gap: 20px;
+  padding-top: 4px;
+}
+
+.create-payout-block {
+  display: grid;
+  gap: 8px;
+}
+
+.create-payout-note {
+  display: grid;
+  gap: 2px;
+  padding-inline: 4px;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption, 13px);
+  line-height: 1.35;
+}
+
+.create-payout-note.field-error {
+  color: var(--app-danger, #ff453a);
+}
+
+/* The family: logo, name and terms; a tap goes back to change them. */
+.app-shell .create-terms-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 14px 12px 12px;
+  border: 0;
+  border-radius: var(--app-radius-md, 16px);
+  background: var(--app-surface);
+  box-shadow: none;
+  color: var(--app-text);
+  font: inherit;
+  text-align: left;
+}
+
+.app-shell .create-terms-summary:active {
+  background: var(--app-secondary-bg, #2c2c2e);
+}
+
+.create-terms-summary > svg {
+  flex: none;
+  color: var(--app-muted);
+}
+
+.create-terms-summary-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.create-terms-summary-copy strong {
+  overflow: hidden;
+  font-size: var(--app-size-body, 16px);
+  font-weight: var(--app-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.create-terms-summary-copy > span {
+  overflow: hidden;
+  color: var(--app-muted);
+  font-size: var(--app-size-caption, 13px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Bank and chat: a segmented control, the picked one lifted. */
+.create-segment {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 14px;
+  background: var(--app-surface);
+}
+
+.app-shell .create-segment-option {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--app-weight-medium);
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-shell .create-segment-option[aria-checked="true"] {
+  background: var(--app-secondary-bg, #2c2c2e);
+  color: var(--app-text);
+  font-weight: var(--app-weight-semibold);
+}
+
+/* Recipient rows: the name in a fixed column, the field taking the rest. */
+.create-payout-row > label {
+  flex: none;
+  width: 76px;
+  font-size: var(--app-size-body, 16px);
+  font-weight: var(--app-weight-medium);
+}
+
+.create-payout-row[data-invalid] > label {
+  color: var(--app-danger, #ff453a);
+}
+
+/* The :not()s match the specificity of the shared field rule, which this undoes. */
+.app-shell .create-payout-row input:not([type="checkbox"]):not([type="radio"]),
+.app-shell .create-terms-group textarea.create-payout-rules {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-text);
+  font: inherit;
+  font-size: var(--app-size-body, 16px);
+  outline: none;
+  caret-color: var(--app-text);
+}
+
+.app-shell .create-payout-row input:not([type="checkbox"]):not([type="radio"]) {
+  height: 36px;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .create-terms-group textarea.create-payout-rules {
+  display: block;
+  width: 100%;
+  min-height: 76px;
+  padding: 14px 16px;
+  line-height: 1.35;
+  resize: none;
+}
+
+/* Steps 2 and 3 scroll under the bar: a short fade above it, as under «Заявки». */
+.create-screen .create-step-form:not([data-step="service"]) .create-wizard-footer::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  inset-inline: -16px;
+  height: 28px;
+  background: linear-gradient(to bottom, transparent, var(--app-bg));
+  pointer-events: none;
+}

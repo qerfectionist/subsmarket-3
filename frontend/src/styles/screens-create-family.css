@@ -93,8 +93,7 @@
   gap: 8px;
 }
 
-.app-shell .create-service-tile,
-.app-shell .create-bank-tile {
+.app-shell .create-service-tile {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -124,24 +123,10 @@
   -webkit-line-clamp: 2;
 }
 
-.app-shell .create-service-tile[aria-checked="true"],
-.app-shell .create-bank-tile[aria-checked="true"] {
+.app-shell .create-service-tile[aria-checked="true"] {
   border-color: var(--app-text);
 }
 
-.create-service-tile-check {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--app-text);
-  color: var(--app-accent-text);
-}
 
 .create-service-empty {
   margin: 0;
@@ -190,70 +175,6 @@
   -webkit-appearance: none;
 }
 
-/* Payout: terms summary, bank tiles. */
-.create-terms-summary {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: var(--app-radius-md);
-  background: var(--app-surface);
-}
-
-.create-terms-summary > div {
-  display: grid;
-  flex: 1 1 auto;
-  gap: 2px;
-  min-width: 0;
-}
-
-.create-terms-summary strong {
-  overflow: hidden;
-  font-size: var(--app-size-caption);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.create-terms-summary span {
-  color: var(--app-muted);
-  font-size: var(--app-size-label);
-}
-
-.app-shell .create-terms-summary > button {
-  flex: 0 0 auto;
-  min-height: 44px;
-  padding: 0 4px;
-  border: 0;
-  background: none;
-  color: var(--app-text);
-  font: inherit;
-  font-size: var(--app-size-caption);
-  font-weight: var(--app-weight-semibold);
-  box-shadow: none;
-}
-
-.create-bank-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.app-shell .create-bank-tile {
-  min-height: 72px;
-  font-size: var(--app-size-label);
-}
-
-.create-bank-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--app-secondary-bg);
-  font-weight: var(--app-weight-bold);
-}
-
 .create-wizard-footer {
   display: grid;
   gap: 8px;
@@ -269,34 +190,6 @@
 .create-final-note {
   display: block;
   text-align: center;
-}
-
-/* Chat choice on the payout step. */
-.create-chat-choice {
-  display: flex;
-  gap: var(--app-segment-gap);
-  padding: var(--app-segment-padding);
-  border-radius: var(--app-radius-pill);
-  background: var(--app-surface);
-}
-
-.app-shell .create-chat-option {
-  flex: 1 1 0;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: var(--app-radius-pill);
-  background: transparent;
-  color: var(--app-muted);
-  font: inherit;
-  font-size: var(--app-size-caption);
-  box-shadow: none;
-}
-
-.app-shell .create-chat-option[aria-checked="true"] {
-  background: var(--app-secondary-bg);
-  color: var(--app-text);
-  font-weight: var(--app-weight-semibold);
 }
 
 /* Family chat panel: after creation and in «Мои». */

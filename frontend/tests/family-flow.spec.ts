@@ -279,19 +279,18 @@ test("create family form validates payout fields in real time", async ({ page })
   await openCreate(page);
   await goToCreateStep(page, "payout");
 
-  // Empty phone and name: the button waits and says what is missing.
+  // Empty phone and name: the button waits, and nothing nags before a try.
   await expect(page.getByTestId("create-family-submit")).toBeDisabled();
-  await expect(page.getByTestId("create-fix-hint")).toContainText("номер телефона и имя получателя");
+  await expect(page.getByTestId("create-fix-hint")).toHaveCount(0);
 
   await fillCreateField(page, "create-payment-phone-input", "123");
   await page.getByTestId("create-payment-phone-input").blur();
-  await expect(page.locator(".field-error")).toContainText("Нужно +7 и 10 цифр");
+  await expect(page.locator(".field-error")).toContainText("Номер неполный");
 
   await fillCreateField(page, "create-payment-phone-input", "+77001234567");
   await fillCreateField(page, "create-recipient-name-input", "Айгерим 4400");
   await page.getByTestId("create-recipient-name-input").blur();
   await expect(page.locator(".field-error")).toContainText("без цифр");
-  await expect(page.getByTestId("create-fix-hint")).toContainText("имя получателя");
 
   await fillCreateField(page, "create-recipient-name-input", "Айгерим Б.");
   await expect(page.locator(".field-error")).toHaveCount(0);
@@ -301,7 +300,7 @@ test("create family form validates payout fields in real time", async ({ page })
   await fillCreateField(page, "create-total-price-input", "0");
   await expect(page.locator(".field-error")).toContainText("больше нуля");
   await expect(page.getByTestId("create-family-next")).toBeDisabled();
-  await expect(page.getByTestId("create-fix-hint")).toContainText("цену");
+  await expect(page.getByTestId("create-fix-hint")).toHaveCount(0);
 });
 
 test("create family picks a service from the logo grid and moves on", async ({ page }) => {

@@ -93,7 +93,7 @@ export function validateCreateForm(
   if (!form.payment_phone.trim()) {
     errors.payment_phone = "Укажите номер телефона";
   } else if (!PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
-    errors.payment_phone = "Нужно +7 и 10 цифр, например +77001234567";
+    errors.payment_phone = "Номер неполный: нужно 10 цифр после +7";
   }
   const recipient = (form.payment_recipient_name ?? "").trim();
   if (!recipient) {

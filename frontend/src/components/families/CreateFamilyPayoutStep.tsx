@@ -1,5 +1,4 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { Input, TextArea } from "../ui";
 import { ServiceLogo } from "../branding";
 import { SystemSymbol } from "../SystemSymbol";
 import { serviceTitle } from "../../format";
@@ -12,17 +11,21 @@ import {
   pluralRu,
   type FieldErrors
 } from "./createFamilyForm";
-import { FieldNote } from "./createFamilyFields";
+import { formatPhoneInput, PayoutRow, Segmented } from "./createPayoutParts";
 
 const BANKS = Object.keys(bankLabels) as FamilyCreate["payment_bank"][];
-const CHAT_OPTIONS: { kind: NonNullable<FamilyCreate["chat_kind"]>; label: string }[] = [
-  { kind: "telegram", label: "Telegram" },
-  { kind: "whatsapp", label: "WhatsApp" }
+const CHAT_OPTIONS: { value: NonNullable<FamilyCreate["chat_kind"]>; label: string }[] = [
+  { value: "telegram", label: "Telegram" },
+  { value: "whatsapp", label: "WhatsApp" }
 ];
 
 type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolean>>;
 
-/** Step 3: where members send money. */
+/**
+ * Step 3: where members send money. The family it is for on top, then the
+ * bank, the recipient as one group of rows, the chat and optional rules; each
+ * block has its caption above and one short note below, as on step 2.
+ */
 export function CreateFamilyPayoutStep({
   form,
   errors,
@@ -40,141 +43,141 @@ export function CreateFamilyPayoutStep({
 }) {
   const [touched, setTouched] = useState<Touched>({});
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
+  const phoneError = shown("payment_phone");
+  const nameError = shown("payment_recipient_name");
+  const recipientErrors = [phoneError, nameError].filter(Boolean) as string[];
   const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
+  const chat = form.chat_kind ?? "telegram";
   const title =
     service.family_type === "tariff" && form.plan_name?.trim()
       ? `${service.name} «${form.plan_name.trim()}»`
       : serviceTitle(service);
 
   return (
-    <div className="create-step-body" data-create-step="payout">
-      <div className="create-terms-summary" data-testid="create-terms-summary">
-        <ServiceLogo
-          serviceSlug={service.slug}
-          serviceName={service.name}
-          familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
-          size={36}
-          loading="eager"
-        />
-        <div>
-          <strong>{title}</strong>
-          <span>
-            {formatKzt(share)} {periodPhrase(form.period)} · {form.max_members}{" "}
-            {pluralRu(form.max_members, "место", "места", "мест")} · оплата {form.payment_day}-го
+    <div className="create-step-body create-payout" data-create-step="payout">
+      <section className="create-payout-block">
+        {/* The whole card goes back to «Цена и места». */}
+        <button
+          type="button"
+          className="create-terms-summary"
+          data-testid="create-edit-terms"
+          aria-label="Изменить цену и места"
+          onClick={onEditTerms}
+        >
+          <ServiceLogo
+            serviceSlug={service.slug}
+            serviceName={service.name}
+            familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
+            size={40}
+            loading="eager"
+          />
+          <span className="create-terms-summary-copy" data-testid="create-terms-summary">
+            <strong>{title}</strong>
+            <span>
+              {formatKzt(share)} {periodPhrase(form.period)} · {form.max_members}{" "}
+              {pluralRu(form.max_members, "место", "места", "мест")} · {form.payment_day}-го
+            </span>
           </span>
-        </div>
-        <button type="button" data-testid="create-edit-terms" onClick={onEditTerms}>
-          Изменить
+          <SystemSymbol name="chevron.forward" size={16} />
         </button>
-      </div>
+        <small className="create-payout-note">После создания сервис и места не поменять.</small>
+      </section>
 
-      <div className="ui-field">
-        <span>Куда переводить</span>
-        <div className="create-bank-grid" role="radiogroup" aria-label="Банк">
-          {BANKS.map((bank) => {
-            const selected = bank === form.payment_bank;
-            return (
-              <button
-                key={bank}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                data-testid={`create-bank-${bank}`}
-                className="create-bank-tile"
-                onClick={() => onChangeForm((current) => ({ ...current, payment_bank: bank }))}
-              >
-                <span className={`create-bank-mark create-bank-mark-${bank}`} aria-hidden="true">
-                  {bankLabels[bank].slice(0, 1)}
-                </span>
-                <span>{bankLabels[bank]}</span>
-                {selected ? (
-                  <span className="create-service-tile-check">
-                    <SystemSymbol name="checkmark" size={14} />
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
+      <section className="create-payout-block" aria-label="Банк">
+        <span className="create-terms-caption">Банк</span>
+        <Segmented
+          label="Банк"
+          options={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank] }))}
+          value={form.payment_bank}
+          testId={(bank) => `create-bank-${bank}`}
+          onChange={(bank) => onChangeForm((current) => ({ ...current, payment_bank: bank }))}
+        />
+      </section>
+
+      <section className="create-payout-block" aria-label="Получатель">
+        <span className="create-terms-caption">Получатель</span>
+        <div className="create-terms-group">
+          <PayoutRow label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)}>
+            <input
+              id="create-payment-phone"
+              required
+              placeholder="+7 700 123 45 67"
+              data-testid="create-payment-phone-input"
+              inputMode="tel"
+              autoComplete="tel"
+              enterKeyHint="next"
+              aria-invalid={Boolean(phoneError) || undefined}
+              value={form.payment_phone}
+              onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
+              onChange={(event) => {
+                const next = formatPhoneInput(event.target.value, form.payment_phone);
+                onChangeForm((current) => ({ ...current, payment_phone: next }));
+              }}
+            />
+          </PayoutRow>
+          <PayoutRow label="Имя" htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
+            <input
+              id="create-recipient-name"
+              required
+              placeholder="Айгерим Б."
+              data-testid="create-recipient-name-input"
+              autoComplete="off"
+              autoCapitalize="words"
+              enterKeyHint="done"
+              maxLength={40}
+              aria-invalid={Boolean(nameError) || undefined}
+              value={form.payment_recipient_name ?? ""}
+              onBlur={() => setTouched((current) => ({ ...current, payment_recipient_name: true }))}
+              onChange={(event) =>
+                onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
+              }
+            />
+          </PayoutRow>
         </div>
-      </div>
+        {recipientErrors.length > 0 ? (
+          <small className="create-payout-note field-error" role="alert" aria-live="polite">
+            {recipientErrors.map((error) => (
+              <span key={error}>{error}</span>
+            ))}
+          </small>
+        ) : (
+          <small className="create-payout-note">
+            Номер, привязанный к {bankLabels[form.payment_bank]}, и имя как в банке. Видят только
+            принятые участники.
+          </small>
+        )}
+      </section>
 
-      <div>
-        <Input
-          required
-          label="Номер телефона"
-          placeholder="+7 700 123 45 67"
-          data-testid="create-payment-phone-input"
-          inputMode="tel"
-          autoComplete="tel"
-          error={Boolean(shown("payment_phone"))}
-          value={form.payment_phone}
-          onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
-          onChange={(event) =>
-            onChangeForm((current) => ({ ...current, payment_phone: event.target.value }))
-          }
+      <section className="create-payout-block" aria-label="Чат семьи">
+        <span className="create-terms-caption">Чат семьи</span>
+        <Segmented
+          label="Чат семьи"
+          options={CHAT_OPTIONS}
+          value={chat}
+          testId={(kind) => `create-chat-${kind}`}
+          onChange={(kind) => onChangeForm((current) => ({ ...current, chat_kind: kind }))}
         />
-        <FieldNote
-          error={shown("payment_phone")}
-          helper="Номер, привязанный к банку. Карту и IBAN указать нельзя."
-        />
-      </div>
-
-      <div>
-        <Input
-          required
-          label="Имя получателя"
-          placeholder="Айгерим Б."
-          data-testid="create-recipient-name-input"
-          autoComplete="off"
-          maxLength={40}
-          error={Boolean(shown("payment_recipient_name"))}
-          value={form.payment_recipient_name ?? ""}
-          onBlur={() => setTouched((current) => ({ ...current, payment_recipient_name: true }))}
-          onChange={(event) =>
-            onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
-          }
-        />
-        <FieldNote
-          error={shown("payment_recipient_name")}
-          helper="Имя и первая буква фамилии, как покажет банк при переводе. Номер и имя увидят только участники, которым вы подтвердили доступ."
-        />
-      </div>
-
-      <div className="ui-field">
-        <span>Чат семьи</span>
-        <div className="create-chat-choice" role="radiogroup" aria-label="Чат семьи">
-          {CHAT_OPTIONS.map((option) => (
-            <button
-              key={option.kind}
-              type="button"
-              role="radio"
-              aria-checked={(form.chat_kind ?? "telegram") === option.kind}
-              data-testid={`create-chat-${option.kind}`}
-              className="create-chat-option"
-              onClick={() => onChangeForm((current) => ({ ...current, chat_kind: option.kind }))}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <small className="field-helper">
-          {(form.chat_kind ?? "telegram") === "telegram"
-            ? "После создания откроем новую группу с ботом. Вам останется нажать «Создать»."
-            : "После создания поможем сделать группу в WhatsApp: три коротких шага."}{" "}
-          Без чата участников не добавить.
+        <small className="create-payout-note">
+          {chat === "telegram"
+            ? "После создания откроем группу с ботом, останется нажать «Создать»."
+            : "После создания поможем сделать группу в WhatsApp за три шага."}
         </small>
-      </div>
+      </section>
 
-      <TextArea
-        label="Правила семьи · необязательно"
-        placeholder="Например: не менять пароль, не делиться доступом"
-        data-testid="create-owner-rules-input"
-        rows={2}
-        value={form.owner_rules ?? ""}
-        onChange={(event) =>
-          onChangeForm((current) => ({ ...current, owner_rules: event.target.value }))
-        }
-      />
+      <section className="create-payout-block" aria-label="Правила семьи">
+        <span className="create-terms-caption">Правила · необязательно</span>
+        <div className="create-terms-group">
+          <textarea
+            className="create-payout-rules"
+            aria-label="Правила семьи"
+            placeholder="Например: не менять пароль, не делиться доступом"
+            data-testid="create-owner-rules-input"
+            rows={2}
+            value={form.owner_rules ?? ""}
+            onChange={(event) => onChangeForm((current) => ({ ...current, owner_rules: event.target.value }))}
+          />
+        </div>
+      </section>
     </div>
   );
 }

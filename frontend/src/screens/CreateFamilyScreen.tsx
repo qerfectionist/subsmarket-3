@@ -20,7 +20,7 @@ import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 const STEP_QUESTIONS: Record<CreateStep, (familyType: FamilyType) => string> = {
   service: (familyType) => (familyType === "tariff" ? "Какой тариф?" : "Какой сервис?"),
   terms: () => "Цена и места",
-  payout: () => "Куда переводить?"
+  payout: () => "Выплата"
 };
 
 export function CreateFamilyScreen({
@@ -176,7 +176,8 @@ export function CreateFamilyScreen({
                 })}
               </ol>
             </div>
-            {hint && step !== "service" ? (
+            {/* Only after a try: an untouched form does not nag, the empty fields speak for themselves. */}
+            {hint && step !== "service" && attempted.has(step) ? (
               <p className="create-fix-hint" data-testid="create-fix-hint">
                 {hint}
               </p>
@@ -205,11 +206,6 @@ export function CreateFamilyScreen({
                 )}
               </div>
             )}
-            {isLast ? (
-              <small className="field-helper create-final-note">
-                После создания не поменять сервис и число мест.
-              </small>
-            ) : null}
           </div>
         </form>
       </div>
