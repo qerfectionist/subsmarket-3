@@ -209,9 +209,11 @@ export function CreateFamilyPayoutStep({
           if (stage === 2) reveal(3);
         }}
       >
-        <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
-          {stage >= 3 && !progress.chat ? "Выберите чат семьи" : "Чат семьи"}
-        </span>
+        <ChatInfo>
+          <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
+            {stage >= 3 && !progress.chat ? "Выберите чат семьи" : "Чат семьи"}
+          </span>
+        </ChatInfo>
         <Segmented
           label="Чат семьи"
           options={CHAT_OPTIONS}
@@ -232,7 +234,6 @@ export function CreateFamilyPayoutStep({
                 ? "После создания поможем сделать группу в WhatsApp за три шага."
                 : "Семья будет без общего чата: участникам и вам придётся связываться напрямую."}
         </small>
-        <ChatInfo />
       </section>
     </div>
   );

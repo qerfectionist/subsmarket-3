@@ -93,30 +93,34 @@ export function formatPhoneInput(raw: string, previous: string) {
   return ["+7", ...parts].join(" ");
 }
 
-/** «(!) Зачем нужен чат»: a quiet line that opens a short explanation when tapped. */
-export function ChatInfo() {
+/**
+ * The chat caption with a small «!» right after it; a tap opens a short text
+ * on what the chat is for, under the caption.
+ */
+export function ChatInfo({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="create-chat-info" data-open={open || undefined}>
-      <button
-        type="button"
-        className="create-chat-info-toggle"
-        data-testid="create-chat-info"
-        aria-expanded={open}
-        aria-controls="create-chat-info-text"
-        onClick={() => setOpen((current) => !current)}
-      >
-        <span className="create-chat-info-mark" aria-hidden="true">
+    <>
+      <div className="create-chat-head">
+        {children}
+        <button
+          type="button"
+          className="create-chat-info-toggle"
+          data-testid="create-chat-info"
+          aria-label="Зачем нужен чат"
+          aria-expanded={open}
+          aria-controls="create-chat-info-text"
+          onClick={() => setOpen((current) => !current)}
+        >
           !
-        </span>
-        Зачем нужен чат
-      </button>
+        </button>
+      </div>
       {open ? (
         <p id="create-chat-info-text" className="create-chat-info-text" data-testid="create-chat-info-text">
           В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет
           напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек.
         </p>
       ) : null}
-    </div>
+    </>
   );
 }

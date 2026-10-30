@@ -16,7 +16,8 @@
 
 /* Type scale of the step: caption 15 semibold > value 17 > plate label 12 > note 12 muted. */
 .create-payout-block > .create-terms-caption,
-.create-payout-head > .create-terms-caption {
+.create-payout-head > .create-terms-caption,
+.create-chat-head > .create-terms-caption {
   padding-inline: 4px;
   color: var(--app-text);
   font-size: 15px;
@@ -261,40 +262,43 @@
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--app-text) 28%, transparent);
 }
 
-/* «(!) Зачем нужен чат»: a quiet line under the chat choice that opens its text. */
-.create-chat-info {
-  display: grid;
-  gap: 6px;
-  padding-inline: 4px;
+/* «Чат семьи (!)»: the caption with a small round «!» that opens its text. */
+.create-chat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .app-shell .create-chat-info-toggle {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--app-muted);
-  font: inherit;
-  font-size: 13px;
-  font-weight: var(--app-weight-semibold);
-}
-
-.create-chat-info-mark {
+  position: relative;
   display: inline-grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   background: var(--app-secondary-bg, #2c2c2e);
+  box-shadow: none;
   color: var(--app-text);
+  font: inherit;
   font-size: 12px;
   font-weight: var(--app-weight-bold, 700);
   line-height: 1;
+}
+
+/* A bigger invisible target than the 20px dot. */
+.app-shell .create-chat-info-toggle::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.app-shell .create-chat-info-toggle[aria-expanded="true"] {
+  background: var(--app-text);
+  color: var(--app-bg, #000);
 }
 
 .app-shell .create-chat-info-text {
