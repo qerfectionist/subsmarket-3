@@ -90,7 +90,8 @@ export function CreateFamilyPayoutStep({
       </section>
 
       <section className="create-payout-block" aria-label="Банк">
-        <span className="create-terms-caption">Банк</span>
+        {/* While it is the open question, the caption says what to do. */}
+        <span className="create-terms-caption">{stage === 0 ? "Выберите банк" : "Банк"}</span>
         <Segmented
           label="Банк"
           options={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank], icon: bankLogo(bank) }))}
@@ -197,7 +198,7 @@ export function CreateFamilyPayoutStep({
         }}
       >
         <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
-          Чат семьи
+          {stage >= 3 && !progress.chat ? "Выберите чат семьи" : "Чат семьи"}
         </span>
         <Segmented
           label="Чат семьи"

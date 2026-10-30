@@ -234,6 +234,11 @@
   pointer-events: none;
 }
 
+/* The choice that is waiting for the person gets a soft ring, so the eye lands on it. */
+.create-segment[data-empty]:not([data-locked]) {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--app-text) 28%, transparent);
+}
+
 /* «(!) Зачем нужен чат»: a quiet line under the chat choice that opens its text. */
 .create-chat-info {
   display: grid;
