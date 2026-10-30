@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { CreateFamilyNextSteps } from "./CreateFamilyNextSteps";
 import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
@@ -252,6 +253,8 @@ export function CreateFamilyPayoutStep({
                 : "Семья будет без общего чата: участникам и вам придётся связываться напрямую."}
         </small>
       </section>
+
+      <CreateFamilyNextSteps form={form} bankChosen={stage >= 1} />
     </div>
   );
 }

@@ -253,114 +253,6 @@
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--app-text) 28%, transparent);
 }
 
-/* «Чат семьи (!) Зачем нужен чат»: the question sits right after the caption,
-   the same size, quieter in colour, and opens its text. */
-.create-chat-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: 10px;
-}
-
-.app-shell .create-info-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--app-muted);
-  font: inherit;
-  font-size: 15px;
-  font-weight: var(--app-weight-semibold);
-  line-height: 20px;
-  transition: color 0.2s ease;
-}
-
-.create-info-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--app-text) 14%, transparent);
-  color: var(--app-text);
-  font-size: 12px;
-  font-weight: var(--app-weight-bold, 700);
-  line-height: 1;
-}
-
-/* A caption that is not its turn yet greys its question too; it can still be read. */
-.create-chat-head:has(> [data-locked]) .create-info-toggle:not([aria-expanded="true"]) {
-  opacity: 0.38;
-}
-
-.app-shell .create-info-toggle[aria-expanded="true"] {
-  color: var(--app-text);
-}
-
-.app-shell .create-info-toggle[aria-expanded="true"] .create-info-mark {
-  background: var(--app-text);
-  color: var(--app-bg, #000);
-}
-
-/* The text unfolds from under the caption: height, fade and a small slide together.
-   Its 8px gap sits inside the fold, so closed it takes no room at all. */
-.create-info-panel {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition:
-    grid-template-rows 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.22s ease;
-}
-
-.create-info-panel[data-open] {
-  grid-template-rows: 1fr;
-  opacity: 1;
-  transition:
-    grid-template-rows 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.28s ease 0.06s;
-}
-
-.create-info-clip {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.create-info-panel .create-info-text {
-  transform: translateY(-6px);
-  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.create-info-panel[data-open] .create-info-text {
-  transform: none;
-}
-
-.create-info-mark {
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .create-info-panel,
-  .create-info-panel[data-open],
-  .create-info-panel .create-info-text {
-    transition: none;
-  }
-}
-
-.app-shell .create-info-text {
-  margin: 8px 0 0;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--app-surface);
-  color: var(--app-text);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
 /* «Так увидят в Маркете» stays on top while the rest scrolls up under it,
    fading out at its lower edge. The side shadows widen its background to
    the screen edges, as the wizard footer does. */
@@ -371,9 +263,9 @@
   z-index: 4;
   padding-bottom: 4px;
   background: var(--app-bg);
-  /* Sides to the screen edges, and up over the 16px gap under the header. */
-  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg), 0 -16px var(--app-bg), -16px -16px var(--app-bg),
-    16px -16px var(--app-bg);
+  /* Sides to the screen edges, and up over the 20px gap under the header. */
+  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg), 0 -24px var(--app-bg), -16px -24px var(--app-bg),
+    16px -24px var(--app-bg);
 }
 
 .create-payout-pinned::after {
@@ -392,12 +284,23 @@
 /* Scrolling snaps block by block: bank, recipient, chat, each stopping just
    under the pinned card (shell padding + header + card + its fade). */
 .app-shell:has(.create-payout) {
-  scroll-snap-type: y mandatory;
+  scroll-snap-type: y proximity;
+}
+
+/* The Market card carries its feed's snap point; pinned here, it must not catch the scroll. */
+.app-shell .create-payout-pinned button.sm-listing {
+  scroll-snap-align: none;
 }
 
 .create-payout-snap {
   scroll-snap-align: start;
   scroll-margin-top: calc(297px + var(--app-inset-top, 0px));
+}
+
+/* The last stop: «Что будет после создания» settles fully above the button. */
+.create-payout-snap-end {
+  scroll-snap-align: end;
+  scroll-margin-bottom: calc(var(--app-nav-height, 64px) + 190px);
 }
 
 .create-payout [data-scroll] {

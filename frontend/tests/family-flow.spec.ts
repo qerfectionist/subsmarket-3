@@ -319,6 +319,9 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   await chat.evaluate((element) => (element as HTMLElement).click());
   await expect(submit).toBeEnabled();
 
+  // «Что будет после создания» names this family's bank under the chat.
+  await expect(page.getByTestId("create-next-steps")).toContainText("на Halyk");
+
   // Going back to the terms and forward again keeps everything that was woken up.
   await goToCreateStep(page, "terms");
   await goToCreateStep(page, "payout");
