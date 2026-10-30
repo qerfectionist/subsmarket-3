@@ -58,21 +58,30 @@
 
 .create-terms-summary-copy > span {
   color: var(--app-muted);
-  font-size: 13px;
+  font-size: 12.5px;
   line-height: 1.3;
 }
 
+/* A small pill, so it reads as a button and not as part of the name. */
 .app-shell .create-payout-edit {
   flex: none;
-  min-height: 44px;
-  padding: 0 8px;
+  min-height: 32px;
+  margin-inline: 0 4px;
+  padding: 0 12px;
   border: 0;
-  background: none;
+  border-radius: 999px;
+  background: var(--app-secondary-bg, #2c2c2e);
   box-shadow: none;
-  color: var(--app-text);
+  color: var(--app-muted);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: var(--app-weight-semibold);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.app-shell .create-payout-edit:active {
+  background: color-mix(in srgb, var(--app-secondary-bg, #2c2c2e) 70%, var(--app-text));
+  color: var(--app-text);
 }
 
 /* Bank and chat: a segmented control, the picked one lifted. */
