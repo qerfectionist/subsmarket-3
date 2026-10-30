@@ -100,7 +100,7 @@ export function formatPhoneInput(raw: string, previous: string) {
 export function ChatInfo({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <>
+    <div className="create-chat-info">
       <div className="create-chat-head">
         {children}
         <button
@@ -117,12 +117,22 @@ export function ChatInfo({ children }: { children: ReactNode }) {
           Зачем нужен чат
         </button>
       </div>
-      {open ? (
-        <p id="create-chat-info-text" className="create-chat-info-text" data-testid="create-chat-info-text">
-          В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет
-          напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек.
-        </p>
-      ) : null}
-    </>
+      {/* Always rendered so it can unfold and fold smoothly; closed, it takes no room and no focus. */}
+      <div
+        id="create-chat-info-text"
+        className="create-chat-info-panel"
+        data-testid="create-chat-info-panel"
+        data-open={open || undefined}
+        aria-hidden={!open}
+        inert={!open}
+      >
+        <div className="create-chat-info-clip">
+          <p className="create-chat-info-text" data-testid="create-chat-info-text">
+            В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет
+            напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

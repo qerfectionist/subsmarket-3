@@ -324,11 +324,16 @@ test("a family can be created without a chat, and the hint explains what the cha
   await revealPayout(page, "chat");
   await page.getByTestId("create-payment-phone-input").fill("+77001234567");
 
-  await expect(page.getByTestId("create-chat-info-text")).toHaveCount(0);
+  // The text stays in the page so it can unfold smoothly; closed, it is folded and inert.
+  const panel = page.getByTestId("create-chat-info-panel");
+  await expect(panel).toHaveAttribute("aria-hidden", "true");
   await page.getByTestId("create-chat-info").evaluate((element) => (element as HTMLElement).click());
+  await expect(panel).toHaveAttribute("data-open", "true");
   await expect(page.getByTestId("create-chat-info-text")).toContainText("будет напоминать об оплате");
+  await expect(page.getByTestId("create-chat-info-text")).toBeVisible();
   await page.getByTestId("create-chat-info").evaluate((element) => (element as HTMLElement).click());
-  await expect(page.getByTestId("create-chat-info-text")).toHaveCount(0);
+  await expect(panel).toHaveAttribute("aria-hidden", "true");
+  await expect(panel).not.toHaveAttribute("data-open");
 
   await page.getByTestId("create-chat-none").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-chat-none")).toHaveAttribute("aria-checked", "true");

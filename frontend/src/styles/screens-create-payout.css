@@ -310,8 +310,53 @@
   color: var(--app-bg, #000);
 }
 
+/* The text unfolds from under the caption: height, fade and a small slide together.
+   Its 8px gap sits inside the fold, so closed it takes no room at all. */
+.create-chat-info-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.22s ease;
+}
+
+.create-chat-info-panel[data-open] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows 0.34s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.28s ease 0.06s;
+}
+
+.create-chat-info-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.create-chat-info-panel .create-chat-info-text {
+  transform: translateY(-6px);
+  transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.create-chat-info-panel[data-open] .create-chat-info-text {
+  transform: none;
+}
+
+.create-chat-info-mark {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-chat-info-panel,
+  .create-chat-info-panel[data-open],
+  .create-chat-info-panel .create-chat-info-text {
+    transition: none;
+  }
+}
+
 .app-shell .create-chat-info-text {
-  margin: 0;
+  margin: 8px 0 0;
   padding: 12px 14px;
   border-radius: 14px;
   background: var(--app-surface);
