@@ -389,7 +389,17 @@
 
 /* The sticky footer and the menu cover the bottom of the screen: a block that is
    scrolled into view must stop above them, not behind them. */
+/* Scrolling snaps block by block: bank, recipient, chat, each stopping just
+   under the pinned card (shell padding + header + card + its fade). */
+.app-shell:has(.create-payout) {
+  scroll-snap-type: y mandatory;
+}
+
+.create-payout-snap {
+  scroll-snap-align: start;
+  scroll-margin-top: calc(297px + var(--app-inset-top, 0px));
+}
+
 .create-payout [data-scroll] {
-  scroll-margin-top: 300px;
   scroll-margin-bottom: calc(var(--app-nav-height, 64px) + 190px);
 }

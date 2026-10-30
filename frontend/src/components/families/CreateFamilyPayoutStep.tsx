@@ -103,7 +103,7 @@ export function CreateFamilyPayoutStep({
         <small className="create-payout-note">После создания сервис и места не поменять.</small>
       </section>
 
-      <section className="create-payout-block" aria-label="Банк">
+      <section className="create-payout-block create-payout-snap" aria-label="Банк">
         {/* While it is the open question, the caption says what to do. */}
         <span className="create-terms-caption">{stage === 0 ? "Выберите банк" : "Банк"}</span>
         <Segmented
@@ -119,7 +119,7 @@ export function CreateFamilyPayoutStep({
         <small className="create-payout-note">Сюда участники будут переводить оплату.</small>
       </section>
 
-      <section className="create-payout-block" aria-label="Получатель" data-scroll="1">
+      <section className="create-payout-block create-payout-snap" aria-label="Получатель" data-scroll="1">
         <CaptionInfo
           question="Зачем указывать имя"
           testId="create-name-info"
@@ -214,7 +214,7 @@ export function CreateFamilyPayoutStep({
       </section>
 
       <section
-        className="create-payout-block"
+        className="create-payout-block create-payout-snap"
         aria-label="Чат семьи"
         data-scroll="3"
         // The name can be skipped: a tap on the waiting chat wakes it.
