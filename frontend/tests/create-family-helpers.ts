@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
 /** Steps of the create-family wizard, in order. */
-const STEPS = ["service", "terms", "payout"] as const;
+const STEPS = ["service", "terms", "payout", "review"] as const;
 type Step = (typeof STEPS)[number];
 
 const FIELD_STEP: Record<string, Step> = {
@@ -80,6 +80,7 @@ export async function pressCreateFamily(page: Page) {
   if (!(await phone.inputValue())) await phone.fill("+77001234567");
   const name = page.getByTestId("create-recipient-name-input");
   if (!(await name.inputValue())) await name.fill("Айгерим Б.");
+  await goToCreateStep(page, "review");
   const submit = page.getByTestId("create-family-submit");
   await expect(submit).toBeEnabled();
   await submit.evaluate((element) => (element as HTMLElement).click());

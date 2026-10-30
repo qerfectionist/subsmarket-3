@@ -5,6 +5,7 @@ import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServ
 import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
 import type { PreviewOwner } from "../components/families/CreateFamilyPreview";
 import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
+import { CreateFamilyReviewStep } from "../components/families/CreateFamilyReviewStep";
 import {
   CREATE_STEPS,
   fixHint,
@@ -21,7 +22,8 @@ import type { FamilyCreate, FamilyService, FamilyType } from "../types";
 const STEP_QUESTIONS: Record<CreateStep, (familyType: FamilyType) => string> = {
   service: (familyType) => (familyType === "tariff" ? "Какой тариф?" : "Какой сервис?"),
   terms: () => "Цена и места",
-  payout: () => "Выплата"
+  payout: () => "Выплата",
+  review: () => "Проверка"
 };
 
 export function CreateFamilyScreen({
@@ -55,7 +57,7 @@ export function CreateFamilyScreen({
   const [attempted, setAttempted] = useState<ReadonlySet<CreateStep>>(() => new Set());
   const errors = validateCreateForm(createForm, service);
   const stepIndex = CREATE_STEPS.findIndex((item) => item.id === step);
-  const isLast = step === "payout";
+  const isLast = step === "review";
   const blocked = stepHasErrors(step, errors) || (isLast && busy !== null);
   const hint = fixHint(stepErrorFields(step, errors), isLast ? "создать семью" : "продолжить");
 
@@ -147,11 +149,12 @@ export function CreateFamilyScreen({
               form={createForm}
               errors={errors}
               service={service}
-              owner={owner}
               showAllErrors={attempted.has("payout")}
-              onEditTerms={() => goTo("terms")}
               onChangeForm={onChangeForm}
             />
+          ) : null}
+          {step === "review" && service ? (
+            <CreateFamilyReviewStep form={createForm} service={service} owner={owner} onEdit={goTo} />
           ) : null}
 
           <div className="create-wizard-footer">

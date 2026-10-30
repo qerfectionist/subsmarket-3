@@ -1,5 +1,4 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
 import type { FieldErrors } from "./createFamilyForm";
@@ -17,25 +16,21 @@ const CHAT_OPTIONS: { value: NonNullable<FamilyCreate["chat_kind"]>; label: stri
 type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolean>>;
 
 /**
- * Step 3: where members send money. The family it is for on top, then the
- * bank, the recipient as two field plates and the chat; each
+ * Step 3: where members send money: the bank, the recipient as two field
+ * plates and the chat; each
  * block has its caption above and one short note below, as on step 2.
  */
 export function CreateFamilyPayoutStep({
   form,
   errors,
   service,
-  owner,
   showAllErrors,
-  onEditTerms,
   onChangeForm
 }: {
   form: FamilyCreate;
   errors: FieldErrors;
   service: FamilyService;
-  owner: PreviewOwner;
   showAllErrors: boolean;
-  onEditTerms: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
 }) {
   const [touched, setTouched] = useState<Touched>({});
@@ -49,17 +44,6 @@ export function CreateFamilyPayoutStep({
 
   return (
     <div className="create-step-body create-payout" data-create-step="payout">
-      <section className="create-payout-block" aria-label="Так увидят в Маркете" data-testid="create-terms-summary">
-        <div className="create-payout-head">
-          <span className="create-terms-caption">Так увидят в Маркете</span>
-          <button type="button" className="create-payout-edit" data-testid="create-edit-terms" onClick={onEditTerms}>
-            Изменить
-          </button>
-        </div>
-        <CreateFamilyPreview form={form} service={service} owner={owner} />
-        <small className="create-payout-note">После создания сервис и места не поменять.</small>
-      </section>
-
       <section className="create-payout-block" aria-label="Банк">
         <span className="create-terms-caption">Банк</span>
         <Segmented

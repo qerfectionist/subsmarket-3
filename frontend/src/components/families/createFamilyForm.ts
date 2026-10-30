@@ -5,12 +5,13 @@ const PHONE_RE = /^\+?7\d{10}$/;
 export const MAX_FAMILY_PRICE_KZT = 1_000_000;
 export const MAX_FULL_SPEED_GB = 5000;
 
-export type CreateStep = "service" | "terms" | "payout";
+export type CreateStep = "service" | "terms" | "payout" | "review";
 
 export const CREATE_STEPS: { id: CreateStep; title: string }[] = [
   { id: "service", title: "Сервис" },
-  { id: "terms", title: "Цена и места" },
-  { id: "payout", title: "Выплата" }
+  { id: "terms", title: "Условия" },
+  { id: "payout", title: "Выплата" },
+  { id: "review", title: "Проверка" }
 ];
 
 export interface FieldErrors {
@@ -35,7 +36,9 @@ const STEP_FIELDS: Record<CreateStep, (keyof FieldErrors)[]> = {
     "payment_day",
     "next_payment_date"
   ],
-  payout: ["payment_phone", "payment_recipient_name"]
+  payout: ["payment_phone", "payment_recipient_name"],
+  // The last look: every field was checked on its own step.
+  review: []
 };
 
 /** Short name of the field, used in «Чтобы создать семью, исправьте …». */
