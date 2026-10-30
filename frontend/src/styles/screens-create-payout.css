@@ -168,7 +168,7 @@
 .create-payout-phone {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 6px;
   font-size: 17px;
   font-variant-numeric: tabular-nums;
 }
