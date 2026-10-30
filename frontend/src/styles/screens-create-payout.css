@@ -366,12 +366,14 @@
    the screen edges, as the wizard footer does. */
 .create-payout-pinned {
   position: sticky;
-  top: calc(var(--app-inset-top, 0px) + 8px);
+  /* Where it already sits under the pinned header (48px + the gaps): it does not move at all. */
+  top: 68px;
   z-index: 4;
   padding-bottom: 4px;
   background: var(--app-bg);
-  /* Sides to the screen edges, and up over the 8px above it. */
-  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg), 0 -32px var(--app-bg);
+  /* Sides to the screen edges, and up over the 16px gap under the header. */
+  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg), 0 -16px var(--app-bg), -16px -16px var(--app-bg),
+    16px -16px var(--app-bg);
 }
 
 .create-payout-pinned::after {
@@ -388,6 +390,6 @@
 /* The sticky footer and the menu cover the bottom of the screen: a block that is
    scrolled into view must stop above them, not behind them. */
 .create-payout [data-scroll] {
-  scroll-margin-top: 240px;
+  scroll-margin-top: 300px;
   scroll-margin-bottom: calc(var(--app-nav-height, 64px) + 190px);
 }
