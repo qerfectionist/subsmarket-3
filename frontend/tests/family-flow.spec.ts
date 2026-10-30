@@ -326,7 +326,7 @@ test("a family can be created without a chat, and the hint explains what the cha
 
   await expect(page.getByTestId("create-chat-info-text")).toHaveCount(0);
   await page.getByTestId("create-chat-info").evaluate((element) => (element as HTMLElement).click());
-  await expect(page.getByTestId("create-chat-info-text")).toContainText("Бот напоминает об оплате");
+  await expect(page.getByTestId("create-chat-info-text")).toContainText("будет напоминать об оплате");
   await page.getByTestId("create-chat-info").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-chat-info-text")).toHaveCount(0);
 
