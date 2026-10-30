@@ -565,7 +565,8 @@ export function App() {
   return (
     <Shell title={shellTitle} appearance={isMarket ? "market" : "default"}>
       {import.meta.env.DEV && <ViewportMetrics />}
-      {isDevUserSwitchVisible() && devUser && !isMarket && (
+      {/* Not on the create flow either: there it sat over the back arrow. */}
+      {isDevUserSwitchVisible() && devUser && !isMarket && tab !== "create" && tab !== "created" && (
         <DevUserSwitch value={devUser} onChange={(id) => void switchDevUser(id)} />
       )}
 

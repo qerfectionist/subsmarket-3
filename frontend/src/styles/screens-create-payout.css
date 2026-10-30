@@ -361,8 +361,33 @@
   line-height: 1.45;
 }
 
+/* «Так увидят в Маркете» stays on top while the rest scrolls up under it,
+   fading out at its lower edge. The side shadows widen its background to
+   the screen edges, as the wizard footer does. */
+.create-payout-pinned {
+  position: sticky;
+  top: calc(var(--app-inset-top, 0px) + 8px);
+  z-index: 4;
+  padding-bottom: 4px;
+  background: var(--app-bg);
+  /* Sides to the screen edges, and up over the 8px above it. */
+  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg), 0 -32px var(--app-bg);
+}
+
+.create-payout-pinned::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: -16px;
+  right: -16px;
+  height: 28px;
+  background: linear-gradient(to bottom, var(--app-bg), color-mix(in srgb, var(--app-bg) 0%, transparent));
+  pointer-events: none;
+}
+
 /* The sticky footer and the menu cover the bottom of the screen: a block that is
    scrolled into view must stop above them, not behind them. */
 .create-payout [data-scroll] {
+  scroll-margin-top: 240px;
   scroll-margin-bottom: calc(var(--app-nav-height, 64px) + 190px);
 }

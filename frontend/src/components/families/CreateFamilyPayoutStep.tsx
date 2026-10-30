@@ -87,7 +87,12 @@ export function CreateFamilyPayoutStep({
 
   return (
     <div className="create-step-body create-payout" data-create-step="payout">
-      <section className="create-payout-block" aria-label="Так увидят в Маркете" data-testid="create-terms-summary">
+      {/* The card stays pinned on top while the questions scroll under it. */}
+      <section
+        className="create-payout-block create-payout-pinned"
+        aria-label="Так увидят в Маркете"
+        data-testid="create-terms-summary"
+      >
         <div className="create-payout-head">
           <span className="create-terms-caption">Так увидят в Маркете</span>
           <button type="button" className="create-payout-edit" data-testid="create-edit-terms" onClick={onEditTerms}>
