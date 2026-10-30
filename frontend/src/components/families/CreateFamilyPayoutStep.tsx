@@ -56,34 +56,40 @@ export function CreateFamilyPayoutStep({
 
   return (
     <div className="create-step-body create-payout" data-create-step="payout">
-      <section className="create-payout-block">
-        {/* The whole card goes back to «Цена и места». */}
-        <button
-          type="button"
-          className="create-terms-summary"
-          data-testid="create-edit-terms"
-          aria-label="Изменить цену и места"
-          onClick={onEditTerms}
-        >
-          <ServiceLogo
-            serviceSlug={service.slug}
-            serviceName={service.name}
-            familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
-            size={40}
-            loading="eager"
-          />
-          <span className="create-terms-summary-copy" data-testid="create-terms-summary">
-            <strong>{title}</strong>
-            <span>
-              {formatKzt(share)} {periodPhrase(form.period)} · {form.max_members}{" "}
-              {pluralRu(form.max_members, "место", "места", "мест")}
-            </span>
-            <span>Оплата {form.payment_day}-го числа</span>
-          </span>
-          <span className="create-terms-summary-edit" aria-hidden="true">
+      <section className="create-payout-block" aria-label="Семья">
+        {/* As in iOS settings: the caption on the left, the way to change it on the right. */}
+        <div className="create-payout-head">
+          <span className="create-terms-caption">Семья</span>
+          <button type="button" className="create-payout-edit" data-testid="create-edit-terms" onClick={onEditTerms}>
             Изменить
-          </span>
-        </button>
+          </button>
+        </div>
+        <div className="create-terms-summary" data-testid="create-terms-summary">
+          <div className="create-terms-summary-head">
+            <ServiceLogo
+              serviceSlug={service.slug}
+              serviceName={service.name}
+              familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
+              size={36}
+              loading="eager"
+            />
+            <strong>{title}</strong>
+          </div>
+          <dl className="create-terms-summary-facts">
+            <div>
+              <dt>{periodPhrase(form.period)}</dt>
+              <dd>{formatKzt(share)}</dd>
+            </div>
+            <div>
+              <dt>{pluralRu(form.max_members, "место", "места", "мест")}</dt>
+              <dd>{form.max_members}</dd>
+            </div>
+            <div>
+              <dt>оплата</dt>
+              <dd>{form.payment_day}-го</dd>
+            </div>
+          </dl>
+        </div>
         <small className="create-payout-note">После создания сервис и места не поменять.</small>
       </section>
 
