@@ -10,14 +10,15 @@ import {
   pluralRu,
   type FieldErrors
 } from "./createFamilyForm";
-import { BankTiles, formatPhoneInput, PayoutField, Segmented } from "./createPayoutParts";
+import { formatPhoneInput, PayoutField, Segmented } from "./createPayoutParts";
 
 /** The banks a new family can take payments to; Jusan is no longer offered. */
 const BANKS: FamilyCreate["payment_bank"][] = ["kaspi", "halyk", "freedom"];
 const bankLogo = (bank: string) => `${import.meta.env.BASE_URL}brand-assets/banks/${bank}.svg`;
-const CHAT_OPTIONS: { value: NonNullable<FamilyCreate["chat_kind"]>; label: string }[] = [
-  { value: "telegram", label: "Telegram" },
-  { value: "whatsapp", label: "WhatsApp" }
+const chatLogo = (kind: string) => `${import.meta.env.BASE_URL}brand-assets/chats/${kind}.svg`;
+const CHAT_OPTIONS: { value: NonNullable<FamilyCreate["chat_kind"]>; label: string; icon: string }[] = [
+  { value: "telegram", label: "Telegram", icon: chatLogo("telegram") },
+  { value: "whatsapp", label: "WhatsApp", icon: chatLogo("whatsapp") }
 ];
 
 type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolean>>;
@@ -81,11 +82,11 @@ export function CreateFamilyPayoutStep({
 
       <section className="create-payout-block" aria-label="Банк">
         <span className="create-terms-caption">Банк</span>
-        <BankTiles
-          banks={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank] }))}
+        <Segmented
+          label="Банк"
+          options={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank], icon: bankLogo(bank) }))}
           value={form.payment_bank}
-          label={(bank) => bankLabels[bank]}
-          logo={bankLogo}
+          testId={(bank) => `create-bank-${bank}`}
           onChange={(bank) => onChangeForm((current) => ({ ...current, payment_bank: bank }))}
         />
       </section>

@@ -21,44 +21,6 @@ export function PayoutField({
   );
 }
 
-/** Banks as equal tiles: the mark above, the name under it, the picked one ringed. */
-export function BankTiles<T extends string>({
-  banks,
-  value,
-  label,
-  logo,
-  onChange
-}: {
-  banks: { value: T; label: string }[];
-  value: T;
-  label: (bank: T) => string;
-  logo: (bank: T) => string;
-  onChange: (bank: T) => void;
-}) {
-  return (
-    <div className="create-bank-tiles" role="radiogroup" aria-label="Банк">
-      {banks.map((bank) => (
-        <button
-          key={bank.value}
-          type="button"
-          role="radio"
-          aria-checked={bank.value === value}
-          data-testid={`create-bank-${bank.value}`}
-          className="create-bank-tile"
-          onClick={() => {
-            if (bank.value === value) return;
-            triggerTelegramSelection();
-            onChange(bank.value);
-          }}
-        >
-          <img src={logo(bank.value)} alt="" aria-hidden="true" draggable={false} />
-          <span>{label(bank.value)}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** One choice out of a few short names, as a segmented control. */
 export function Segmented<T extends string>({
   label,
@@ -68,7 +30,7 @@ export function Segmented<T extends string>({
   onChange
 }: {
   label: string;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; icon?: string }[];
   value: T;
   testId: (value: T) => string;
   onChange: (value: T) => void;
@@ -89,6 +51,7 @@ export function Segmented<T extends string>({
             onChange(option.value);
           }}
         >
+          {option.icon ? <img src={option.icon} alt="" aria-hidden="true" draggable={false} /> : null}
           <span>{option.label}</span>
         </button>
       ))}
