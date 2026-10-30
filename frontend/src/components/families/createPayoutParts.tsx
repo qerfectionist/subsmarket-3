@@ -94,8 +94,8 @@ export function formatPhoneInput(raw: string, previous: string) {
 }
 
 /**
- * The chat caption with a small «!» right after it; a tap opens a short text
- * on what the chat is for, under the caption.
+ * The chat caption, and across from it «(!) Зачем нужен чат»; a tap opens a
+ * short text on what the chat is for, under the caption.
  */
 export function ChatInfo({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -107,12 +107,14 @@ export function ChatInfo({ children }: { children: ReactNode }) {
           type="button"
           className="create-chat-info-toggle"
           data-testid="create-chat-info"
-          aria-label="Зачем нужен чат"
           aria-expanded={open}
           aria-controls="create-chat-info-text"
           onClick={() => setOpen((current) => !current)}
         >
-          !
+          <span className="create-chat-info-mark" aria-hidden="true">
+            !
+          </span>
+          Зачем нужен чат
         </button>
       </div>
       {open ? (
