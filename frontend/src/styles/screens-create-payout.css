@@ -149,18 +149,12 @@
 }
 
 .create-payout-field > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--app-muted);
   font-size: 12px;
   font-weight: 400;
-}
-
-.create-payout-field-hint {
-  margin-left: 4px;
-  opacity: 0.6;
-}
-
-.create-payout-field-hint::before {
-  content: "· ";
 }
 
 .create-payout-field[data-invalid] > label {
@@ -271,7 +265,7 @@
   column-gap: 10px;
 }
 
-.app-shell .create-chat-info-toggle {
+.app-shell .create-info-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -288,7 +282,7 @@
   transition: color 0.2s ease;
 }
 
-.create-chat-info-mark {
+.create-info-mark {
   display: inline-grid;
   place-items: center;
   width: 18px;
@@ -301,18 +295,33 @@
   line-height: 1;
 }
 
-.app-shell .create-chat-info-toggle[aria-expanded="true"] {
+/* In a plate label: the label's own 12px, a smaller mark. */
+.app-shell .create-info-toggle[data-size="small"] {
+  min-height: 0;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.create-info-toggle[data-size="small"] .create-info-mark {
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+}
+
+.app-shell .create-info-toggle[aria-expanded="true"] {
   color: var(--app-text);
 }
 
-.app-shell .create-chat-info-toggle[aria-expanded="true"] .create-chat-info-mark {
+.app-shell .create-info-toggle[aria-expanded="true"] .create-info-mark {
   background: var(--app-text);
   color: var(--app-bg, #000);
 }
 
 /* The text unfolds from under the caption: height, fade and a small slide together.
    Its 8px gap sits inside the fold, so closed it takes no room at all. */
-.create-chat-info-panel {
+.create-info-panel {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
@@ -321,7 +330,7 @@
     opacity 0.22s ease;
 }
 
-.create-chat-info-panel[data-open] {
+.create-info-panel[data-open] {
   grid-template-rows: 1fr;
   opacity: 1;
   transition:
@@ -329,33 +338,33 @@
     opacity 0.28s ease 0.06s;
 }
 
-.create-chat-info-clip {
+.create-info-clip {
   min-height: 0;
   overflow: hidden;
 }
 
-.create-chat-info-panel .create-chat-info-text {
+.create-info-panel .create-info-text {
   transform: translateY(-6px);
   transition: transform 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.create-chat-info-panel[data-open] .create-chat-info-text {
+.create-info-panel[data-open] .create-info-text {
   transform: none;
 }
 
-.create-chat-info-mark {
+.create-info-mark {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .create-chat-info-panel,
-  .create-chat-info-panel[data-open],
-  .create-chat-info-panel .create-chat-info-text {
+  .create-info-panel,
+  .create-info-panel[data-open],
+  .create-info-panel .create-info-text {
     transition: none;
   }
 }
 
-.app-shell .create-chat-info-text {
+.app-shell .create-info-text {
   margin: 8px 0 0;
   padding: 12px 14px;
   border-radius: 14px;

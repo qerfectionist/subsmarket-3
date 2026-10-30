@@ -3,7 +3,15 @@ import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
 import type { FieldErrors } from "./createFamilyForm";
-import { ChatInfo, formatPhoneInput, PayoutField, Segmented, type PayoutProgress } from "./createPayoutParts";
+import {
+  ChatInfo,
+  formatPhoneInput,
+  InfoPanel,
+  InfoToggle,
+  PayoutField,
+  Segmented,
+  type PayoutProgress
+} from "./createPayoutParts";
 
 /** The banks a new family can take payments to; Jusan is no longer offered. */
 const BANKS: FamilyCreate["payment_bank"][] = ["kaspi", "halyk", "freedom"];
@@ -50,6 +58,7 @@ export function CreateFamilyPayoutStep({
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
 }) {
   const [touched, setTouched] = useState<Touched>({});
+  const [nameInfo, setNameInfo] = useState(false);
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
   const phoneError = shown("payment_phone");
   // The stored number is «+7 700 123 45 67»; the field shows what follows the fixed +7.
@@ -148,44 +157,60 @@ export function CreateFamilyPayoutStep({
               </span>
             </div>
           </PayoutField>
-          <PayoutField
-            label={
-              <>
-                Имя <span className="create-payout-field-hint">рекомендуем, для сверки перевода</span>
-              </>
-            }
-            htmlFor="create-recipient-name"
-            invalid={Boolean(nameError)}
-            locked={stage < 2}
-          >
-            <input
-              ref={nameRef}
-              id="create-recipient-name"
-              disabled={stage < 2}
-              placeholder="Кайрат Н."
-              data-testid="create-recipient-name-input"
-              autoComplete="off"
-              autoCapitalize="words"
-              enterKeyHint="next"
-              onKeyDown={(event) => {
-                // Enter moves on to the chat instead of sending the form.
-                if (event.key !== "Enter") return;
-                event.preventDefault();
-                reveal(3);
-              }}
-              maxLength={40}
-              aria-invalid={Boolean(nameError) || undefined}
-              value={form.payment_recipient_name ?? ""}
-              onBlur={() => {
-                setTouched((current) => ({ ...current, payment_recipient_name: true }));
-                // Leaving the name, filled or not, wakes the chat: the name is optional.
-                reveal(3);
-              }}
-              onChange={(event) =>
-                onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
+          <div>
+            <PayoutField
+              label={
+                <>
+                  Имя
+                  <InfoToggle
+                    small
+                    open={nameInfo}
+                    controls="create-name-info-text"
+                    testId="create-name-info"
+                    onToggle={() => setNameInfo((current) => !current)}
+                  >
+                    Зачем указывать
+                  </InfoToggle>
+                </>
               }
-            />
-          </PayoutField>
+              htmlFor="create-recipient-name"
+              invalid={Boolean(nameError)}
+              locked={stage < 2}
+            >
+              <input
+                ref={nameRef}
+                id="create-recipient-name"
+                aria-label="Имя получателя"
+                disabled={stage < 2}
+                placeholder="Кайрат Н."
+                data-testid="create-recipient-name-input"
+                autoComplete="off"
+                autoCapitalize="words"
+                enterKeyHint="next"
+                onKeyDown={(event) => {
+                  // Enter moves on to the chat instead of sending the form.
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  reveal(3);
+                }}
+                maxLength={40}
+                aria-invalid={Boolean(nameError) || undefined}
+                value={form.payment_recipient_name ?? ""}
+                onBlur={() => {
+                  setTouched((current) => ({ ...current, payment_recipient_name: true }));
+                  // Leaving the name, filled or not, wakes the chat: the name is optional.
+                  reveal(3);
+                }}
+                onChange={(event) =>
+                  onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
+                }
+              />
+            </PayoutField>
+            <InfoPanel open={nameInfo} id="create-name-info-text" testId="create-name-info">
+              Необязательно, но рекомендуем. При переводе банк покажет имя получателя, и участник сверит его с этим:
+              так он будет уверен, что платит именно вам.
+            </InfoPanel>
+          </div>
         </div>
         {recipientErrors.length > 0 ? (
           <small className="create-payout-note field-error" role="alert" aria-live="polite">

@@ -93,46 +93,100 @@ export function formatPhoneInput(raw: string, previous: string) {
   return ["+7", ...parts].join(" ");
 }
 
+/** «(!) Зачем …»: a quiet question that opens its answer in an InfoPanel. */
+export function InfoToggle({
+  open,
+  controls,
+  testId,
+  small,
+  children,
+  onToggle
+}: {
+  open: boolean;
+  controls: string;
+  testId: string;
+  /** Sized to sit in a 12px plate label instead of a 15px caption. */
+  small?: boolean;
+  children: ReactNode;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="create-info-toggle"
+      data-size={small ? "small" : undefined}
+      data-testid={testId}
+      aria-expanded={open}
+      aria-controls={controls}
+      // Keeps the keyboard and focus where they are: a question is not leaving the field.
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={(event) => {
+        // Inside a field label: open the answer, do not focus the field.
+        event.preventDefault();
+        onToggle();
+      }}
+    >
+      <span className="create-info-mark" aria-hidden="true">
+        !
+      </span>
+      {children}
+    </button>
+  );
+}
+
 /**
- * The chat caption with «(!) Зачем нужен чат» right after it; a tap opens a
- * short text on what the chat is for, under the caption.
+ * The answer to an InfoToggle. Always rendered so it unfolds and folds
+ * smoothly; closed, it takes no room and no focus.
  */
+export function InfoPanel({
+  open,
+  id,
+  testId,
+  children
+}: {
+  open: boolean;
+  id: string;
+  testId: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      id={id}
+      className="create-info-panel"
+      data-testid={`${testId}-panel`}
+      data-open={open || undefined}
+      aria-hidden={!open}
+      inert={!open}
+    >
+      <div className="create-info-clip">
+        <p className="create-info-text" data-testid={`${testId}-text`}>
+          {children}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** The chat caption with «(!) Зачем нужен чат» right after it, the answer under it. */
 export function ChatInfo({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="create-chat-info">
+    <div>
       <div className="create-chat-head">
         {children}
-        <button
-          type="button"
-          className="create-chat-info-toggle"
-          data-testid="create-chat-info"
-          aria-expanded={open}
-          aria-controls="create-chat-info-text"
-          onClick={() => setOpen((current) => !current)}
+        <InfoToggle
+          open={open}
+          controls="create-chat-info-text"
+          testId="create-chat-info"
+          onToggle={() => setOpen((current) => !current)}
         >
-          <span className="create-chat-info-mark" aria-hidden="true">
-            !
-          </span>
           Зачем нужен чат
-        </button>
+        </InfoToggle>
       </div>
-      {/* Always rendered so it can unfold and fold smoothly; closed, it takes no room and no focus. */}
-      <div
-        id="create-chat-info-text"
-        className="create-chat-info-panel"
-        data-testid="create-chat-info-panel"
-        data-open={open || undefined}
-        aria-hidden={!open}
-        inert={!open}
-      >
-        <div className="create-chat-info-clip">
-          <p className="create-chat-info-text" data-testid="create-chat-info-text">
-            В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет
-            напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек.
-          </p>
-        </div>
-      </div>
+      <InfoPanel open={open} id="create-chat-info-text" testId="create-chat-info">
+        В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет
+        напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек.
+      </InfoPanel>
     </div>
   );
 }

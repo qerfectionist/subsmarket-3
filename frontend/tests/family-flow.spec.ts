@@ -297,6 +297,15 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   // The name wakes up once the ten digits are in.
   await phone.fill("+77001234567");
   await expect(name).toBeEnabled();
+
+  // «(!) Зачем указывать» in the name label opens its answer without focusing the field.
+  const nameInfo = page.getByTestId("create-name-info-panel");
+  await expect(nameInfo).toHaveAttribute("aria-hidden", "true");
+  await page.getByTestId("create-name-info").click();
+  await expect(nameInfo).toHaveAttribute("data-open", "true");
+  await expect(page.getByTestId("create-name-info-text")).toContainText("уверен, что платит именно вам");
+  await page.getByTestId("create-name-info").click();
+  await expect(nameInfo).toHaveAttribute("aria-hidden", "true");
   await expect(chat).toBeDisabled();
 
   // Leaving the name empty wakes the chat; the family can be created only after picking it.
