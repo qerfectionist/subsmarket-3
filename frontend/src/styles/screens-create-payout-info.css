@@ -108,56 +108,84 @@
   line-height: 1.45;
 }
 
-/* «Что будет после создания»: three numbered rows on one plate. */
-.create-next-steps {
+/* What happens after creation: a vertical timeline, no plate. A round icon per
+   point joined by a line; the first point is lit and the line fades after it. */
+.create-timeline {
   display: grid;
   margin: 0;
-  padding: 4px 0;
-  border-radius: var(--app-radius-md, 16px);
-  background: var(--app-surface);
+  padding: 4px 4px 0;
   list-style: none;
 }
 
-.create-next-steps > li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px 16px;
+.create-timeline > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 14px;
+  padding-bottom: 20px;
 }
 
-.create-next-steps > li + li {
-  border-top: 0.5px solid color-mix(in srgb, var(--app-text) 10%, transparent);
+.create-timeline > li:last-child {
+  padding-bottom: 0;
 }
 
-.create-next-steps-num {
-  display: inline-grid;
+/* The line from this point down to the next one. */
+.create-timeline > li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 36px;
+  bottom: 4px;
+  left: 15px;
+  width: 2px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--app-text) 12%, transparent);
+}
+
+.create-timeline > li:first-child::before {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--app-text) 55%, transparent),
+    color-mix(in srgb, var(--app-text) 12%, transparent)
+  );
+}
+
+.create-timeline-icon {
+  display: grid;
   place-items: center;
-  flex: none;
-  width: 24px;
-  height: 24px;
-  margin-top: 1px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--app-secondary-bg, #2c2c2e);
-  color: var(--app-text);
-  font-size: 13px;
-  font-weight: var(--app-weight-semibold);
-  font-variant-numeric: tabular-nums;
+  background: var(--app-surface);
+  color: var(--app-muted);
 }
 
-.create-next-steps-body {
+.create-timeline > li:first-child .create-timeline-icon {
+  background: var(--app-text);
+  color: var(--app-bg, #000);
+}
+
+.create-timeline-body {
   display: grid;
   gap: 2px;
   min-width: 0;
+  padding-top: 1px;
 }
 
-.create-next-steps-body > strong {
+.create-timeline-when {
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 16px;
+}
+
+.create-timeline-body > strong {
   color: var(--app-text);
   font-size: 15px;
   font-weight: var(--app-weight-semibold);
   line-height: 20px;
 }
 
-.create-next-steps-body > small {
+.create-timeline-body > small {
   color: var(--app-muted);
   font-size: 13px;
   line-height: 18px;
