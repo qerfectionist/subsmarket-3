@@ -243,15 +243,16 @@ export function CreateFamilyPayoutStep({
             onProgress((current) => ({ ...current, chat: true }));
           }}
         />
-        <small className="create-payout-note">
-          {!progress.chat
-            ? "Где будет общаться семья."
-            : chat === "telegram"
+        {/* No note until a chat is picked; then what happens with it. */}
+        {progress.chat ? (
+          <small className="create-payout-note">
+            {chat === "telegram"
               ? "После создания откроем группу с ботом, останется нажать «Создать»."
               : chat === "whatsapp"
                 ? "После создания поможем сделать группу в WhatsApp за три шага."
                 : "Семья будет без общего чата: участникам и вам придётся связываться напрямую."}
-        </small>
+          </small>
+        ) : null}
       </section>
 
       <CreateFamilyNextSteps form={form} bankChosen={stage >= 1} />
