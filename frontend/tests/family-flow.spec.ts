@@ -241,8 +241,7 @@ test("subscription and tariff families stay in separate storefronts", async ({
   await fillCreateField(page, "create-total-price-input", "12000");
   await fillCreateField(page, "create-max-members-input", "4");
   // The last step sums the family up with the tariff's name.
-  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
-  await goToCreateStep(page, "review");
+  await goToCreateStep(page, "payout");
   await expect(page.getByTestId("create-terms-summary")).toContainText("Семейный 4");
   await submitCreateFamily(page);
 
@@ -278,8 +277,8 @@ test("create family form validates payout fields in real time", async ({ page })
   await openCreate(page);
   await goToCreateStep(page, "payout");
 
-  // Empty phone: the button waits, and nothing nags before a try.
-  await expect(page.getByTestId("create-family-next")).toBeDisabled();
+  // Empty phone and name: the button waits, and nothing nags before a try.
+  await expect(page.getByTestId("create-family-submit")).toBeDisabled();
   await expect(page.getByTestId("create-fix-hint")).toHaveCount(0);
 
   await fillCreateField(page, "create-payment-phone-input", "123");
@@ -294,7 +293,7 @@ test("create family form validates payout fields in real time", async ({ page })
   await fillCreateField(page, "create-recipient-name-input", "Айгерим Б.");
   await expect(page.locator(".field-error")).toHaveCount(0);
   await expect(page.getByTestId("create-fix-hint")).toHaveCount(0);
-  await expect(page.getByTestId("create-family-next")).toBeEnabled();
+  await expect(page.getByTestId("create-family-submit")).toBeEnabled();
 
   await fillCreateField(page, "create-total-price-input", "0");
   await expect(page.locator(".field-error")).toContainText("больше нуля");
@@ -439,12 +438,9 @@ test("inside Telegram the native main button drives family creation", async ({ p
 
   await pressMainButton();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "payout");
-  await expect.poll(mainButton).toMatchObject({ text: "Далее", enabled: false });
+  await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: false });
   await page.getByTestId("create-payment-phone-input").fill("+77001234567");
   await page.getByTestId("create-recipient-name-input").fill("Айгерим Б.");
-  await expect.poll(mainButton).toMatchObject({ text: "Далее", enabled: true, handlers: 1 });
-  await pressMainButton();
-  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "review");
   await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: true, handlers: 1 });
   await pressMainButton();
   await waitForNetworkQuiet(page);
@@ -950,19 +946,3 @@ function futureDateISO(days: number) {
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
 }
-
-test("create family review step lists what was entered and goes back to change it", async ({ page }) => {
-  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
-  await openCreate(page);
-  await fillCreateField(page, "create-total-price-input", "4800");
-  await fillCreateField(page, "create-payment-phone-input", "+77001234567");
-  await goToCreateStep(page, "review");
-  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "review");
-  await expect(page.getByTestId("create-review-terms")).toContainText("4 800 ₸");
-  await expect(page.getByTestId("create-review-payout")).toContainText("+7 700 123 45 67");
-  await expect(page.getByTestId("create-review-payout")).toContainText("Без имени получателя");
-  await expect(page.getByTestId("create-family-submit")).toBeEnabled();
-
-  await page.getByTestId("create-review-terms-edit").evaluate((element) => (element as HTMLElement).click());
-  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
-});
