@@ -3,8 +3,8 @@ import type { FamilyCreate } from "../../types";
 import { calculatePreviewShare } from "./createFamilyForm";
 
 /**
- * «Что будет после создания»: the three things that happen once the family
- * exists, with this family's own share, day and bank, so the button below is
+ * What happens after creation: the three things that follow once the family
+ * exists (no caption, the numbered rows speak for themselves), with this family's own share, day and bank, so the button below is
  * not a leap into the unknown.
  */
 export function CreateFamilyNextSteps({ form, bankChosen }: { form: FamilyCreate; bankChosen: boolean }) {
@@ -21,7 +21,6 @@ export function CreateFamilyNextSteps({ form, bankChosen }: { form: FamilyCreate
       className="create-payout-block create-payout-snap-end"
       aria-label="Что будет после создания"
       data-testid="create-next-steps">
-      <span className="create-terms-caption">Что будет после создания</span>
       <ol className="create-next-steps">
         {steps.map((step, index) => (
           <li key={step.title}>
