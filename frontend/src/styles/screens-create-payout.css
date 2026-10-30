@@ -180,9 +180,31 @@
   line-height: 28px;
 }
 
-.create-payout-phone input {
+.create-payout-phone > .create-payout-phone-box {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.app-shell .create-payout-phone-box input:not([type="checkbox"]):not([type="radio"]) {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+/* Same font and box as the input: the typed part is invisible, only the rest shows. */
+.create-payout-phone-mask {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--app-muted) 55%, transparent);
+  line-height: 28px;
+  white-space: pre;
+  pointer-events: none;
+}
+
+.create-payout-phone-mask > span {
+  color: transparent;
 }
 
 /* The :not()s match the specificity of the shared field rule, which this undoes. */

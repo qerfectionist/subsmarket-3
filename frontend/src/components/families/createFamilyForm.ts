@@ -51,6 +51,15 @@ export const FIELD_NAMES: Record<keyof FieldErrors, string> = {
   payment_recipient_name: "имя получателя"
 };
 
+/** «Осталось 3 цифры»: how many of the ten digits after +7 are still missing. */
+function phoneShortfall(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  const missing = 10 - (phone.trim().startsWith("+7") ? digits.slice(1) : digits).length;
+  if (missing <= 0) return "Проверьте номер: после +7 нужно 10 цифр";
+  const word = missing === 1 ? "цифра" : missing <= 4 ? "цифры" : "цифр";
+  return `Номер неполный: ${missing === 1 ? "осталась" : "осталось"} ${missing} ${word}`;
+}
+
 export function getTodayKz(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Almaty" }).format(new Date());
 }
@@ -93,7 +102,7 @@ export function validateCreateForm(
   if (!form.payment_phone.trim()) {
     errors.payment_phone = "Укажите номер телефона";
   } else if (!PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
-    errors.payment_phone = "Номер неполный: нужно 10 цифр после +7";
+    errors.payment_phone = phoneShortfall(form.payment_phone);
   }
   // The name is optional; when given it must look like a name.
   const recipient = (form.payment_recipient_name ?? "").trim();

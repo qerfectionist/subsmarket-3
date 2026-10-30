@@ -17,6 +17,9 @@ const CHAT_OPTIONS: { value: ChatChoice; label: string; icon?: string }[] = [
   { value: "none", label: "Без чата" }
 ];
 
+/** The ten digits after +7, grouped as they are typed: 700 123 45 67. */
+const PHONE_MASK = "___ ___ __ __";
+
 type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolean>>;
 
 /**
@@ -114,26 +117,35 @@ export function CreateFamilyPayoutStep({
             {/* The country code is fixed: +7 stays in front, only the ten digits are typed. */}
             <div className="create-payout-phone">
               <span aria-hidden="true">+7</span>
-              <input
-                ref={phoneRef}
-                id="create-payment-phone"
-                required
-                disabled={stage < 1}
-                placeholder="700 123 45 67"
-                data-testid="create-payment-phone-input"
-                inputMode="tel"
-                autoComplete="tel-national"
-                enterKeyHint="next"
-                aria-invalid={Boolean(phoneError) || undefined}
-                value={phoneShown}
-                onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
-                onChange={(event) => {
-                  const next = formatPhoneInput(event.target.value, phoneShown);
-                  onChangeForm((current) => ({ ...current, payment_phone: next }));
-                  // Ten digits typed: the name is next.
-                  if (next.replace(/\D/g, "").length === 11) reveal(2);
-                }}
-              />
+              {/* The digits still to type show as a faint mask right after the typed ones. */}
+              <span className="create-payout-phone-box">
+                <input
+                  ref={phoneRef}
+                  id="create-payment-phone"
+                  required
+                  disabled={stage < 1}
+                  placeholder="700 123 45 67"
+                  data-testid="create-payment-phone-input"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  enterKeyHint="next"
+                  aria-invalid={Boolean(phoneError) || undefined}
+                  value={phoneShown}
+                  onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
+                  onChange={(event) => {
+                    const next = formatPhoneInput(event.target.value, phoneShown);
+                    onChangeForm((current) => ({ ...current, payment_phone: next }));
+                    // Ten digits typed: the name is next.
+                    if (next.replace(/\D/g, "").length === 11) reveal(2);
+                  }}
+                />
+                {phoneShown ? (
+                  <span className="create-payout-phone-mask" aria-hidden="true">
+                    <span>{phoneShown}</span>
+                    {PHONE_MASK.slice(phoneShown.length)}
+                  </span>
+                ) : null}
+              </span>
             </div>
           </PayoutField>
           <PayoutField

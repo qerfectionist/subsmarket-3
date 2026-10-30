@@ -351,7 +351,8 @@ test("create family form validates payout fields in real time", async ({ page })
 
   await fillCreateField(page, "create-payment-phone-input", "123");
   await page.getByTestId("create-payment-phone-input").blur();
-  await expect(page.locator(".field-error")).toContainText("Номер неполный");
+  // It says exactly how many digits are still missing: 3 of 10 typed.
+  await expect(page.locator(".field-error")).toContainText("Номер неполный: осталось 7 цифр");
 
   await fillCreateField(page, "create-payment-phone-input", "+77001234567");
   await fillCreateField(page, "create-recipient-name-input", "Айгерим 4400");
