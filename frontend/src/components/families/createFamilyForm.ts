@@ -95,12 +95,11 @@ export function validateCreateForm(
   } else if (!PHONE_RE.test(form.payment_phone.replace(/[\s()-]/g, ""))) {
     errors.payment_phone = "Номер неполный: нужно 10 цифр после +7";
   }
+  // The name is optional; when given it must look like a name.
   const recipient = (form.payment_recipient_name ?? "").trim();
-  if (!recipient) {
-    errors.payment_recipient_name = "Укажите имя, как оно записано в банке";
-  } else if (/\d/.test(recipient)) {
+  if (recipient && /\d/.test(recipient)) {
     errors.payment_recipient_name = "Только имя и буква фамилии, без цифр";
-  } else if (recipient.length < 2) {
+  } else if (recipient && recipient.length < 2) {
     errors.payment_recipient_name = "Слишком короткое имя";
   }
   return errors;

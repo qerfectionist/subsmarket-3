@@ -118,10 +118,9 @@ export function CreateFamilyPayoutStep({
               />
             </div>
           </PayoutField>
-          <PayoutField label="Имя" htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
+          <PayoutField label="Имя · необязательно" htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
             <input
               id="create-recipient-name"
-              required
               placeholder="Кайрат Н."
               data-testid="create-recipient-name-input"
               autoComplete="off"
@@ -145,8 +144,8 @@ export function CreateFamilyPayoutStep({
           </small>
         ) : (
           <small className="create-payout-note">
-            Номер, привязанный к {bankLabels[form.payment_bank]}, и имя как в банке. Видят только
-            принятые участники.
+            Участники увидят номер и имя только после подтверждения. Имя советуем указать: по нему
+            перед переводом сверяют получателя в {bankLabels[form.payment_bank]}.
           </small>
         )}
       </section>
