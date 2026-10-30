@@ -165,6 +165,24 @@
   color: var(--app-danger, #ff453a);
 }
 
+.create-payout-phone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+
+.create-payout-phone > span {
+  flex: none;
+  line-height: 28px;
+}
+
+.create-payout-phone input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* The :not()s match the specificity of the shared field rule, which this undoes. */
 .app-shell .create-payout-field input:not([type="checkbox"]):not([type="radio"]) {
   min-height: 0;

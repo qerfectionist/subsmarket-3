@@ -46,6 +46,8 @@ export function CreateFamilyPayoutStep({
   const [touched, setTouched] = useState<Touched>({});
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
   const phoneError = shown("payment_phone");
+  // The stored number is «+7 700 123 45 67»; the field shows what follows the fixed +7.
+  const phoneShown = form.payment_phone.replace(/^\+7\s?/, "");
   const nameError = shown("payment_recipient_name");
   const recipientErrors = [phoneError, nameError].filter(Boolean) as string[];
   const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
@@ -95,28 +97,32 @@ export function CreateFamilyPayoutStep({
         <span className="create-terms-caption">Получатель</span>
         <div className="create-payout-fields">
           <PayoutField label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)}>
-            <input
-              id="create-payment-phone"
-              required
-              placeholder="+7 700 123 45 67"
-              data-testid="create-payment-phone-input"
-              inputMode="tel"
-              autoComplete="tel"
-              enterKeyHint="next"
-              aria-invalid={Boolean(phoneError) || undefined}
-              value={form.payment_phone}
-              onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
-              onChange={(event) => {
-                const next = formatPhoneInput(event.target.value, form.payment_phone);
-                onChangeForm((current) => ({ ...current, payment_phone: next }));
-              }}
-            />
+            {/* The country code is fixed: +7 stays in front, only the ten digits are typed. */}
+            <div className="create-payout-phone">
+              <span aria-hidden="true">+7</span>
+              <input
+                id="create-payment-phone"
+                required
+                placeholder="700 123 45 67"
+                data-testid="create-payment-phone-input"
+                inputMode="tel"
+                autoComplete="tel-national"
+                enterKeyHint="next"
+                aria-invalid={Boolean(phoneError) || undefined}
+                value={phoneShown}
+                onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
+                onChange={(event) => {
+                  const next = formatPhoneInput(event.target.value, phoneShown);
+                  onChangeForm((current) => ({ ...current, payment_phone: next }));
+                }}
+              />
+            </div>
           </PayoutField>
           <PayoutField label="Имя" htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
             <input
               id="create-recipient-name"
               required
-              placeholder="Айгерим Б."
+              placeholder="Кайрат Н."
               data-testid="create-recipient-name-input"
               autoComplete="off"
               autoCapitalize="words"
