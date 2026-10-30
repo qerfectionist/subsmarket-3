@@ -319,6 +319,10 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   await chat.evaluate((element) => (element as HTMLElement).click());
   await expect(submit).toBeEnabled();
 
+  // Under the chat: the requisites as members will see them, and what comes in when every place is taken.
+  await expect(page.getByTestId("create-requisite-preview")).toContainText("Halyk");
+  await expect(page.getByTestId("create-income")).toContainText("на Halyk");
+
   // Going back to the terms and forward again keeps everything that was woken up.
   await goToCreateStep(page, "terms");
   await goToCreateStep(page, "payout");

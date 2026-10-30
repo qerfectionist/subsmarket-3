@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { CreateFamilyIncome, CreateFamilyRequisitePreview } from "./CreateFamilyPayoutSummary";
 import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
@@ -252,6 +253,9 @@ export function CreateFamilyPayoutStep({
           </small>
         ) : null}
       </section>
+
+      <CreateFamilyRequisitePreview form={form} locked={stage < 2} />
+      <CreateFamilyIncome form={form} bankChosen={stage >= 1} />
     </div>
   );
 }

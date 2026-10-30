@@ -107,3 +107,54 @@
   font-size: 13px;
   line-height: 1.45;
 }
+
+/* «Так увидят участники при оплате»: the real requisites box, only to look at. */
+.create-requisite-preview {
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.25s ease;
+}
+
+.create-requisite-preview[data-locked] {
+  opacity: 0.38;
+}
+
+.create-requisite-preview .requisite-box {
+  margin: 0;
+}
+
+/* The income line: a label, the sum large, the arithmetic small under it. */
+.create-income {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: var(--app-radius-md, 16px);
+  background: var(--app-surface);
+}
+
+.create-income-label {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.create-income-value {
+  color: var(--app-text);
+  font-size: 28px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 34px;
+  font-variant-numeric: tabular-nums;
+}
+
+.create-income-value > span {
+  color: var(--app-muted);
+  font-size: 17px;
+  font-weight: var(--app-weight-medium);
+}
+
+.create-income-math {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
