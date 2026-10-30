@@ -33,9 +33,13 @@
   background: var(--app-border);
 }
 
-.create-progress li[data-state="done"] .create-progress-bar,
 .create-progress li[data-state="current"] .create-progress-bar {
   background: var(--app-text);
+}
+
+/* A step already done is green, so it reads as finished, not as where you are. */
+.create-progress li[data-state="done"] .create-progress-bar {
+  background: var(--app-success, #30d158);
 }
 
 .visually-hidden {

@@ -30,7 +30,7 @@ export function Segmented<T extends string>({
   onChange
 }: {
   label: string;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; icon?: string }[];
   value: T;
   testId: (value: T) => string;
   onChange: (value: T) => void;
@@ -51,7 +51,8 @@ export function Segmented<T extends string>({
             onChange(option.value);
           }}
         >
-          {option.label}
+          {option.icon ? <img src={option.icon} alt="" aria-hidden="true" draggable={false} /> : null}
+          <span>{option.label}</span>
         </button>
       ))}
     </div>

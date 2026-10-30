@@ -1,6 +1,5 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ServiceLogo } from "../branding";
-import { SystemSymbol } from "../SystemSymbol";
 import { serviceTitle } from "../../format";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
@@ -13,7 +12,9 @@ import {
 } from "./createFamilyForm";
 import { formatPhoneInput, PayoutRow, Segmented } from "./createPayoutParts";
 
-const BANKS = Object.keys(bankLabels) as FamilyCreate["payment_bank"][];
+/** The banks a new family can take payments to; Jusan is no longer offered. */
+const BANKS: FamilyCreate["payment_bank"][] = ["kaspi", "halyk", "freedom"];
+const bankLogo = (bank: string) => `${import.meta.env.BASE_URL}brand-assets/banks/${bank}.svg`;
 const CHAT_OPTIONS: { value: NonNullable<FamilyCreate["chat_kind"]>; label: string }[] = [
   { value: "telegram", label: "Telegram" },
   { value: "whatsapp", label: "WhatsApp" }
@@ -75,10 +76,13 @@ export function CreateFamilyPayoutStep({
             <strong>{title}</strong>
             <span>
               {formatKzt(share)} {periodPhrase(form.period)} · {form.max_members}{" "}
-              {pluralRu(form.max_members, "место", "места", "мест")} · {form.payment_day}-го
+              {pluralRu(form.max_members, "место", "места", "мест")}
             </span>
+            <span>Оплата {form.payment_day}-го числа</span>
           </span>
-          <SystemSymbol name="chevron.forward" size={16} />
+          <span className="create-terms-summary-edit" aria-hidden="true">
+            Изменить
+          </span>
         </button>
         <small className="create-payout-note">После создания сервис и места не поменять.</small>
       </section>
@@ -87,7 +91,7 @@ export function CreateFamilyPayoutStep({
         <span className="create-terms-caption">Банк</span>
         <Segmented
           label="Банк"
-          options={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank] }))}
+          options={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank], icon: bankLogo(bank) }))}
           value={form.payment_bank}
           testId={(bank) => `create-bank-${bank}`}
           onChange={(bank) => onChangeForm((current) => ({ ...current, payment_bank: bank }))}
