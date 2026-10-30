@@ -693,6 +693,7 @@ export function App() {
             createForm={createForm}
             busy={busy}
             onPickService={pickCreateService}
+            owner={{ avatar_name: user?.first_name || "Вы", photo_url: user?.photo_url ?? null }}
             onChangeForm={setCreateForm}
             onSubmit={(event) => void handleCreateFamily(event)}
           />

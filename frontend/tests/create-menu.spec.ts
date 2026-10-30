@@ -354,25 +354,23 @@ test("typing in the service search makes room: no step bars, button or menu", as
   await expect(dock).toBeVisible();
 });
 
-test("step 2 takes the price from its own keypad and shows each member's share", async ({ page }) => {
+test("step 2 shows the Market card and updates it from the price and places", async ({ page }) => {
   await openCreate(page);
   await page.getByTestId("create-kind-subscription").click();
   await page.getByTestId("create-service-option-youtube-premium").click();
   await page.getByTestId("create-family-next").click();
+  const card = page.getByTestId("create-preview-card");
+  await expect(card).toContainText("YouTube Premium");
+  await expect(card).toContainText("Вы организатор");
   const price = page.getByTestId("create-total-price-input");
-  const next = page.getByTestId("create-family-next");
-  // No system keyboard: the field asks for none, the keypad types into it.
-  await expect(price).toHaveAttribute("inputmode", "none");
-  for (let i = 0; i < 8; i += 1) await page.getByTestId("create-keypad-back").click();
-  await expect(price).toHaveValue("");
-  await expect(next).toBeDisabled();
-  for (const key of ["4", "2", "0", "0"]) await page.getByTestId(`create-keypad-${key}`).click();
+  // A tap asks for the phone's number keyboard; the digits group as they are typed.
+  await expect(price).toHaveAttribute("inputmode", "numeric");
+  await price.fill("4200");
   await expect(price).toHaveValue(/^4\s?200$/);
   await page.getByTestId("create-max-members-decrease").click();
   await page.getByTestId("create-max-members-decrease").click();
-  await expect(page.getByTestId("create-share-preview")).toContainText("1 050 ₸");
-  await expect(next).toBeEnabled();
-  // The service pill leads back to step 1.
-  await page.getByTestId("create-edit-service").click();
-  await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
+  // 4 200 ₸ for 4 places: each pays 1 050 ₸.
+  await expect(card).toContainText("1 050 ₸");
+  await price.fill("");
+  await expect(page.getByTestId("create-family-next")).toBeDisabled();
 });

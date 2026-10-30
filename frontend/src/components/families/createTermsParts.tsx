@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { SystemSymbol } from "../SystemSymbol";
-import { triggerTelegramSelection } from "../../telegram";
 import { formatKzt } from "./createFamilyForm";
 
 /** Up to 9 999 999 ₸: more digits than any family subscription costs. */
@@ -33,7 +32,7 @@ export function MiniStepper({
         disabled={value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
       >
-        <SystemSymbol name="minus" size={18} />
+        <SystemSymbol name="minus" size={16} />
       </button>
       <input
         id={id}
@@ -53,13 +52,13 @@ export function MiniStepper({
         disabled={value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
       >
-        <SystemSymbol name="plus" size={18} />
+        <SystemSymbol name="plus" size={16} />
       </button>
     </div>
   );
 }
 
-/** One row of the settings group: what it is (and an error if any) on the left, the control or value on the right. */
+/** One row of the settings group: the label (and an error if any) on the left, the control on the right. */
 export function TermsRow({ label, error, children }: { label: ReactNode; error?: string; children: ReactNode }) {
   return (
     <div className="create-terms-row">
@@ -73,19 +72,19 @@ export function TermsRow({ label, error, children }: { label: ReactNode; error?:
 }
 
 /**
- * The total as the one large number on the screen, as banking apps show an
- * amount being typed: grouped digits, ₸ after them and a blinking caret. The
- * field asks for no system keyboard (the keypad below types into it), but
- * still takes typing from a hardware keyboard.
+ * The full price as the one large number on the screen: grouped digits with ₸
+ * after them. A tap opens the phone's number keyboard.
  */
-export function AmountDisplay({
+export function AmountField({
   value,
   label,
+  hint,
   error,
   onChange
 }: {
   value: number;
   label: string;
+  hint: string;
   error?: string;
   onChange: (value: number) => void;
 }) {
@@ -96,56 +95,27 @@ export function AmountDisplay({
       <span className="create-amount-value">
         <input
           data-testid="create-total-price-input"
-          inputMode="none"
+          inputMode="numeric"
+          enterKeyHint="done"
           type="text"
           placeholder="0"
           aria-invalid={Boolean(error) || undefined}
           value={shown}
-          // As wide as the number, so the caret and ₸ stay right after it.
-          style={{ width: `${Math.max(shown.length, 1) + 0.2}ch` }}
+          // As wide as the number, so ₸ stays right after it and the pair stays centred.
+          style={{ width: `${Math.max(shown.length, 1) + 0.15}ch` }}
           onChange={(event) => onChange(Number(event.target.value.replace(/\D/g, "").slice(0, MAX_DIGITS)) || 0)}
         />
-        <span className="create-amount-caret" aria-hidden="true" />
         <span className="create-amount-currency" aria-hidden="true">
           ₸
         </span>
       </span>
       {error ? (
-        <small className="field-error create-amount-error" role="alert" aria-live="polite">
+        <small className="field-error create-amount-note" role="alert" aria-live="polite">
           {error}
         </small>
-      ) : null}
-    </label>
-  );
-}
-
-const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"] as const;
-
-/** The digits for the amount, on the screen itself, so no system keyboard covers the rows. */
-export function AmountKeypad({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  function press(key: (typeof KEYS)[number]) {
-    const digits = value > 0 ? String(value) : "";
-    const next = key === "back" ? digits.slice(0, -1) : (digits + key).slice(0, MAX_DIGITS);
-    triggerTelegramSelection();
-    onChange(Number(next) || 0);
-  }
-  return (
-    <div className="create-keypad" role="group" aria-label="Цифры цены">
-      {KEYS.map((key) =>
-        key === "" ? (
-          <span key="blank" aria-hidden="true" />
-        ) : (
-          <button
-            key={key}
-            type="button"
-            data-testid={`create-keypad-${key}`}
-            aria-label={key === "back" ? "Стереть цифру" : key}
-            onClick={() => press(key)}
-          >
-            {key === "back" ? <SystemSymbol name="delete.left" size={24} /> : key}
-          </button>
-        )
+      ) : (
+        <small className="create-amount-note">{hint}</small>
       )}
-    </div>
+    </label>
   );
 }

@@ -4,8 +4,6 @@ import minusBold from "@iconify-icons/solar/minus-bold";
 import altArrowLeftLinear from "@iconify-icons/solar/alt-arrow-left-linear";
 import altArrowRightLinear from "@iconify-icons/solar/alt-arrow-right-linear";
 import altArrowUpDuotone from "@iconify-icons/solar/alt-arrow-up-bold-duotone";
-import altArrowDownLinear from "@iconify-icons/solar/alt-arrow-down-linear";
-import backspaceLinear from "@iconify-icons/solar/backspace-linear";
 import arrowLeftDuotone from "@iconify-icons/solar/arrow-left-bold-duotone";
 import bellRingDuotone from "@iconify-icons/solar/bell-ring-bold-duotone";
 import bookDuotone from "@iconify-icons/solar/book-bold-duotone";
@@ -64,8 +62,6 @@ const SYSTEM_SYMBOLS = {
   "chevron.backward": altArrowLeftLinear,
   "chevron.forward": altArrowRightLinear,
   "chevron.up": altArrowUpDuotone,
-  "chevron.down": altArrowDownLinear,
-  "delete.left": backspaceLinear,
   clock: clockCircleDuotone,
   cloud: cloudDuotone,
   crown: crownDuotone,

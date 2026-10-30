@@ -334,11 +334,11 @@ test("create family picks a service from the logo grid and moves on", async ({ p
   await page.getByTestId("create-family-next").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");
   await expect(page.getByTestId("create-progress-service")).toHaveAttribute("data-state", "done");
-  // Step 2 opens with the picked service as a small pill that leads back to step 1.
-  await expect(page.getByTestId("create-edit-service")).toContainText(name);
-  await expect(page.locator(".create-terms-pill .service-logo")).toHaveCount(1);
+  // Step 2 opens with the family as the Market will show it; the header arrow leads back to step 1.
+  await expect(page.getByTestId("create-preview-card")).toContainText(name);
+  await expect(page.getByTestId("create-preview-card").locator(".service-logo")).toHaveCount(1);
   await expect(page.getByTestId("create-family-back")).toHaveCount(0);
-  await page.getByTestId("create-edit-service").click();
+  await page.getByTestId("create-form-back").click();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "service");
   await page.getByTestId("create-family-next").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "terms");

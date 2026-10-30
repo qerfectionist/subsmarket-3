@@ -1,49 +1,61 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Input } from "../ui";
-import { ServiceLogo } from "../branding";
-import { SystemSymbol } from "../SystemSymbol";
-import { serviceTitle } from "../../format";
-import type { FamilyCreate, FamilyService } from "../../types";
+import { FamilyListingCard } from "../ListingCard";
+import type { Family, FamilyCreate, FamilyService } from "../../types";
 import {
   calculatePreviewShare,
-  formatKzt,
   nextPaymentDateFor,
   periodPhrase,
   serviceStrings,
   type FieldErrors
 } from "./createFamilyForm";
 import { FieldNote } from "./createFamilyFields";
-import { AmountDisplay, AmountKeypad, MiniStepper, TermsRow } from "./createTermsParts";
+import { AmountField, MiniStepper, TermsRow } from "./createTermsParts";
 
 type Touched = Partial<Record<"plan_name" | "full_speed_gb", boolean>>;
 
+/** Who the preview card shows as the organiser. */
+export type PreviewOwner = { avatar_name: string; photo_url?: string | null };
+
 /**
- * Step 2 as an amount screen, the way banking apps take a sum: the service as
- * a small pill (a tap goes back to change it), the full price as the one large
- * number, the places, the payment day and each member's share as one group of
- * rows, and a keypad for the digits, so no system keyboard covers the rows.
+ * Step 2: the family as it will show on the Market (the same card, updated
+ * as the numbers change), the full price as the one large number, then the
+ * places and the payment day as one group of rows.
  */
 export function CreateFamilyTermsStep({
   form,
   errors,
   service,
+  owner,
   showAllErrors,
-  onEditService,
   onChangeForm
 }: {
   form: FamilyCreate;
   errors: FieldErrors;
   service: FamilyService;
+  owner: PreviewOwner;
   showAllErrors: boolean;
-  onEditService: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
 }) {
   const [touched, setTouched] = useState<Touched>({});
   const isTariff = service.family_type === "tariff";
   const hints = serviceStrings(service, "tariff_hints");
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
-  const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
-  const setPrice = (value: number) => onChangeForm((current) => ({ ...current, total_price_kzt: value }));
+
+  // Only the fields the Market card reads; the rest of a family does not exist yet.
+  const preview = {
+    id: "preview",
+    family_type: isTariff ? "tariff" : "subscription",
+    service_slug: service.slug,
+    service_name: service.name,
+    service_variant: service.variant ?? null,
+    plan_name: isTariff ? form.plan_name?.trim() || "Название тарифа" : null,
+    max_members: form.max_members,
+    free_slots: Math.max(0, form.max_members - 1),
+    period: form.period,
+    member_share_kzt: calculatePreviewShare(form.total_price_kzt, form.max_members),
+    owner
+  } as unknown as Family;
 
   function setDay(day: number) {
     onChangeForm((current) => ({
@@ -56,23 +68,19 @@ export function CreateFamilyTermsStep({
 
   return (
     <div className="create-step-body create-terms" data-create-step="terms">
-      <button type="button" className="create-terms-pill" data-testid="create-edit-service" onClick={onEditService}>
-        <ServiceLogo
-          serviceSlug={service.slug}
-          serviceName={service.name}
-          familyType={isTariff ? "tariff" : "subscription"}
-          size={26}
-          loading="eager"
-        />
-        <span>{isTariff ? service.name : serviceTitle(service)}</span>
-        <SystemSymbol name="chevron.down" size={16} />
-      </button>
+      <section className="create-terms-preview" aria-label="Так увидят в Маркете" data-testid="create-share-preview">
+        <span className="create-terms-caption">Так увидят в Маркете</span>
+        <div className="create-terms-preview-card" aria-hidden="true">
+          <FamilyListingCard family={preview} isOwner onClick={() => undefined} testId="create-preview-card" />
+        </div>
+      </section>
 
-      <AmountDisplay
-        label={`${isTariff ? "Тариф" : "Подписка"} ${periodPhrase(form.period)}`}
+      <AmountField
+        label={`Сколько стоит ${isTariff ? "тариф" : "подписка"} ${periodPhrase(form.period)}`}
+        hint="Цена делится поровну на всех, включая вас"
         value={form.total_price_kzt}
         error={errors.total_price_kzt}
-        onChange={setPrice}
+        onChange={(value) => onChangeForm((current) => ({ ...current, total_price_kzt: value }))}
       />
 
       {isTariff ? (
@@ -142,20 +150,12 @@ export function CreateFamilyTermsStep({
             onChange={setDay}
           />
         </TermsRow>
-        <p className="create-terms-share" data-testid="create-share-preview">
-          <span>Каждый платит вам</span>
-          <strong>
-            {formatKzt(share)} <small>{form.period === "yearly" ? "/ год" : "/ мес"}</small>
-          </strong>
-        </p>
       </section>
       {form.payment_day >= 29 ? (
         <small className="create-terms-note">
           В месяцах без {form.payment_day}-го числа оплата в последний день месяца.
         </small>
       ) : null}
-
-      <AmountKeypad value={form.total_price_kzt} onChange={setPrice} />
     </div>
   );
 }

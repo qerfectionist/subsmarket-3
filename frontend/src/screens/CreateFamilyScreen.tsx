@@ -2,7 +2,7 @@ import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } 
 import { Button as AppButton } from "../components/ui";
 import { CreateShell } from "../components/CreateCategoryPicker";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
-import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
+import { CreateFamilyTermsStep, type PreviewOwner } from "../components/families/CreateFamilyTermsStep";
 import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
 import {
   CREATE_STEPS,
@@ -31,6 +31,7 @@ export function CreateFamilyScreen({
   busy,
   onPickService,
   initialStep = "service",
+  owner,
   onBack,
   onChangeForm,
   onSubmit
@@ -43,6 +44,8 @@ export function CreateFamilyScreen({
   onPickService: (service: FamilyService) => void;
   /** «Условия» when a popular service was picked on «Создать». */
   initialStep?: CreateStep;
+  /** The organiser as the Market card on step 2 shows them. */
+  owner: PreviewOwner;
   onBack: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
   onSubmit: (event: FormEvent) => void;
@@ -134,7 +137,7 @@ export function CreateFamilyScreen({
               errors={errors}
               service={service}
               showAllErrors={attempted.has("terms")}
-              onEditService={() => goTo("service")}
+              owner={owner}
               onChangeForm={onChangeForm}
             />
           ) : null}
