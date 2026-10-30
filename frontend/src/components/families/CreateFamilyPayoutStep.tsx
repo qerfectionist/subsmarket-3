@@ -107,7 +107,7 @@ export function CreateFamilyPayoutStep({
 
       <section className="create-payout-block" aria-label="Получатель" data-scroll="1">
         <span className="create-terms-caption" data-locked={stage < 1 || undefined}>
-          Получатель
+          {stage === 1 ? `Введите номер ${bankLabels[form.payment_bank]}` : "Получатель"}
         </span>
         <div className="create-payout-fields">
           <PayoutField label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)} locked={stage < 1}>
