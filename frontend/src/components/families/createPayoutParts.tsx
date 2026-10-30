@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { triggerTelegramSelection } from "../../telegram";
 
 /** A field as its own plate: the small label inside on top, the value under it. */
@@ -91,4 +91,32 @@ export function formatPhoneInput(raw: string, previous: string) {
   if (rest === "") return "";
   const parts = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6, 8), rest.slice(8, 10)].filter(Boolean);
   return ["+7", ...parts].join(" ");
+}
+
+/** «(!) Зачем нужен чат»: a quiet line that opens a short explanation when tapped. */
+export function ChatInfo() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="create-chat-info" data-open={open || undefined}>
+      <button
+        type="button"
+        className="create-chat-info-toggle"
+        data-testid="create-chat-info"
+        aria-expanded={open}
+        aria-controls="create-chat-info-text"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className="create-chat-info-mark" aria-hidden="true">
+          !
+        </span>
+        Зачем нужен чат
+      </button>
+      {open ? (
+        <p id="create-chat-info-text" className="create-chat-info-text" data-testid="create-chat-info-text">
+          В чате удобно решать вопросы: участники и вы на связи в одном месте. Бот напоминает об оплате, отвечает
+          на вопросы о семье и может сразу проверить чек.
+        </p>
+      ) : null}
+    </div>
+  );
 }

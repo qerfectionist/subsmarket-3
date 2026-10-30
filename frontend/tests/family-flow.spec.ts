@@ -318,6 +318,28 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   await expect(submit).toBeEnabled();
 });
 
+test("a family can be created without a chat, and the hint explains what the chat is for", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await openCreate(page);
+  await revealPayout(page, "chat");
+  await page.getByTestId("create-payment-phone-input").fill("+77001234567");
+
+  await expect(page.getByTestId("create-chat-info-text")).toHaveCount(0);
+  await page.getByTestId("create-chat-info").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("create-chat-info-text")).toContainText("Бот напоминает об оплате");
+  await page.getByTestId("create-chat-info").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("create-chat-info-text")).toHaveCount(0);
+
+  await page.getByTestId("create-chat-none").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("create-chat-none")).toHaveAttribute("aria-checked", "true");
+  const submit = page.getByTestId("create-family-submit");
+  await expect(submit).toBeEnabled();
+  const request = page.waitForRequest((item) => item.method() === "POST" && /\/api\/families$/.test(item.url()));
+  await submit.evaluate((element) => (element as HTMLElement).click());
+  expect((await request).postDataJSON().chat_kind).toBeNull();
+  await expect(page.getByTestId("family-created-screen")).toBeVisible();
+});
+
 test("create family form validates payout fields in real time", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);

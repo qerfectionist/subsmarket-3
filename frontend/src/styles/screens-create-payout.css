@@ -234,6 +234,52 @@
   pointer-events: none;
 }
 
+/* «(!) Зачем нужен чат»: a quiet line under the chat choice that opens its text. */
+.create-chat-info {
+  display: grid;
+  gap: 6px;
+  padding-inline: 4px;
+}
+
+.app-shell .create-chat-info-toggle {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: var(--app-weight-semibold);
+}
+
+.create-chat-info-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--app-secondary-bg, #2c2c2e);
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: var(--app-weight-bold, 700);
+  line-height: 1;
+}
+
+.app-shell .create-chat-info-text {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 /* The sticky footer and the menu cover the bottom of the screen: a block that is
    scrolled into view must stop above them, not behind them. */
 .create-payout [data-scroll] {

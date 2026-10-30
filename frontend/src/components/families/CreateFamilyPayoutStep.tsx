@@ -3,15 +3,18 @@ import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
 import type { FieldErrors } from "./createFamilyForm";
-import { formatPhoneInput, PayoutField, Segmented, type PayoutProgress } from "./createPayoutParts";
+import { ChatInfo, formatPhoneInput, PayoutField, Segmented, type PayoutProgress } from "./createPayoutParts";
 
 /** The banks a new family can take payments to; Jusan is no longer offered. */
 const BANKS: FamilyCreate["payment_bank"][] = ["kaspi", "halyk", "freedom"];
 const bankLogo = (bank: string) => `${import.meta.env.BASE_URL}brand-assets/banks/${bank}.svg`;
 const chatLogo = (kind: string) => `${import.meta.env.BASE_URL}brand-assets/chats/${kind}.svg`;
-const CHAT_OPTIONS: { value: NonNullable<FamilyCreate["chat_kind"]>; label: string; icon: string }[] = [
+/** «none» is a family without a group chat: the form then sends no chat kind at all. */
+type ChatChoice = NonNullable<FamilyCreate["chat_kind"]> | "none";
+const CHAT_OPTIONS: { value: ChatChoice; label: string; icon?: string }[] = [
   { value: "telegram", label: "Telegram", icon: chatLogo("telegram") },
-  { value: "whatsapp", label: "WhatsApp", icon: chatLogo("whatsapp") }
+  { value: "whatsapp", label: "WhatsApp", icon: chatLogo("whatsapp") },
+  { value: "none", label: "Без чата" }
 ];
 
 type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolean>>;
@@ -50,7 +53,7 @@ export function CreateFamilyPayoutStep({
   const phoneShown = form.payment_phone.replace(/^\+7\s?/, "");
   const nameError = shown("payment_recipient_name");
   const recipientErrors = [phoneError, nameError].filter(Boolean) as string[];
-  const chat = form.chat_kind ?? "telegram";
+  const chat: ChatChoice = form.chat_kind ?? "none";
   const { stage } = progress;
   const reveal = (to: PayoutProgress["stage"]) =>
     onProgress((current) => (current.stage < to ? { ...current, stage: to } : current));
@@ -203,7 +206,7 @@ export function CreateFamilyPayoutStep({
           locked={stage < 3}
           testId={(kind) => `create-chat-${kind}`}
           onChange={(kind) => {
-            onChangeForm((current) => ({ ...current, chat_kind: kind }));
+            onChangeForm((current) => ({ ...current, chat_kind: kind === "none" ? null : kind }));
             onProgress((current) => ({ ...current, chat: true }));
           }}
         />
@@ -212,8 +215,11 @@ export function CreateFamilyPayoutStep({
             ? "Где будет общаться семья."
             : chat === "telegram"
               ? "После создания откроем группу с ботом, останется нажать «Создать»."
-              : "После создания поможем сделать группу в WhatsApp за три шага."}
+              : chat === "whatsapp"
+                ? "После создания поможем сделать группу в WhatsApp за три шага."
+                : "Семья будет без общего чата: участникам и вам придётся связываться напрямую."}
         </small>
+        <ChatInfo />
       </section>
     </div>
   );
