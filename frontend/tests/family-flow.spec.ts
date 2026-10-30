@@ -3,6 +3,7 @@ import {
   openCreateKind,
   fillCreateField,
   goToCreateStep,
+  revealPayout,
   pickCreateService,
   pressCreateFamily,
   finishCreatedFamily,
@@ -272,6 +273,47 @@ test("subscription and tariff families stay in separate storefronts", async ({
   ).toHaveCount(0);
 });
 
+test("payout step leads one question at a time: bank, phone, name, chat", async ({ page }) => {
+  await page.goto(appUrl, { waitUntil: "domcontentloaded" });
+  await openCreate(page);
+  await goToCreateStep(page, "payout");
+  const phone = page.getByTestId("create-payment-phone-input");
+  const name = page.getByTestId("create-recipient-name-input");
+  const chat = page.getByTestId("create-chat-telegram");
+  const submit = page.getByTestId("create-family-submit");
+
+  // Only the bank to start with, and nothing is picked for the person.
+  await expect(page.getByTestId("create-bank-kaspi")).toHaveAttribute("aria-checked", "false");
+  await expect(phone).toHaveCount(0);
+  await expect(name).toHaveCount(0);
+  await expect(chat).toHaveCount(0);
+
+  await page.getByTestId("create-bank-halyk").evaluate((element) => (element as HTMLElement).click());
+  await expect(page.getByTestId("create-bank-halyk")).toHaveAttribute("aria-checked", "true");
+  await expect(phone).toBeVisible();
+  await expect(name).toHaveCount(0);
+
+  // The name appears once the ten digits are in.
+  await phone.fill("+77001234567");
+  await expect(name).toBeVisible();
+  await expect(chat).toHaveCount(0);
+
+  // «Пропустить имя» leads on to the chat; the family can be created only after picking it.
+  await page.getByTestId("create-payout-next").evaluate((element) => (element as HTMLElement).click());
+  await expect(chat).toBeVisible();
+  await expect(chat).toHaveAttribute("aria-checked", "false");
+  await expect(submit).toBeDisabled();
+  await chat.evaluate((element) => (element as HTMLElement).click());
+  await expect(submit).toBeEnabled();
+
+  // Going back to the terms and forward again keeps everything that was opened.
+  await goToCreateStep(page, "terms");
+  await goToCreateStep(page, "payout");
+  await expect(page.getByTestId("create-bank-halyk")).toHaveAttribute("aria-checked", "true");
+  await expect(chat).toHaveAttribute("aria-checked", "true");
+  await expect(submit).toBeEnabled();
+});
+
 test("create family form validates payout fields in real time", async ({ page }) => {
   await page.goto(appUrl, { waitUntil: "domcontentloaded" });
   await openCreate(page);
@@ -293,6 +335,10 @@ test("create family form validates payout fields in real time", async ({ page })
   await fillCreateField(page, "create-recipient-name-input", "Айгерим Б.");
   await expect(page.locator(".field-error")).toHaveCount(0);
   await expect(page.getByTestId("create-fix-hint")).toHaveCount(0);
+  // Valid, but the chat has not been picked yet: the button still waits.
+  await expect(page.getByTestId("create-family-submit")).toBeDisabled();
+  await revealPayout(page, "chat");
+  await page.getByTestId("create-chat-telegram").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-family-submit")).toBeEnabled();
 
   await fillCreateField(page, "create-total-price-input", "0");
@@ -439,8 +485,13 @@ test("inside Telegram the native main button drives family creation", async ({ p
   await pressMainButton();
   await expect(page.getByTestId("create-family-form")).toHaveAttribute("data-step", "payout");
   await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: false });
+  await revealPayout(page, "name");
   await page.getByTestId("create-payment-phone-input").fill("+77001234567");
   await page.getByTestId("create-recipient-name-input").fill("Айгерим Б.");
+  // The chat is the last question: the button waits for it.
+  await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: false });
+  await revealPayout(page, "chat");
+  await page.getByTestId("create-chat-telegram").evaluate((element) => (element as HTMLElement).click());
   await expect.poll(mainButton).toMatchObject({ text: "Создать семью", enabled: true, handlers: 1 });
   await pressMainButton();
   await waitForNetworkQuiet(page);

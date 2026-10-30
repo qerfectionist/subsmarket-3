@@ -213,3 +213,49 @@
   background: linear-gradient(to bottom, transparent, var(--app-bg));
   pointer-events: none;
 }
+
+/* Nothing picked yet: every logo at full strength, so the choice reads as open. */
+.create-segment[data-empty] .create-segment-option img {
+  opacity: 1;
+}
+
+/* «Выплата» is led one question at a time: a block that appears settles in. */
+.create-payout-reveal {
+  animation: create-payout-reveal 0.28s ease both;
+}
+
+@keyframes create-payout-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.app-shell .create-payout-next {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--app-radius-md, 16px);
+  background: var(--app-secondary-bg, #2c2c2e);
+  box-shadow: none;
+  color: var(--app-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--app-weight-semibold);
+}
+
+.app-shell .create-payout-next:active {
+  background: color-mix(in srgb, var(--app-secondary-bg, #2c2c2e) 70%, var(--app-text));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-payout-reveal {
+    animation: none;
+  }
+}
+
+/* The sticky footer and the menu cover the bottom of the screen: a block that is
+   scrolled into view must stop above them, not behind them. */
+.create-payout [data-scroll] {
+  scroll-margin-bottom: calc(var(--app-nav-height, 64px) + 190px);
+}

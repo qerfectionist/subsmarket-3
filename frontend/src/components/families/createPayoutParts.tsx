@@ -21,7 +21,17 @@ export function PayoutField({
   );
 }
 
-/** One choice out of a few short names, as a segmented control. */
+/**
+ * How far the person has been led through «Выплата»: 0 bank only, 1 + phone,
+ * 2 + name, 3 + chat. `chat` is true once they picked a chat themselves.
+ */
+export type PayoutProgress = { stage: 0 | 1 | 2 | 3; chat: boolean };
+export const PAYOUT_START: PayoutProgress = { stage: 0, chat: false };
+
+/** The last step can be sent only when every block has been walked through. */
+export const payoutDone = (progress: PayoutProgress) => progress.stage === 3 && progress.chat;
+
+/** One choice out of a few short names, as a segmented control; `null` = nothing picked yet. */
 export function Segmented<T extends string>({
   label,
   options,
@@ -31,12 +41,12 @@ export function Segmented<T extends string>({
 }: {
   label: string;
   options: { value: T; label: string; icon?: string }[];
-  value: T;
+  value: T | null;
   testId: (value: T) => string;
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="create-segment" role="radiogroup" aria-label={label}>
+    <div className="create-segment" role="radiogroup" aria-label={label} data-empty={value === null || undefined}>
       {options.map((option) => (
         <button
           key={option.value}

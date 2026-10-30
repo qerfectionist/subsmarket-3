@@ -42,8 +42,34 @@ export async function goToCreateStep(page: Page, target: Step) {
   await expect(form(page)).toHaveAttribute("data-step", target);
 }
 
+const click = (page: Page, testId: string) =>
+  page.getByTestId(testId).evaluate((element) => (element as HTMLElement).click());
+
+/**
+ * «Выплата» opens one question at a time: bank, phone, name, chat. Walks it as
+ * far as `upTo` needs, using the first bank and a plain phone where nothing is filled.
+ */
+export async function revealPayout(page: Page, upTo: "phone" | "name" | "chat") {
+  await goToCreateStep(page, "payout");
+  const phone = page.getByTestId("create-payment-phone-input");
+  if ((await phone.count()) === 0) await click(page, "create-bank-kaspi");
+  if (upTo === "phone") return;
+  const name = page.getByTestId("create-recipient-name-input");
+  if ((await name.count()) === 0) {
+    await expect(phone).toBeVisible();
+    if (!(await phone.inputValue())) await phone.fill("+77001234567");
+    await expect(name).toBeVisible();
+  }
+  if (upTo === "name") return;
+  const chat = page.getByTestId("create-chat-telegram");
+  if ((await chat.count()) === 0) await click(page, "create-payout-next");
+  await expect(chat).toBeVisible();
+}
+
 export async function fillCreateField(page: Page, testId: string, value: string) {
-  await goToCreateStep(page, FIELD_STEP[testId] ?? "terms");
+  if (testId === "create-payment-phone-input") await revealPayout(page, "phone");
+  else if (testId === "create-recipient-name-input") await revealPayout(page, "name");
+  else await goToCreateStep(page, FIELD_STEP[testId] ?? "terms");
   await page.getByTestId(testId).fill(value);
 }
 
@@ -75,11 +101,15 @@ export async function pickCreateService(page: Page, slug: string, category = "al
 
 /** Fills what is still required and presses «Создать семью». The caller waits for the network. */
 export async function pressCreateFamily(page: Page) {
-  await goToCreateStep(page, "payout");
+  await revealPayout(page, "chat");
   const phone = page.getByTestId("create-payment-phone-input");
   if (!(await phone.inputValue())) await phone.fill("+77001234567");
   const name = page.getByTestId("create-recipient-name-input");
   if (!(await name.inputValue())) await name.fill("Айгерим Б.");
+  // The chat has to be picked on purpose; nothing is preselected.
+  if ((await page.locator('[data-testid^="create-chat-"][aria-checked="true"]').count()) === 0) {
+    await click(page, "create-chat-telegram");
+  }
   const submit = page.getByTestId("create-family-submit");
   await expect(submit).toBeEnabled();
   await submit.evaluate((element) => (element as HTMLElement).click());

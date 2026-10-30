@@ -5,6 +5,7 @@ import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServ
 import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
 import type { PreviewOwner } from "../components/families/CreateFamilyPreview";
 import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
+import { PAYOUT_START, payoutDone, type PayoutProgress } from "../components/families/createPayoutParts";
 import {
   CREATE_STEPS,
   fixHint,
@@ -53,10 +54,12 @@ export function CreateFamilyScreen({
 }) {
   const [step, setStep] = useState<CreateStep>(initialStep);
   const [attempted, setAttempted] = useState<ReadonlySet<CreateStep>>(() => new Set());
+  // How far «Выплата» has been walked: kept here so going back to «Цена и места» loses nothing.
+  const [payoutProgress, setPayoutProgress] = useState<PayoutProgress>(PAYOUT_START);
   const errors = validateCreateForm(createForm, service);
   const stepIndex = CREATE_STEPS.findIndex((item) => item.id === step);
   const isLast = step === "payout";
-  const blocked = stepHasErrors(step, errors) || (isLast && busy !== null);
+  const blocked = stepHasErrors(step, errors) || (isLast && (busy !== null || !payoutDone(payoutProgress)));
   const hint = fixHint(stepErrorFields(step, errors), isLast ? "создать семью" : "продолжить");
 
   function goTo(next: CreateStep) {
@@ -88,7 +91,7 @@ export function CreateFamilyScreen({
       advance();
       return;
     }
-    if (Object.keys(errors).length === 0 && busy === null) onSubmit(event);
+    if (Object.keys(errors).length === 0 && busy === null && payoutDone(payoutProgress)) onSubmit(event);
   }
 
   // The picked service shows on its tile, so the button only says what it does.
@@ -149,6 +152,8 @@ export function CreateFamilyScreen({
               service={service}
               owner={owner}
               showAllErrors={attempted.has("payout")}
+              progress={payoutProgress}
+              onProgress={setPayoutProgress}
               onEditTerms={() => goTo("terms")}
               onChangeForm={onChangeForm}
             />
