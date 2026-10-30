@@ -98,15 +98,12 @@ export function InfoToggle({
   open,
   controls,
   testId,
-  small,
   children,
   onToggle
 }: {
   open: boolean;
   controls: string;
   testId: string;
-  /** Sized to sit in a 12px plate label instead of a 15px caption. */
-  small?: boolean;
   children: ReactNode;
   onToggle: () => void;
 }) {
@@ -114,17 +111,12 @@ export function InfoToggle({
     <button
       type="button"
       className="create-info-toggle"
-      data-size={small ? "small" : undefined}
       data-testid={testId}
       aria-expanded={open}
       aria-controls={controls}
       // Keeps the keyboard and focus where they are: a question is not leaving the field.
       onMouseDown={(event) => event.preventDefault()}
-      onClick={(event) => {
-        // Inside a field label: open the answer, do not focus the field.
-        event.preventDefault();
-        onToggle();
-      }}
+      onClick={onToggle}
     >
       <span className="create-info-mark" aria-hidden="true">
         !
@@ -167,8 +159,21 @@ export function InfoPanel({
   );
 }
 
-/** The chat caption with «(!) Зачем нужен чат» right after it, the answer under it. */
-export function ChatInfo({ children }: { children: ReactNode }) {
+/**
+ * A block caption with «(!) Зачем …» right after it; the answer unfolds under
+ * the caption, so nothing the person tapped moves away from the finger.
+ */
+export function CaptionInfo({
+  question,
+  testId,
+  answer,
+  children
+}: {
+  question: string;
+  testId: string;
+  answer: ReactNode;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <div>
@@ -176,16 +181,15 @@ export function ChatInfo({ children }: { children: ReactNode }) {
         {children}
         <InfoToggle
           open={open}
-          controls="create-chat-info-text"
-          testId="create-chat-info"
+          controls={`${testId}-text`}
+          testId={testId}
           onToggle={() => setOpen((current) => !current)}
         >
-          Зачем нужен чат
+          {question}
         </InfoToggle>
       </div>
-      <InfoPanel open={open} id="create-chat-info-text" testId="create-chat-info">
-        В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет
-        напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек.
+      <InfoPanel open={open} id={`${testId}-text`} testId={testId}>
+        {answer}
       </InfoPanel>
     </div>
   );

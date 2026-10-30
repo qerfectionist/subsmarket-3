@@ -149,9 +149,6 @@
 }
 
 .create-payout-field > label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   color: var(--app-muted);
   font-size: 12px;
   font-weight: 400;
@@ -295,19 +292,9 @@
   line-height: 1;
 }
 
-/* In a plate label: the label's own 12px, a smaller mark. */
-.app-shell .create-info-toggle[data-size="small"] {
-  min-height: 0;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 16px;
-}
-
-.create-info-toggle[data-size="small"] .create-info-mark {
-  width: 14px;
-  height: 14px;
-  font-size: 10px;
+/* A caption that is not its turn yet greys its question too; it can still be read. */
+.create-chat-head:has(> [data-locked]) .create-info-toggle:not([aria-expanded="true"]) {
+  opacity: 0.38;
 }
 
 .app-shell .create-info-toggle[aria-expanded="true"] {

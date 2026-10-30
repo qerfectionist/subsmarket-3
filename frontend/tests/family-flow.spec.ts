@@ -298,7 +298,7 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   await phone.fill("+77001234567");
   await expect(name).toBeEnabled();
 
-  // «(!) Зачем указывать» in the name label opens its answer without focusing the field.
+  // «(!) Зачем указывать имя» by the «Получатель» caption opens its answer under the caption.
   const nameInfo = page.getByTestId("create-name-info-panel");
   await expect(nameInfo).toHaveAttribute("aria-hidden", "true");
   await page.getByTestId("create-name-info").click();

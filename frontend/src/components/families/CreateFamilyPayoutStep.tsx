@@ -4,10 +4,8 @@ import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
 import type { FieldErrors } from "./createFamilyForm";
 import {
-  ChatInfo,
+  CaptionInfo,
   formatPhoneInput,
-  InfoPanel,
-  InfoToggle,
   PayoutField,
   Segmented,
   type PayoutProgress
@@ -58,7 +56,6 @@ export function CreateFamilyPayoutStep({
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
 }) {
   const [touched, setTouched] = useState<Touched>({});
-  const [nameInfo, setNameInfo] = useState(false);
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
   const phoneError = shown("payment_phone");
   // The stored number is «+7 700 123 45 67»; the field shows what follows the fixed +7.
@@ -118,9 +115,15 @@ export function CreateFamilyPayoutStep({
       </section>
 
       <section className="create-payout-block" aria-label="Получатель" data-scroll="1">
-        <span className="create-terms-caption" data-locked={stage < 1 || undefined}>
-          {stage === 1 ? `Введите номер ${bankLabels[form.payment_bank]}` : "Получатель"}
-        </span>
+        <CaptionInfo
+          question="Зачем указывать имя"
+          testId="create-name-info"
+          answer="Имя необязательно, но рекомендуем. При переводе банк покажет имя получателя, и участник сверит его с этим: так он будет уверен, что платит именно вам."
+        >
+          <span className="create-terms-caption" data-locked={stage < 1 || undefined}>
+            {stage === 1 ? `Введите номер ${bankLabels[form.payment_bank]}` : "Получатель"}
+          </span>
+        </CaptionInfo>
         <div className="create-payout-fields">
           <PayoutField label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)} locked={stage < 1}>
             {/* The country code is fixed: +7 stays in front, only the ten digits are typed. */}
@@ -157,60 +160,40 @@ export function CreateFamilyPayoutStep({
               </span>
             </div>
           </PayoutField>
-          <div>
-            <PayoutField
-              label={
-                <>
-                  Имя
-                  <InfoToggle
-                    small
-                    open={nameInfo}
-                    controls="create-name-info-text"
-                    testId="create-name-info"
-                    onToggle={() => setNameInfo((current) => !current)}
-                  >
-                    Зачем указывать
-                  </InfoToggle>
-                </>
+          <PayoutField
+            label="Имя"
+            htmlFor="create-recipient-name"
+            invalid={Boolean(nameError)}
+            locked={stage < 2}
+          >
+            <input
+              ref={nameRef}
+              id="create-recipient-name"
+              disabled={stage < 2}
+              placeholder="Кайрат Н."
+              data-testid="create-recipient-name-input"
+              autoComplete="off"
+              autoCapitalize="words"
+              enterKeyHint="next"
+              onKeyDown={(event) => {
+                // Enter moves on to the chat instead of sending the form.
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                reveal(3);
+              }}
+              maxLength={40}
+              aria-invalid={Boolean(nameError) || undefined}
+              value={form.payment_recipient_name ?? ""}
+              onBlur={() => {
+                setTouched((current) => ({ ...current, payment_recipient_name: true }));
+                // Leaving the name, filled or not, wakes the chat: the name is optional.
+                reveal(3);
+              }}
+              onChange={(event) =>
+                onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
               }
-              htmlFor="create-recipient-name"
-              invalid={Boolean(nameError)}
-              locked={stage < 2}
-            >
-              <input
-                ref={nameRef}
-                id="create-recipient-name"
-                aria-label="Имя получателя"
-                disabled={stage < 2}
-                placeholder="Кайрат Н."
-                data-testid="create-recipient-name-input"
-                autoComplete="off"
-                autoCapitalize="words"
-                enterKeyHint="next"
-                onKeyDown={(event) => {
-                  // Enter moves on to the chat instead of sending the form.
-                  if (event.key !== "Enter") return;
-                  event.preventDefault();
-                  reveal(3);
-                }}
-                maxLength={40}
-                aria-invalid={Boolean(nameError) || undefined}
-                value={form.payment_recipient_name ?? ""}
-                onBlur={() => {
-                  setTouched((current) => ({ ...current, payment_recipient_name: true }));
-                  // Leaving the name, filled or not, wakes the chat: the name is optional.
-                  reveal(3);
-                }}
-                onChange={(event) =>
-                  onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
-                }
-              />
-            </PayoutField>
-            <InfoPanel open={nameInfo} id="create-name-info-text" testId="create-name-info">
-              Необязательно, но рекомендуем. При переводе банк покажет имя получателя, и участник сверит его с этим:
-              так он будет уверен, что платит именно вам.
-            </InfoPanel>
-          </div>
+            />
+          </PayoutField>
         </div>
         {recipientErrors.length > 0 ? (
           <small className="create-payout-note field-error" role="alert" aria-live="polite">
@@ -234,11 +217,15 @@ export function CreateFamilyPayoutStep({
           if (stage === 2) reveal(3);
         }}
       >
-        <ChatInfo>
+        <CaptionInfo
+          question="Зачем нужен чат"
+          testId="create-chat-info"
+          answer="В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек."
+        >
           <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
             {stage >= 3 && !progress.chat ? "Выберите чат семьи" : "Чат семьи"}
           </span>
-        </ChatInfo>
+        </CaptionInfo>
         <Segmented
           label="Чат семьи"
           options={CHAT_OPTIONS}
