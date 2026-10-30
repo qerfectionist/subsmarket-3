@@ -294,13 +294,7 @@
 
 .create-payout-snap {
   scroll-snap-align: start;
-  scroll-margin-top: calc(297px + var(--app-inset-top, 0px));
-}
-
-/* The last stop: «Что будет после создания» settles fully above the button. */
-.create-payout-snap-end {
-  scroll-snap-align: end;
-  scroll-margin-bottom: calc(var(--app-nav-height, 64px) + 190px);
+  scroll-margin-top: calc(269px + var(--app-inset-top, 0px));
 }
 
 .create-payout [data-scroll] {

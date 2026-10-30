@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { CreateFamilyNextSteps } from "./CreateFamilyNextSteps";
 import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
@@ -101,7 +100,6 @@ export function CreateFamilyPayoutStep({
           </button>
         </div>
         <CreateFamilyPreview form={form} service={service} owner={owner} />
-        <small className="create-payout-note">После создания сервис и места не поменять.</small>
       </section>
 
       <section className="create-payout-block create-payout-snap" aria-label="Банк">
@@ -254,8 +252,6 @@ export function CreateFamilyPayoutStep({
           </small>
         ) : null}
       </section>
-
-      <CreateFamilyNextSteps form={form} bankChosen={stage >= 1} />
     </div>
   );
 }

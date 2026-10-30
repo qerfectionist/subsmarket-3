@@ -1,4 +1,4 @@
-/* «Выплата»: the «(!) Зачем …» questions with their unfolding answers, and «Что будет после создания». */
+/* «Выплата»: the «(!) Зачем …» questions with their unfolding answers. */
 
 /* «Чат семьи (!) Зачем нужен чат»: the question sits right after the caption,
    the same size, quieter in colour, and opens its text. */
@@ -106,87 +106,4 @@
   color: var(--app-text);
   font-size: 13px;
   line-height: 1.45;
-}
-
-/* What happens after creation: a vertical timeline, no plate. A round icon per
-   point joined by a line; the first point is lit and the line fades after it. */
-.create-timeline {
-  display: grid;
-  margin: 0;
-  padding: 4px 4px 0;
-  list-style: none;
-}
-
-.create-timeline > li {
-  position: relative;
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
-  column-gap: 14px;
-  padding-bottom: 20px;
-}
-
-.create-timeline > li:last-child {
-  padding-bottom: 0;
-}
-
-/* The line from this point down to the next one. */
-.create-timeline > li:not(:last-child)::before {
-  content: "";
-  position: absolute;
-  top: 36px;
-  bottom: 4px;
-  left: 15px;
-  width: 2px;
-  border-radius: 1px;
-  background: color-mix(in srgb, var(--app-text) 12%, transparent);
-}
-
-.create-timeline > li:first-child::before {
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--app-text) 55%, transparent),
-    color-mix(in srgb, var(--app-text) 12%, transparent)
-  );
-}
-
-.create-timeline-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--app-surface);
-  color: var(--app-muted);
-}
-
-.create-timeline > li:first-child .create-timeline-icon {
-  background: var(--app-text);
-  color: var(--app-bg, #000);
-}
-
-.create-timeline-body {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-  padding-top: 1px;
-}
-
-.create-timeline-when {
-  color: var(--app-muted);
-  font-size: 12px;
-  font-weight: var(--app-weight-semibold);
-  line-height: 16px;
-}
-
-.create-timeline-body > strong {
-  color: var(--app-text);
-  font-size: 15px;
-  font-weight: var(--app-weight-semibold);
-  line-height: 20px;
-}
-
-.create-timeline-body > small {
-  color: var(--app-muted);
-  font-size: 13px;
-  line-height: 18px;
 }
