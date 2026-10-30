@@ -12,7 +12,6 @@ const FIELD_STEP: Record<string, Step> = {
   "create-payment-day-input": "terms",
   "create-payment-phone-input": "payout",
   "create-recipient-name-input": "payout",
-  "create-owner-rules-input": "payout"
 };
 
 function form(page: Page) {

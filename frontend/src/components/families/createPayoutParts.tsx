@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { triggerTelegramSelection } from "../../telegram";
 
-/** A row of the recipient group: the name on the left, the field filling the rest. */
-export function PayoutRow({
+/** A field as its own plate: the small label inside on top, the value under it. */
+export function PayoutField({
   label,
   htmlFor,
   invalid,
@@ -14,9 +14,47 @@ export function PayoutRow({
   children: ReactNode;
 }) {
   return (
-    <div className="create-terms-row create-payout-row" data-invalid={invalid || undefined}>
+    <div className="create-payout-field" data-invalid={invalid || undefined}>
       <label htmlFor={htmlFor}>{label}</label>
       {children}
+    </div>
+  );
+}
+
+/** Banks as equal tiles: the mark above, the name under it, the picked one ringed. */
+export function BankTiles<T extends string>({
+  banks,
+  value,
+  label,
+  logo,
+  onChange
+}: {
+  banks: { value: T; label: string }[];
+  value: T;
+  label: (bank: T) => string;
+  logo: (bank: T) => string;
+  onChange: (bank: T) => void;
+}) {
+  return (
+    <div className="create-bank-tiles" role="radiogroup" aria-label="Банк">
+      {banks.map((bank) => (
+        <button
+          key={bank.value}
+          type="button"
+          role="radio"
+          aria-checked={bank.value === value}
+          data-testid={`create-bank-${bank.value}`}
+          className="create-bank-tile"
+          onClick={() => {
+            if (bank.value === value) return;
+            triggerTelegramSelection();
+            onChange(bank.value);
+          }}
+        >
+          <img src={logo(bank.value)} alt="" aria-hidden="true" draggable={false} />
+          <span>{label(bank.value)}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -30,7 +68,7 @@ export function Segmented<T extends string>({
   onChange
 }: {
   label: string;
-  options: { value: T; label: string; icon?: string }[];
+  options: { value: T; label: string }[];
   value: T;
   testId: (value: T) => string;
   onChange: (value: T) => void;
@@ -51,7 +89,6 @@ export function Segmented<T extends string>({
             onChange(option.value);
           }}
         >
-          {option.icon ? <img src={option.icon} alt="" aria-hidden="true" draggable={false} /> : null}
           <span>{option.label}</span>
         </button>
       ))}
@@ -60,15 +97,18 @@ export function Segmented<T extends string>({
 }
 
 /**
- * Keeps a Kazakh number readable while it is typed: +7 700 123 45 67. A leading
- * 8 or 7 is the country code; anything else starts the number itself.
+ * Keeps a Kazakh number readable while it is typed: +7 700 123 45 67. The
+ * country code is dropped when the text starts with «+» (our own format or a
+ * paste), with 8, or has 11 digits; a bare 10-digit number is the number itself.
  */
 export function formatPhoneInput(raw: string, previous: string) {
   let digits = raw.replace(/\D/g, "");
-  // A backspace over a space or bracket would change nothing: take the digit before it.
+  // A backspace over a space would change nothing: take the digit before it.
   if (raw.length < previous.length && digits === previous.replace(/\D/g, "")) digits = digits.slice(0, -1);
-  if (digits === "") return "";
-  const rest = (/^[78]/.test(digits) ? digits.slice(1) : digits).slice(0, 10);
+  const hasCode =
+    raw.trim().startsWith("+") || digits.startsWith("8") || (digits.length >= 11 && digits.startsWith("7"));
+  const rest = (hasCode ? digits.slice(1) : digits).slice(0, 10);
+  if (rest === "") return "";
   const parts = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6, 8), rest.slice(8, 10)].filter(Boolean);
   return ["+7", ...parts].join(" ");
 }

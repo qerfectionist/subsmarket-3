@@ -10,7 +10,7 @@ import {
   pluralRu,
   type FieldErrors
 } from "./createFamilyForm";
-import { formatPhoneInput, PayoutRow, Segmented } from "./createPayoutParts";
+import { BankTiles, formatPhoneInput, PayoutField, Segmented } from "./createPayoutParts";
 
 /** The banks a new family can take payments to; Jusan is no longer offered. */
 const BANKS: FamilyCreate["payment_bank"][] = ["kaspi", "halyk", "freedom"];
@@ -24,7 +24,7 @@ type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolea
 
 /**
  * Step 3: where members send money. The family it is for on top, then the
- * bank, the recipient as one group of rows, the chat and optional rules; each
+ * bank, the recipient as two field plates and the chat; each
  * block has its caption above and one short note below, as on step 2.
  */
 export function CreateFamilyPayoutStep({
@@ -57,57 +57,43 @@ export function CreateFamilyPayoutStep({
   return (
     <div className="create-step-body create-payout" data-create-step="payout">
       <section className="create-payout-block" aria-label="Семья">
-        {/* As in iOS settings: the caption on the left, the way to change it on the right. */}
-        <div className="create-payout-head">
-          <span className="create-terms-caption">Семья</span>
+        <div className="create-terms-summary" data-testid="create-terms-summary">
+          <ServiceLogo
+            serviceSlug={service.slug}
+            serviceName={service.name}
+            familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
+            size={40}
+            loading="eager"
+          />
+          <div className="create-terms-summary-copy">
+            <strong>{title}</strong>
+            <span>
+              {formatKzt(share)} {periodPhrase(form.period)} · {form.max_members}{" "}
+              {pluralRu(form.max_members, "место", "места", "мест")} · {form.payment_day}-го
+            </span>
+          </div>
           <button type="button" className="create-payout-edit" data-testid="create-edit-terms" onClick={onEditTerms}>
             Изменить
           </button>
-        </div>
-        <div className="create-terms-summary" data-testid="create-terms-summary">
-          <div className="create-terms-summary-head">
-            <ServiceLogo
-              serviceSlug={service.slug}
-              serviceName={service.name}
-              familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
-              size={36}
-              loading="eager"
-            />
-            <strong>{title}</strong>
-          </div>
-          <dl className="create-terms-summary-facts">
-            <div>
-              <dt>{periodPhrase(form.period)}</dt>
-              <dd>{formatKzt(share)}</dd>
-            </div>
-            <div>
-              <dt>{pluralRu(form.max_members, "место", "места", "мест")}</dt>
-              <dd>{form.max_members}</dd>
-            </div>
-            <div>
-              <dt>оплата</dt>
-              <dd>{form.payment_day}-го</dd>
-            </div>
-          </dl>
         </div>
         <small className="create-payout-note">После создания сервис и места не поменять.</small>
       </section>
 
       <section className="create-payout-block" aria-label="Банк">
         <span className="create-terms-caption">Банк</span>
-        <Segmented
-          label="Банк"
-          options={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank], icon: bankLogo(bank) }))}
+        <BankTiles
+          banks={BANKS.map((bank) => ({ value: bank, label: bankLabels[bank] }))}
           value={form.payment_bank}
-          testId={(bank) => `create-bank-${bank}`}
+          label={(bank) => bankLabels[bank]}
+          logo={bankLogo}
           onChange={(bank) => onChangeForm((current) => ({ ...current, payment_bank: bank }))}
         />
       </section>
 
       <section className="create-payout-block" aria-label="Получатель">
         <span className="create-terms-caption">Получатель</span>
-        <div className="create-terms-group">
-          <PayoutRow label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)}>
+        <div className="create-payout-fields">
+          <PayoutField label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)}>
             <input
               id="create-payment-phone"
               required
@@ -124,8 +110,8 @@ export function CreateFamilyPayoutStep({
                 onChangeForm((current) => ({ ...current, payment_phone: next }));
               }}
             />
-          </PayoutRow>
-          <PayoutRow label="Имя" htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
+          </PayoutField>
+          <PayoutField label="Имя" htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
             <input
               id="create-recipient-name"
               required
@@ -142,7 +128,7 @@ export function CreateFamilyPayoutStep({
                 onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
               }
             />
-          </PayoutRow>
+          </PayoutField>
         </div>
         {recipientErrors.length > 0 ? (
           <small className="create-payout-note field-error" role="alert" aria-live="polite">
@@ -172,21 +158,6 @@ export function CreateFamilyPayoutStep({
             ? "После создания откроем группу с ботом, останется нажать «Создать»."
             : "После создания поможем сделать группу в WhatsApp за три шага."}
         </small>
-      </section>
-
-      <section className="create-payout-block" aria-label="Правила семьи">
-        <span className="create-terms-caption">Правила · необязательно</span>
-        <div className="create-terms-group">
-          <textarea
-            className="create-payout-rules"
-            aria-label="Правила семьи"
-            placeholder="Например: не менять пароль, не делиться доступом"
-            data-testid="create-owner-rules-input"
-            rows={2}
-            value={form.owner_rules ?? ""}
-            onChange={(event) => onChangeForm((current) => ({ ...current, owner_rules: event.target.value }))}
-          />
-        </div>
       </section>
     </div>
   );

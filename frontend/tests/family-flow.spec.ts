@@ -81,11 +81,9 @@ test("owner and member complete the first payment family flow", async ({ page })
   await fillCreateField(page, "create-max-members-input", "4");
   await expect(page.getByTestId("create-share-preview")).toContainText("1 000 ₸");
   await fillCreateField(page, "create-payment-phone-input", "+77001234567");
-  await fillCreateField(page, "create-owner-rules-input", "Access first, payment after check.");
   await submitCreateFamily(page);
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);
   await expandFirstFamilyCard(page);
-  await expect(page.locator(".family-workspace")).toContainText("Access first");
 
   await page
     .getByTestId("owner-settings-toggle")
