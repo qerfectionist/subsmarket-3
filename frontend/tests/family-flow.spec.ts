@@ -242,7 +242,7 @@ test("subscription and tariff families stay in separate storefronts", async ({
   await fillCreateField(page, "create-max-members-input", "4");
   // The last step sums the family up with the tariff's name.
   await goToCreateStep(page, "payout");
-  await expect(page.getByTestId("create-terms-summary")).toContainText("«Семейный 4»");
+  await expect(page.getByTestId("create-terms-summary")).toContainText("Семейный 4");
   await submitCreateFamily(page);
 
   await expect(page.getByTestId("family-workspace")).toHaveCount(1);

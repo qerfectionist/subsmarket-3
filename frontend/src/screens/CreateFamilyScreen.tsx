@@ -2,7 +2,8 @@ import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } 
 import { Button as AppButton } from "../components/ui";
 import { CreateShell } from "../components/CreateCategoryPicker";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
-import { CreateFamilyTermsStep, type PreviewOwner } from "../components/families/CreateFamilyTermsStep";
+import { CreateFamilyTermsStep } from "../components/families/CreateFamilyTermsStep";
+import type { PreviewOwner } from "../components/families/CreateFamilyPreview";
 import { CreateFamilyPayoutStep } from "../components/families/CreateFamilyPayoutStep";
 import {
   CREATE_STEPS,
@@ -146,6 +147,7 @@ export function CreateFamilyScreen({
               form={createForm}
               errors={errors}
               service={service}
+              owner={owner}
               showAllErrors={attempted.has("payout")}
               onEditTerms={() => goTo("terms")}
               onChangeForm={onChangeForm}

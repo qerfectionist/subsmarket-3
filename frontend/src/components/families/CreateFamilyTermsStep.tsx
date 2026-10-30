@@ -1,9 +1,8 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Input } from "../ui";
-import { FamilyListingCard } from "../ListingCard";
-import type { Family, FamilyCreate, FamilyService } from "../../types";
+import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
+import type { FamilyCreate, FamilyService } from "../../types";
 import {
-  calculatePreviewShare,
   nextPaymentDateFor,
   periodPhrase,
   serviceStrings,
@@ -13,9 +12,6 @@ import { FieldNote } from "./createFamilyFields";
 import { AmountField, MiniStepper, TermsRow } from "./createTermsParts";
 
 type Touched = Partial<Record<"plan_name" | "full_speed_gb", boolean>>;
-
-/** Who the preview card shows as the organiser. */
-export type PreviewOwner = { avatar_name: string; photo_url?: string | null };
 
 /**
  * Step 2: the family as it will show on the Market (the same card, updated
@@ -42,21 +38,6 @@ export function CreateFamilyTermsStep({
   const hints = serviceStrings(service, "tariff_hints");
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
 
-  // Only the fields the Market card reads; the rest of a family does not exist yet.
-  const preview = {
-    id: "preview",
-    family_type: isTariff ? "tariff" : "subscription",
-    service_slug: service.slug,
-    service_name: service.name,
-    service_variant: service.variant ?? null,
-    plan_name: isTariff ? form.plan_name?.trim() || "Название тарифа" : null,
-    max_members: form.max_members,
-    free_slots: Math.max(0, form.max_members - 1),
-    period: form.period,
-    member_share_kzt: calculatePreviewShare(form.total_price_kzt, form.max_members),
-    owner
-  } as unknown as Family;
-
   function setDay(day: number) {
     onChangeForm((current) => ({
       ...current,
@@ -70,9 +51,7 @@ export function CreateFamilyTermsStep({
     <div className="create-step-body create-terms" data-create-step="terms">
       <section className="create-terms-preview" aria-label="Так увидят в Маркете" data-testid="create-share-preview">
         <span className="create-terms-caption">Так увидят в Маркете</span>
-        <div className="create-terms-preview-card" aria-hidden="true">
-          <FamilyListingCard family={preview} isOwner onClick={() => undefined} testId="create-preview-card" />
-        </div>
+        <CreateFamilyPreview form={form} service={service} owner={owner} />
       </section>
 
       <AmountField

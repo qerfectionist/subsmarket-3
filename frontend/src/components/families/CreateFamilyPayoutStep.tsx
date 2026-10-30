@@ -1,15 +1,8 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { ServiceLogo } from "../branding";
-import { serviceTitle } from "../../format";
+import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
-import {
-  calculatePreviewShare,
-  formatKzt,
-  periodPhrase,
-  pluralRu,
-  type FieldErrors
-} from "./createFamilyForm";
+import type { FieldErrors } from "./createFamilyForm";
 import { formatPhoneInput, PayoutField, Segmented } from "./createPayoutParts";
 
 /** The banks a new family can take payments to; Jusan is no longer offered. */
@@ -32,6 +25,7 @@ export function CreateFamilyPayoutStep({
   form,
   errors,
   service,
+  owner,
   showAllErrors,
   onEditTerms,
   onChangeForm
@@ -39,6 +33,7 @@ export function CreateFamilyPayoutStep({
   form: FamilyCreate;
   errors: FieldErrors;
   service: FamilyService;
+  owner: PreviewOwner;
   showAllErrors: boolean;
   onEditTerms: () => void;
   onChangeForm: Dispatch<SetStateAction<FamilyCreate>>;
@@ -50,35 +45,18 @@ export function CreateFamilyPayoutStep({
   const phoneShown = form.payment_phone.replace(/^\+7\s?/, "");
   const nameError = shown("payment_recipient_name");
   const recipientErrors = [phoneError, nameError].filter(Boolean) as string[];
-  const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
   const chat = form.chat_kind ?? "telegram";
-  const title =
-    service.family_type === "tariff" && form.plan_name?.trim()
-      ? `${service.name} «${form.plan_name.trim()}»`
-      : serviceTitle(service);
 
   return (
     <div className="create-step-body create-payout" data-create-step="payout">
-      <section className="create-payout-block" aria-label="Семья">
-        <div className="create-terms-summary" data-testid="create-terms-summary">
-          <ServiceLogo
-            serviceSlug={service.slug}
-            serviceName={service.name}
-            familyType={service.family_type === "tariff" ? "tariff" : "subscription"}
-            size={40}
-            loading="eager"
-          />
-          <div className="create-terms-summary-copy">
-            <strong>{title}</strong>
-            <span>
-              {formatKzt(share)} {periodPhrase(form.period)} · {form.max_members}{" "}
-              {pluralRu(form.max_members, "место", "места", "мест")} · {form.payment_day}-го
-            </span>
-          </div>
+      <section className="create-payout-block" aria-label="Так увидят в Маркете" data-testid="create-terms-summary">
+        <div className="create-payout-head">
+          <span className="create-terms-caption">Так увидят в Маркете</span>
           <button type="button" className="create-payout-edit" data-testid="create-edit-terms" onClick={onEditTerms}>
             Изменить
           </button>
         </div>
+        <CreateFamilyPreview form={form} service={service} owner={owner} />
         <small className="create-payout-note">После создания сервис и места не поменять.</small>
       </section>
 

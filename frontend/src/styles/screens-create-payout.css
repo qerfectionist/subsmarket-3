@@ -15,7 +15,8 @@
 }
 
 /* Type scale of the step: caption 15 semibold > value 17 > plate label 12 > note 12 muted. */
-.create-payout-block > .create-terms-caption {
+.create-payout-block > .create-terms-caption,
+.create-payout-head > .create-terms-caption {
   padding-inline: 4px;
   color: var(--app-text);
   font-size: 15px;
@@ -37,45 +38,18 @@
   font-size: 12px;
 }
 
-/* The family: one plate, «Изменить» on its right. */
-.create-terms-summary {
+/* «Так увидят в Маркете» with «Изменить» across from it. */
+.create-payout-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 64px;
-  padding: 12px 8px 12px 12px;
-  border-radius: var(--app-radius-md, 16px);
-  background: var(--app-surface);
-}
-
-.create-terms-summary-copy {
-  display: grid;
-  flex: 1 1 auto;
-  gap: 2px;
-  min-width: 0;
-}
-
-.create-terms-summary-copy strong {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: var(--app-size-body, 16px);
-  font-weight: var(--app-weight-semibold);
-  line-height: 1.25;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.create-terms-summary-copy > span {
-  color: var(--app-muted);
-  font-size: 12.5px;
-  line-height: 1.3;
+  justify-content: space-between;
+  min-height: 32px;
 }
 
 /* A small pill, so it reads as a button and not as part of the name. */
 .app-shell .create-payout-edit {
   flex: none;
   min-height: 32px;
-  margin-inline: 0 4px;
   padding: 0 12px;
   border: 0;
   border-radius: 999px;
