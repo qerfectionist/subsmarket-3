@@ -8,7 +8,7 @@ export function PayoutField({
   invalid,
   children
 }: {
-  label: string;
+  label: ReactNode;
   htmlFor: string;
   invalid?: boolean;
   children: ReactNode;

@@ -118,7 +118,11 @@ export function CreateFamilyPayoutStep({
               />
             </div>
           </PayoutField>
-          <PayoutField label="Имя · рекомендуем, для сверки перевода" htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
+          <PayoutField label={
+              <>
+                Имя <span className="create-payout-field-hint">рекомендуем, для сверки перевода</span>
+              </>
+            } htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
             <input
               id="create-recipient-name"
               placeholder="Кайрат Н."

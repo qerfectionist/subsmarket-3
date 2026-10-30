@@ -14,13 +14,22 @@
   gap: 8px;
 }
 
+/* Type scale of the step: caption 15 semibold > value 17 > plate label 12 > note 12 muted. */
+.create-payout-block > .create-terms-caption {
+  padding-inline: 4px;
+  color: var(--app-text);
+  font-size: 15px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 20px;
+}
+
 .create-payout-note {
   display: grid;
   gap: 2px;
   padding-inline: 4px;
-  color: var(--app-muted);
-  font-size: var(--app-size-caption, 13px);
-  line-height: 1.35;
+  color: color-mix(in srgb, var(--app-muted) 85%, transparent);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .create-payout-note.field-error {
@@ -167,7 +176,16 @@
 .create-payout-field > label {
   color: var(--app-muted);
   font-size: 12px;
-  font-weight: var(--app-weight-medium);
+  font-weight: 400;
+}
+
+.create-payout-field-hint {
+  margin-left: 4px;
+  opacity: 0.6;
+}
+
+.create-payout-field-hint::before {
+  content: "· ";
 }
 
 .create-payout-field[data-invalid] > label {
@@ -175,6 +193,7 @@
 }
 
 .create-payout-phone {
+  font-weight: var(--app-weight-medium);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -204,6 +223,7 @@
   color: var(--app-text);
   font: inherit;
   font-size: 17px;
+  font-weight: var(--app-weight-medium);
   font-variant-numeric: tabular-nums;
   outline: none;
   caret-color: var(--app-text);
