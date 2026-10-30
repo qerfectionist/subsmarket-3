@@ -94,7 +94,7 @@ export function formatPhoneInput(raw: string, previous: string) {
 }
 
 /**
- * The chat caption, and across from it «(!) Зачем нужен чат»; a tap opens a
+ * The chat caption with «(!) Зачем нужен чат» right after it; a tap opens a
  * short text on what the chat is for, under the caption.
  */
 export function ChatInfo({ children }: { children: ReactNode }) {

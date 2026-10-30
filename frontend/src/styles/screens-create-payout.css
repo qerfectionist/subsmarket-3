@@ -262,37 +262,37 @@
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--app-text) 28%, transparent);
 }
 
-/* «Чат семьи» and, across from it, «(!) Зачем нужен чат» that opens its text. */
+/* «Чат семьи (!) Зачем нужен чат»: the question sits right after the caption,
+   the same size, quieter in colour, and opens its text. */
 .create-chat-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  column-gap: 10px;
 }
 
 .app-shell .create-chat-info-toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex: none;
   min-height: 32px;
-  padding: 0 12px 0 6px;
+  padding: 0;
   border: 0;
-  border-radius: 999px;
-  background: var(--app-secondary-bg, #2c2c2e);
+  background: transparent;
   box-shadow: none;
   color: var(--app-muted);
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: var(--app-weight-semibold);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  line-height: 20px;
+  transition: color 0.2s ease;
 }
 
 .create-chat-info-mark {
   display: inline-grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--app-text) 14%, transparent);
   color: var(--app-text);
