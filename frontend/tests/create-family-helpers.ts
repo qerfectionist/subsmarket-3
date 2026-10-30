@@ -62,7 +62,8 @@ export async function revealPayout(page: Page, upTo: "phone" | "name" | "chat") 
   }
   if (upTo === "name") return;
   const chat = page.getByTestId("create-chat-telegram");
-  if (await chat.isDisabled()) await click(page, "create-payout-next");
+  // The name is optional: leaving it wakes the chat.
+  if (await chat.isDisabled()) await name.evaluate((element) => { (element as HTMLElement).focus(); (element as HTMLElement).blur(); });
   await expect(chat).toBeEnabled();
 }
 

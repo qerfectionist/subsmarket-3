@@ -223,36 +223,16 @@
    view, greyed out, and wakes up when the step before it is done. */
 .create-payout-field,
 .create-segment,
-.create-payout .create-terms-caption,
-.app-shell .create-payout-next {
+.create-payout .create-terms-caption {
   transition: opacity 0.25s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .create-payout-field[data-locked],
 .create-segment[data-locked],
-.create-payout .create-terms-caption[data-locked],
-.app-shell .create-payout-next:disabled {
+.create-payout .create-terms-caption[data-locked] {
   opacity: 0.38;
   pointer-events: none;
 }
-
-.app-shell .create-payout-next {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: var(--app-radius-md, 16px);
-  background: var(--app-secondary-bg, #2c2c2e);
-  box-shadow: none;
-  color: var(--app-text);
-  font: inherit;
-  font-size: 15px;
-  font-weight: var(--app-weight-semibold);
-}
-
-.app-shell .create-payout-next:active {
-  background: color-mix(in srgb, var(--app-secondary-bg, #2c2c2e) 70%, var(--app-text));
-}
-
 
 /* The sticky footer and the menu cover the bottom of the screen: a block that is
    scrolled into view must stop above them, not behind them. */

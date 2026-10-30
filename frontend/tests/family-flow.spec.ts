@@ -288,7 +288,6 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   await expect(phone).toBeDisabled();
   await expect(name).toBeDisabled();
   await expect(chat).toBeDisabled();
-  await expect(page.getByTestId("create-payout-next")).toBeDisabled();
 
   await page.getByTestId("create-bank-halyk").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-bank-halyk")).toHaveAttribute("aria-checked", "true");
@@ -300,8 +299,11 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   await expect(name).toBeEnabled();
   await expect(chat).toBeDisabled();
 
-  // «Пропустить имя» wakes the chat; the family can be created only after picking it.
-  await page.getByTestId("create-payout-next").evaluate((element) => (element as HTMLElement).click());
+  // Leaving the name empty wakes the chat; the family can be created only after picking it.
+  await name.evaluate((element) => {
+    (element as HTMLElement).focus();
+    (element as HTMLElement).blur();
+  });
   await expect(chat).toBeEnabled();
   await expect(chat).toHaveAttribute("aria-checked", "false");
   await expect(submit).toBeDisabled();

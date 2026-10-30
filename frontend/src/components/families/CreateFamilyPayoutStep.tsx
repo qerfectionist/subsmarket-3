@@ -160,7 +160,11 @@ export function CreateFamilyPayoutStep({
               maxLength={40}
               aria-invalid={Boolean(nameError) || undefined}
               value={form.payment_recipient_name ?? ""}
-              onBlur={() => setTouched((current) => ({ ...current, payment_recipient_name: true }))}
+              onBlur={() => {
+                setTouched((current) => ({ ...current, payment_recipient_name: true }));
+                // Leaving the name, filled or not, wakes the chat: the name is optional.
+                reveal(3);
+              }}
               onChange={(event) =>
                 onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
               }
@@ -178,21 +182,17 @@ export function CreateFamilyPayoutStep({
             Номер и имя увидят только участники, которым вы подтвердили доступ.
           </small>
         )}
-        {stage < 3 ? (
-          <button
-            type="button"
-            className="create-payout-next"
-            data-testid="create-payout-next"
-            data-scroll="2"
-            disabled={stage < 2}
-            onClick={() => reveal(3)}
-          >
-            {form.payment_recipient_name?.trim() ? "Дальше" : "Пропустить имя"}
-          </button>
-        ) : null}
       </section>
 
-      <section className="create-payout-block" aria-label="Чат семьи" data-scroll="3">
+      <section
+        className="create-payout-block"
+        aria-label="Чат семьи"
+        data-scroll="3"
+        // The name can be skipped: a tap on the waiting chat wakes it.
+        onPointerDown={() => {
+          if (stage === 2) reveal(3);
+        }}
+      >
         <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
           Чат семьи
         </span>
