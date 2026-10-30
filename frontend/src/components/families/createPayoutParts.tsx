@@ -60,18 +60,35 @@ export function Segmented<T extends string>({
 }
 
 /**
- * Keeps a Kazakh number readable while it is typed: +7 700 123 45 67. The
- * country code is dropped when the text starts with «+» (our own format or a
- * paste), with 8, or has 11 digits; a bare 10-digit number is the number itself.
+ * The number is kept as «+7 700 123 45 67». The field fixes «+7 7» (every
+ * Kazakh mobile starts with it) and shows only the nine digits after it.
  */
-export function formatPhoneInput(raw: string, previous: string) {
+export function phoneRemainder(stored: string) {
+  const digits = stored.replace(/\D/g, "");
+  return formatGroups(digits.slice(2), [2, 3, 2, 2]);
+}
+
+function formatGroups(digits: string, sizes: number[]) {
+  const parts: string[] = [];
+  let at = 0;
+  for (const size of sizes) {
+    if (at >= digits.length) break;
+    parts.push(digits.slice(at, at + size));
+    at += size;
+  }
+  return parts.join(" ");
+}
+
+/** Turns what was typed or pasted in the field into the stored number; «» when nothing is left. */
+export function formatPhoneInput(raw: string, shown = "") {
   let digits = raw.replace(/\D/g, "");
-  // A backspace over a space would change nothing: take the digit before it.
-  if (raw.length < previous.length && digits === previous.replace(/\D/g, "")) digits = digits.slice(0, -1);
-  const hasCode =
-    raw.trim().startsWith("+") || digits.startsWith("8") || (digits.length >= 11 && digits.startsWith("7"));
-  const rest = (hasCode ? digits.slice(1) : digits).slice(0, 10);
-  if (rest === "") return "";
-  const parts = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6, 8), rest.slice(8, 10)].filter(Boolean);
-  return ["+7", ...parts].join(" ");
+  // A paste may bring the whole number: +7 7XX…, 8 7XX… or 7XX….
+  if (raw.trim().startsWith("+") || digits.length >= 11) digits = digits.slice(1);
+  // Ten digits after a different text is a pasted national number; after the same nine it is just one digit too many.
+  if (digits.length === 10 && digits.startsWith("7") && digits.slice(0, 9) !== shown.replace(/\D/g, "")) {
+    digits = digits.slice(1);
+  }
+  digits = digits.slice(0, 9);
+  if (digits === "") return "";
+  return `+7 ${formatGroups(`7${digits}`, [3, 3, 2, 2])}`;
 }

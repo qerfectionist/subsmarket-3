@@ -10,7 +10,7 @@ import {
   pluralRu,
   type FieldErrors
 } from "./createFamilyForm";
-import { formatPhoneInput, PayoutField, Segmented } from "./createPayoutParts";
+import { formatPhoneInput, PayoutField, phoneRemainder, Segmented } from "./createPayoutParts";
 
 /** The banks a new family can take payments to; Jusan is no longer offered. */
 const BANKS: FamilyCreate["payment_bank"][] = ["kaspi", "halyk", "freedom"];
@@ -46,8 +46,8 @@ export function CreateFamilyPayoutStep({
   const [touched, setTouched] = useState<Touched>({});
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
   const phoneError = shown("payment_phone");
-  // The stored number is «+7 700 123 45 67»; the field shows what follows the fixed +7.
-  const phoneShown = form.payment_phone.replace(/^\+7\s?/, "");
+  // The stored number is «+7 700 123 45 67»; the field shows what follows the fixed «+7 7».
+  const phoneShown = phoneRemainder(form.payment_phone);
   const nameError = shown("payment_recipient_name");
   const recipientErrors = [phoneError, nameError].filter(Boolean) as string[];
   const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
@@ -97,13 +97,13 @@ export function CreateFamilyPayoutStep({
         <span className="create-terms-caption">Получатель</span>
         <div className="create-payout-fields">
           <PayoutField label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)}>
-            {/* The country code is fixed: +7 stays in front, only the ten digits are typed. */}
+            {/* The start is fixed: «+7 7» stays in front, only the other nine digits are typed. */}
             <div className="create-payout-phone">
-              <span aria-hidden="true">+7</span>
+              <span aria-hidden="true">+7 7</span>
               <input
                 id="create-payment-phone"
                 required
-                placeholder="700 123 45 67"
+                placeholder="00 123 45 67"
                 data-testid="create-payment-phone-input"
                 inputMode="tel"
                 autoComplete="tel-national"
