@@ -46,24 +46,24 @@ const click = (page: Page, testId: string) =>
   page.getByTestId(testId).evaluate((element) => (element as HTMLElement).click());
 
 /**
- * «Выплата» opens one question at a time: bank, phone, name, chat. Walks it as
+ * «Выплата» wakes one question at a time: bank, phone, name, chat. Walks it as
  * far as `upTo` needs, using the first bank and a plain phone where nothing is filled.
  */
 export async function revealPayout(page: Page, upTo: "phone" | "name" | "chat") {
   await goToCreateStep(page, "payout");
   const phone = page.getByTestId("create-payment-phone-input");
-  if ((await phone.count()) === 0) await click(page, "create-bank-kaspi");
+  if (await phone.isDisabled()) await click(page, "create-bank-kaspi");
   if (upTo === "phone") return;
   const name = page.getByTestId("create-recipient-name-input");
-  if ((await name.count()) === 0) {
-    await expect(phone).toBeVisible();
+  if (await name.isDisabled()) {
+    await expect(phone).toBeEnabled();
     if (!(await phone.inputValue())) await phone.fill("+77001234567");
-    await expect(name).toBeVisible();
+    await expect(name).toBeEnabled();
   }
   if (upTo === "name") return;
   const chat = page.getByTestId("create-chat-telegram");
-  if ((await chat.count()) === 0) await click(page, "create-payout-next");
-  await expect(chat).toBeVisible();
+  if (await chat.isDisabled()) await click(page, "create-payout-next");
+  await expect(chat).toBeEnabled();
 }
 
 export async function fillCreateField(page: Page, testId: string, value: string) {

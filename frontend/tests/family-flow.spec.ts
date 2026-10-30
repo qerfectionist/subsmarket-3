@@ -282,31 +282,33 @@ test("payout step leads one question at a time: bank, phone, name, chat", async 
   const chat = page.getByTestId("create-chat-telegram");
   const submit = page.getByTestId("create-family-submit");
 
-  // Only the bank to start with, and nothing is picked for the person.
+  // Everything is in view, but only the bank can be touched, and nothing is picked for the person.
   await expect(page.getByTestId("create-bank-kaspi")).toHaveAttribute("aria-checked", "false");
-  await expect(phone).toHaveCount(0);
-  await expect(name).toHaveCount(0);
-  await expect(chat).toHaveCount(0);
+  await expect(page.getByTestId("create-bank-kaspi")).toBeEnabled();
+  await expect(phone).toBeDisabled();
+  await expect(name).toBeDisabled();
+  await expect(chat).toBeDisabled();
+  await expect(page.getByTestId("create-payout-next")).toBeDisabled();
 
   await page.getByTestId("create-bank-halyk").evaluate((element) => (element as HTMLElement).click());
   await expect(page.getByTestId("create-bank-halyk")).toHaveAttribute("aria-checked", "true");
-  await expect(phone).toBeVisible();
-  await expect(name).toHaveCount(0);
+  await expect(phone).toBeEnabled();
+  await expect(name).toBeDisabled();
 
-  // The name appears once the ten digits are in.
+  // The name wakes up once the ten digits are in.
   await phone.fill("+77001234567");
-  await expect(name).toBeVisible();
-  await expect(chat).toHaveCount(0);
+  await expect(name).toBeEnabled();
+  await expect(chat).toBeDisabled();
 
-  // «Пропустить имя» leads on to the chat; the family can be created only after picking it.
+  // «Пропустить имя» wakes the chat; the family can be created only after picking it.
   await page.getByTestId("create-payout-next").evaluate((element) => (element as HTMLElement).click());
-  await expect(chat).toBeVisible();
+  await expect(chat).toBeEnabled();
   await expect(chat).toHaveAttribute("aria-checked", "false");
   await expect(submit).toBeDisabled();
   await chat.evaluate((element) => (element as HTMLElement).click());
   await expect(submit).toBeEnabled();
 
-  // Going back to the terms and forward again keeps everything that was opened.
+  // Going back to the terms and forward again keeps everything that was woken up.
   await goToCreateStep(page, "terms");
   await goToCreateStep(page, "payout");
   await expect(page.getByTestId("create-bank-halyk")).toHaveAttribute("aria-checked", "true");

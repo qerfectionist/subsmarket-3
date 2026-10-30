@@ -18,8 +18,9 @@ type Touched = Partial<Record<"payment_phone" | "payment_recipient_name", boolea
 
 /**
  * Step 3: where members send money, one question at a time. The family it is
- * for stays on top; then the bank, and only after it the phone, then the name,
- * then the chat, so nobody types a number before knowing where it goes.
+ * for stays on top; the bank, phone, name and chat are all in view, but each
+ * stays greyed out until the one before it is done, so nobody types a number
+ * before knowing where it goes.
  */
 export function CreateFamilyPayoutStep({
   form,
@@ -97,112 +98,123 @@ export function CreateFamilyPayoutStep({
             reveal(1);
           }}
         />
-        {stage === 0 ? <small className="create-payout-note">Сюда участники будут переводить оплату.</small> : null}
+        <small className="create-payout-note">Сюда участники будут переводить оплату.</small>
       </section>
 
-      {stage >= 1 ? (
-        <section className="create-payout-block create-payout-reveal" aria-label="Получатель" data-scroll="1">
-          <span className="create-terms-caption">Получатель</span>
-          <div className="create-payout-fields">
-            <PayoutField label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)}>
-              {/* The country code is fixed: +7 stays in front, only the ten digits are typed. */}
-              <div className="create-payout-phone">
-                <span aria-hidden="true">+7</span>
-                <input
-                  ref={phoneRef}
-                  id="create-payment-phone"
-                  required
-                  placeholder="700 123 45 67"
-                  data-testid="create-payment-phone-input"
-                  inputMode="tel"
-                  autoComplete="tel-national"
-                  enterKeyHint="next"
-                  aria-invalid={Boolean(phoneError) || undefined}
-                  value={phoneShown}
-                  onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
-                  onChange={(event) => {
-                    const next = formatPhoneInput(event.target.value, phoneShown);
-                    onChangeForm((current) => ({ ...current, payment_phone: next }));
-                    // Ten digits typed: the next question is the name.
-                    if (next.replace(/\D/g, "").length === 11) reveal(2);
-                  }}
-                />
-              </div>
-            </PayoutField>
-            {stage >= 2 ? (
-            <div className="create-payout-reveal">
-              <PayoutField label={
-                  <>
-                    Имя <span className="create-payout-field-hint">рекомендуем, для сверки перевода</span>
-                  </>
-                } htmlFor="create-recipient-name" invalid={Boolean(nameError)}>
-                <input
-                  ref={nameRef}
-                  id="create-recipient-name"
-                  placeholder="Кайрат Н."
-                  data-testid="create-recipient-name-input"
-                  autoComplete="off"
-                  autoCapitalize="words"
-                  enterKeyHint="next"
-                  onKeyDown={(event) => {
-                    // Enter moves on to the chat instead of sending the form.
-                    if (event.key !== "Enter") return;
-                    event.preventDefault();
-                    reveal(3);
-                  }}
-                  maxLength={40}
-                  aria-invalid={Boolean(nameError) || undefined}
-                  value={form.payment_recipient_name ?? ""}
-                  onBlur={() => setTouched((current) => ({ ...current, payment_recipient_name: true }))}
-                  onChange={(event) =>
-                    onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
-                  }
-                />
-              </PayoutField>
+      <section className="create-payout-block" aria-label="Получатель" data-scroll="1">
+        <span className="create-terms-caption" data-locked={stage < 1 || undefined}>
+          Получатель
+        </span>
+        <div className="create-payout-fields">
+          <PayoutField label="Телефон" htmlFor="create-payment-phone" invalid={Boolean(phoneError)} locked={stage < 1}>
+            {/* The country code is fixed: +7 stays in front, only the ten digits are typed. */}
+            <div className="create-payout-phone">
+              <span aria-hidden="true">+7</span>
+              <input
+                ref={phoneRef}
+                id="create-payment-phone"
+                required
+                disabled={stage < 1}
+                placeholder="700 123 45 67"
+                data-testid="create-payment-phone-input"
+                inputMode="tel"
+                autoComplete="tel-national"
+                enterKeyHint="next"
+                aria-invalid={Boolean(phoneError) || undefined}
+                value={phoneShown}
+                onBlur={() => setTouched((current) => ({ ...current, payment_phone: true }))}
+                onChange={(event) => {
+                  const next = formatPhoneInput(event.target.value, phoneShown);
+                  onChangeForm((current) => ({ ...current, payment_phone: next }));
+                  // Ten digits typed: the name is next.
+                  if (next.replace(/\D/g, "").length === 11) reveal(2);
+                }}
+              />
             </div>
-          ) : null}
-          </div>
-          {recipientErrors.length > 0 ? (
-            <small className="create-payout-note field-error" role="alert" aria-live="polite">
-              {recipientErrors.map((error) => (
-                <span key={error}>{error}</span>
-              ))}
-            </small>
-          ) : (
-            <small className="create-payout-note">
-              Номер и имя увидят только участники, которым вы подтвердили доступ.
-            </small>
-          )}
-          {stage === 2 ? (
-            <button type="button" className="create-payout-next" data-testid="create-payout-next" data-scroll="2" onClick={() => reveal(3)}>
-              {form.payment_recipient_name?.trim() ? "Дальше" : "Пропустить имя"}
-            </button>
-          ) : null}
-        </section>
-      ) : null}
-
-      {stage >= 3 ? (
-        <section className="create-payout-block create-payout-reveal" aria-label="Чат семьи" data-scroll="3">
-          <span className="create-terms-caption">Чат семьи</span>
-          <Segmented
-            label="Чат семьи"
-            options={CHAT_OPTIONS}
-            value={progress.chat ? chat : null}
-            testId={(kind) => `create-chat-${kind}`}
-            onChange={(kind) => {
-              onChangeForm((current) => ({ ...current, chat_kind: kind }));
-              onProgress((current) => ({ ...current, chat: true }));
-            }}
-          />
-          <small className="create-payout-note">
-            {!progress.chat
-              ? "Где будет общаться семья."
-              : chat === "telegram"
-                ? "После создания откроем группу с ботом, останется нажать «Создать»."
-                : "После создания поможем сделать группу в WhatsApp за три шага."}
+          </PayoutField>
+          <PayoutField
+            label={
+              <>
+                Имя <span className="create-payout-field-hint">рекомендуем, для сверки перевода</span>
+              </>
+            }
+            htmlFor="create-recipient-name"
+            invalid={Boolean(nameError)}
+            locked={stage < 2}
+          >
+            <input
+              ref={nameRef}
+              id="create-recipient-name"
+              disabled={stage < 2}
+              placeholder="Кайрат Н."
+              data-testid="create-recipient-name-input"
+              autoComplete="off"
+              autoCapitalize="words"
+              enterKeyHint="next"
+              onKeyDown={(event) => {
+                // Enter moves on to the chat instead of sending the form.
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                reveal(3);
+              }}
+              maxLength={40}
+              aria-invalid={Boolean(nameError) || undefined}
+              value={form.payment_recipient_name ?? ""}
+              onBlur={() => setTouched((current) => ({ ...current, payment_recipient_name: true }))}
+              onChange={(event) =>
+                onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
+              }
+            />
+          </PayoutField>
+        </div>
+        {recipientErrors.length > 0 ? (
+          <small className="create-payout-note field-error" role="alert" aria-live="polite">
+            {recipientErrors.map((error) => (
+              <span key={error}>{error}</span>
+            ))}
           </small>
-        </section>
-      ) : null}
+        ) : (
+          <small className="create-payout-note">
+            Номер и имя увидят только участники, которым вы подтвердили доступ.
+          </small>
+        )}
+        {stage < 3 ? (
+          <button
+            type="button"
+            className="create-payout-next"
+            data-testid="create-payout-next"
+            data-scroll="2"
+            disabled={stage < 2}
+            onClick={() => reveal(3)}
+          >
+            {form.payment_recipient_name?.trim() ? "Дальше" : "Пропустить имя"}
+          </button>
+        ) : null}
+      </section>
+
+      <section className="create-payout-block" aria-label="Чат семьи" data-scroll="3">
+        <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
+          Чат семьи
+        </span>
+        <Segmented
+          label="Чат семьи"
+          options={CHAT_OPTIONS}
+          value={progress.chat ? chat : null}
+          locked={stage < 3}
+          testId={(kind) => `create-chat-${kind}`}
+          onChange={(kind) => {
+            onChangeForm((current) => ({ ...current, chat_kind: kind }));
+            onProgress((current) => ({ ...current, chat: true }));
+          }}
+        />
+        <small className="create-payout-note">
+          {!progress.chat
+            ? "Где будет общаться семья."
+            : chat === "telegram"
+              ? "После создания откроем группу с ботом, останется нажать «Создать»."
+              : "После создания поможем сделать группу в WhatsApp за три шага."}
+        </small>
+      </section>
     </div>
   );
 }

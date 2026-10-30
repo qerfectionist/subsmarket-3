@@ -6,15 +6,18 @@ export function PayoutField({
   label,
   htmlFor,
   invalid,
+  locked,
   children
 }: {
   label: ReactNode;
   htmlFor: string;
   invalid?: boolean;
+  /** Not its turn yet: shown, but greyed out and not editable. */
+  locked?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="create-payout-field" data-invalid={invalid || undefined}>
+    <div className="create-payout-field" data-invalid={invalid || undefined} data-locked={locked || undefined}>
       <label htmlFor={htmlFor}>{label}</label>
       {children}
     </div>
@@ -37,22 +40,26 @@ export function Segmented<T extends string>({
   options,
   value,
   testId,
+  locked,
   onChange
 }: {
   label: string;
   options: { value: T; label: string; icon?: string }[];
   value: T | null;
   testId: (value: T) => string;
+  /** Not its turn yet: shown, but greyed out and not pressable. */
+  locked?: boolean;
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="create-segment" role="radiogroup" aria-label={label} data-empty={value === null || undefined}>
+    <div className="create-segment" role="radiogroup" aria-label={label} data-empty={value === null || undefined} data-locked={locked || undefined}>
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
           role="radio"
           aria-checked={option.value === value}
+          disabled={locked}
           data-testid={testId(option.value)}
           className="create-segment-option"
           onClick={() => {

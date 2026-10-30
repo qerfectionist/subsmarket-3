@@ -219,16 +219,21 @@
   opacity: 1;
 }
 
-/* «Выплата» is led one question at a time: a block that appears settles in. */
-.create-payout-reveal {
-  animation: create-payout-reveal 0.28s ease both;
+/* «Выплата» is led one question at a time: what is not its turn yet stays in
+   view, greyed out, and wakes up when the step before it is done. */
+.create-payout-field,
+.create-segment,
+.create-payout .create-terms-caption,
+.app-shell .create-payout-next {
+  transition: opacity 0.25s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-@keyframes create-payout-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
+.create-payout-field[data-locked],
+.create-segment[data-locked],
+.create-payout .create-terms-caption[data-locked],
+.app-shell .create-payout-next:disabled {
+  opacity: 0.38;
+  pointer-events: none;
 }
 
 .app-shell .create-payout-next {
@@ -248,11 +253,6 @@
   background: color-mix(in srgb, var(--app-secondary-bg, #2c2c2e) 70%, var(--app-text));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .create-payout-reveal {
-    animation: none;
-  }
-}
 
 /* The sticky footer and the menu cover the bottom of the screen: a block that is
    scrolled into view must stop above them, not behind them. */
