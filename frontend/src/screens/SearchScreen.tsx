@@ -140,9 +140,22 @@ export function SearchScreen({
 
   const isCatalog = view === "family-catalog";
   const term = searchTerm.trim().toLocaleLowerCase("ru-RU");
-  const isInvite = /^\d{8}$/.test(term);
+  const normalizedInviteCode = term
+    .replace(/^(?:https?:\/\/.*?start=(?:inv_)?)?(?:inv_)?/i, "")
+    .replace(/[\s-]/g, "");
+  const isInvite = /^\d{8}$/.test(normalizedInviteCode);
   const isSearching = Boolean(term) && !isInvite;
   const isHome = !isCatalog && !isSearching;
+
+  const handleOpenInvite = useCallback(
+    (code: string) => {
+      const clean = code
+        .replace(/^(?:https?:\/\/.*?start=(?:inv_)?)?(?:inv_)?/i, "")
+        .replace(/[\s-]/g, "");
+      onOpenInvite(clean || code);
+    },
+    [onOpenInvite]
+  );
 
   function persistMarketViewState(overrides: Partial<MarketViewState> = {}) {
     if (view !== "market") return;
@@ -663,7 +676,7 @@ export function SearchScreen({
         searchTerm={searchTerm}
         onSearchTermChange={updateSearchTerm}
         isInvite={isInvite}
-        onOpenInvite={onOpenInvite}
+        onOpenInvite={handleOpenInvite}
         searchInputRef={searchInputRef}
         scrollRef={marketScrollRef}
         onScroll={scheduleMarketScrollPersistence}
@@ -704,7 +717,7 @@ export function SearchScreen({
       searchTerm={searchTerm}
       onSearchTermChange={updateSearchTerm}
       isInvite={isInvite}
-      onOpenInvite={onOpenInvite}
+      onOpenInvite={handleOpenInvite}
       searchInputRef={searchInputRef}
       scrollRef={marketScrollRef}
       onScroll={scheduleMarketScrollPersistence}

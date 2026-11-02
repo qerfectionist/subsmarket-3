@@ -46,8 +46,13 @@ export function FamilyCreatedScreen({
   return (
     <Panel title="Семья создана">
       <div className="screen-body-inset family-created" data-testid="family-created-screen">
-        <section className="create-live-card" aria-label="Ваша семья в маркете">
-          <span className="create-live-caption">Уже в маркете</span>
+        <section
+          className="create-live-card"
+          aria-label={family.is_search_visible ? "Ваша семья в маркете" : "Приватная семья"}
+        >
+          <span className="create-live-caption">
+            {family.is_search_visible ? "Уже в маркете" : "Приватная семья"}
+          </span>
           <div className="create-live-head">
             <ServiceLogo
               serviceSlug={family.service_slug}
@@ -94,8 +99,9 @@ export function FamilyCreatedScreen({
         )}
         {!connected && chat ? (
           <small className="field-helper create-final-note">
-            Без чата семья видна в маркете, но принять участников не получится. Подключить
-            чат можно позже в «Мои».
+            {family.is_search_visible
+              ? "Без чата семья видна в маркете, но принять участников не получится. Подключить чат можно позже в «Мои»."
+              : "Без чата принять участников не получится. Подключить чат можно позже в «Мои»."}
           </small>
         ) : null}
       </div>

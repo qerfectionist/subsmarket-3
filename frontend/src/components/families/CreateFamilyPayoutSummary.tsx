@@ -23,7 +23,7 @@ export function CreateFamilyVisibility({
         </span>
         <span className="create-switch-text">
           <span id="create-visibility-label">Показывать в Маркете</span>
-          <small>{visible ? "Семью увидят все" : "Только по ссылке-приглашению"}</small>
+          <small>{visible ? "Публичная — увидят все в Маркете" : "Приватная — только по коду или ссылке для своих"}</small>
         </span>
         <button
           type="button"
