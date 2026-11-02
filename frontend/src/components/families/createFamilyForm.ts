@@ -243,3 +243,11 @@ export function matchesServiceQuery(service: FamilyService, query: string) {
     .toLocaleLowerCase("ru-RU");
   return haystack.includes(needle);
 }
+
+/**
+ * Capitalizes the first letter of each word/part in the recipient name
+ * (e.g. "кайрат н." -> "Кайрат Н.", "айгерим" -> "Айгерим").
+ */
+export function formatRecipientName(value: string): string {
+  return value.replace(/(^|[\s\-.,(«"'])\p{L}/gu, (match) => match.toLocaleUpperCase());
+}

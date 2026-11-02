@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import date, datetime
 from typing import Any, Literal
@@ -49,7 +50,7 @@ class FamilyCreate(BaseModel):
             raise ValueError("PAYMENT_RECIPIENT_NAME_TOO_SHORT")
         if any(char.isdigit() for char in name):
             raise ValueError("PAYMENT_RECIPIENT_NAME_HAS_DIGITS")
-        return name
+        return re.sub(r"(^|[\s\-.,(«\"'])\w", lambda m: m.group(0).upper(), name)
 
     @field_validator("next_payment_date")
     @classmethod

@@ -250,7 +250,8 @@ test("create family form validates payout fields in real time", async ({ page })
   await page.getByTestId("create-recipient-name-input").blur();
   await expect(page.locator(".field-error")).toContainText("без цифр");
 
-  await fillCreateField(page, "create-recipient-name-input", "Айгерим Б.");
+  await fillCreateField(page, "create-recipient-name-input", "айгерим б.");
+  await expect(page.getByTestId("create-recipient-name-input")).toHaveValue("Айгерим Б.");
   await expect(page.locator(".field-error")).toHaveCount(0);
   await expect(page.getByTestId("create-fix-hint")).toHaveCount(0);
   // Valid, but the chat has not been picked yet: the button still waits.

@@ -160,6 +160,20 @@ def test_recipient_name_rejects_short_names_and_digits(name: str) -> None:
         )
 
 
+def test_recipient_name_auto_capitalizes_words() -> None:
+    created = FamilyCreate(
+        service_id="00000000-0000-0000-0000-000000000000",
+        max_members=4,
+        total_price_kzt=6000,
+        payment_day=15,
+        next_payment_date=date.today() + timedelta(days=20),
+        payment_bank="kaspi",
+        payment_phone="+77001234567",
+        payment_recipient_name="кайрат н.",
+    )
+    assert created.payment_recipient_name == "Кайрат Н."
+
+
 def test_tariff_family_keeps_full_speed_gb(db: Session) -> None:
     service = make_service(db, slug="beeline-family-tariff", family_type="tariff")
     owner = make_user(db, 4)

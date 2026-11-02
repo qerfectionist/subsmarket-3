@@ -3,7 +3,7 @@ import { CreateFamilyVisibility } from "./CreateFamilyPayoutSummary";
 import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
-import type { FieldErrors } from "./createFamilyForm";
+import { formatRecipientName, type FieldErrors } from "./createFamilyForm";
 import {
   CaptionInfo,
   formatPhoneInput,
@@ -197,9 +197,10 @@ export function CreateFamilyPayoutStep({
                 // Leaving the name, filled or not, wakes the chat: the name is optional.
                 reveal(3);
               }}
-              onChange={(event) =>
-                onChangeForm((current) => ({ ...current, payment_recipient_name: event.target.value }))
-              }
+              onChange={(event) => {
+                const formatted = formatRecipientName(event.target.value);
+                onChangeForm((current) => ({ ...current, payment_recipient_name: formatted }));
+              }}
             />
           </PayoutField>
         </div>
