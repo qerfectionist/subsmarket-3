@@ -23,6 +23,7 @@ from subsmarket.families._internal import (
 from subsmarket.families.audit import record_family_audit_event
 from subsmarket.families.chat import create_family_chat
 from subsmarket.families.crypto import encrypt_payment_requisite
+from subsmarket.families.invites import create_initial_family_invite
 from subsmarket.families.models import (
     Family,
     FamilyMember,
@@ -147,6 +148,7 @@ def create_family(
     )
     db.add(owner_member)
     db.flush()
+    create_initial_family_invite(db, family.id, user_id)
     record_family_audit_event(
         db,
         family_id=family.id,

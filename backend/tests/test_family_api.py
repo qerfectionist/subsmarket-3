@@ -476,7 +476,12 @@ def test_family_invite_lifecycle_and_hidden_discovery(
             "payment_phone": "+77001234567",
         },
     )
+    assert create_response.status_code == 201
     family_id = create_response.json()["family"]["id"]
+    created_invite = create_response.json().get("invite")
+    assert created_invite is not None
+    assert len(created_invite["code"]) == 6
+    assert created_invite["code"].isdigit()
 
     invite_response = client.post(
         f"/api/families/{family_id}/invite",
@@ -484,6 +489,7 @@ def test_family_invite_lifecycle_and_hidden_discovery(
     )
     assert invite_response.status_code == 201
     first_code = invite_response.json()["code"]
+    assert first_code == created_invite["code"]
     assert len(first_code) == 6
     assert first_code.isdigit()
 

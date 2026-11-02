@@ -352,7 +352,9 @@ function OwnerInvitePanel({
 }) {
   const editable = ["active", "full"].includes(family.status);
   const formattedCode = invite
-    ? `${invite.code.slice(0, 4)} ${invite.code.slice(4)}`
+    ? invite.code.length === 6
+      ? `${invite.code.slice(0, 3)} ${invite.code.slice(3)}`
+      : `${invite.code.slice(0, 4)} ${invite.code.slice(4)}`
     : null;
 
   return (

@@ -40,6 +40,7 @@ export type FamilyCreate = Schema["FamilyCreate"];
 
 export type FamilyCreateResult = {
   family: Family;
+  invite?: FamilyInvite | null;
 };
 
 export type FamilyInvite = Omit<Schema["FamilyInviteOut"], "status"> & {

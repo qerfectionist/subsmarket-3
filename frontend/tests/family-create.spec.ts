@@ -187,6 +187,11 @@ test("a family can be created without a chat, and the hint explains what the cha
   expect(sent.chat_kind).toBeNull();
   expect(sent.is_search_visible).toBe(false);
   await expect(page.getByTestId("family-created-screen")).toBeVisible();
+  await expect(page.getByTestId("family-created-invite")).toBeVisible();
+  const inviteCodeEl = page.getByTestId("family-created-invite-code");
+  await expect(inviteCodeEl).toBeVisible();
+  const displayedCode = (await inviteCodeEl.innerText()).replace(/\s/g, "");
+  expect(displayedCode).toMatch(/^\d{6}$/);
 });
 
 test("half-made families survive leaving the app and resume from their kind", async ({ page }) => {

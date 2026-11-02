@@ -144,21 +144,22 @@ class FamilyOut(BaseModel):
     created_at: datetime
 
 
-class FamilyCreateResult(BaseModel):
-    family: FamilyOut
-
-
-class FamilyPageOut(BaseModel):
-    items: list[FamilyOut]
-    next_cursor: str | None = None
-
-
 class FamilyInviteOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     code: str
     status: str
     created_at: datetime
+
+
+class FamilyCreateResult(BaseModel):
+    family: FamilyOut
+    invite: FamilyInviteOut | None = None
+
+
+class FamilyPageOut(BaseModel):
+    items: list[FamilyOut]
+    next_cursor: str | None = None
 
 
 class RequestUserOut(BaseModel):

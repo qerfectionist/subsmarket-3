@@ -34,6 +34,7 @@ from subsmarket.families.creation import (  # noqa: F401
 )
 from subsmarket.families.invites import (  # noqa: F401
     create_family_invite,
+    create_initial_family_invite,
     disable_family_invite,
     get_family_invite,
     normalize_family_invite_code,

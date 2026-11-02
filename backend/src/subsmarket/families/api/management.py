@@ -55,7 +55,11 @@ def post_family(
         payload,
         idempotency_key=idempotency_key,
     )
-    return FamilyCreateResult(family=to_family_out(family, include_owner_photo=True))
+    invite = get_family_invite(db, user, family.id)
+    return FamilyCreateResult(
+        family=to_family_out(family, include_owner_photo=True),
+        invite=FamilyInviteOut.model_validate(invite) if invite else None,
+    )
 
 
 def patch_family_description(

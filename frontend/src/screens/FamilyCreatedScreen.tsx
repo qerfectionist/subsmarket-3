@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Button as AppButton } from "../components/ui";
+import { Button as AppButton, Typography, useToast } from "../components/ui";
 import { Panel } from "../components/layout";
 import { ServiceLogo } from "../components/branding";
 import { FamilyChatConnect } from "../components/families/FamilyChatPanel";
 import { formatKzt, pluralRu } from "../components/families/createFamilyForm";
 import { familyTitle } from "../format";
 import { useTelegramBackButton, useTelegramMainButton } from "../hooks/useTelegramAppEffects";
+import { useFamilyInvite } from "../hooks/api/families-queries";
 import { canUseTelegramMainButton } from "../telegram";
 import type { MyFamily } from "../types";
 
@@ -20,6 +21,12 @@ export function FamilyCreatedScreen({
   const chat = item?.chat ?? null;
   const connected = chat?.status === "connected";
   const [nativeMainButton] = useState(canUseTelegramMainButton);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const familyId = item?.family.id ?? null;
+  const inviteQuery = useFamilyInvite(familyId);
+  const invite = inviteQuery.data ?? null;
 
   useTelegramBackButton(true, onDone);
   useTelegramMainButton({
@@ -29,6 +36,28 @@ export function FamilyCreatedScreen({
     isPending: false,
     disabled: false
   });
+
+  const handleCopyCode = async (code: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = code;
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+      setCopied(true);
+      toast.success({ title: "Код скопирован" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error({ title: "Не удалось скопировать" });
+    }
+  };
 
   if (!item) {
     return (
@@ -78,6 +107,43 @@ export function FamilyCreatedScreen({
             <span>оплата {family.payment_day}-го</span>
           </div>
         </section>
+
+        {invite?.code ? (
+          <section className="invite-owner-card family-created-invite" data-testid="family-created-invite">
+            <div>
+              <Typography as="span" variant="body" level={4} className="muted">
+                {family.is_search_visible ? "Код приглашения" : "Код для вступления (приватная)"}
+              </Typography>
+              <Typography
+                as="strong"
+                variant="subtitle"
+                level={2}
+                data-testid="family-created-invite-code"
+                style={{ fontSize: "24px", letterSpacing: "0.1em", marginTop: "4px" }}
+              >
+                {invite.code.length === 6
+                  ? `${invite.code.slice(0, 3)} ${invite.code.slice(3)}`
+                  : invite.code}
+              </Typography>
+              <Typography as="p" variant="body" level={3} className="muted" style={{ marginTop: "6px" }}>
+                {family.is_search_visible
+                  ? "Близкие могут ввести этот 6-значный код в поиске Маркета, чтобы сразу открыть карточку семьи."
+                  : "Семья скрыта из общего Маркета. Отправьте этот код близким, чтобы они нашли семью через поиск."}
+              </Typography>
+            </div>
+            <div className="row-actions" style={{ marginTop: "4px" }}>
+              <AppButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                data-testid="copy-created-invite-code"
+                onClick={() => void handleCopyCode(invite.code)}
+              >
+                {copied ? "Скопировано ✓" : "Скопировать код"}
+              </AppButton>
+            </div>
+          </section>
+        ) : null}
 
         {chat ? (
           <FamilyChatConnect

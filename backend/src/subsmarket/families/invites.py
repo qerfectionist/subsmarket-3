@@ -63,6 +63,23 @@ def create_family_invite(
     return invite
 
 
+def create_initial_family_invite(
+    db: Session,
+    family_id: UUID,
+    user_id: UUID,
+) -> FamilyInvite:
+    invite = _insert_family_invite(db, family_id)
+    record_family_audit_event(
+        db,
+        family_id=family_id,
+        action="family_invite_created",
+        actor_user_id=user_id,
+    )
+    db.flush()
+    db.refresh(invite)
+    return invite
+
+
 def rotate_family_invite(
     db: Session,
     user: User,
