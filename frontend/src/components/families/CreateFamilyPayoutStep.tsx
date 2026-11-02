@@ -180,7 +180,8 @@ export function CreateFamilyPayoutStep({
               disabled={stage < 2}
               placeholder="Кайрат Н."
               data-testid="create-recipient-name-input"
-              autoComplete="off"
+              lang="ru"
+              autoComplete="name"
               autoCapitalize="words"
               enterKeyHint="next"
               onKeyDown={(event) => {
