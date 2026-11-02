@@ -118,6 +118,7 @@ def create_family(
         next_payment_date=data.next_payment_date,
         description=data.description,
         owner_rules=data.owner_rules,
+        is_search_visible=data.is_search_visible,
         availability_confirmed_at=now,
         availability_expires_at=now + FAMILY_AVAILABILITY_TTL,
     )

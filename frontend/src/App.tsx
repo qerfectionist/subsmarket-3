@@ -18,14 +18,24 @@ import {
 import type { Tab } from "./appTypes";
 import { BottomNav, DevUserSwitch, Shell } from "./components/layout";
 import { DevCardsConstructorModal } from "./components/dev/DevCardsConstructorModal";
-import { countDevCards, DEV_CARDS_UPDATE_EVENT } from "./utils/devCardsStore";
-import { DEV_OPEN_CONSTRUCTOR_EVENT } from "./components/DevControls";
+import { AppLoadNotice } from "./components/AppLoadNotice";
 import { AsyncContent } from "./components/AsyncContent";
 import { ViewportMetrics } from "./components/ViewportMetrics";
 import { formatError, normalizeText } from "./format";
 import { nextPaymentDateFor } from "./components/families/createFamilyForm";
 import { useCreateFamily, useRefreshTelegramProfile } from "./hooks/useApi";
 import { useAppQueries } from "./hooks/useAppQueries";
+import { useAppScrollCapture } from "./hooks/useAppScrollCapture";
+import { useDevCardsModal } from "./hooks/useDevCardsModal";
+import {
+  newDraftId,
+  useCreateFamilyDrafts,
+  WIZARD_START,
+  type CreateFamilyDraft,
+  type CreateWizardState
+} from "./hooks/useCreateFamilyDraft";
+import type { CreateStep } from "./components/families/createFamilyForm";
+import type { PayoutProgress } from "./components/families/createPayoutParts";
 import { useTouchScrollLock } from "./hooks/useTouchScrollLock";
 import { useFamilyActionHandlers } from "./hooks/useFamilyActionHandlers";
 import { CreateFamilyScreen } from "./screens/CreateFamilyScreen";
@@ -66,7 +76,8 @@ const emptyCreateForm: FamilyCreate = {
   payment_bank: "kaspi",
   payment_phone: "",
   payment_recipient_name: "",
-  chat_kind: "telegram"
+  chat_kind: "telegram",
+  is_search_visible: true
 };
 
 export function App() {
@@ -119,7 +130,10 @@ export function App() {
   const [myProductScope, setMyProductScope] = useState<"families" | "accounts" | "gigabytes">("families");
   // «Создать» opens on its menu; a form opened from elsewhere sets its own scope.
   const [createScope, setCreateScope] = useState<"home" | "families" | "accounts" | "gigabytes">("home");
-  const [createFamilyStep, setCreateFamilyStep] = useState<"service" | "terms">("service");
+  const [createFamilyStep, setCreateFamilyStep] = useState<CreateStep>("service");
+  // Where the family wizard is, for the saved draft; and the «Выплата» progress to resume with.
+  const [createWizard, setCreateWizard] = useState<CreateWizardState>(WIZARD_START);
+  const [resumeProgress, setResumeProgress] = useState<PayoutProgress | undefined>(undefined);
   const [createEntry, setCreateEntry] = useState(0);
   const [createFromMenu, setCreateFromMenu] = useState(false);
   const [createPreset, setCreatePreset] = useState<string | null>(null);
@@ -127,92 +141,8 @@ export function App() {
   const [createRepeat, setCreateRepeat] = useState<AccountListing | MarketplaceListing | null>(null);
   const startParamHandled = useRef(false);
 
-  const [isDevCardsModalOpen, setIsDevCardsModalOpen] = useState(false);
-  const [devCardsTotal, setDevCardsTotal] = useState(() => (import.meta.env.DEV ? countDevCards().total : 0));
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    const handleCardsUpdate = () => {
-      setDevCardsTotal(countDevCards().total);
-    };
-    const handleOpenModal = () => {
-      setIsDevCardsModalOpen(true);
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.code === "KeyD" || e.key === "D")) {
-        e.preventDefault();
-        setIsDevCardsModalOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener(DEV_CARDS_UPDATE_EVENT, handleCardsUpdate);
-    window.addEventListener(DEV_OPEN_CONSTRUCTOR_EVENT, handleOpenModal);
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener(DEV_CARDS_UPDATE_EVENT, handleCardsUpdate);
-      window.removeEventListener(DEV_OPEN_CONSTRUCTOR_EVENT, handleOpenModal);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    let actionsScrollTimeout: number | null = null;
-
-    const handleScrollCapture = (event: Event) => {
-      const target = event.target;
-      if (!target || !(target instanceof HTMLElement)) return;
-      const isScrolled = target.scrollTop > 2;
-      const current = target.getAttribute("data-scrolled") === "true";
-      if (isScrolled !== current) {
-        if (isScrolled) {
-          target.setAttribute("data-scrolled", "true");
-          target
-            .closest<HTMLElement>(
-              ".actions-scope-swipe-pane, .my-product-scope-swipe-pane, .my-feed-wrap, .sm-market-home-feed-wrap, .sm-market-catalog-swipe-viewport, .sm-market-catalog-stack, .gb-stack, .actions-archive-content, .my-calendar-disclosure, .family-details-page, .app-shell"
-            )
-            ?.setAttribute("data-scrolled", "true");
-        } else {
-          target.removeAttribute("data-scrolled");
-          target
-            .closest<HTMLElement>(
-              ".actions-scope-swipe-pane, .my-product-scope-swipe-pane, .my-feed-wrap, .sm-market-home-feed-wrap, .sm-market-catalog-swipe-viewport, .sm-market-catalog-stack, .gb-stack, .actions-archive-content, .my-calendar-disclosure, .family-details-page, .app-shell"
-            )
-            ?.removeAttribute("data-scrolled");
-        }
-      }
-
-      const actionsPane = target.closest<HTMLElement>(".actions-scope-swipe-pane");
-      if (actionsPane) {
-        if (isScrolled) {
-          target.setAttribute("data-scrolling", "true");
-          actionsPane.setAttribute("data-scrolling", "true");
-          if (actionsScrollTimeout) {
-            window.clearTimeout(actionsScrollTimeout);
-          }
-          actionsScrollTimeout = window.setTimeout(() => {
-            target.removeAttribute("data-scrolling");
-            actionsPane.removeAttribute("data-scrolling");
-            actionsScrollTimeout = null;
-          }, 200);
-        } else {
-          if (actionsScrollTimeout) {
-            window.clearTimeout(actionsScrollTimeout);
-            actionsScrollTimeout = null;
-          }
-          target.removeAttribute("data-scrolling");
-          actionsPane.removeAttribute("data-scrolling");
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScrollCapture, { capture: true, passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScrollCapture, { capture: true });
-      if (actionsScrollTimeout) {
-        window.clearTimeout(actionsScrollTimeout);
-        actionsScrollTimeout = null;
-      }
-    };
-  }, []);
+  const { isDevCardsModalOpen, setIsDevCardsModalOpen } = useDevCardsModal();
+  useAppScrollCapture();
 
   const {
     meQuery,
@@ -250,6 +180,20 @@ export function App() {
       accountPurchaseActionCount
     }
   } = useAppQueries(tab, familyType, selectedFamilyId);
+  // The draft the open family form writes to: a new one per fresh start, the old one on «Продолжить».
+  const [activeDraftId, setActiveDraftId] = useState(newDraftId);
+  const {
+    drafts: familyDrafts,
+    remove: removeFamilyDraft,
+    restore: restoreFamilyDraft
+  } = useCreateFamilyDrafts({
+    userId: user?.id ?? null,
+    active: tab === "create" && createScope === "families",
+    draftId: activeDraftId,
+    form: createForm,
+    familyType,
+    wizard: createWizard
+  });
 
   const {
     busy,
@@ -362,6 +306,8 @@ export function App() {
         payment_recipient_name: normalizeText(createForm.payment_recipient_name)
       };
       const created = await createFamilyMutation.mutateAsync(payload);
+      removeFamilyDraft(activeDraftId);
+      setActiveDraftId(newDraftId());
       setCreateForm({ ...emptyCreateForm, max_members: 6 });
       setCreatedFamilyId(created.family.id);
       setTab("created");
@@ -421,56 +367,15 @@ export function App() {
     );
   }, [typedServices]);
 
-  if (loadState === "loading") {
-    return <Shell title="SubsMarket">Загружаем Mini App...</Shell>;
-  }
-
-  if (loadState === "username-required") {
+  if (loadState !== "ready") {
     return (
-      <Shell title="Нужен Telegram username">
-        <div className="notice">
-          <p>{me?.message}</p>
-          <ol>
-            <li>Откройте настройки Telegram.</li>
-            <li>Создайте username.</li>
-            <li>Вернитесь в SubsMarket и обновите профиль.</li>
-          </ol>
-          <AppButton
-            type="button"
-            fullWidth
-            onClick={() => void runMutation("refresh-profile", () => refreshProfileMutation.mutateAsync())}
-          >
-            Я создал username
-          </AppButton>
-        </div>
-      </Shell>
-    );
-  }
-
-  if (loadState === "error") {
-    const loadErrorMessage = formatError(meQuery.error);
-    const requiresTelegram = loadErrorMessage.includes("Telegram Mini App");
-    return (
-      <Shell title="Backend недоступен">
-        <div className="notice notice-error">
-          <p>{loadErrorMessage}</p>
-          <div className="notice-actions">
-            {requiresTelegram && (
-              <AppButton type="button" fullWidth onClick={openTelegramMiniApp}>
-                Открыть в Telegram
-              </AppButton>
-            )}
-            <AppButton
-              type="button"
-              fullWidth
-              variant={requiresTelegram ? "secondary" : "primary"}
-              onClick={() => meQuery.refetch()}
-            >
-              Повторить
-            </AppButton>
-          </div>
-        </div>
-      </Shell>
+      <AppLoadNotice
+        loadState={loadState}
+        me={me}
+        meError={meQuery.error}
+        onRefreshProfile={() => void runMutation("refresh-profile", () => refreshProfileMutation.mutateAsync())}
+        onRetry={() => void meQuery.refetch()}
+      />
     );
   }
 
@@ -483,6 +388,7 @@ export function App() {
     } else {
       setCreateScope("families");
       setCreateFamilyStep("service");
+      startFreshFamily();
       changeFamilyType(category);
     }
     setCreateEntry((current) => current + 1);
@@ -492,11 +398,40 @@ export function App() {
 
   /** A service found on the menu opens its family on «Условия». */
   function createFromPopular(next: FamilyService) {
+    startFreshFamily();
     pickCreateService(next);
     setCreateScope("families");
     setCreateFamilyStep("terms");
     setCreateEntry((current) => current + 1);
     setCreateFromMenu(true);
+  }
+
+  /**
+   * A new family from scratch: a new draft, an empty form (a draft left before
+   * keeps its own copy), nothing walked on «Выплата».
+   */
+  function startFreshFamily() {
+    setActiveDraftId(newDraftId());
+    setResumeProgress(undefined);
+    setCreateForm({ ...emptyCreateForm, next_payment_date: nextPaymentDateFor(emptyCreateForm.payment_day) });
+  }
+
+  /** A draft picked from the «Создать» menu: its form, on the step it was left at. */
+  function resumeFamilyDraft(draft: CreateFamilyDraft) {
+    setActiveDraftId(draft.id);
+    setFamilyType(draft.familyType);
+    setCreateForm({
+      ...emptyCreateForm,
+      ...draft.form,
+      // The day stays; the date is worked out again, so an old draft is not in the past.
+      next_payment_date: nextPaymentDateFor(draft.form.payment_day)
+    });
+    setCreateFamilyStep(draft.step);
+    setResumeProgress(draft.progress);
+    setCreateScope("families");
+    setCreateEntry((current) => current + 1);
+    setCreateFromMenu(true);
+    setTab("create");
   }
 
   /** An account or operator found on the menu opens its form with it picked. */
@@ -657,6 +592,7 @@ export function App() {
           onCreateFamily={(nextType) => {
             setCreateScope("families");
             setCreateFamilyStep("service");
+            startFreshFamily();
             setCreateFromMenu(false);
             changeFamilyType(nextType);
             setCreateBackTab("home");
@@ -671,6 +607,10 @@ export function App() {
           <CreateHome
             services={services}
             myFamilies={myFamilies}
+            drafts={familyDrafts}
+            onResumeDraft={resumeFamilyDraft}
+            onDiscardDraft={removeFamilyDraft}
+            onRestoreDraft={restoreFamilyDraft}
             onOpen={switchCreateCategory}
             onPickService={createFromPopular}
             onPickAccount={(slug) => createListingFromPopular("accounts", slug)}
@@ -687,6 +627,8 @@ export function App() {
           <CreateFamilyScreen
             key={`create-family-${createEntry}`}
             initialStep={createFamilyStep}
+            initialPayoutProgress={resumeProgress}
+            onWizardChange={setCreateWizard}
             onBack={leaveCreateForm}
             services={services}
             service={service}
@@ -783,6 +725,7 @@ export function App() {
           onCreateFamily={() => {
             setCreateScope("families");
             setCreateFamilyStep("service");
+            startFreshFamily();
             setCreateFromMenu(false);
             changeFamilyType("subscription");
             setCreateBackTab("mine");

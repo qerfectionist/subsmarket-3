@@ -135,6 +135,16 @@ def test_recipient_name_is_optional_for_old_clients(db: Session) -> None:
     assert requisite.encrypted_recipient_name is None
 
 
+def test_family_can_be_created_hidden_from_the_market(db: Session) -> None:
+    service = make_service(db, slug="youtube-premium", family_type="subscription")
+    owner = make_user(db, 4)
+    shown = create_family(db, owner, payload(service))
+    hidden = create_family(db, owner, payload(service, is_search_visible=False))
+
+    assert shown.is_search_visible is True
+    assert hidden.is_search_visible is False
+
+
 @pytest.mark.parametrize("name", ["А", "Айгерим 4400", "4400 4300 1234 5678"])
 def test_recipient_name_rejects_short_names_and_digits(name: str) -> None:
     with pytest.raises(ValidationError):

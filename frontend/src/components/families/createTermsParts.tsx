@@ -5,7 +5,7 @@ import { formatKzt } from "./createFamilyForm";
 /** Up to 9 999 999 ₸: more digits than any family subscription costs. */
 const MAX_DIGITS = 7;
 
-/** A compact − value + control for a row; keeps the test ids of the old stepper. */
+/** − value + in one capsule, as a row's control; keeps the test ids of the old stepper. */
 export function MiniStepper({
   id,
   label,
@@ -58,13 +58,30 @@ export function MiniStepper({
   );
 }
 
-/** One row of the settings group: the label (and an error if any) on the left, the control on the right. */
-export function TermsRow({ label, error, children }: { label: ReactNode; error?: string; children: ReactNode }) {
+/**
+ * One row of the settings group: the label with one line of what the number
+ * means under it (or the error, if any) on the left, the control on the right.
+ */
+export function TermsRow({
+  label,
+  hint,
+  error,
+  children
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  error?: string;
+  children: ReactNode;
+}) {
   return (
     <div className="create-terms-row">
       <div className="create-terms-row-copy">
         <strong>{label}</strong>
-        {error ? <span className="create-terms-row-error">{error}</span> : null}
+        {error ? (
+          <span className="create-terms-row-error">{error}</span>
+        ) : hint ? (
+          <span className="create-terms-row-hint">{hint}</span>
+        ) : null}
       </div>
       {children}
     </div>

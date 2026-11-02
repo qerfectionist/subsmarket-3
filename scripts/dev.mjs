@@ -2,6 +2,7 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureLocalInfrastructure } from "./ensure-local-infrastructure.mjs";
@@ -148,7 +149,12 @@ async function main() {
 
   if (!status.frontend) {
     console.log("Starting frontend on http://127.0.0.1:5173");
-    start("frontend", npmCmd, ["run", "dev"], { cwd: frontendDir, shell: true });
+    // SUBS_LAN=1 (start-phone.bat): listen on the local network so a phone can open it.
+    const lan = process.env.SUBS_LAN === "1";
+    start("frontend", npmCmd, lan ? ["run", "dev", "--", "--host"] : ["run", "dev"], {
+      cwd: frontendDir,
+      shell: true
+    });
     if (shouldOpen) {
       console.log("Waiting for frontend readiness...");
       await waitUntilUp("http://127.0.0.1:5173/");
@@ -161,6 +167,15 @@ async function main() {
     console.log("  Frontend: http://localhost:5173/");
     console.log("  Backend:  http://127.0.0.1:8002/");
     console.log("========================================================\n");
+    if (process.env.SUBS_LAN === "1") {
+      const addresses = Object.values(os.networkInterfaces())
+        .flat()
+        .filter((item) => item && item.family === "IPv4" && !item.internal)
+        .map((item) => item.address);
+      console.log("  С телефона (та же Wi-Fi сеть):");
+      for (const address of addresses) console.log(`    http://${address}:5173/`);
+      console.log("========================================================\n");
+    }
     openBrowser("http://localhost:5173/");
   }
 }

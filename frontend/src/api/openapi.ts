@@ -1968,6 +1968,11 @@ export interface components {
             payment_recipient_name?: string | null;
             /** Chat Kind */
             chat_kind?: ("telegram" | "whatsapp") | null;
+            /**
+             * Is Search Visible
+             * @default true
+             */
+            is_search_visible: boolean;
         };
         /** FamilyCreateResult */
         FamilyCreateResult: {

@@ -12474,6 +12474,11 @@
               }
             ],
             "title": "Chat Kind"
+          },
+          "is_search_visible": {
+            "type": "boolean",
+            "title": "Is Search Visible",
+            "default": true
           }
         },
         "type": "object",

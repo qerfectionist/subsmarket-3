@@ -37,6 +37,20 @@ export function CreateFamilyTermsStep({
   const isTariff = service.family_type === "tariff";
   const hints = serviceStrings(service, "tariff_hints");
   const shown = (key: keyof Touched) => (showAllErrors || touched[key] ? errors[key] : undefined);
+  // One line under each number saying what it means right now.
+  const others = Math.max(0, form.max_members - 1);
+  const placesHint =
+    form.max_members >= service.max_members
+      ? `Вы и ещё ${others} · это максимум`
+      : `Вы и ещё ${others} · максимум ${service.max_members}`;
+  const nextDate = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" }).format(
+    new Date(`${form.next_payment_date}T00:00:00`)
+  );
+  // 29–31: some months have no such day, and the payment moves to the month's last one.
+  const dayHint =
+    form.payment_day >= 29
+      ? `Ближайшая ${nextDate} · если нет ${form.payment_day}-го, в конце месяца`
+      : `Ближайшая ${nextDate}`;
 
   function setDay(day: number) {
     onChangeForm((current) => ({
@@ -107,7 +121,7 @@ export function CreateFamilyTermsStep({
       ) : null}
 
       <section className="create-terms-group" aria-label="Места и оплата">
-        <TermsRow label="Мест, считая вас" error={errors.max_members}>
+        <TermsRow label="Мест, считая вас" hint={placesHint} error={errors.max_members}>
           <MiniStepper
             id="create-max-members"
             label="Мест, считая вас"
@@ -118,7 +132,7 @@ export function CreateFamilyTermsStep({
             onChange={(value) => onChangeForm((current) => ({ ...current, max_members: value }))}
           />
         </TermsRow>
-        <TermsRow label="День оплаты" error={errors.payment_day ?? errors.next_payment_date}>
+        <TermsRow label="День оплаты" hint={dayHint} error={errors.payment_day ?? errors.next_payment_date}>
           <MiniStepper
             id="create-payment-day"
             label="День оплаты"
@@ -130,11 +144,6 @@ export function CreateFamilyTermsStep({
           />
         </TermsRow>
       </section>
-      {form.payment_day >= 29 ? (
-        <small className="create-terms-note">
-          В месяцах без {form.payment_day}-го числа оплата в последний день месяца.
-        </small>
-      ) : null}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { CreateFamilyIncome, CreateFamilyRequisitePreview } from "./CreateFamilyPayoutSummary";
+import { CreateFamilyVisibility } from "./CreateFamilyPayoutSummary";
 import { CreateFamilyPreview, type PreviewOwner } from "./CreateFamilyPreview";
 import { bankLabels } from "../../labels";
 import type { FamilyCreate, FamilyService } from "../../types";
@@ -95,7 +95,10 @@ export function CreateFamilyPayoutStep({
         data-testid="create-terms-summary"
       >
         <div className="create-payout-head">
-          <span className="create-terms-caption">Так увидят в Маркете</span>
+          {/* Hidden from the Market, the same card is what the invite link opens. */}
+          <span className="create-terms-caption">
+            {form.is_search_visible ? "Так увидят в Маркете" : "Так увидят по приглашению"}
+          </span>
           <button type="button" className="create-payout-edit" data-testid="create-edit-terms" onClick={onEditTerms}>
             Изменить
           </button>
@@ -213,49 +216,55 @@ export function CreateFamilyPayoutStep({
         )}
       </section>
 
-      <section
-        className="create-payout-block create-payout-snap"
-        aria-label="Чат семьи"
-        data-scroll="3"
-        // The name can be skipped: a tap on the waiting chat wakes it.
-        onPointerDown={() => {
-          if (stage === 2) reveal(3);
-        }}
-      >
-        <CaptionInfo
-          question="Зачем нужен чат"
-          testId="create-chat-info"
-          answer="В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек."
-        >
-          <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
-            {stage >= 3 && !progress.chat ? "Выберите чат семьи" : "Чат семьи"}
-          </span>
-        </CaptionInfo>
-        <Segmented
-          label="Чат семьи"
-          options={CHAT_OPTIONS}
-          value={progress.chat ? chat : null}
-          locked={stage < 3}
-          testId={(kind) => `create-chat-${kind}`}
-          onChange={(kind) => {
-            onChangeForm((current) => ({ ...current, chat_kind: kind === "none" ? null : kind }));
-            onProgress((current) => ({ ...current, chat: true }));
+      {/* The chat and the switch under it: tall enough that the chat can also stop right under the card. */}
+      <div className="create-payout-tail">
+        <section
+          className="create-payout-block create-payout-snap"
+          aria-label="Чат семьи"
+          data-scroll="3"
+          // The name can be skipped: a tap on the waiting chat wakes it.
+          onPointerDown={() => {
+            if (stage === 2) reveal(3);
           }}
-        />
-        {/* No note until a chat is picked; then what happens with it. */}
-        {progress.chat ? (
-          <small className="create-payout-note">
-            {chat === "telegram"
-              ? "После создания откроем группу с ботом, останется нажать «Создать»."
-              : chat === "whatsapp"
-                ? "После создания поможем сделать группу в WhatsApp за три шага."
-                : "Семья будет без общего чата: участникам и вам придётся связываться напрямую."}
-          </small>
-        ) : null}
-      </section>
+        >
+          <CaptionInfo
+            question="Зачем нужен чат"
+            testId="create-chat-info"
+            answer="В чате удобно решать вопросы: участники и вы на связи в одном месте. Скоро в нём появится бот: он будет напоминать об оплате, отвечать на вопросы о семье и сможет сразу проверить чек."
+          >
+            <span className="create-terms-caption" data-locked={stage < 3 || undefined}>
+              {stage >= 3 && !progress.chat ? "Выберите чат семьи" : "Чат семьи"}
+            </span>
+          </CaptionInfo>
+          <Segmented
+            label="Чат семьи"
+            options={CHAT_OPTIONS}
+            value={progress.chat ? chat : null}
+            locked={stage < 3}
+            testId={(kind) => `create-chat-${kind}`}
+            onChange={(kind) => {
+              onChangeForm((current) => ({ ...current, chat_kind: kind === "none" ? null : kind }));
+              onProgress((current) => ({ ...current, chat: true }));
+            }}
+          />
+          {/* No note until a chat is picked; then what happens with it. */}
+          {progress.chat ? (
+            <small className="create-payout-note">
+              {chat === "telegram"
+                ? "После создания откроем группу с ботом, останется нажать «Создать»."
+                : chat === "whatsapp"
+                  ? "После создания поможем сделать группу в WhatsApp за три шага."
+                  : "Семья будет без общего чата: участникам и вам придётся связываться напрямую."}
+            </small>
+          ) : null}
+        </section>
 
-      <CreateFamilyRequisitePreview form={form} locked={stage < 2} />
-      <CreateFamilyIncome form={form} bankChosen={stage >= 1} />
+        <CreateFamilyVisibility
+          visible={form.is_search_visible}
+          locked={!progress.chat}
+          onChange={(visible) => onChangeForm((current) => ({ ...current, is_search_visible: visible }))}
+        />
+      </div>
     </div>
   );
 }

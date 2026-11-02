@@ -422,40 +422,6 @@
   margin-bottom: 16px;
 }
 
-/* The back arrow and the title stay put while the step scrolls, as on «Мои»
-   and «Заявки». Sticky offsets count from inside the shell's top padding, so
-   top: 0 is exactly where the header already sits; the upward shadow paints
-   that padding strip so nothing scrolls through above it. */
-.create-form-screen {
-  --create-header-top: calc(24px + var(--app-inset-top, 0px));
-}
-
-.create-form-screen > .create-form-header.gb-header {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  height: 48px;
-  background: var(--app-bg);
-  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg), 0 calc(-1 * var(--create-header-top)) var(--app-bg),
-    -16px calc(-1 * var(--create-header-top)) var(--app-bg), 16px calc(-1 * var(--create-header-top)) var(--app-bg);
-}
-
-/* Content fades out as it slides under the header. */
-.create-form-screen > .create-form-header.gb-header::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: -16px;
-  right: -16px;
-  height: 16px;
-  background: linear-gradient(to bottom, var(--app-bg), color-mix(in srgb, var(--app-bg) 0%, transparent));
-  pointer-events: none;
-}
-
-/* With the header pinned, the shell's top fade would only dim it. */
-.app-shell:has(.create-form-screen)::before {
-  opacity: 0 !important;
-}
 
 .create-form-header .gb-back {
   position: absolute;

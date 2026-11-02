@@ -116,9 +116,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 56px;
-  padding: 10px 10px 10px 16px;
+  gap: 12px;
+  min-height: 64px;
+  padding: 11px 12px 11px 16px;
 }
 
 .create-terms-row + .create-terms-row::before {
@@ -143,23 +143,26 @@
   font-weight: var(--app-weight-medium);
 }
 
+.create-terms-row-hint {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
 .create-terms-row-error {
   color: var(--app-danger, #ff453a);
   font-size: var(--app-size-caption, 13px);
 }
 
-.create-terms-note {
-  margin-top: -10px;
-  padding-inline: 4px;
-  color: var(--app-muted);
-  font-size: var(--app-size-caption, 13px);
-}
-
-/* − 6 +: two round buttons around the number. */
+/* − 6 +: one capsule; the ends are its own buttons, the number sits between. */
 .create-mini-stepper {
   display: flex;
   flex: none;
   align-items: center;
+  height: 36px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--app-secondary-bg, #2c2c2e);
 }
 
 .app-shell .create-mini-stepper button {
@@ -171,18 +174,24 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--app-secondary-bg, #2c2c2e);
+  background: transparent;
   box-shadow: none;
   color: var(--app-text);
+  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 
+.app-shell .create-mini-stepper button:active:not(:disabled) {
+  background: color-mix(in srgb, var(--app-text) 12%, transparent);
+}
+
+/* At a limit the end fades back, but stays in place so the number does not jump. */
 .app-shell .create-mini-stepper button:disabled {
   color: var(--app-muted);
-  opacity: 0.45;
+  opacity: 0.35;
 }
 
 .app-shell .create-mini-stepper input:not([type="checkbox"]):not([type="radio"]) {
-  width: 40px;
+  width: 34px;
   min-height: 0;
   padding: 0;
   border: 0;

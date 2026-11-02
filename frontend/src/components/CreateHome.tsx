@@ -5,6 +5,8 @@ import { MarketSearchField } from "./market/MarketSearchField";
 import { CreateFeed } from "./CreateFeed";
 import { CreateRecentSection } from "./CreateRecentSection";
 import { CreateTicker } from "./CreateTicker";
+import { CreateDraftsCount, CreateDraftsSheet, CreateDraftUndo } from "./CreateDraftsSheet";
+import type { CreateFamilyDraft } from "../hooks/useCreateFamilyDraft";
 import { triggerTelegramSelection } from "../telegram";
 import { servicePopularity } from "./families/createFamilyForm";
 import { CREATE_TITLES, type CreateCategory } from "./CreateCategoryPicker";
@@ -64,13 +66,27 @@ export function CreateHome({
   services,
   myFamilies,
   onOpen,
+  drafts = [],
+  onResumeDraft,
+  onDiscardDraft,
+  onRestoreDraft,
   ...actions
 }: CreateHomeActions & {
   services: FamilyService[];
   myFamilies: MyFamily[];
   onOpen: (kind: CreateCategory) => void;
+  /** Families left half-made on this device, newest first. */
+  drafts?: CreateFamilyDraft[];
+  onResumeDraft?: (draft: CreateFamilyDraft) => void;
+  onDiscardDraft?: (id: string) => void;
+  /** Undo of a delete. */
+  onRestoreDraft?: (draft: CreateFamilyDraft) => void;
 }) {
   const [query, setQuery] = useState("");
+  // The kind whose drafts are shown in the sheet.
+  const [draftsKind, setDraftsKind] = useState<"subscription" | "tariff" | null>(null);
+  // The draft just deleted, while «Вернуть» is on screen.
+  const [deletedDraft, setDeletedDraft] = useState<CreateFamilyDraft | null>(null);
   const accountServices = useAccountServices().data ?? [];
   // The operators endpoint lists only operators that take listings now.
   const operators = useMarketplaceOperators().data ?? [];
@@ -87,6 +103,13 @@ export function CreateHome({
   };
 
   const searching = query.trim() !== "";
+  // Drafts by kind, only those whose service is still in the catalog.
+  const draftsOf = (kind: CreateCategory) =>
+    kind === "subscription" || kind === "tariff"
+      ? drafts.filter(
+          (item) => item.familyType === kind && services.some((service) => service.id === item.form.service_id)
+        )
+      : [];
   const found = searching ? searchCreateItems(query, { services, accountServices, operators }, actions) : [];
   const recent = searching
     ? []
@@ -133,7 +156,9 @@ export function CreateHome({
                   data-testid={`create-kind-${kind}`}
                   onClick={() => {
                     triggerTelegramSelection();
-                    onOpen(kind);
+                    // A kind with drafts asks first: one of them, or a new one.
+                    if (draftsOf(kind).length > 0 && (kind === "subscription" || kind === "tariff")) setDraftsKind(kind);
+                    else onOpen(kind);
                   }}
                 >
                   <span className="create-kind-icon" aria-hidden="true">
@@ -143,6 +168,7 @@ export function CreateHome({
                     <strong>{CREATE_TITLES[kind]}</strong>
                     {descriptions[kind] ? <span>{descriptions[kind]}</span> : null}
                   </span>
+                  {draftsOf(kind).length > 0 ? <CreateDraftsCount count={draftsOf(kind).length} /> : null}
                   <SystemSymbol name="chevron.forward" size={18} />
                 </button>
               ))}
@@ -152,6 +178,37 @@ export function CreateHome({
           </>
         )}
       </Panel>
+      {draftsKind && onResumeDraft && onDiscardDraft ? (
+        <CreateDraftsSheet
+          drafts={draftsOf(draftsKind)}
+          totalDrafts={drafts.length}
+          services={services}
+          onResume={(item) => {
+            setDraftsKind(null);
+            onResumeDraft(item);
+          }}
+          onDiscard={(item) => {
+            onDiscardDraft(item.id);
+            setDeletedDraft(item);
+          }}
+          onCreateNew={() => {
+            const kind = draftsKind;
+            setDraftsKind(null);
+            onOpen(kind);
+          }}
+          onClose={() => setDraftsKind(null)}
+        />
+      ) : null}
+      {deletedDraft && onRestoreDraft ? (
+        <CreateDraftUndo
+          key={deletedDraft.id}
+          onUndo={() => {
+            onRestoreDraft(deletedDraft);
+            setDeletedDraft(null);
+          }}
+          onDone={() => setDeletedDraft(null)}
+        />
+      ) : null}
     </div>
   );
 }

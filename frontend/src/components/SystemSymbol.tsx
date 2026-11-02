@@ -43,6 +43,8 @@ import crownMinimalisticDuotone from "@iconify-icons/solar/crown-minimalistic-bo
 import shieldUserDuotone from "@iconify-icons/solar/shield-user-bold-duotone";
 import verifiedCheckDuotone from "@iconify-icons/solar/verified-check-bold-duotone";
 import archiveDuotone from "@iconify-icons/solar/archive-bold-duotone";
+import menuDotsBold from "@iconify-icons/solar/menu-dots-bold";
+import trashBinDuotone from "@iconify-icons/solar/trash-bin-minimalistic-bold-duotone";
 
 const SYSTEM_SYMBOLS = {
   archive: archiveDuotone,
@@ -59,6 +61,8 @@ const SYSTEM_SYMBOLS = {
   "checkmark.shield": shieldCheckDuotone,
   checklist: checklistDuotone,
   "clipboard.list": clipboardListDuotone,
+  ellipsis: menuDotsBold,
+  trash: trashBinDuotone,
   "chevron.backward": altArrowLeftLinear,
   "chevron.forward": altArrowRightLinear,
   "chevron.up": altArrowUpDuotone,

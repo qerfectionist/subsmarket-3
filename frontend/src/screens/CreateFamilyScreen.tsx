@@ -1,4 +1,4 @@
-import { useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type Dispatch, type FormEvent, type SetStateAction } from "react";
 import { Button as AppButton } from "../components/ui";
 import { CreateShell } from "../components/CreateCategoryPicker";
 import { CreateFamilyServiceStep } from "../components/families/CreateFamilyServiceStep";
@@ -33,6 +33,8 @@ export function CreateFamilyScreen({
   busy,
   onPickService,
   initialStep = "service",
+  initialPayoutProgress = PAYOUT_START,
+  onWizardChange,
   owner,
   onBack,
   onChangeForm,
@@ -46,6 +48,10 @@ export function CreateFamilyScreen({
   onPickService: (service: FamilyService) => void;
   /** «Условия» when a popular service was picked on «Создать». */
   initialStep?: CreateStep;
+  /** How far «Выплата» was walked, when a saved draft is resumed. */
+  initialPayoutProgress?: PayoutProgress;
+  /** Reports the furthest step reached and «Выплата» progress, so the draft keeps them too. */
+  onWizardChange?: (state: { step: CreateStep; progress: PayoutProgress }) => void;
   /** The organiser as the Market card on step 2 shows them. */
   owner: PreviewOwner;
   onBack: () => void;
@@ -55,8 +61,23 @@ export function CreateFamilyScreen({
   const [step, setStep] = useState<CreateStep>(initialStep);
   const [attempted, setAttempted] = useState<ReadonlySet<CreateStep>>(() => new Set());
   // How far «Выплата» has been walked: kept here so going back to «Цена и места» loses nothing.
-  const [payoutProgress, setPayoutProgress] = useState<PayoutProgress>(PAYOUT_START);
+  const [payoutProgress, setPayoutProgress] = useState<PayoutProgress>(initialPayoutProgress);
+  const [furthestStep, setFurthestStep] = useState<CreateStep>(initialStep);
+  useEffect(() => {
+    // The furthest step reached is what a draft resumes on: going back to the
+    // menu through «Назад» must not rewind it to «Сервис».
+    if (CREATE_STEPS.findIndex((item) => item.id === step) > CREATE_STEPS.findIndex((item) => item.id === furthestStep)) {
+      setFurthestStep(step);
+      return;
+    }
+    onWizardChange?.({ step: furthestStep, progress: payoutProgress });
+    // The callback is App's state setter; only the values matter here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, furthestStep, payoutProgress]);
   const errors = validateCreateForm(createForm, service);
+  // «Выплата» asks three things: its bar below fills a third for each one answered.
+  const payoutAnswered =
+    (payoutProgress.stage >= 1 ? 1 : 0) + (payoutProgress.stage >= 2 ? 1 : 0) + (payoutProgress.chat ? 1 : 0);
   const stepIndex = CREATE_STEPS.findIndex((item) => item.id === step);
   const isLast = step === "payout";
   const blocked = stepHasErrors(step, errors) || (isLast && (busy !== null || !payoutDone(payoutProgress)));
@@ -174,6 +195,12 @@ export function CreateFamilyScreen({
                       data-state={state}
                       aria-current={state === "current" ? "step" : undefined}
                       data-testid={`create-progress-${item.id}`}
+                      data-fill={item.id === "payout" && state === "current" ? payoutAnswered : undefined}
+                      style={
+                        item.id === "payout" && state === "current"
+                          ? ({ "--create-step-fill": payoutAnswered / 3 } as CSSProperties)
+                          : undefined
+                      }
                     >
                       <span className="create-progress-bar" />
                       <span className="visually-hidden">{index + 1}. </span>

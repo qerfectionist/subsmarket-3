@@ -1,0 +1,301 @@
+/* Drafts on «Создать»: a pencil and a count on the kind row; tapping the kind
+   opens a sheet with its drafts and «Создать новую». */
+.create-drafts-count {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  margin-right: 2px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  /* In the system's own greys: a count, not an alarm, and no new accent colour. */
+  background: var(--app-secondary-bg, #2c2c2e);
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The sheet: comes up from the bottom over a dim that fades in, and goes back
+   down the same way. More air than a list sheet: 20px sides, 24px between the
+   heading, the drafts and the button. */
+.create-drafts-backdrop {
+  animation: create-drafts-dim-in 0.24s ease both;
+}
+
+.create-drafts-backdrop[data-closing] {
+  animation: create-drafts-dim-out 0.24s ease both;
+}
+
+.create-drafts-backdrop .create-drafts-sheet {
+  gap: 0;
+  padding: 8px 20px calc(20px + env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  background: var(--app-surface);
+  /* The screen fades out into the sheet's top edge, as content does under the
+     pinned header and above the wizard's bar. A shadow, since the sheet's own
+     scroll would clip a gradient drawn outside it; black, the colour of the dim
+     behind the sheet (the page colour over the dim would read as a light band). */
+  box-shadow: 0 -24px 40px 8px rgb(0 0 0 / 70%);
+  /* Backwards only: once in, the pull-down can move it with an inline transform. */
+  animation: create-drafts-sheet-in 0.34s cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
+}
+
+.create-drafts-backdrop[data-closing] .create-drafts-sheet {
+  animation: create-drafts-sheet-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes create-drafts-dim-in {
+  from {
+    background: rgb(0 0 0 / 0%);
+  }
+}
+
+@keyframes create-drafts-dim-out {
+  to {
+    background: rgb(0 0 0 / 0%);
+  }
+}
+
+@keyframes create-drafts-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes create-drafts-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-drafts-backdrop,
+  .create-drafts-backdrop[data-closing],
+  .create-drafts-backdrop .create-drafts-sheet,
+  .create-drafts-backdrop[data-closing] .create-drafts-sheet {
+    animation-duration: 0.01s;
+  }
+}
+
+/* The top strip is the grip: the handle and «Черновики»; pulled down, it closes. */
+.create-drafts-grip {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 20px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.create-drafts-grip > h2 {
+  font-size: 22px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 28px;
+}
+
+.create-drafts-sheet:focus {
+  outline: none;
+}
+
+/* Each draft its own card, 8px apart. */
+.create-drafts-list {
+  display: grid;
+  gap: 8px;
+}
+
+/* A card and, beside it, the bin it uncovers when swiped left. */
+.create-drafts-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.create-drafts-sheet .create-drafts-delete {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--app-danger, #ff453a) 16%, transparent);
+  box-shadow: none;
+  color: var(--app-danger, #ff453a);
+  opacity: var(--swipe, 0);
+  transform: translateY(-50%) scale(calc(0.6 + 0.4 * var(--swipe, 0)));
+  pointer-events: none;
+}
+
+.create-drafts-row[data-open] .create-drafts-delete {
+  pointer-events: auto;
+}
+
+.create-drafts-sheet .create-drafts-open {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 70px;
+  /* Swiped, the card narrows from the right instead of sliding off the left. */
+  margin-right: var(--swipe-px, 0px);
+  padding: 12px 16px 12px 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--app-secondary-bg, #2c2c2e);
+  box-shadow: none;
+  color: var(--app-muted);
+  font: inherit;
+  text-align: left;
+  touch-action: pan-y;
+  transition: margin-right 0.25s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.create-drafts-row[data-dragging] .create-drafts-open {
+  transition: none;
+}
+
+/* One box per logo, no visible plate: icons and wordmarks line up the same. */
+.create-drafts-logo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.create-drafts-logo img,
+.create-drafts-logo svg {
+  max-width: 34px;
+  max-height: 34px;
+  object-fit: contain;
+}
+
+.create-drafts-sheet .create-row-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 3px;
+  min-width: 0;
+}
+
+.create-drafts-sheet .create-row-copy > strong,
+.create-drafts-sheet .create-row-copy > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.create-drafts-sheet .create-row-copy > strong {
+  color: var(--app-text);
+  font-size: 16px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 21px;
+}
+
+.create-drafts-sheet .create-row-copy > span {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.create-drafts-sheet .create-row-copy > .create-drafts-expiring {
+  color: var(--app-warning, #ffd60a);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* What tells two drafts of one service apart: the share and the places. */
+.create-drafts-price {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.create-drafts-price > strong {
+  color: var(--app-text);
+  font-size: 15px;
+  font-weight: var(--app-weight-semibold);
+  line-height: 21px;
+}
+
+.create-drafts-price > span {
+  color: var(--app-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* The quiet second action: a new one, under the drafts. */
+.create-drafts-sheet .create-drafts-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-text) 16%, transparent);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: var(--app-weight-semibold);
+}
+
+.create-drafts-note {
+  justify-self: center;
+  margin-top: 12px;
+  color: var(--app-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* «Черновик удалён · Вернуть» at the top for a few seconds, clear of the sheet. */
+.create-draft-undo {
+  position: fixed;
+  top: calc(12px + var(--app-inset-top, 0px));
+  right: 16px;
+  left: 16px;
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 8px 0 16px;
+  border-radius: 16px;
+  background: var(--app-secondary-bg, #2c2c2e);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  color: var(--app-text);
+  font-size: 15px;
+  animation: create-draft-undo-in 0.3s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.app-shell .create-draft-undo > button,
+.create-draft-undo > button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--app-text);
+  font: inherit;
+  font-weight: var(--app-weight-semibold);
+}
+
+@keyframes create-draft-undo-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}

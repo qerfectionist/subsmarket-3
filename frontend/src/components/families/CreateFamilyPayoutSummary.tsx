@@ -1,60 +1,45 @@
-import { bankLabels } from "../../labels";
-import type { FamilyCreate } from "../../types";
-import { RequisiteBox } from "../RequisiteBox";
-import { calculatePreviewShare } from "./createFamilyForm";
+import { triggerTelegramSelection } from "../../telegram";
+import { SystemSymbol } from "../SystemSymbol";
 
 /**
- * «Так увидят участники при оплате»: the real requisites box a member gets,
- * filled from this form, only to look at. Like the Market card on top, it is
- * the actual component, so it cannot drift from what members see.
+ * «Показывать в Маркете» as a settings row: an icon tile, the title with one
+ * short line under it, the switch on the right. Off, the family is found only
+ * by the owner's invite link (the backend's is_search_visible).
  */
-export function CreateFamilyRequisitePreview({ form, locked }: { form: FamilyCreate; locked: boolean }) {
-  const name = form.payment_recipient_name?.trim();
+export function CreateFamilyVisibility({
+  visible,
+  locked,
+  onChange
+}: {
+  visible: boolean;
+  locked: boolean;
+  onChange: (visible: boolean) => void;
+}) {
   return (
-    <section
-      className="create-payout-block"
-      aria-label="Так увидят участники при оплате"
-      data-testid="create-requisite-preview"
-    >
-      <span className="create-terms-caption" data-locked={locked || undefined}>
-        Так увидят участники при оплате
-      </span>
-      <div className="create-requisite-preview" data-locked={locked || undefined} aria-hidden="true" inert>
-        <RequisiteBox
-          requisite={{
-            bank: form.payment_bank,
-            phone: form.payment_phone || "+7 700 123 45 67",
-            recipient_name: name || null
+    <section className="create-payout-block" aria-label="Показывать в Маркете" data-testid="create-visibility">
+      <div className="create-switch-row" data-locked={locked || undefined}>
+        <span className="create-switch-icon" aria-hidden="true">
+          <SystemSymbol name="square.grid.2x2" size={18} />
+        </span>
+        <span className="create-switch-text">
+          <span id="create-visibility-label">Показывать в Маркете</span>
+          <small>{visible ? "Семью увидят все" : "Только по ссылке-приглашению"}</small>
+        </span>
+        <button
+          type="button"
+          role="switch"
+          className="create-switch"
+          data-testid="create-visibility-switch"
+          aria-checked={visible}
+          aria-labelledby="create-visibility-label"
+          disabled={locked}
+          onClick={() => {
+            triggerTelegramSelection();
+            onChange(!visible);
           }}
-        />
-      </div>
-    </section>
-  );
-}
-
-/**
- * What the family brings in once every place is taken: the share times the
- * other members, on the day and to the bank set here. A number, not a lesson,
- * so it stays worth reading every time.
- */
-export function CreateFamilyIncome({ form, bankChosen }: { form: FamilyCreate; bankChosen: boolean }) {
-  const share = calculatePreviewShare(form.total_price_kzt, form.max_members);
-  const members = Math.max(0, form.max_members - 1);
-  const yearly = form.period === "yearly";
-  const total = (share * members).toLocaleString("ru-RU");
-  const when = yearly ? "раз в год" : `${form.payment_day}-го`;
-  const where = bankChosen ? ` на ${bankLabels[form.payment_bank]}` : "";
-  return (
-    <section className="create-payout-block" aria-label="Сколько вы будете получать" data-testid="create-income">
-      <div className="create-income">
-        <span className="create-income-label">Когда все места заняты, вам придёт</span>
-        <strong className="create-income-value">
-          {total} ₸ <span>{yearly ? "в год" : "в месяц"}</span>
-        </strong>
-        <small className="create-income-math">
-          {members} × {share.toLocaleString("ru-RU")} ₸, {when}
-          {where}
-        </small>
+        >
+          <span aria-hidden="true" />
+        </button>
       </div>
     </section>
   );

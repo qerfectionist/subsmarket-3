@@ -44,23 +44,32 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 32px;
+  min-height: 26px;
 }
 
 /* A small pill, so it reads as a button and not as part of the name. */
 .app-shell .create-payout-edit {
+  position: relative;
   flex: none;
-  min-height: 32px;
-  padding: 0 12px;
+  min-height: 26px;
+  padding: 0 10px;
   border: 0;
   border-radius: 999px;
   background: var(--app-secondary-bg, #2c2c2e);
   box-shadow: none;
   color: var(--app-muted);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: var(--app-weight-semibold);
+  line-height: 26px;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Small to the eye, still a full finger to tap. */
+.app-shell .create-payout-edit::after {
+  content: "";
+  position: absolute;
+  inset: -9px -6px;
 }
 
 .app-shell .create-payout-edit:active {
@@ -294,7 +303,17 @@
 
 .create-payout-snap {
   scroll-snap-align: start;
-  scroll-margin-top: calc(269px + var(--app-inset-top, 0px));
+  scroll-margin-top: calc(263px + var(--app-inset-top, 0px));
+}
+
+/* The last blocks fill at least the window between the pinned card and the
+   footer (header + card above, footer + menu below), so the chat has room to
+   scroll up to its stop like the blocks before it. */
+.create-payout-tail {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-height: calc(var(--app-viewport-stable-height, 100dvh) - 263px - var(--app-inset-top, 0px) - 236px);
 }
 
 .create-payout [data-scroll] {

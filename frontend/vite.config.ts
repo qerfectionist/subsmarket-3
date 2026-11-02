@@ -22,10 +22,8 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       strictPort: false,
-      hmr: {
-        host: "127.0.0.1",
-        clientPort: 5173
-      },
+      // On a phone (start-phone.bat) the page host is the PC's address, not 127.0.0.1.
+      hmr: process.env.SUBS_LAN === "1" ? undefined : { host: "127.0.0.1", clientPort: 5173 },
       allowedHosts: true,
       proxy: {
         "/api": {

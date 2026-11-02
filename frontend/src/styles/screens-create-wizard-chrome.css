@@ -1,0 +1,77 @@
+/* The create wizard's chrome: the pinned header, and the «Выплата» bar that fills by thirds. */
+
+/* The back arrow and the title stay put while the step scrolls, as on «Мои»
+   and «Заявки». Sticky offsets count from inside the shell's top padding, so
+   top: 0 is exactly where the header already sits; the upward shadow paints
+   that padding strip so nothing scrolls through above it. */
+.create-form-screen {
+  --create-header-top: calc(24px + var(--app-inset-top, 0px));
+}
+
+.create-form-screen > .create-form-header.gb-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  height: 48px;
+  background: var(--app-bg);
+  box-shadow: -16px 0 var(--app-bg), 16px 0 var(--app-bg), 0 calc(-1 * var(--create-header-top)) var(--app-bg),
+    -16px calc(-1 * var(--create-header-top)) var(--app-bg), 16px calc(-1 * var(--create-header-top)) var(--app-bg);
+}
+
+/* Content fades out as it slides under the header. */
+.create-form-screen > .create-form-header.gb-header::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: -16px;
+  right: -16px;
+  height: 16px;
+  background: linear-gradient(to bottom, var(--app-bg), color-mix(in srgb, var(--app-bg) 0%, transparent));
+  pointer-events: none;
+}
+
+/* With the header pinned, the shell's top fade would only dim it. */
+.app-shell:has(.create-form-screen)::before {
+  opacity: 0 !important;
+}
+
+/* «Выплата» asks three things: while it is open its bar fills green by thirds
+   as each is answered (bank, recipient, chat), over a grey track. */
+.create-progress li[data-fill] .create-progress-bar {
+  position: relative;
+  overflow: hidden;
+  background: var(--app-border);
+}
+
+.create-progress li[data-fill] .create-progress-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--create-step-fill, 0) * 100%);
+  border-radius: inherit;
+  background: var(--app-success, #30d158);
+  transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-progress li[data-fill] .create-progress-bar::after {
+    transition: none;
+  }
+}
+
+/* The wizard's button sits at the same place on every step, right above the
+   menu: a short step («Цена и места») stretches down to it instead of leaving
+   the button halfway up the screen. The height is the window minus the shell
+   padding and pinned header above (88px) and the menu strip below. */
+.create-screen .create-step-form {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(
+    var(--app-viewport-stable-height, 100dvh) - 88px - var(--app-inset-top, 0px) -
+      (var(--app-nav-height) + 40px + var(--app-inset-bottom, 0px))
+  );
+}
+
+.create-screen .create-step-form > .create-wizard-footer {
+  margin-top: auto;
+}

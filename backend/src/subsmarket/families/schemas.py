@@ -34,6 +34,8 @@ class FamilyCreate(BaseModel):
     payment_phone: str = Field(min_length=6, max_length=32)
     payment_recipient_name: str | None = Field(default=None, max_length=40)
     chat_kind: FamilyChatKind | None = None
+    # False keeps the family out of the Market: people reach it only by the invite link.
+    is_search_visible: bool = True
 
     @field_validator("payment_recipient_name")
     @classmethod

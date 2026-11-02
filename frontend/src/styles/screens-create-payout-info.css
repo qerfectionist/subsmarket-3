@@ -108,53 +108,93 @@
   line-height: 1.45;
 }
 
-/* «Так увидят участники при оплате»: the real requisites box, only to look at. */
-.create-requisite-preview {
-  pointer-events: none;
-  user-select: none;
+/* «Показывать в Маркете»: a settings row, icon tile + title + one line + switch. */
+.create-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 14px 10px 12px;
+  border-radius: var(--app-radius-md, 16px);
+  background: var(--app-surface);
   transition: opacity 0.25s ease;
 }
 
-.create-requisite-preview[data-locked] {
+.create-switch-row[data-locked] {
   opacity: 0.38;
+  pointer-events: none;
 }
 
-.create-requisite-preview .requisite-box {
-  margin: 0;
-}
-
-/* The income line: a label, the sum large, the arithmetic small under it. */
-.create-income {
+.create-switch-icon {
   display: grid;
-  gap: 4px;
-  padding: 16px;
-  border-radius: var(--app-radius-md, 16px);
-  background: var(--app-surface);
-}
-
-.create-income-label {
-  color: var(--app-muted);
-  font-size: 13px;
-  line-height: 18px;
-}
-
-.create-income-value {
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--app-secondary-bg, #2c2c2e);
   color: var(--app-text);
-  font-size: 28px;
-  font-weight: var(--app-weight-semibold);
-  line-height: 34px;
-  font-variant-numeric: tabular-nums;
 }
 
-.create-income-value > span {
-  color: var(--app-muted);
-  font-size: 17px;
+.create-switch-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 1px;
+  min-width: 0;
+}
+
+.create-switch-text > span {
+  color: var(--app-text);
+  font-size: 16px;
   font-weight: var(--app-weight-medium);
+  line-height: 21px;
 }
 
-.create-income-math {
+.create-switch-text > small {
+  overflow: hidden;
   color: var(--app-muted);
   font-size: 13px;
-  line-height: 18px;
-  font-variant-numeric: tabular-nums;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .create-switch {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-text) 16%, transparent);
+  box-shadow: none;
+  transition: background-color 0.2s ease;
+}
+
+.app-shell .create-switch[aria-checked="true"] {
+  background: var(--app-success, #30d158);
+}
+
+.create-switch > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.create-switch[aria-checked="true"] > span {
+  transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .create-switch > span {
+    transition: none;
+  }
 }
