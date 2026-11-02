@@ -28,11 +28,22 @@ def get_family_invite(
         raise HTTPException(status_code=404, detail="FAMILY_NOT_FOUND")
     if family.owner_user_id != user.id:
         raise HTTPException(status_code=403, detail="ONLY_OWNER_CAN_VIEW_INVITE")
-    return db.scalar(
+    invite = db.scalar(
         select(FamilyInvite)
         .where(FamilyInvite.family_id == family_id)
         .where(FamilyInvite.status == "active")
     )
+    if invite is None and family.status in {"active", "full"}:
+        invite = _insert_family_invite(db, family.id)
+        record_family_audit_event(
+            db,
+            family_id=family.id,
+            action="family_invite_created",
+            actor_user_id=user.id,
+        )
+        db.flush()
+        db.refresh(invite)
+    return invite
 
 
 def create_family_invite(
