@@ -146,7 +146,6 @@ export function MyFamiliesScreen({
   onCreateFamily,
   onOpenMarket
 }: MyFamiliesScreenProps) {
-  const [expandedFamilyId, setExpandedFamilyId] = useState<string | null>(null);
   const [familyRoleFilter, setFamilyRoleFilter] = useState<MyFamilyRoleFilter>("all");
   const [familyFilter, setFamilyFilter] = useState<MyFamilyFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -291,36 +290,7 @@ export function MyFamiliesScreen({
                 <MyFamilyWorkspaceCard
                   key={item.membership.id}
                   item={item}
-                  details={ownerDetails[item.family.id]}
-                  requisite={requisites[item.membership.id]}
-                  isExpanded={expandedFamilyId === item.family.id}
-                  busy={busy}
-                  onToggleExpand={() =>
-                    setExpandedFamilyId((curr) => (curr === item.family.id ? null : item.family.id))
-                  }
                   onOpenFamily={onOpenFamily}
-                  onLoadOwnerDetails={onLoadOwnerDetails}
-                  onUpdateDescription={onUpdateDescription}
-                  onUpdatePrice={onUpdatePrice}
-                  onUpdatePaymentDay={onUpdatePaymentDay}
-                  onCloseFamily={onCloseFamily}
-                  onConfirmAvailability={onConfirmAvailability}
-                  onConfirmAccess={onConfirmAccess}
-                  onGetRequisite={onGetRequisite}
-                  onAcknowledgeClosing={onAcknowledgeClosing}
-                  onLeaveFamily={onLeaveFamily}
-                  onCreatePrepayment={onCreatePrepayment}
-                  onReportPayment={onReportPayment}
-                  onCancelPaymentReport={onCancelPaymentReport}
-                  onApproveRequest={onApproveRequest}
-                  onRejectRequest={onRejectRequest}
-                  onAccessProvided={onAccessProvided}
-                  onRemindAccess={onRemindAccess}
-                  onCancelBeforeAccess={onCancelBeforeAccess}
-                  onRemoveMember={onRemoveMember}
-                  onConfirmPayment={onConfirmPayment}
-                  onNotReceived={onNotReceived}
-                  onRecordPrepayment={onRecordPrepayment}
                 />
               ))}
             </div>
