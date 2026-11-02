@@ -484,7 +484,7 @@ def test_family_invite_lifecycle_and_hidden_discovery(
     )
     assert invite_response.status_code == 201
     first_code = invite_response.json()["code"]
-    assert len(first_code) == 8
+    assert len(first_code) == 6
     assert first_code.isdigit()
 
     hidden = client.patch(

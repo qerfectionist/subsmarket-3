@@ -143,7 +143,7 @@ export function SearchScreen({
   const normalizedInviteCode = term
     .replace(/^(?:https?:\/\/.*?start=(?:inv_)?)?(?:inv_)?/i, "")
     .replace(/[\s-]/g, "");
-  const isInvite = /^\d{8}$/.test(normalizedInviteCode);
+  const isInvite = /^\d{6,8}$/.test(normalizedInviteCode);
   const isSearching = Boolean(term) && !isInvite;
   const isHome = !isCatalog && !isSearching;
 

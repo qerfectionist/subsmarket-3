@@ -129,7 +129,7 @@ class FamilyChat(Base):
 class FamilyInvite(Base):
     __tablename__ = "family_invites"
     __table_args__ = (
-        CheckConstraint("length(code) = 8", name="family_invite_code_length_ck"),
+        CheckConstraint("length(code) in (6, 8)", name="family_invite_code_length_ck"),
         CheckConstraint(
             "status in ('active', 'revoked')",
             name="family_invite_status_ck",

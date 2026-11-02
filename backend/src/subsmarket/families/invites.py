@@ -122,7 +122,7 @@ def resolve_family_invite(
 
 def normalize_family_invite_code(value: str) -> str:
     code = re.sub(r"[\s-]", "", value.strip())
-    if not re.fullmatch(r"\d{8}", code):
+    if not re.fullmatch(r"\d{6,8}", code):
         raise HTTPException(status_code=400, detail="INVALID_FAMILY_INVITE_CODE")
     return code
 
@@ -134,7 +134,7 @@ def _ensure_family_can_manage_invite(family: Family) -> None:
 
 def _insert_family_invite(db: Session, family_id: UUID) -> FamilyInvite:
     for _ in range(20):
-        code = f"{secrets.randbelow(100_000_000):08d}"
+        code = f"{secrets.randbelow(1_000_000):06d}"
         if db.scalar(select(FamilyInvite.id).where(FamilyInvite.code == code)):
             continue
         invite = FamilyInvite(family_id=family_id, code=code, status="active")
